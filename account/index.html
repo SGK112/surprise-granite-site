@@ -17107,10 +17107,88 @@
             </div>
           </div>
 
-          <!-- Location -->
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="font-size: 13px; margin-bottom: 4px;">Location</label>
-            <input type="text" id="cal-event-location" class="input-modern" placeholder="Address or location" />
+          <!-- Location / Meeting Details (Dynamic based on meeting format) -->
+          <div id="cal-event-location-section" class="form-group" style="margin-bottom: 12px;">
+            <!-- In Person Location -->
+            <div id="location-in-person" style="display: block;">
+              <label style="font-size: 13px; margin-bottom: 8px; display: block;">Location</label>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Location type radio buttons -->
+                <div style="display: flex; gap: 12px; margin-bottom: 4px;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
+                    <input type="radio" name="location-type" value="contact" id="location-type-contact" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" />
+                    <span>Contact Address</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
+                    <input type="radio" name="location-type" value="showroom" id="location-type-showroom" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" />
+                    <span>Showroom</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
+                    <input type="radio" name="location-type" value="other" id="location-type-other" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" checked />
+                    <span>Other</span>
+                  </label>
+                </div>
+                <!-- Contact address display (shown when contact is selected and has address) -->
+                <div id="contact-address-display" style="display: none; padding: 10px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-location-dot" style="color: #10b981;"></i>
+                    <span id="contact-address-text" style="font-size: 13px; color: var(--text-primary);"></span>
+                  </div>
+                </div>
+                <!-- Showroom address (preset) -->
+                <div id="showroom-address-display" style="display: none; padding: 10px 12px; background: rgba(249, 203, 0, 0.1); border: 1px solid rgba(249, 203, 0, 0.3); border-radius: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-store" style="color: var(--gold-primary);"></i>
+                    <span style="font-size: 13px; color: var(--text-primary);">14050 N 83rd Ave Suite 290, Peoria, AZ 85381</span>
+                  </div>
+                </div>
+                <!-- Manual location input -->
+                <input type="text" id="cal-event-location" class="input-modern" placeholder="Enter address or location" />
+              </div>
+            </div>
+
+            <!-- Phone Call Details -->
+            <div id="location-phone-call" style="display: none;">
+              <label style="font-size: 13px; margin-bottom: 8px; display: block;">Phone Call Details</label>
+              <div style="padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <i class="fa-solid fa-phone" style="color: #3b82f6; font-size: 16px;"></i>
+                  <span style="font-size: 13px; color: var(--text-muted);">Call will be made to:</span>
+                </div>
+                <div id="phone-call-number" style="font-size: 16px; font-weight: 600; color: var(--text-primary); padding-left: 26px;">
+                  <span id="phone-call-display">No phone number set</span>
+                </div>
+                <input type="hidden" id="cal-event-location-phone" value="" />
+              </div>
+            </div>
+
+            <!-- Video Call Details -->
+            <div id="location-video-call" style="display: none;">
+              <label style="font-size: 13px; margin-bottom: 8px; display: block;">Video Call Details</label>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <select id="cal-event-video-platform" class="input-modern" onchange="handleVideoPlatformChange()">
+                  <option value="">Select platform...</option>
+                  <option value="zoom">Zoom</option>
+                  <option value="google_meet">Google Meet</option>
+                  <option value="teams">Microsoft Teams</option>
+                  <option value="facetime">FaceTime</option>
+                  <option value="other">Other</option>
+                </select>
+                <input type="text" id="cal-event-video-link" class="input-modern" placeholder="Meeting link (optional)" />
+              </div>
+            </div>
+
+            <!-- Conference Call Details -->
+            <div id="location-conference-call" style="display: none;">
+              <label style="font-size: 13px; margin-bottom: 8px; display: block;">Conference Call Details</label>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <input type="text" id="cal-event-conference-number" class="input-modern" placeholder="Dial-in number" />
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <input type="text" id="cal-event-conference-code" class="input-modern" placeholder="Access code" />
+                  <input type="text" id="cal-event-conference-pin" class="input-modern" placeholder="PIN (optional)" />
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Notes -->
@@ -38484,6 +38562,29 @@
       // Reset contact search
       clearCalEventContact();
 
+      // Reset meeting format to in_person and initialize location section
+      const meetingFormatSelect = document.getElementById('cal-event-meeting-format');
+      if (meetingFormatSelect) {
+        meetingFormatSelect.value = 'in_person';
+      }
+      // Reset location type to "other"
+      const locationTypeOther = document.getElementById('location-type-other');
+      if (locationTypeOther) locationTypeOther.checked = true;
+      handleMeetingFormatChange();
+      handleLocationTypeChange();
+
+      // Clear video/conference fields
+      const videoLink = document.getElementById('cal-event-video-link');
+      const videoPlatform = document.getElementById('cal-event-video-platform');
+      const confNumber = document.getElementById('cal-event-conference-number');
+      const confCode = document.getElementById('cal-event-conference-code');
+      const confPin = document.getElementById('cal-event-conference-pin');
+      if (videoLink) videoLink.value = '';
+      if (videoPlatform) videoPlatform.value = '';
+      if (confNumber) confNumber.value = '';
+      if (confCode) confCode.value = '';
+      if (confPin) confPin.value = '';
+
       // Hide manual participant form
       const manualForm = document.getElementById('manual-participant-form');
       if (manualForm) manualForm.style.display = 'none';
@@ -38520,19 +38621,32 @@
         if (prefillData) {
           if (prefillData.title) document.getElementById('cal-event-title').value = prefillData.title;
           if (prefillData.type) document.getElementById('cal-event-type').value = prefillData.type;
-          if (prefillData.meetingFormat) document.getElementById('cal-event-meeting-format').value = prefillData.meetingFormat;
+          if (prefillData.meetingFormat) {
+            document.getElementById('cal-event-meeting-format').value = prefillData.meetingFormat;
+            handleMeetingFormatChange();
+          }
           // If prefill has contact info, set as selected contact
           if (prefillData.contactName) {
             selectCalEventContact(
-              prefillData.contactType || 'manual',
-              prefillData.contactId || null,
+              prefillData.contactType || 'lead',
+              prefillData.contactId || prefillData.leadId || null,
               prefillData.contactName,
               prefillData.contactEmail || '',
               prefillData.contactPhone || '',
-              prefillData.location || ''
+              prefillData.contactAddress || prefillData.location || ''
             );
+            // If contact has address, select contact address option for in-person meetings
+            if ((prefillData.contactAddress || prefillData.location) && document.getElementById('cal-event-meeting-format').value === 'in_person') {
+              const locationTypeContact = document.getElementById('location-type-contact');
+              if (locationTypeContact) {
+                locationTypeContact.checked = true;
+                handleLocationTypeChange();
+              }
+            }
           }
-          if (prefillData.location) document.getElementById('cal-event-location').value = prefillData.location;
+          if (prefillData.location && !prefillData.contactName) {
+            document.getElementById('cal-event-location').value = prefillData.location;
+          }
           if (prefillData.leadId) document.getElementById('cal-event-lead').value = prefillData.leadId;
           if (prefillData.customerId) document.getElementById('cal-event-customer').value = prefillData.customerId;
           if (prefillData.jobId) document.getElementById('cal-event-job').value = prefillData.jobId;
@@ -38695,7 +38809,18 @@
       suggestionsEl.style.display = 'block';
     }
 
+    // Store selected contact data for location display
+    let selectedContactData = {
+      name: '',
+      email: '',
+      phone: '',
+      address: ''
+    };
+
     function selectCalEventContact(type, id, name, email, phone, address) {
+      // Store contact data
+      selectedContactData = { name, email, phone, address };
+
       // Set hidden fields
       document.getElementById('cal-event-contact-type').value = type || '';
       document.getElementById('cal-event-contact-id').value = id || '';
@@ -38704,9 +38829,27 @@
       document.getElementById('cal-event-contact-email').value = email || '';
       document.getElementById('cal-event-contact-phone').value = phone || '';
 
-      // Auto-fill location if address provided and location is empty
+      // Update contact address display for in-person meetings
+      const contactAddressDisplay = document.getElementById('contact-address-display');
+      const contactAddressText = document.getElementById('contact-address-text');
+      const locationTypeContact = document.getElementById('location-type-contact');
+
+      if (address && contactAddressDisplay && contactAddressText) {
+        contactAddressText.textContent = address;
+        // If contact has address, select the contact address option
+        if (locationTypeContact) {
+          locationTypeContact.checked = true;
+          handleLocationTypeChange();
+        }
+      }
+
+      // Update phone call display
+      updatePhoneCallDisplay(phone);
+
+      // Auto-fill location if address provided and location type is "other"
       const locationField = document.getElementById('cal-event-location');
-      if (address && !locationField.value) {
+      const locationTypeOther = document.getElementById('location-type-other');
+      if (address && locationField && locationTypeOther && locationTypeOther.checked) {
         locationField.value = address;
       }
 
@@ -38730,10 +38873,143 @@
         document.getElementById('cal-event-customer').value = id;
       }
 
-      console.log('[CalEvent] Selected contact:', { type, id, name, email, phone });
+      console.log('[CalEvent] Selected contact:', { type, id, name, email, phone, address });
     }
 
+    // Handle meeting format change
+    function handleMeetingFormatChange() {
+      const format = document.getElementById('cal-event-meeting-format').value;
+
+      // Hide all location sections
+      document.getElementById('location-in-person').style.display = 'none';
+      document.getElementById('location-phone-call').style.display = 'none';
+      document.getElementById('location-video-call').style.display = 'none';
+      document.getElementById('location-conference-call').style.display = 'none';
+
+      // Show appropriate section
+      switch (format) {
+        case 'in_person':
+          document.getElementById('location-in-person').style.display = 'block';
+          break;
+        case 'phone_call':
+          document.getElementById('location-phone-call').style.display = 'block';
+          // Update phone display with current contact phone
+          const phoneField = document.getElementById('cal-event-contact-phone');
+          updatePhoneCallDisplay(phoneField ? phoneField.value : '');
+          break;
+        case 'video_call':
+          document.getElementById('location-video-call').style.display = 'block';
+          break;
+        case 'conference_call':
+          document.getElementById('location-conference-call').style.display = 'block';
+          break;
+        default:
+          document.getElementById('location-in-person').style.display = 'block';
+      }
+    }
+
+    // Handle location type radio change (contact address vs showroom vs other)
+    function handleLocationTypeChange() {
+      const locationType = document.querySelector('input[name="location-type"]:checked')?.value;
+      const locationField = document.getElementById('cal-event-location');
+      const contactAddressDisplay = document.getElementById('contact-address-display');
+      const showroomAddressDisplay = document.getElementById('showroom-address-display');
+
+      // Hide all displays first
+      if (contactAddressDisplay) contactAddressDisplay.style.display = 'none';
+      if (showroomAddressDisplay) showroomAddressDisplay.style.display = 'none';
+      if (locationField) locationField.style.display = 'block';
+
+      switch (locationType) {
+        case 'contact':
+          if (selectedContactData.address) {
+            if (contactAddressDisplay) contactAddressDisplay.style.display = 'block';
+            if (locationField) {
+              locationField.style.display = 'none';
+              locationField.value = selectedContactData.address;
+            }
+          } else {
+            // No address, fall back to other
+            const otherRadio = document.getElementById('location-type-other');
+            if (otherRadio) otherRadio.checked = true;
+            if (locationField) locationField.placeholder = 'Enter contact address';
+          }
+          break;
+        case 'showroom':
+          if (showroomAddressDisplay) showroomAddressDisplay.style.display = 'block';
+          if (locationField) {
+            locationField.style.display = 'none';
+            locationField.value = '14050 N 83rd Ave Suite 290, Peoria, AZ 85381';
+          }
+          break;
+        case 'other':
+        default:
+          if (locationField) {
+            locationField.style.display = 'block';
+            locationField.placeholder = 'Enter address or location';
+          }
+          break;
+      }
+    }
+
+    // Update phone call display
+    function updatePhoneCallDisplay(phone) {
+      const phoneDisplay = document.getElementById('phone-call-display');
+      const phoneHidden = document.getElementById('cal-event-location-phone');
+      if (phoneDisplay) {
+        if (phone) {
+          phoneDisplay.innerHTML = `<a href="tel:${phone}" style="color: var(--gold-primary); text-decoration: none;">${phone}</a>`;
+        } else {
+          phoneDisplay.textContent = 'No phone number set - add in contact fields above';
+        }
+      }
+      if (phoneHidden) phoneHidden.value = phone || '';
+    }
+
+    // Handle video platform change
+    function handleVideoPlatformChange() {
+      const platform = document.getElementById('cal-event-video-platform').value;
+      const linkField = document.getElementById('cal-event-video-link');
+      if (linkField) {
+        switch (platform) {
+          case 'zoom':
+            linkField.placeholder = 'Paste Zoom meeting link';
+            break;
+          case 'google_meet':
+            linkField.placeholder = 'Paste Google Meet link';
+            break;
+          case 'teams':
+            linkField.placeholder = 'Paste Teams meeting link';
+            break;
+          case 'facetime':
+            linkField.placeholder = 'FaceTime will use contact phone/email';
+            break;
+          default:
+            linkField.placeholder = 'Meeting link (optional)';
+        }
+      }
+    }
+
+    // Watch for phone field changes to update phone call display
+    document.addEventListener('DOMContentLoaded', function() {
+      const phoneField = document.getElementById('cal-event-contact-phone');
+      if (phoneField) {
+        phoneField.addEventListener('input', function() {
+          updatePhoneCallDisplay(this.value);
+        });
+      }
+
+      // Add meeting format change listener
+      const meetingFormatSelect = document.getElementById('cal-event-meeting-format');
+      if (meetingFormatSelect) {
+        meetingFormatSelect.addEventListener('change', handleMeetingFormatChange);
+      }
+    });
+
     function clearCalEventContact() {
+      // Clear stored contact data
+      selectedContactData = { name: '', email: '', phone: '', address: '' };
+
       // Clear hidden fields
       const typeField = document.getElementById('cal-event-contact-type');
       const idField = document.getElementById('cal-event-contact-id');
@@ -38745,6 +39021,16 @@
       const phoneField = document.getElementById('cal-event-contact-phone');
       if (emailField) emailField.value = '';
       if (phoneField) phoneField.value = '';
+
+      // Reset location type to "other"
+      const locationTypeOther = document.getElementById('location-type-other');
+      if (locationTypeOther) {
+        locationTypeOther.checked = true;
+        handleLocationTypeChange();
+      }
+
+      // Clear phone call display
+      updatePhoneCallDisplay('');
 
       // Hide chip, show search
       const chip = document.getElementById('cal-event-contact-chip');
@@ -38805,13 +39091,43 @@
           document.getElementById('cal-event-end-time').value = `${endHours}:${endMins}`;
         }
 
-        document.getElementById('cal-event-location').value = event.location || '';
         document.getElementById('cal-event-description').value = event.description || '';
 
-        // Load meeting format
+        // Load meeting format and trigger change handler
         if (event.meeting_format) {
           document.getElementById('cal-event-meeting-format').value = event.meeting_format;
+          handleMeetingFormatChange();
         }
+
+        // Load meeting details from metadata
+        if (event.metadata && event.metadata.meeting_details) {
+          const details = event.metadata.meeting_details;
+          // Video call details
+          if (details.video_platform) {
+            const videoPlatform = document.getElementById('cal-event-video-platform');
+            if (videoPlatform) videoPlatform.value = details.video_platform;
+          }
+          if (details.video_link) {
+            const videoLink = document.getElementById('cal-event-video-link');
+            if (videoLink) videoLink.value = details.video_link;
+          }
+          // Conference call details
+          if (details.conference_number) {
+            const confNumber = document.getElementById('cal-event-conference-number');
+            if (confNumber) confNumber.value = details.conference_number;
+          }
+          if (details.conference_code) {
+            const confCode = document.getElementById('cal-event-conference-code');
+            if (confCode) confCode.value = details.conference_code;
+          }
+          if (details.conference_pin) {
+            const confPin = document.getElementById('cal-event-conference-pin');
+            if (confPin) confPin.value = details.conference_pin;
+          }
+        }
+
+        // Set location for in-person meetings
+        document.getElementById('cal-event-location').value = event.location || '';
 
         // Load contact info from metadata
         if (event.metadata) {
@@ -38822,7 +39138,9 @@
           const contactId = event.metadata.contact_id || null;
 
           if (contactName || contactEmail || contactPhone) {
-            selectCalEventContact(contactType, contactId, contactName, contactEmail, contactPhone, event.location || '');
+            // Extract address from location for in-person meetings
+            const contactAddress = (event.meeting_format === 'in_person') ? (event.location || '') : '';
+            selectCalEventContact(contactType, contactId, contactName, contactEmail, contactPhone, contactAddress);
           }
         }
 
@@ -38875,14 +39193,25 @@
       const leadName = lead.full_name || lead.homeowner_name || lead.name || lead.email || 'Lead';
       const leadEmail = lead.email || lead.homeowner_email || '';
       const leadPhone = lead.phone || lead.homeowner_phone || '';
-      const leadAddress = lead.address || lead.project_address || '';
+      // Build full address from available fields
+      const addressParts = [
+        lead.address || lead.project_address,
+        lead.city,
+        lead.state,
+        lead.zip
+      ].filter(Boolean);
+      const leadAddress = addressParts.join(', ');
 
       openCalendarEventModal(null, null, {
         title: `Appointment - ${leadName}`,
         type: 'appointment',
+        meetingFormat: 'in_person',
+        contactType: 'lead',
+        contactId: leadId,
         contactName: leadName,
         contactEmail: leadEmail,
         contactPhone: leadPhone,
+        contactAddress: leadAddress,
         location: leadAddress,
         leadId: leadId
       });
@@ -40896,7 +41225,6 @@
         const startDate = document.getElementById('cal-event-start-date').value;
         const startTime = document.getElementById('cal-event-start-time').value || '09:00';
         const endTime = document.getElementById('cal-event-end-time').value || '10:00';
-        const location = document.getElementById('cal-event-location').value.trim();
         const description = document.getElementById('cal-event-description').value.trim();
 
         // Get contact info - from selected contact or manual entry
@@ -40906,6 +41234,47 @@
                            document.getElementById('cal-event-contact-search')?.value?.trim() || '';
         const contactEmail = document.getElementById('cal-event-contact-email')?.value?.trim() || '';
         const contactPhone = document.getElementById('cal-event-contact-phone')?.value?.trim() || '';
+
+        // Get location based on meeting format
+        let location = '';
+        let meetingDetails = {};
+
+        switch (meetingFormat) {
+          case 'in_person':
+            location = document.getElementById('cal-event-location').value.trim();
+            break;
+          case 'phone_call':
+            location = contactPhone ? `Phone: ${contactPhone}` : 'Phone Call';
+            meetingDetails.phone = contactPhone;
+            break;
+          case 'video_call':
+            const videoPlatform = document.getElementById('cal-event-video-platform')?.value || '';
+            const videoLink = document.getElementById('cal-event-video-link')?.value?.trim() || '';
+            const platformNames = {
+              zoom: 'Zoom',
+              google_meet: 'Google Meet',
+              teams: 'Microsoft Teams',
+              facetime: 'FaceTime',
+              other: 'Video Call'
+            };
+            location = platformNames[videoPlatform] || 'Video Call';
+            if (videoLink) location += `: ${videoLink}`;
+            meetingDetails.video_platform = videoPlatform;
+            meetingDetails.video_link = videoLink;
+            break;
+          case 'conference_call':
+            const confNumber = document.getElementById('cal-event-conference-number')?.value?.trim() || '';
+            const confCode = document.getElementById('cal-event-conference-code')?.value?.trim() || '';
+            const confPin = document.getElementById('cal-event-conference-pin')?.value?.trim() || '';
+            location = confNumber ? `Conference: ${confNumber}` : 'Conference Call';
+            if (confCode) location += ` (Code: ${confCode})`;
+            meetingDetails.conference_number = confNumber;
+            meetingDetails.conference_code = confCode;
+            meetingDetails.conference_pin = confPin;
+            break;
+          default:
+            location = document.getElementById('cal-event-location').value.trim();
+        }
 
         if (!title || !startDate) {
           showToast('Please enter a title and date', 'warning');
@@ -40933,7 +41302,8 @@
             contact_email: contactEmail,
             contact_phone: contactPhone,
             contact_type: contactType,
-            contact_id: contactId
+            contact_id: contactId,
+            meeting_details: meetingDetails
           }
         };
 
