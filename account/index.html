@@ -17828,7 +17828,21 @@
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   Address
                 </div>
-                <div class="profile-info-value" id="profile-detail-address">—</div>
+                <div id="profile-address-container">
+                  <a href="#" id="profile-detail-address-link" target="_blank" class="profile-info-value" style="color: #3b82f6; text-decoration: none; display: block;">
+                    <span id="profile-detail-address">—</span>
+                  </a>
+                  <div id="profile-address-actions" style="display: none; margin-top: 8px; display: flex; gap: 8px;">
+                    <button onclick="openDirectionsFromProfile()" class="btn-modern ghost" style="font-size: 11px; padding: 6px 10px; flex: 1;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                      Directions
+                    </button>
+                    <button onclick="shareEnRouteFromProfile()" class="btn-modern primary" style="font-size: 11px; padding: 6px 10px; flex: 1;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                      En Route
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -23596,6 +23610,205 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // ============ NAVIGATION & LOCATION HELPERS ============
+
+    // Build full address string
+    function buildFullAddress(street, city, state, zip) {
+      const parts = [street, city, state, zip].filter(Boolean);
+      return parts.join(', ');
+    }
+
+    // Get navigation URL (works on mobile and desktop)
+    function getNavigationUrl(street, city, state, zip) {
+      const address = buildFullAddress(street, city, state, zip);
+      // Use universal Google Maps URL that works everywhere
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+
+    // Open in Google Maps with directions
+    function openInGoogleMaps(street, city, state, zip) {
+      const address = buildFullAddress(street, city, state, zip);
+      // Check if on iOS for Apple Maps option
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS && confirm('Open in Apple Maps instead of Google Maps?')) {
+        window.open(`https://maps.apple.com/?daddr=${encodeURIComponent(address)}`, '_blank');
+      } else {
+        // Google Maps directions (will prompt for starting location)
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
+      }
+    }
+
+    // Share En Route status - notifies customer and logs activity
+    async function shareEnRouteStatus(projectId, customerName, street, city, state, zip) {
+      const address = buildFullAddress(street, city, state, zip);
+
+      // Show confirmation with options
+      const options = [
+        { label: 'Start Navigation & Notify Customer', value: 'navigate_notify' },
+        { label: 'Just Start Navigation', value: 'navigate_only' },
+        { label: 'Just Update Status', value: 'status_only' }
+      ];
+
+      const choice = await showEnRouteOptions(customerName, address);
+      if (!choice) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Update project status to show en route
+        if (choice !== 'navigate_only') {
+          await supabaseClient
+            .from('projects')
+            .update({
+              en_route_status: 'en_route',
+              en_route_started_at: new Date().toISOString(),
+              en_route_by: user.id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', projectId);
+
+          // Log activity
+          await supabaseClient.from('project_activity').insert({
+            project_id: projectId,
+            user_id: user.id,
+            type: 'en_route',
+            message: `${userProfile?.full_name || 'Team member'} is en route to the project location`,
+            created_at: new Date().toISOString()
+          });
+
+          showToast('En Route status updated!', 'success');
+        }
+
+        // Open navigation
+        if (choice === 'navigate_notify' || choice === 'navigate_only') {
+          openInGoogleMaps(street, city, state, zip);
+        }
+
+        // Send notification to customer (if they have email)
+        if (choice === 'navigate_notify') {
+          const { data: project } = await supabaseClient
+            .from('projects')
+            .select('customer_email, customer_phone, customer_name')
+            .eq('id', projectId)
+            .single();
+
+          if (project?.customer_email) {
+            // Send en route notification email
+            try {
+              await fetch(`${API_BASE}/api/notifications/en-route`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  customer_email: project.customer_email,
+                  customer_name: project.customer_name,
+                  team_member: userProfile?.full_name || 'Our team',
+                  project_address: address
+                })
+              });
+              showToast('Customer notified!', 'success');
+            } catch (e) {
+              console.warn('Could not send en route notification:', e);
+            }
+          }
+        }
+
+      } catch (err) {
+        console.error('Error updating en route status:', err);
+        showToast('Error updating status', 'error');
+      }
+    }
+
+    // Show en route options dialog
+    function showEnRouteOptions(customerName, address) {
+      return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay active';
+        modal.style.zIndex = '20000';
+        modal.innerHTML = `
+          <div class="modal" style="max-width: 400px; text-align: center;">
+            <div class="modal-header">
+              <h2 class="modal-title">En Route to Project</h2>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+              <div style="background: var(--dark-surface); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">DESTINATION</div>
+                <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(customerName || 'Customer')}</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(address)}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-modern primary" style="width: 100%; justify-content: center; padding: 14px;" onclick="this.closest('.modal-overlay').dataset.choice='navigate_notify'; this.closest('.modal-overlay').remove();">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  Navigate & Notify Customer
+                </button>
+                <button class="btn-modern secondary" style="width: 100%; justify-content: center; padding: 14px;" onclick="this.closest('.modal-overlay').dataset.choice='navigate_only'; this.closest('.modal-overlay').remove();">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                  Just Navigate
+                </button>
+                <button class="btn-modern ghost" style="width: 100%; justify-content: center; padding: 14px;" onclick="this.closest('.modal-overlay').dataset.choice='status_only'; this.closest('.modal-overlay').remove();">
+                  Update Status Only
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.remove();
+            resolve(null);
+          }
+        });
+
+        const observer = new MutationObserver(() => {
+          if (!document.body.contains(modal)) {
+            observer.disconnect();
+            resolve(modal.dataset.choice || null);
+          }
+        });
+        observer.observe(document.body, { childList: true });
+
+        document.body.appendChild(modal);
+      });
+    }
+
+    // Mark as arrived at location
+    async function markArrivedAtProject(projectId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        await supabaseClient
+          .from('projects')
+          .update({
+            en_route_status: 'arrived',
+            arrived_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId);
+
+        await supabaseClient.from('project_activity').insert({
+          project_id: projectId,
+          user_id: user.id,
+          type: 'arrived',
+          message: `${userProfile?.full_name || 'Team member'} arrived at the project location`,
+          created_at: new Date().toISOString()
+        });
+
+        showToast('Marked as arrived!', 'success');
+        if (typeof openProjectDetail === 'function') {
+          openProjectDetail(projectId);
+        }
+      } catch (err) {
+        console.error('Error marking arrived:', err);
+        showToast('Error updating status', 'error');
+      }
     }
 
     function requestQuoteForFavorites() {
@@ -35893,9 +36106,26 @@
             <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Customer</div>
               <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(project.customer_name || 'N/A')}</div>
-              ${project.customer_email ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(project.customer_email)}</div>` : ''}
-              ${project.customer_phone ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(project.customer_phone)}</div>` : ''}
-              ${project.address ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(project.address)}${project.city ? ', ' + escapeHtml(project.city) : ''}${project.state ? ', ' + escapeHtml(project.state) : ''} ${escapeHtml(project.zip || '')}</div>` : ''}
+              ${project.customer_email ? `<a href="mailto:${escapeHtml(project.customer_email)}" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block; text-decoration: none;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>${escapeHtml(project.customer_email)}</a>` : ''}
+              ${project.customer_phone ? `<a href="tel:${escapeHtml(project.customer_phone)}" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px; display: block; text-decoration: none;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>${escapeHtml(project.customer_phone)}</a>` : ''}
+              ${project.address ? `
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+                  <a href="${getNavigationUrl(project.address, project.city, project.state, project.zip)}" target="_blank" style="font-size: 12px; color: #3b82f6; text-decoration: none; display: flex; align-items: flex-start; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>${escapeHtml(project.address)}${project.city ? ', ' + escapeHtml(project.city) : ''}${project.state ? ', ' + escapeHtml(project.state) : ''} ${escapeHtml(project.zip || '')}</span>
+                  </a>
+                  <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button onclick="openInGoogleMaps('${escapeHtml(project.address)}', '${escapeHtml(project.city || '')}', '${escapeHtml(project.state || '')}', '${escapeHtml(project.zip || '')}')" class="btn-modern ghost" style="font-size: 11px; padding: 6px 10px; flex: 1;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                      Directions
+                    </button>
+                    <button onclick="shareEnRouteStatus('${project.id}', '${escapeHtml(project.customer_name || '')}', '${escapeHtml(project.address || '')}', '${escapeHtml(project.city || '')}', '${escapeHtml(project.state || '')}', '${escapeHtml(project.zip || '')}')" class="btn-modern primary" style="font-size: 11px; padding: 6px 10px; flex: 1;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                      En Route
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
             </div>
             <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Financials</div>
@@ -40466,6 +40696,22 @@
       document.getElementById('profile-detail-phone').textContent = phone || '—';
       document.getElementById('profile-detail-address').textContent = address || '—';
 
+      // Set address link and actions
+      const addressLink = document.getElementById('profile-detail-address-link');
+      const addressActions = document.getElementById('profile-address-actions');
+      if (address && address !== '—') {
+        addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        addressLink.style.color = '#3b82f6';
+        addressActions.style.display = 'flex';
+        // Store address data for navigation functions
+        window.currentProfileAddress = address;
+      } else {
+        addressLink.href = '#';
+        addressLink.style.color = 'inherit';
+        addressActions.style.display = 'none';
+        window.currentProfileAddress = null;
+      }
+
       const projectType = data.project_type || data.service_type || '';
       document.getElementById('profile-detail-project-type').textContent = projectType || '—';
 
@@ -40555,6 +40801,81 @@
     function closeProfilePanel() {
       document.getElementById('profile-panel-overlay').classList.remove('active');
       currentProfileData = null;
+      window.currentProfileAddress = null;
+    }
+
+    // Open directions from profile panel
+    function openDirectionsFromProfile() {
+      if (!window.currentProfileAddress) {
+        showToast('No address available', 'warning');
+        return;
+      }
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS && confirm('Open in Apple Maps instead of Google Maps?')) {
+        window.open(`https://maps.apple.com/?daddr=${encodeURIComponent(window.currentProfileAddress)}`, '_blank');
+      } else {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(window.currentProfileAddress)}`, '_blank');
+      }
+    }
+
+    // Share en route status from profile panel (for leads)
+    async function shareEnRouteFromProfile() {
+      if (!currentProfileData || !window.currentProfileAddress) {
+        showToast('No address available', 'warning');
+        return;
+      }
+
+      const name = currentProfileData.full_name || currentProfileData.name || currentProfileData.homeowner_name || 'Customer';
+      const address = window.currentProfileAddress;
+
+      // Simple version for leads - just navigate and optionally notify
+      const choice = await showEnRouteOptions(name, address);
+      if (!choice) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Log activity for the lead
+        if (choice !== 'navigate_only' && currentProfileData.id) {
+          await supabaseClient.from('lead_activity').insert({
+            lead_id: currentProfileData.id,
+            user_id: user.id,
+            type: 'en_route',
+            message: `${userProfile?.full_name || 'Team member'} is en route to visit`,
+            created_at: new Date().toISOString()
+          }).then(() => {}).catch(() => {}); // Don't fail if table doesn't exist
+
+          showToast('En Route status logged!', 'success');
+        }
+
+        // Open navigation
+        if (choice === 'navigate_notify' || choice === 'navigate_only') {
+          openDirectionsFromProfile();
+        }
+
+        // Send notification to customer if they have email
+        if (choice === 'navigate_notify' && currentProfileData.email) {
+          try {
+            await fetch(`${API_BASE}/api/notifications/en-route`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customer_email: currentProfileData.email,
+                customer_name: name,
+                team_member: userProfile?.full_name || 'Our team',
+                project_address: address
+              })
+            });
+            showToast('Customer notified!', 'success');
+          } catch (e) {
+            console.warn('Could not send en route notification:', e);
+          }
+        }
+      } catch (err) {
+        console.error('Error with en route:', err);
+        showToast('Error updating status', 'error');
+      }
     }
 
     function switchProfileTab(tabName) {
