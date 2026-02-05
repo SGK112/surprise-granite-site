@@ -126,6 +126,59 @@
       animation: shimmer 1.5s infinite;
     }
 
+    /* Loading spinner component */
+    .loading-spinner {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .loading-spinner::before {
+      content: '';
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-light);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loading-spinner.large::before {
+      width: 32px;
+      height: 32px;
+      border-width: 3px;
+    }
+
+    .loading-spinner.small::before {
+      width: 14px;
+      height: 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Full page loading overlay */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 99999;
+    }
+
+    .loading-overlay .loading-spinner::before {
+      width: 40px;
+      height: 40px;
+      border-width: 3px;
+    }
+
     /* Unified Nav Offset - account for fixed header */
     :root {
       --unified-nav-height: 140px; /* Match unified-nav.css --nav-height-desktop */
@@ -1269,6 +1322,47 @@
       padding: 16px 28px;
       font-size: 16px;
       min-height: 52px;
+    }
+
+    .btn-modern.ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-modern.ghost:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .btn-modern.outline {
+      background: transparent;
+      color: var(--gold-primary);
+      border: 1px solid var(--gold-primary);
+    }
+
+    .btn-modern.outline:hover:not(:disabled) {
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .btn-modern.loading {
+      pointer-events: none;
+      position: relative;
+      color: transparent;
+    }
+
+    .btn-modern.loading::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: btnSpin 0.6s linear infinite;
+    }
+
+    @keyframes btnSpin {
+      to { transform: rotate(360deg); }
     }
 
     /* Notification Panel Styles */
