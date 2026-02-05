@@ -482,6 +482,25 @@
       margin: 8px 0;
     }
 
+    /* Pro Tools Dropdown - Enhanced Visibility */
+    .pro-tools-dropdown .export-menu {
+      background: rgba(26, 26, 46, 0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.15);
+    }
+
+    .pro-tools-dropdown .export-menu button:hover {
+      background: rgba(139, 92, 246, 0.15);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: rgba(139, 92, 246, 0.2);
+      margin: 8px 0;
+    }
+
     /* Main Layout */
     .main {
       flex: 1;
@@ -18233,14 +18252,16 @@
             right: 0;
             width: 380px;
             height: calc(100vh - 60px);
-            background: var(--bg);
-            border-left: 1px solid var(--border);
+            background: rgba(20, 20, 35, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(139, 92, 246, 0.3);
             display: flex;
             flex-direction: column;
             z-index: 1000;
             transform: translateX(0);
             transition: transform 0.3s ease;
-            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+            box-shadow: -4px 0 30px rgba(0,0,0,0.5), 0 0 20px rgba(139, 92, 246, 0.1);
           }
           #aiChatPanel .chat-header {
             padding: 16px 20px;
@@ -18285,8 +18306,8 @@
           }
           #aiChatPanel .chat-message.assistant {
             align-self: flex-start;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: rgba(30, 30, 50, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom-left-radius: 4px;
           }
           #aiChatPanel .chat-message.system {
@@ -18308,8 +18329,8 @@
           }
           #aiChatPanel .chat-input-area {
             padding: 16px;
-            border-top: 1px solid var(--border);
-            background: var(--surface);
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            background: rgba(26, 26, 46, 0.98);
           }
           #aiChatPanel .chat-input-wrapper {
             display: flex;
@@ -18319,17 +18340,17 @@
           #aiChatPanel .chat-input {
             flex: 1;
             padding: 12px 16px;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 24px;
-            background: var(--bg);
-            color: var(--text);
+            background: rgba(15, 15, 30, 0.95);
+            color: #ffffff;
             font-size: 14px;
             resize: none;
             max-height: 100px;
             outline: none;
           }
           #aiChatPanel .chat-input:focus {
-            border-color: var(--primary);
+            border-color: #6366f1;
           }
           #aiChatPanel .chat-send-btn {
             width: 44px;
@@ -18358,17 +18379,18 @@
           }
           #aiChatPanel .quick-action {
             padding: 6px 12px;
-            background: var(--bg);
-            border: 1px solid var(--border);
+            background: rgba(30, 30, 50, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px;
             font-size: 12px;
             cursor: pointer;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.7);
             transition: all 0.2s;
           }
           #aiChatPanel .quick-action:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+            border-color: #6366f1;
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.15);
           }
           #aiChatPanel .typing-indicator {
             display: flex;
@@ -18379,7 +18401,7 @@
           #aiChatPanel .typing-indicator span {
             width: 8px;
             height: 8px;
-            background: var(--text-muted);
+            background: rgba(139, 92, 246, 0.7);
             border-radius: 50%;
             animation: typingBounce 1.4s ease-in-out infinite;
           }
@@ -34348,8 +34370,17 @@
 
       // Element-to-element snapping (for placing cabinets together)
       const snapDistance = pixelsPerFoot * 0.4; // Reduced from 0.5 for less aggressive snap
-      const elW = selectedElement.width * pixelsPerFoot;
-      const elH = selectedElement.height * pixelsPerFoot;
+
+      // Account for rotation when calculating effective dimensions
+      // When rotated 90 or 270 degrees, width and height are effectively swapped
+      const rotation = (selectedElement.rotation || 0) % 360;
+      const isRotated90 = (rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270);
+      const elW = isRotated90
+        ? selectedElement.height * pixelsPerFoot
+        : selectedElement.width * pixelsPerFoot;
+      const elH = isRotated90
+        ? selectedElement.width * pixelsPerFoot
+        : selectedElement.height * pixelsPerFoot;
 
       // Check if this is a cabinet-type element for stricter alignment
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
@@ -55036,8 +55067,14 @@
         // Convert 2D position to 3D
         // In 2D: origin is top-left, Y goes down
         // In 3D: origin is corner, Z goes forward (into room)
-        let xPos = (el.x / pixelsPerFoot) + el.width / 2;
-        let zPos = (el.y / pixelsPerFoot) + el.height / 2;
+        // Account for rotation when calculating center position
+        const posRotation = (el.rotation || 0) % 360;
+        const posIsRotated90 = (posRotation === 90 || posRotation === 270 || posRotation === -90 || posRotation === -270);
+        // When rotated 90/270, the visual width in 2D is el.height and vice versa
+        const visualWidth = posIsRotated90 ? el.height : el.width;
+        const visualHeight = posIsRotated90 ? el.width : el.height;
+        let xPos = (el.x / pixelsPerFoot) + visualWidth / 2;
+        let zPos = (el.y / pixelsPerFoot) + visualHeight / 2;
         let yPos = get3DYPosition(el, height);
 
         // Windows and doors snap to wall surface
@@ -55098,8 +55135,16 @@
         // Check if element is against a side or front wall (not back wall)
         const el2DX = el.x / pixelsPerFoot;
         const el2DY = el.y / pixelsPerFoot;
-        const elRightEdge = el2DX + el.width;
-        const elBottomEdge = el2DY + el.height;
+
+        // Account for rotation when calculating effective dimensions
+        // When rotated 90 or 270 degrees, width and height are effectively swapped in 2D space
+        const elRotation = (el.rotation || 0) % 360;
+        const elIsRotated90 = (elRotation === 90 || elRotation === 270 || elRotation === -90 || elRotation === -270);
+        const effectiveWidth = elIsRotated90 ? el.height : el.width;
+        const effectiveHeight = elIsRotated90 ? el.width : el.height;
+
+        const elRightEdge = el2DX + effectiveWidth;
+        const elBottomEdge = el2DY + effectiveHeight;
         const wallThreshold = 0.5; // Within 0.5ft of wall
 
         // Detect which wall the element is against
@@ -55117,13 +55162,16 @@
         if (isCabinetAppliance) {
           if (!hasManualRotation) {
             // No rotation set - auto-rotate based on wall position
+            // Cabinet geometry has front (doors) at +z local, back at -z local
+            // For right wall: need back at +x, front at -x → rotate +90° (counterclockwise)
+            // For left wall: need back at -x, front at +x → rotate -90° (clockwise)
             if (isAgainstRightWall && !isAgainstBackWall) {
-              group.rotation.y = -Math.PI / 2;
+              group.rotation.y = Math.PI / 2;  // +90° so front faces into room (-x direction)
               autoRotated = true;
               xPos = roomWidth - el.height / 2;
               zPos = (el.y / pixelsPerFoot) + el.width / 2;
             } else if (isAgainstLeftWall && !isAgainstBackWall) {
-              group.rotation.y = Math.PI / 2;
+              group.rotation.y = -Math.PI / 2;  // -90° so front faces into room (+x direction)
               autoRotated = true;
               xPos = el.height / 2;
               zPos = (el.y / pixelsPerFoot) + el.width / 2;
@@ -55139,14 +55187,14 @@
             // rotation=180 means front wall (cabinet faces back into room)
             // rotation=0 means back wall (cabinet faces front into room)
             if (manualRotation === 270 && isAgainstLeftWall) {
-              // Left wall - cabinet rotated to face right
-              group.rotation.y = Math.PI / 2; // Same as -270 degrees
+              // Left wall - cabinet faces right into room (+x direction)
+              group.rotation.y = -Math.PI / 2;  // -90° so front faces +x
               autoRotated = true;
               xPos = el.height / 2; // Position from left wall using depth (el.height in 2D)
               zPos = (el.y / pixelsPerFoot) + el.width / 2; // Use width for Z position
             } else if (manualRotation === 90 && isAgainstRightWall) {
-              // Right wall - cabinet rotated to face left
-              group.rotation.y = -Math.PI / 2;
+              // Right wall - cabinet faces left into room (-x direction)
+              group.rotation.y = Math.PI / 2;  // +90° so front faces -x
               autoRotated = true;
               xPos = roomWidth - el.height / 2;
               zPos = (el.y / pixelsPerFoot) + el.width / 2;
@@ -55251,10 +55299,12 @@
           let closestWall;
 
           // Rotation is the primary indicator of which wall the element faces
+          // rotation=90 means front faces LEFT, so element is ON the RIGHT wall
+          // rotation=270 means front faces RIGHT, so element is ON the LEFT wall
           if (normalizedRotation === 90) {
-            closestWall = 'left';
-          } else if (normalizedRotation === 270) {
             closestWall = 'right';
+          } else if (normalizedRotation === 270) {
+            closestWall = 'left';
           } else if (normalizedRotation === 180) {
             closestWall = 'front';
           } else if (normalizedRotation === 0) {
@@ -55304,24 +55354,25 @@
           }
 
           // Position based on closest wall
+          // Element front (+z local) should face INTO the room
           switch (closestWall) {
             case 'back':
               zPos = wallOffset;
-              group.rotation.y = 0;
+              group.rotation.y = 0;  // Front faces +z (into room)
               break;
             case 'front':
               zPos = roomDepth - wallOffset;
-              group.rotation.y = Math.PI;
+              group.rotation.y = Math.PI;  // Front faces -z (into room)
               break;
             case 'left':
               zPos = elCenterY;
               xPos = wallOffset;
-              group.rotation.y = Math.PI / 2;
+              group.rotation.y = -Math.PI / 2;  // Front faces +x (into room)
               break;
             case 'right':
               zPos = elCenterY;
               xPos = roomWidth - wallOffset;
-              group.rotation.y = -Math.PI / 2;
+              group.rotation.y = Math.PI / 2;  // Front faces -x (into room)
               break;
           }
         } else if (!autoRotated) {
