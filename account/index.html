@@ -1139,6 +1139,64 @@
       visibility: visible;
     }
 
+    /* General purpose tooltip utility */
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 6px;
+      padding: 6px 10px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    [data-tooltip]:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    [data-tooltip-pos="right"]::after {
+      bottom: auto;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-bottom: 0;
+      margin-left: 8px;
+    }
+
+    [data-tooltip-pos="left"]::after {
+      bottom: auto;
+      left: auto;
+      right: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-bottom: 0;
+      margin-right: 8px;
+    }
+
+    [data-tooltip-pos="bottom"]::after {
+      bottom: auto;
+      top: 100%;
+      margin-bottom: 0;
+      margin-top: 6px;
+    }
+
     /* Adjust main content for toolbar */
     .main-content {
       margin-left: calc(var(--sidebar-width) + 56px) !important;
@@ -7559,6 +7617,66 @@
     .compose-textarea:focus {
       outline: none;
       border-color: var(--gold);
+    }
+
+    /* Chip/Tag component */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .chip.primary {
+      background: rgba(249, 203, 0, 0.15);
+      color: var(--gold-primary);
+    }
+
+    .chip.success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .chip.warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    .chip.danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .chip.info {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .chip .chip-close {
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.7;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .chip .chip-close:hover {
+      opacity: 1;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .compose-recipient-chip {
