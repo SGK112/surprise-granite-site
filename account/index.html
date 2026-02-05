@@ -147,6 +147,32 @@
       padding-top: var(--unified-nav-height); /* Space for fixed unified nav */
     }
 
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--dark-deep);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Firefox scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-light) var(--dark-deep);
+    }
+
     /* Sidebar */
     .sidebar {
       position: fixed;
@@ -1397,6 +1423,15 @@
     .stat-card:hover {
       border-color: var(--border-light);
       transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-card.clickable {
+      cursor: pointer;
+    }
+
+    .stat-card.clickable:hover {
+      border-color: rgba(249, 203, 0, 0.3);
     }
 
     .stat-label {
@@ -1420,6 +1455,15 @@
       border-radius: 14px;
       overflow: hidden;
       margin-bottom: 24px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-light);
+    }
+
+    .card.highlight {
+      border-left: 3px solid var(--gold-primary);
     }
 
     .card-header {
@@ -2390,6 +2434,8 @@
       text-align: center;
       padding: 60px 24px;
       color: var(--text-muted);
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 100%);
+      border-radius: 12px;
     }
 
     .empty-state svg {
@@ -2397,12 +2443,21 @@
       height: 64px;
       margin-bottom: 16px;
       opacity: 0.5;
+      color: var(--gold-primary);
     }
 
     .empty-state h3 {
       font-size: 18px;
       color: var(--text-primary);
       margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 320px;
+      margin: 0 auto;
+      line-height: 1.5;
     }
 
     /* Coming Soon */
