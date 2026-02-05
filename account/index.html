@@ -2451,6 +2451,10 @@
       background: rgba(249, 203, 0, 0.05);
     }
 
+    tr.selected {
+      background: rgba(249, 203, 0, 0.05);
+    }
+
     tr.selected td {
       background: rgba(249, 203, 0, 0.1);
     }
@@ -9404,8 +9408,8 @@
     }
 
     .kanban-column {
-      flex: 0 0 320px;
-      min-width: 320px;
+      flex: 0 0 280px;
+      min-width: 280px;
       background: var(--dark-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 16px;
@@ -39423,8 +39427,8 @@
               <div style="font-size: 12px; color: var(--text-muted);">Role: ${inv.role || 'Collaborator'}</div>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn-modern primary" onclick="respondToInvite('${inv.id}', 'accepted')">Accept</button>
-              <button class="btn-modern ghost" onclick="respondToInvite('${inv.id}', 'declined')">Decline</button>
+              <button class="btn-modern primary" onclick="respondToInvitation('${inv.id}', 'accepted', false)">Accept</button>
+              <button class="btn-modern ghost" onclick="respondToInvitation('${inv.id}', 'declined', false)">Decline</button>
             </div>
           </div>
         `).join('');
@@ -42453,6 +42457,11 @@
     function closeContractorPicker() {
       const modal = document.getElementById('contractor-picker-modal');
       if (modal) modal.classList.remove('active');
+    }
+
+    function openAddContractorFromWorkflow() {
+      // Open the contractor picker from workflow context
+      openContractorPicker();
     }
 
     function assignContractorToJob(contractorId) {
@@ -46279,6 +46288,24 @@
         console.error('Load catalog error:', err);
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Error loading catalog</div>';
       }
+    }
+
+    function filterCatalog(type) {
+      // Update active filter button
+      document.querySelectorAll('#service-catalog-modal .filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(type === 'all' ? 'all' : type));
+      });
+
+      // Filter catalog items
+      const items = document.querySelectorAll('.catalog-item');
+      items.forEach(item => {
+        if (type === 'all') {
+          item.style.display = '';
+        } else {
+          const itemType = item.dataset.type || '';
+          item.style.display = itemType === type ? '' : 'none';
+        }
+      });
     }
 
     function openAddCatalogItem() {
