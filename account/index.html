@@ -46183,6 +46183,7 @@
 
     async function saveCustomer(event) {
       event.preventDefault();
+      console.log('[SaveCustomer] Form submitted');
 
       const customerId = document.getElementById('edit-customer-id').value;
       const notesField = document.getElementById('cust-notes');
@@ -46198,13 +46199,17 @@
         notes: notesField ? notesField.value.trim() || null : null
       };
 
+      console.log('[SaveCustomer] Customer data:', customerData);
+
       if (!customerData.name) {
         showToast('Customer name is required', 'error');
         return;
       }
 
       try {
+        console.log('[SaveCustomer] Getting user...');
         const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log('[SaveCustomer] User:', user?.id);
         if (!user) {
           showToast('Please log in first', 'error');
           return;
@@ -46222,6 +46227,7 @@
             .single();
         } else {
           // Create new customer
+          console.log('[SaveCustomer] Inserting new customer...');
           result = await supabaseClient
             .from('customers')
             .insert({ ...customerData, user_id: user.id })
@@ -46229,6 +46235,7 @@
             .single();
         }
 
+        console.log('[SaveCustomer] Result:', result);
         if (result.error) throw result.error;
 
         showToast(customerId ? 'Customer updated!' : 'Customer created!');
