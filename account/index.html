@@ -31209,7 +31209,9 @@
 
     // Preview invoice before sending
     async function previewInvoice() {
+      console.log('[Invoices] previewInvoice called');
       const formData = getInvoiceFormData();
+      console.log('[Invoices] previewInvoice formData:', formData);
 
       if (!formData.customerEmail) {
         showToast('Please enter customer email', 'warning');
@@ -31286,8 +31288,8 @@
           </div>
 
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn-modern secondary" onclick="this.closest('.modal-overlay').classList.remove('active')">Edit Invoice</button>
-            <button class="btn-modern primary" onclick="confirmSendInvoice()">
+            <button class="btn-modern secondary" id="preview-edit-btn">Edit Invoice</button>
+            <button class="btn-modern primary" id="preview-send-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               Send Invoice
             </button>
@@ -31310,22 +31312,61 @@
         previewModal.querySelector('.modal').innerHTML = previewHtml;
       }
 
+      // Attach button handlers after modal is created
+      const editBtn = previewModal.querySelector('#preview-edit-btn');
+      const sendBtn = previewModal.querySelector('#preview-send-btn');
+      if (editBtn) {
+        editBtn.onclick = () => previewModal.classList.remove('active');
+      }
+      if (sendBtn) {
+        sendBtn.onclick = () => {
+          console.log('[Invoices] Send button clicked');
+          confirmSendInvoice();
+        };
+      }
+
       previewModal.classList.add('active');
+      console.log('[Invoices] Preview modal shown');
     }
 
     // Confirm and send invoice after preview
     async function confirmSendInvoice() {
+      console.log('[Invoices] confirmSendInvoice called');
       document.getElementById('invoice-preview-modal')?.classList.remove('active');
-      await createInvoice(new Event('submit'));
+      try {
+        await createInvoice(new Event('submit'));
+      } catch (err) {
+        console.error('[Invoices] confirmSendInvoice error:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
     }
 
     async function createInvoice(e) {
+      console.log('[Invoices] createInvoice called');
       if (e && e.preventDefault) e.preventDefault();
+
       const btn = document.getElementById('invoice-preview-btn');
+      if (!btn) {
+        console.error('[Invoices] Button not found!');
+        showToast('Error: Button not found', 'error');
+        return;
+      }
+
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Creating...';
 
-      const formData = getInvoiceFormData();
+      let formData;
+      try {
+        formData = getInvoiceFormData();
+        console.log('[Invoices] Form data:', formData);
+      } catch (formErr) {
+        console.error('[Invoices] Form data error:', formErr);
+        showToast('Error reading form data', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Preview & Send';
+        return;
+      }
+
       const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther } = formData;
 
       // Build CC recipients list
@@ -31334,11 +31375,18 @@
       if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log('[Invoices] Getting user...');
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        if (authError) {
+          console.error('[Invoices] Auth error:', authError);
+          throw new Error('Authentication error: ' + authError.message);
+        }
         if (!user) throw new Error('Not authenticated');
+        console.log('[Invoices] User:', user.id);
 
         // Calculate total from items
         const total = items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
+        console.log('[Invoices] Total:', total, 'Email:', customerEmail);
         if (total <= 0) throw new Error('Invoice total must be greater than $0');
         if (!customerEmail) throw new Error('Customer email is required');
 
