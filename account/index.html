@@ -20945,18 +20945,21 @@
       async handleInvoiceAction(action, item) {
         switch (action) {
           case 'view':
-            if (item.hosted_invoice_url) {
-              window.open(item.hosted_invoice_url, '_blank');
-            }
+            // Use unified view function that handles both Supabase and Stripe invoices
+            viewSupabaseInvoice(item.id);
             break;
           case 'open-stripe':
             if (item.hosted_invoice_url) {
               window.open(item.hosted_invoice_url, '_blank');
+            } else {
+              showToast('No Stripe payment link available', 'warning');
             }
             break;
           case 'download-pdf':
             if (item.pdf_url) {
               window.open(item.pdf_url, '_blank');
+            } else {
+              showToast('No PDF available for this invoice', 'warning');
             }
             break;
           case 'send-reminder':
@@ -30453,13 +30456,25 @@
       if (!confirm('Void this invoice? The customer will no longer be able to pay it.')) return;
 
       try {
-        const response = await apiCall(`/api/invoices/${invoiceId}/void`, {
-          method: 'POST'
-        });
+        // Check if it's a Stripe invoice (starts with 'in_')
+        if (invoiceId.startsWith('in_')) {
+          // Void via Stripe API
+          const response = await apiCall(`/api/invoices/${invoiceId}/void`, {
+            method: 'POST'
+          });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to void invoice');
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to void invoice');
+          }
+        } else {
+          // Supabase invoice - update status directly
+          const { error } = await supabaseClient
+            .from('invoices')
+            .update({ status: 'void' })
+            .eq('id', invoiceId);
+
+          if (error) throw error;
         }
 
         loadInvoices();
@@ -30508,7 +30523,7 @@
                  onclick="viewSupabaseInvoice('${inv.id}')"
                  data-context-menu="invoice"
                  data-item-id="${inv.id}"
-                 data-item-data='${JSON.stringify({ invoice_number: inv.number, status: inv.status, hosted_invoice_url: inv.hosted_invoice_url, pdf_url: inv.pdf, customer_name: inv.customer_name }).replace(/'/g, "&#39;")}'>
+                 data-item-data='${JSON.stringify({ invoice_number: inv.number, status: inv.status, hosted_invoice_url: inv.stripe_hosted_url, pdf_url: inv.stripe_pdf_url, customer_name: inv.customer_name, source: inv.source }).replace(/'/g, "&#39;")}'>
               <div class="list-item-icon" style="background: ${statusColor}20; color: ${statusColor};">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -31361,6 +31376,48 @@
     // ============ SUPABASE INVOICE FUNCTIONS ============
     async function viewSupabaseInvoice(invoiceId) {
       try {
+        // First check if this is a Stripe-only invoice (starts with 'in_')
+        const stripeOnlyInvoice = allInvoices.find(inv => inv.id === invoiceId && inv.source === 'stripe');
+        if (stripeOnlyInvoice) {
+          // For Stripe-only invoices, open the hosted URL or show basic info
+          if (stripeOnlyInvoice.stripe_hosted_url) {
+            window.open(stripeOnlyInvoice.stripe_hosted_url, '_blank');
+            return;
+          }
+          // Fallback: show what we have from Stripe
+          const invoiceHtml = `
+            <html>
+            <head><title>Invoice #${stripeOnlyInvoice.number}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+              .header { border-bottom: 3px solid #f9cb00; padding-bottom: 20px; margin-bottom: 30px; }
+              .header h1 { color: #1a1a2e; margin: 0; }
+              .info-box { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              .status { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: 600; }
+              .status-paid { background: #d1fae5; color: #059669; }
+              .status-open { background: #fef3c7; color: #d97706; }
+            </style>
+            </head>
+            <body>
+              <div class="header"><h1>Surprise Granite</h1><p>Marble & Quartz</p></div>
+              <h2>Invoice #${stripeOnlyInvoice.number}</h2>
+              <div class="info-box">
+                <p><strong>Customer:</strong> ${stripeOnlyInvoice.customer_name || stripeOnlyInvoice.customer_email || 'N/A'}</p>
+                <p><strong>Status:</strong> <span class="status status-${stripeOnlyInvoice.status}">${stripeOnlyInvoice.status}</span></p>
+                <p><strong>Amount Due:</strong> $${(stripeOnlyInvoice.amount_due || 0).toFixed(2)}</p>
+                <p><strong>Due Date:</strong> ${stripeOnlyInvoice.due_date ? new Date(stripeOnlyInvoice.due_date).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              <p style="color: #666;">This invoice was created in Stripe. For full details, view in the Stripe Dashboard.</p>
+            </body>
+            </html>
+          `;
+          const win = window.open('', '_blank');
+          win.document.write(invoiceHtml);
+          win.document.close();
+          return;
+        }
+
+        // For Supabase invoices, fetch full details
         const { data: invoice } = await supabaseClient
           .from('invoices')
           .select('*, invoice_items(*)')
@@ -31519,6 +31576,62 @@
       } catch (err) {
         console.error('Delete invoice error:', err);
         alert('Error deleting invoice');
+      }
+    }
+
+    async function sendInvoiceReminder(invoiceId) {
+      if (!confirm('Send payment reminder for this invoice?')) return;
+
+      try {
+        // Check if it's a Stripe invoice (starts with 'in_')
+        if (invoiceId.startsWith('in_')) {
+          // Use Stripe API
+          const response = await apiCall(`/api/invoices/${invoiceId}/remind`, {
+            method: 'POST'
+          });
+          if (response.ok) {
+            showToast('Payment reminder sent!', 'success');
+          } else {
+            throw new Error('Stripe reminder failed');
+          }
+        } else {
+          // Supabase invoice - send via our email API
+          const { data: invoice } = await supabaseClient
+            .from('invoices')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
+
+          if (!invoice || !invoice.customer_email) {
+            showToast('Invoice not found or missing customer email', 'error');
+            return;
+          }
+
+          const response = await apiCall('/api/send-invoice-reminder', {
+            method: 'POST',
+            body: JSON.stringify({
+              customer_email: invoice.customer_email,
+              customer_name: invoice.customer_name,
+              invoice_number: invoice.invoice_number,
+              amount_due: invoice.amount_due || invoice.total,
+              due_date: invoice.due_date,
+              payment_url: invoice.stripe_hosted_url || null
+            })
+          });
+
+          if (response.ok) {
+            showToast('Payment reminder sent!', 'success');
+          } else {
+            // Fallback to email client
+            const subject = encodeURIComponent(`Payment Reminder - Invoice #${invoice.invoice_number}`);
+            const body = encodeURIComponent(`Hi ${invoice.customer_name || 'there'},\n\nThis is a friendly reminder that Invoice #${invoice.invoice_number} for $${(invoice.amount_due || invoice.total || 0).toFixed(2)} is due.\n\nPlease let us know if you have any questions.\n\nThank you,\nSurprise Granite`);
+            window.open(`mailto:${invoice.customer_email}?subject=${subject}&body=${body}`);
+            showToast('Email client opened for reminder', 'info');
+          }
+        }
+      } catch (err) {
+        console.error('Send reminder error:', err);
+        showToast('Error sending reminder', 'error');
       }
     }
 
@@ -35306,8 +35419,15 @@
     // Bridge: Create project pre-filled from invoice data
     async function createProjectFromInvoice(invoiceId) {
       try {
-        var result = await supabaseClient.from('invoices').select('*').eq('id', invoiceId).single();
-        var inv = result.data;
+        // First try to find in our cached allInvoices array (handles both Supabase and Stripe)
+        var inv = allInvoices.find(i => i.id === invoiceId);
+
+        // If not found in cache and it's a UUID (Supabase), try fetching from database
+        if (!inv && !invoiceId.startsWith('in_')) {
+          var result = await supabaseClient.from('invoices').select('*').eq('id', invoiceId).single();
+          inv = result.data;
+        }
+
         if (!inv) { showToast('Invoice not found', 'warning'); return; }
 
         showPage('projects');
