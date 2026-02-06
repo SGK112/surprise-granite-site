@@ -24750,8 +24750,8 @@
         }).join('');
 
       } catch (err) {
-        console.error('Load field status error:', err);
-        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading field status</div>';
+        // Silently hide card if columns don't exist yet (schema not updated)
+        card.style.display = 'none';
       }
     }
 
