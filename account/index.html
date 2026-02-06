@@ -27134,6 +27134,18 @@
       // Reset service address visibility
       document.getElementById('new-lead-service-address-section').style.display = 'none';
       document.getElementById('new-lead-address-same').checked = true;
+
+      // Setup smart paste for auto-filling from pasted contact info
+      setupSmartPaste('new-lead-first-name', {
+        firstName: 'new-lead-first-name',
+        lastName: 'new-lead-last-name',
+        email: 'new-lead-email',
+        phone: 'new-lead-phone',
+        address: 'new-lead-billing-street',
+        city: 'new-lead-billing-city',
+        state: 'new-lead-billing-state',
+        zip: 'new-lead-billing-zip'
+      });
     }
 
     function closeAddLeadModal() {
@@ -46145,6 +46157,141 @@
       document.getElementById('customers-modal').classList.remove('active');
     }
 
+    // Smart paste parser - auto-fills form fields from pasted text block
+    function parseContactInfo(text) {
+      const result = {
+        name: null,
+        firstName: null,
+        lastName: null,
+        address: null,
+        city: null,
+        state: null,
+        zip: null,
+        phone: null,
+        email: null
+      };
+
+      // Split into lines and clean up
+      const lines = text.split(/[\n\r]+/).map(l => l.trim()).filter(l => l);
+      if (lines.length === 0) return null;
+
+      // Only trigger smart parse if multiple lines or contains patterns
+      const hasMultipleLines = lines.length > 1;
+      const hasEmail = /@/.test(text);
+      const hasPhone = /\d{10}|\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(text);
+      const hasAddress = /\d+\s+\w+\s+(st|street|ave|avenue|ln|lane|dr|drive|rd|road|blvd|way|ct|court|pl|place|cir|circle)/i.test(text);
+
+      if (!hasMultipleLines && !hasEmail && !hasPhone && !hasAddress) {
+        return null; // Just a normal name paste, don't parse
+      }
+
+      for (const line of lines) {
+        // Check for email
+        const emailMatch = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (emailMatch) {
+          result.email = emailMatch[1];
+          continue;
+        }
+
+        // Check for phone (10 digits in various formats)
+        const phoneMatch = line.match(/(\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10})/);
+        if (phoneMatch && !result.phone) {
+          result.phone = phoneMatch[1].replace(/\D/g, '');
+          // Format as (XXX) XXX-XXXX
+          if (result.phone.length === 10) {
+            result.phone = `(${result.phone.slice(0,3)}) ${result.phone.slice(3,6)}-${result.phone.slice(6)}`;
+          }
+          continue;
+        }
+
+        // Check for City, State ZIP pattern
+        const cityStateZipMatch = line.match(/^([A-Za-z\s]+),?\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)?$/i);
+        if (cityStateZipMatch) {
+          result.city = cityStateZipMatch[1].trim();
+          result.state = cityStateZipMatch[2].toUpperCase();
+          if (cityStateZipMatch[3]) result.zip = cityStateZipMatch[3];
+          continue;
+        }
+
+        // Check for street address (number + street name)
+        const addressMatch = line.match(/^(\d+\s+.+)$/);
+        if (addressMatch && !result.address) {
+          // Make sure it's not a phone or zip
+          if (!/^\d{5,}$/.test(line.replace(/\s/g, '')) && !/^\d{10}$/.test(line.replace(/\D/g, ''))) {
+            result.address = addressMatch[1];
+            continue;
+          }
+        }
+
+        // First unmatched line is probably the name
+        if (!result.name && !result.address) {
+          // Check it doesn't look like an address or phone
+          if (!/^\d+\s/.test(line) && !/\d{3}[-.\s]?\d{3}/.test(line)) {
+            result.name = line;
+            // Split into first/last name
+            const nameParts = line.split(/\s+/);
+            if (nameParts.length >= 2) {
+              result.firstName = nameParts[0];
+              result.lastName = nameParts.slice(1).join(' ');
+            } else {
+              result.firstName = line;
+              result.lastName = '';
+            }
+          }
+        }
+      }
+
+      return result;
+    }
+
+    // Setup smart paste on a form
+    function setupSmartPaste(nameFieldId, fieldMap) {
+      const nameField = document.getElementById(nameFieldId);
+      if (!nameField || nameField._smartPasteSetup) return;
+
+      nameField._smartPasteSetup = true;
+      nameField.addEventListener('paste', (e) => {
+        const pastedText = e.clipboardData?.getData('text');
+        if (!pastedText) return;
+
+        const parsed = parseContactInfo(pastedText);
+        if (!parsed) return; // Let normal paste happen
+
+        e.preventDefault(); // Stop normal paste
+
+        // Fill in the fields
+        if (parsed.name && fieldMap.name) {
+          document.getElementById(fieldMap.name).value = parsed.name;
+        }
+        if (parsed.firstName && fieldMap.firstName) {
+          document.getElementById(fieldMap.firstName).value = parsed.firstName;
+        }
+        if (parsed.lastName && fieldMap.lastName) {
+          document.getElementById(fieldMap.lastName).value = parsed.lastName;
+        }
+        if (parsed.email && fieldMap.email) {
+          document.getElementById(fieldMap.email).value = parsed.email;
+        }
+        if (parsed.phone && fieldMap.phone) {
+          document.getElementById(fieldMap.phone).value = parsed.phone;
+        }
+        if (parsed.address && fieldMap.address) {
+          document.getElementById(fieldMap.address).value = parsed.address;
+        }
+        if (parsed.city && fieldMap.city) {
+          document.getElementById(fieldMap.city).value = parsed.city;
+        }
+        if (parsed.state && fieldMap.state) {
+          document.getElementById(fieldMap.state).value = parsed.state;
+        }
+        if (parsed.zip && fieldMap.zip) {
+          document.getElementById(fieldMap.zip).value = parsed.zip;
+        }
+
+        showToast('Contact info auto-filled!', 'success');
+      });
+    }
+
     function openAddCustomerModal(customerId = null) {
       const modal = document.getElementById('add-customer-modal');
       const form = document.getElementById('add-customer-form');
@@ -46174,6 +46321,17 @@
       } else {
         title.textContent = 'Add New Customer';
       }
+
+      // Setup smart paste for auto-filling from pasted contact info
+      setupSmartPaste('cust-name', {
+        name: 'cust-name',
+        email: 'cust-email',
+        phone: 'cust-phone',
+        address: 'cust-address',
+        city: 'cust-city',
+        state: 'cust-state',
+        zip: 'cust-zip'
+      });
 
       modal.classList.add('active');
     }
