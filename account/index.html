@@ -31241,12 +31241,16 @@
 
         // Calculate total from items
         const total = items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
+        if (total <= 0) throw new Error('Invoice total must be greater than $0');
+        if (!customerEmail) throw new Error('Customer email is required');
 
         // Generate invoice number
         const invoicePrefix = businessSettings?.invoice_prefix || 'INV-';
         const timestamp = Date.now().toString().slice(-6);
         const random = Math.random().toString(36).substring(2, 5).toUpperCase();
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
+
+        console.log('[Invoices] Creating invoice:', invoiceNumber, 'for', customerEmail);
 
         // Step 1: Create invoice in Supabase (single source of truth)
         const { data: invoice, error: invoiceError } = await supabaseClient
@@ -31268,7 +31272,12 @@
           .select()
           .single();
 
-        if (invoiceError) throw invoiceError;
+        if (invoiceError) {
+          console.error('[Invoices] Supabase insert error:', invoiceError);
+          throw invoiceError;
+        }
+
+        console.log('[Invoices] Supabase invoice created:', invoice.id);
 
         // Step 2: Create invoice items in Supabase
         if (items.length > 0) {
@@ -31281,70 +31290,75 @@
             total: item.quantity * item.amount
           }));
 
-          await supabaseClient.from('invoice_items').insert(invoiceItems);
+          const { error: itemsError } = await supabaseClient.from('invoice_items').insert(invoiceItems);
+          if (itemsError) console.warn('[Invoices] Items insert error:', itemsError);
         }
 
-        // Step 3: Create Stripe invoice for payment processing (with timeout)
-        let stripeInvoiceId = null;
-        let stripeHostedUrl = null;
-        try {
-          // Create AbortController for timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        // Close modal and show success IMMEDIATELY - don't wait for Stripe
+        closeInvoiceModal();
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        showToast(`Invoice #${invoiceNumber} created! Sending email...`, 'success');
+        loadInvoices();
 
-          const response = await apiCall('/api/invoices', {
-            method: 'POST',
-            signal: controller.signal,
-            body: JSON.stringify({
-              customer_email: customerEmail,
-              customer_name: customerName,
-              customer_phone: customerPhone,
-              items,
-              due_days: dueDays,
-              notes: notes,
-              auto_send: true,
-              template: selectedTemplate,
-              cc_recipients: ccRecipients
-            })
-          });
+        // Step 3: Create Stripe invoice in background (non-blocking)
+        (async () => {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
 
-          clearTimeout(timeoutId);
+            const response = await apiCall('/api/invoices', {
+              method: 'POST',
+              signal: controller.signal,
+              body: JSON.stringify({
+                customer_email: customerEmail,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                items,
+                due_days: dueDays,
+                notes: notes,
+                auto_send: true,
+                template: selectedTemplate,
+                cc_recipients: ccRecipients
+              })
+            });
 
-          if (response.ok) {
-            const stripeData = await response.json();
-            stripeInvoiceId = stripeData.invoice?.id;
-            stripeHostedUrl = stripeData.invoice?.hosted_invoice_url;
+            clearTimeout(timeoutId);
 
-            // Step 4: Update Supabase record with Stripe references
-            if (stripeInvoiceId) {
-              await supabaseClient
-                .from('invoices')
-                .update({
-                  stripe_invoice_id: stripeInvoiceId,
-                  stripe_hosted_url: stripeHostedUrl,
-                  status: 'open'
-                })
-                .eq('id', invoice.id);
+            if (response.ok) {
+              const stripeData = await response.json();
+              const stripeInvoiceId = stripeData.invoice?.id;
+              const stripeHostedUrl = stripeData.invoice?.hosted_invoice_url;
+
+              if (stripeInvoiceId) {
+                await supabaseClient
+                  .from('invoices')
+                  .update({
+                    stripe_invoice_id: stripeInvoiceId,
+                    stripe_hosted_url: stripeHostedUrl,
+                    status: 'open'
+                  })
+                  .eq('id', invoice.id);
+
+                console.log('[Invoices] Stripe invoice created and linked:', stripeInvoiceId);
+                showToast(`Invoice emailed to ${customerEmail}!`, 'success');
+                loadInvoices(); // Refresh to show updated status
+              }
+            } else {
+              console.warn('[Invoices] Stripe API returned error:', response.status);
+            }
+          } catch (stripeErr) {
+            if (stripeErr.name === 'AbortError') {
+              console.warn('[Invoices] Stripe API timed out');
+            } else {
+              console.warn('[Invoices] Stripe error:', stripeErr.message);
             }
           }
-        } catch (stripeErr) {
-          if (stripeErr.name === 'AbortError') {
-            console.warn('[Invoices] Stripe API timed out (Supabase record saved)');
-          } else {
-            console.warn('[Invoices] Stripe invoice creation failed (Supabase record saved):', stripeErr.message);
-          }
-        }
+        })();
 
-        closeInvoiceModal();
-        loadInvoices();
-        if (stripeInvoiceId) {
-          showToast(`Invoice #${invoiceNumber} sent to ${customerEmail}!`, 'success');
-        } else {
-          showToast(`Invoice #${invoiceNumber} saved as draft (email service unavailable)`, 'warning');
-        }
       } catch (err) {
+        console.error('[Invoices] Create error:', err);
         showToast('Error creating invoice: ' + err.message, 'error');
-      } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
       }
