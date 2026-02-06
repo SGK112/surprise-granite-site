@@ -31341,19 +31341,31 @@
       }
     }
 
+    let isCreatingInvoice = false; // Guard against double-clicks
+
     async function createInvoice(e) {
-      console.log('[Invoices] createInvoice called');
+      console.log('[Invoices] createInvoice called, isCreating:', isCreatingInvoice);
       if (e && e.preventDefault) e.preventDefault();
 
-      const btn = document.getElementById('invoice-preview-btn');
-      if (!btn) {
-        console.error('[Invoices] Button not found!');
-        showToast('Error: Button not found', 'error');
+      // Prevent double-submission
+      if (isCreatingInvoice) {
+        console.log('[Invoices] Already creating an invoice, ignoring');
         return;
       }
+      isCreatingInvoice = true;
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Creating...';
+      const btn = document.getElementById('invoice-preview-btn');
+      const sendBtn = document.getElementById('preview-send-btn');
+
+      // Disable both buttons if they exist
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Creating...';
+      }
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+      }
 
       let formData;
       try {
@@ -31362,8 +31374,11 @@
       } catch (formErr) {
         console.error('[Invoices] Form data error:', formErr);
         showToast('Error reading form data', 'error');
-        btn.disabled = false;
-        btn.innerHTML = 'Preview & Send';
+        isCreatingInvoice = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Preview & Send';
+        }
         return;
       }
 
@@ -31442,16 +31457,21 @@
 
         // Close modal and show success IMMEDIATELY - don't wait for Stripe
         closeInvoiceModal();
-        btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        isCreatingInvoice = false; // Reset guard
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        }
+        console.log('[Invoices] Invoice created successfully:', invoiceNumber);
         showToast(`Invoice #${invoiceNumber} created! Sending email...`, 'success');
         loadInvoices();
 
         // Step 3: Create Stripe invoice in background (non-blocking)
         (async () => {
           try {
+            console.log('[Invoices] Starting Stripe API call for:', customerEmail);
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
             const response = await apiCall('/api/invoices', {
               method: 'POST',
@@ -31470,9 +31490,11 @@
             });
 
             clearTimeout(timeoutId);
+            console.log('[Invoices] Stripe API response status:', response.status);
 
             if (response.ok) {
               const stripeData = await response.json();
+              console.log('[Invoices] Stripe response data:', stripeData);
               const stripeInvoiceId = stripeData.invoice?.id;
               const stripeHostedUrl = stripeData.invoice?.hosted_invoice_url;
 
@@ -31489,15 +31511,22 @@
                 console.log('[Invoices] Stripe invoice created and linked:', stripeInvoiceId);
                 showToast(`Invoice emailed to ${customerEmail}!`, 'success');
                 loadInvoices(); // Refresh to show updated status
+              } else {
+                console.error('[Invoices] Stripe response missing invoice ID:', stripeData);
+                showToast('Invoice saved but email may not have sent', 'warning');
               }
             } else {
-              console.warn('[Invoices] Stripe API returned error:', response.status);
+              const errorText = await response.text();
+              console.error('[Invoices] Stripe API error:', response.status, errorText);
+              showToast(`Email delivery failed (${response.status}). Invoice saved locally.`, 'error');
             }
           } catch (stripeErr) {
             if (stripeErr.name === 'AbortError') {
-              console.warn('[Invoices] Stripe API timed out');
+              console.error('[Invoices] Stripe API timed out after 30s');
+              showToast('Email service timed out. Invoice saved, please resend manually.', 'warning');
             } else {
-              console.warn('[Invoices] Stripe error:', stripeErr.message);
+              console.error('[Invoices] Stripe error:', stripeErr);
+              showToast('Email failed: ' + stripeErr.message, 'error');
             }
           }
         })();
@@ -31505,8 +31534,16 @@
       } catch (err) {
         console.error('[Invoices] Create error:', err);
         showToast('Error creating invoice: ' + err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        isCreatingInvoice = false; // Reset guard
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        }
+        const sendBtn = document.getElementById('preview-send-btn');
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = 'Send Invoice';
+        }
       }
     }
 
