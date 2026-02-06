@@ -16673,6 +16673,10 @@
               <input type="email" id="qp-email" required placeholder="customer@email.com">
             </div>
             <div class="form-group">
+              <label>Customer Phone (for SMS)</label>
+              <input type="tel" id="qp-phone" placeholder="(555) 123-4567">
+            </div>
+            <div class="form-group">
               <label>Amount ($) *</label>
               <input type="number" id="qp-amount" required min="1" step="0.01" placeholder="0.00">
             </div>
@@ -34096,6 +34100,7 @@
       try {
         const name = document.getElementById('qp-name').value.trim();
         const email = document.getElementById('qp-email').value.trim();
+        const phone = document.getElementById('qp-phone').value.trim();
         const amount = parseFloat(document.getElementById('qp-amount').value);
         const description = document.getElementById('qp-description').value.trim() || 'Payment to Surprise Granite';
 
@@ -34103,10 +34108,9 @@
           throw new Error('Please fill in all required fields');
         }
 
-        // Create payment link via API
-        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/payment-links', {
+        // Create payment link via API (with authentication)
+        const response = await apiCall('/api/payment-links', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: amount,
             description: description,
@@ -34125,6 +34129,7 @@
         quickPayData = {
           name,
           email,
+          phone,
           amount,
           description,
           url: result.payment_link.url
@@ -34217,14 +34222,24 @@
 
     function sendQuickPaySMS() {
       const message = encodeURIComponent(`Hi ${quickPayData.name}! Here's your payment link for $${quickPayData.amount.toFixed(2)}: ${quickPayData.url} - Surprise Granite`);
+      const phone = quickPayData.phone ? quickPayData.phone.replace(/\D/g, '') : '';
 
-      // Try to open SMS app (works on mobile)
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        window.open(`sms:?body=${message}`);
+      // If we have a phone number, open SMS to that number
+      if (phone) {
+        // Format for different platforms
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          window.open(`sms:${phone}&body=${message}`);
+        } else if (/Android/i.test(navigator.userAgent)) {
+          window.open(`sms:${phone}?body=${message}`);
+        } else {
+          // Desktop - open default SMS handler
+          window.open(`sms:${phone}?body=${message}`);
+        }
+        showToast(`Opening SMS to ${quickPayData.phone}`, 'success');
       } else {
-        // On desktop, copy to clipboard and show instruction
+        // No phone - copy to clipboard
         navigator.clipboard.writeText(`Hi ${quickPayData.name}! Here's your payment link for $${quickPayData.amount.toFixed(2)}: ${quickPayData.url} - Surprise Granite`);
-        showToast('SMS text copied to clipboard!', 'success');
+        showToast('SMS text copied to clipboard! (No phone number entered)', 'info');
       }
     }
 
