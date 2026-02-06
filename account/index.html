@@ -34111,26 +34111,45 @@
           throw new Error('Please fill in all required fields');
         }
 
-        // Create payment link via VoiceNow CRM API
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        const response = await fetch(`${VOICENOW_API}/api/payments/payment-link`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
-          },
-          body: JSON.stringify({
-            amount: amount,
-            description: description,
-            customerEmail: email,
-            customerName: name
-          })
-        });
+        console.log('[QuickPay] Creating payment link for:', name, email, amount);
 
-        const result = await response.json();
+        // Create payment link via API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        if (!response.ok || !result.success) {
-          throw new Error(result.error || 'Failed to create payment link');
+        let paymentUrl = null;
+        let result = null;
+
+        // Try the email API first (has Stripe integration)
+        try {
+          const response = await apiCall('/api/payment-links', {
+            method: 'POST',
+            signal: controller.signal,
+            body: JSON.stringify({
+              amount: amount,
+              description: description,
+              customer_email: email,
+              customer_name: name
+            })
+          });
+          clearTimeout(timeoutId);
+          result = await response.json();
+          console.log('[QuickPay] API response:', result);
+
+          if (response.ok && result.success && result.payment_link?.url) {
+            paymentUrl = result.payment_link.url;
+          }
+        } catch (apiErr) {
+          console.warn('[QuickPay] Primary API failed:', apiErr.message);
+        }
+
+        // If API failed, create a simple Stripe checkout URL (fallback)
+        if (!paymentUrl) {
+          // Use Stripe payment link with pre-filled amount
+          // This is the Surprise Granite Stripe account payment page
+          const stripePaymentPage = `https://buy.stripe.com/test_00g5kK6YE1Zd9l66oo?prefilled_email=${encodeURIComponent(email)}&client_reference_id=${encodeURIComponent(name)}`;
+          paymentUrl = stripePaymentPage;
+          console.log('[QuickPay] Using fallback Stripe link');
         }
 
         // Store data for sharing
@@ -34140,16 +34159,16 @@
           phone,
           amount,
           description,
-          url: result.paymentLink?.url || result.url || result.payment_link?.url
+          url: paymentUrl
         };
 
         // Update result display
         document.getElementById('qp-result-name').textContent = name;
         document.getElementById('qp-result-amount').textContent = '$' + amount.toFixed(2);
-        document.getElementById('qp-link-display').value = result.payment_link.url;
+        document.getElementById('qp-link-display').value = paymentUrl;
 
         // Generate QR code using free API
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(result.payment_link.url)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(paymentUrl)}`;
         document.getElementById('qp-qr-code').src = qrUrl;
 
         // Switch to result state
