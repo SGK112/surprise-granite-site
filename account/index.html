@@ -46191,12 +46191,13 @@
         name: document.getElementById('cust-name').value.trim(),
         email: document.getElementById('cust-email').value.trim() || null,
         phone: document.getElementById('cust-phone').value.trim() || null,
-        company: document.getElementById('cust-company').value.trim() || null,
         address: document.getElementById('cust-address').value.trim() || null,
         city: document.getElementById('cust-city').value.trim() || null,
         state: document.getElementById('cust-state').value.trim() || null,
         zip: document.getElementById('cust-zip').value.trim() || null,
-        notes: notesField ? notesField.value.trim() || null : null
+        notes: notesField ? notesField.value.trim() || null : null,
+        source: 'manual',
+        created_at: new Date().toISOString()
       };
 
       console.log('[SaveCustomer] Customer data:', customerData);
@@ -46236,7 +46237,10 @@
         }
 
         console.log('[SaveCustomer] Result:', result);
-        if (result.error) throw result.error;
+        if (result.error) {
+          console.error('[SaveCustomer] Supabase error details:', result.error);
+          throw result.error;
+        }
 
         showToast(customerId ? 'Customer updated!' : 'Customer created!');
         closeAddCustomerModal();
