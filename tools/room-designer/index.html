@@ -12996,6 +12996,14 @@
                   <option value="countertop-corner">Corner Countertop</option>
                   <option value="backsplash">Backsplash</option>
                 </optgroup>
+                <optgroup label="Fillers &amp; Scribes">
+                  <option value="filler-1.5">Filler 1.5"</option>
+                  <option value="filler-3">Filler 3"</option>
+                  <option value="filler-6">Filler 6"</option>
+                  <option value="scribe-0.5">Scribe 0.5"</option>
+                  <option value="scribe-0.75">Scribe 0.75"</option>
+                  <option value="scribe-1.5">Scribe 1.5"</option>
+                </optgroup>
               </select>
             </div>
             <div class="layout-option-row">
@@ -15151,9 +15159,13 @@
               <option value="range">Range/Stove</option>
               <option value="microwave-cabinet">Microwave Cabinet</option>
             </optgroup>
-            <optgroup label="Fillers">
+            <optgroup label="Fillers &amp; Scribes">
+              <option value="filler-1.5">Filler 1.5"</option>
               <option value="filler-3">Filler 3"</option>
               <option value="filler-6">Filler 6"</option>
+              <option value="scribe-0.5">Scribe Molding 0.5"</option>
+              <option value="scribe-0.75">Scribe Molding 0.75"</option>
+              <option value="scribe-1.5">Scribe Molding 1.5"</option>
             </optgroup>
           </select>
         </div>
@@ -16550,7 +16562,7 @@
     // Standardized type checking to avoid inconsistent OR chains
     const ELEMENT_CATEGORIES = {
       countertops: ['countertop', 'countertop-l', 'countertop-u', 'countertop-corner', 'island-countertop'],
-      baseCabinets: ['base-cabinet', 'sink-base', 'drawer-base', 'corner-cabinet', 'lazy-susan', 'blind-corner', 'island'],
+      baseCabinets: ['base-cabinet', 'sink-base', 'drawer-base', 'corner-cabinet', 'lazy-susan', 'blind-corner', 'island', 'filler', 'scribe'],
       wallCabinets: ['wall-cabinet', 'microwave-cabinet', 'above-microwave-cabinet', 'glass-cabinet'],
       tallCabinets: ['tall-cabinet', 'pantry', 'fridge-cabinet', 'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'linen-closet'],
       appliances: ['refrigerator', 'range', 'oven', 'microwave', 'range-hood', 'cooktop', 'dishwasher', 'washer', 'dryer'],
@@ -24541,27 +24553,27 @@
             { sku: 'B48', name: 'Base 48"', width: 4, height: 2, depth: 2, type: 'base-cabinet', price: 575 }
           ],
           wall: [
-            { sku: 'W0930', name: 'Wall 9"x30"', width: 0.75, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 145 },
-            { sku: 'W1230', name: 'Wall 12"x30"', width: 1, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 165 },
-            { sku: 'W1530', name: 'Wall 15"x30"', width: 1.25, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 185 },
-            { sku: 'W1830', name: 'Wall 18"x30"', width: 1.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 205 },
-            { sku: 'W2130', name: 'Wall 21"x30"', width: 1.75, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 225 },
-            { sku: 'W2430', name: 'Wall 24"x30"', width: 2, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 245 },
-            { sku: 'W3030', name: 'Wall 30"x30"', width: 2.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 285 },
-            { sku: 'W3630', name: 'Wall 36"x30"', width: 3, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 325 },
-            { sku: 'W0936', name: 'Wall 9"x36"', width: 0.75, height: 1.25, depth: 3, type: 'wall-cabinet', price: 165 },
-            { sku: 'W1236', name: 'Wall 12"x36"', width: 1, height: 1.25, depth: 3, type: 'wall-cabinet', price: 185 },
-            { sku: 'W1536', name: 'Wall 15"x36"', width: 1.25, height: 1.25, depth: 3, type: 'wall-cabinet', price: 215 },
-            { sku: 'W1836', name: 'Wall 18"x36"', width: 1.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 245 },
-            { sku: 'W2436', name: 'Wall 24"x36"', width: 2, height: 1.25, depth: 3, type: 'wall-cabinet', price: 285 },
-            { sku: 'W3036', name: 'Wall 30"x36"', width: 2.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 335 },
-            { sku: 'W3636', name: 'Wall 36"x36"', width: 3, height: 1.25, depth: 3, type: 'wall-cabinet', price: 385 },
-            { sku: 'W0942', name: 'Wall 9"x42"', width: 0.75, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 185 },
-            { sku: 'W1242', name: 'Wall 12"x42"', width: 1, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 215 },
-            { sku: 'W1842', name: 'Wall 18"x42"', width: 1.5, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 275 },
-            { sku: 'W2442', name: 'Wall 24"x42"', width: 2, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 325 },
-            { sku: 'W3042', name: 'Wall 30"x42"', width: 2.5, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 385 },
-            { sku: 'W3642', name: 'Wall 36"x42"', width: 3, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 445 }
+            { sku: 'W0930', name: 'Wall 9"x30"', width: 0.75, height: 1, depth: 2.5, type: 'wall-cabinet', price: 145 },
+            { sku: 'W1230', name: 'Wall 12"x30"', width: 1, height: 1, depth: 2.5, type: 'wall-cabinet', price: 165 },
+            { sku: 'W1530', name: 'Wall 15"x30"', width: 1.25, height: 1, depth: 2.5, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1830', name: 'Wall 18"x30"', width: 1.5, height: 1, depth: 2.5, type: 'wall-cabinet', price: 205 },
+            { sku: 'W2130', name: 'Wall 21"x30"', width: 1.75, height: 1, depth: 2.5, type: 'wall-cabinet', price: 225 },
+            { sku: 'W2430', name: 'Wall 24"x30"', width: 2, height: 1, depth: 2.5, type: 'wall-cabinet', price: 245 },
+            { sku: 'W3030', name: 'Wall 30"x30"', width: 2.5, height: 1, depth: 2.5, type: 'wall-cabinet', price: 285 },
+            { sku: 'W3630', name: 'Wall 36"x30"', width: 3, height: 1, depth: 2.5, type: 'wall-cabinet', price: 325 },
+            { sku: 'W0936', name: 'Wall 9"x36"', width: 0.75, height: 1, depth: 3, type: 'wall-cabinet', price: 165 },
+            { sku: 'W1236', name: 'Wall 12"x36"', width: 1, height: 1, depth: 3, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1536', name: 'Wall 15"x36"', width: 1.25, height: 1, depth: 3, type: 'wall-cabinet', price: 215 },
+            { sku: 'W1836', name: 'Wall 18"x36"', width: 1.5, height: 1, depth: 3, type: 'wall-cabinet', price: 245 },
+            { sku: 'W2436', name: 'Wall 24"x36"', width: 2, height: 1, depth: 3, type: 'wall-cabinet', price: 285 },
+            { sku: 'W3036', name: 'Wall 30"x36"', width: 2.5, height: 1, depth: 3, type: 'wall-cabinet', price: 335 },
+            { sku: 'W3636', name: 'Wall 36"x36"', width: 3, height: 1, depth: 3, type: 'wall-cabinet', price: 385 },
+            { sku: 'W0942', name: 'Wall 9"x42"', width: 0.75, height: 1, depth: 3.5, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1242', name: 'Wall 12"x42"', width: 1, height: 1, depth: 3.5, type: 'wall-cabinet', price: 215 },
+            { sku: 'W1842', name: 'Wall 18"x42"', width: 1.5, height: 1, depth: 3.5, type: 'wall-cabinet', price: 275 },
+            { sku: 'W2442', name: 'Wall 24"x42"', width: 2, height: 1, depth: 3.5, type: 'wall-cabinet', price: 325 },
+            { sku: 'W3042', name: 'Wall 30"x42"', width: 2.5, height: 1, depth: 3.5, type: 'wall-cabinet', price: 385 },
+            { sku: 'W3642', name: 'Wall 36"x42"', width: 3, height: 1, depth: 3.5, type: 'wall-cabinet', price: 445 }
           ],
           tall: [
             { sku: 'T189024', name: 'Pantry 18"x90"', width: 1.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 685 },
@@ -24636,18 +24648,18 @@
             { sku: 'MSI-B36', name: 'Base 36"', width: 3, height: 2, depth: 2, type: 'base-cabinet', price: 429 }
           ],
           wall: [
-            { sku: 'MSI-W1230', name: 'Wall 12"x30"', width: 1, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 149 },
-            { sku: 'MSI-W1530', name: 'Wall 15"x30"', width: 1.25, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 169 },
-            { sku: 'MSI-W1830', name: 'Wall 18"x30"', width: 1.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 189 },
-            { sku: 'MSI-W2430', name: 'Wall 24"x30"', width: 2, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 229 },
-            { sku: 'MSI-W3030', name: 'Wall 30"x30"', width: 2.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 269 },
-            { sku: 'MSI-W3630', name: 'Wall 36"x30"', width: 3, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 309 },
-            { sku: 'MSI-W1236', name: 'Wall 12"x36"', width: 1, height: 1.25, depth: 3, type: 'wall-cabinet', price: 169 },
-            { sku: 'MSI-W1536', name: 'Wall 15"x36"', width: 1.25, height: 1.25, depth: 3, type: 'wall-cabinet', price: 199 },
-            { sku: 'MSI-W1836', name: 'Wall 18"x36"', width: 1.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 229 },
-            { sku: 'MSI-W2436', name: 'Wall 24"x36"', width: 2, height: 1.25, depth: 3, type: 'wall-cabinet', price: 269 },
-            { sku: 'MSI-W3036', name: 'Wall 30"x36"', width: 2.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 319 },
-            { sku: 'MSI-W3636', name: 'Wall 36"x36"', width: 3, height: 1.25, depth: 3, type: 'wall-cabinet', price: 369 }
+            { sku: 'MSI-W1230', name: 'Wall 12"x30"', width: 1, height: 1, depth: 2.5, type: 'wall-cabinet', price: 149 },
+            { sku: 'MSI-W1530', name: 'Wall 15"x30"', width: 1.25, height: 1, depth: 2.5, type: 'wall-cabinet', price: 169 },
+            { sku: 'MSI-W1830', name: 'Wall 18"x30"', width: 1.5, height: 1, depth: 2.5, type: 'wall-cabinet', price: 189 },
+            { sku: 'MSI-W2430', name: 'Wall 24"x30"', width: 2, height: 1, depth: 2.5, type: 'wall-cabinet', price: 229 },
+            { sku: 'MSI-W3030', name: 'Wall 30"x30"', width: 2.5, height: 1, depth: 2.5, type: 'wall-cabinet', price: 269 },
+            { sku: 'MSI-W3630', name: 'Wall 36"x30"', width: 3, height: 1, depth: 2.5, type: 'wall-cabinet', price: 309 },
+            { sku: 'MSI-W1236', name: 'Wall 12"x36"', width: 1, height: 1, depth: 3, type: 'wall-cabinet', price: 169 },
+            { sku: 'MSI-W1536', name: 'Wall 15"x36"', width: 1.25, height: 1, depth: 3, type: 'wall-cabinet', price: 199 },
+            { sku: 'MSI-W1836', name: 'Wall 18"x36"', width: 1.5, height: 1, depth: 3, type: 'wall-cabinet', price: 229 },
+            { sku: 'MSI-W2436', name: 'Wall 24"x36"', width: 2, height: 1, depth: 3, type: 'wall-cabinet', price: 269 },
+            { sku: 'MSI-W3036', name: 'Wall 30"x36"', width: 2.5, height: 1, depth: 3, type: 'wall-cabinet', price: 319 },
+            { sku: 'MSI-W3636', name: 'Wall 36"x36"', width: 3, height: 1, depth: 3, type: 'wall-cabinet', price: 369 }
           ],
           tall: [
             { sku: 'MSI-T1890', name: 'Pantry 18"x90"', width: 1.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 649 },
@@ -27098,6 +27110,35 @@
           marketplaceProducts = data.products || [];
         }
 
+        // Fallback to local storeProducts for sinks/faucets if API returned no results
+        if (marketplaceProducts.length === 0 && !append) {
+          const categoryToSource = {
+            'sinks': 'sinks.json',
+            'faucets': 'faucets.json',
+            'tile': 'bravo-tile.json'
+          };
+          const sourceFile = categoryToSource[marketplaceCategory];
+          if (sourceFile && storeProducts.length > 0) {
+            // Filter storeProducts by category and convert to marketplace format
+            const localProducts = storeProducts.filter(p =>
+              p.source === sourceFile || p.category === marketplaceCategory
+            ).map(p => ({
+              id: p.slug || p.id,
+              name: p.name,
+              brand: p.brand,
+              images: [p.primaryImage],
+              wholesale_price: p.price,
+              unit_price: p.price,
+              quantity_available: 100, // Assume in stock
+              product_type: p.type || marketplaceCategory
+            }));
+            if (localProducts.length > 0) {
+              marketplaceProducts = localProducts;
+              console.log(`Loaded ${localProducts.length} products from local ${sourceFile}`);
+            }
+          }
+        }
+
         renderMarketplaceGrid(inStockOnly);
         updateMarketplaceBrandFilter();
 
@@ -27107,7 +27148,36 @@
         }
       } catch (err) {
         console.warn('Marketplace load error:', err);
+
+        // Fallback to local storeProducts on API error
         if (!append) {
+          const categoryToSource = {
+            'sinks': 'sinks.json',
+            'faucets': 'faucets.json',
+            'tile': 'bravo-tile.json'
+          };
+          const sourceFile = categoryToSource[marketplaceCategory];
+          if (sourceFile && storeProducts.length > 0) {
+            const localProducts = storeProducts.filter(p =>
+              p.source === sourceFile || p.category === marketplaceCategory
+            ).map(p => ({
+              id: p.slug || p.id,
+              name: p.name,
+              brand: p.brand,
+              images: [p.primaryImage],
+              wholesale_price: p.price,
+              unit_price: p.price,
+              quantity_available: 100,
+              product_type: p.type || marketplaceCategory
+            }));
+            if (localProducts.length > 0) {
+              marketplaceProducts = localProducts;
+              renderMarketplaceGrid(inStockOnly);
+              updateMarketplaceBrandFilter();
+              console.log(`Loaded ${localProducts.length} products from local ${sourceFile} (API fallback)`);
+              return;
+            }
+          }
           grid.innerHTML = '<div class="loading-products">Marketplace unavailable</div>';
         }
       }
@@ -28912,42 +28982,6 @@
         ctx.stroke();
       }
 
-      // Wall labels for clear orientation reference
-      ctx.font = 'bold 11px Inter';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      // Back Wall label (top edge - far wall in 3D)
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
-      ctx.fillRect(roomW / 2 - 40, 8, 80, 18);
-      ctx.fillStyle = '#fff';
-      ctx.fillText('BACK WALL', roomW / 2, 17);
-
-      // Front Wall label (bottom edge - near wall in 3D)
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
-      ctx.fillRect(roomW / 2 - 40, roomH - 26, 80, 18);
-      ctx.fillStyle = '#fff';
-      ctx.fillText('FRONT WALL', roomW / 2, roomH - 17);
-
-      // Left Wall label (left edge)
-      ctx.save();
-      ctx.translate(26, roomH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
-      ctx.fillRect(-40, -9, 80, 18);
-      ctx.fillStyle = '#fff';
-      ctx.fillText('LEFT WALL', 0, 0);
-      ctx.restore();
-
-      // Right Wall label (right edge)
-      ctx.save();
-      ctx.translate(roomW - 26, roomH / 2);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
-      ctx.fillRect(-40, -9, 80, 18);
-      ctx.fillStyle = '#fff';
-      ctx.fillText('RIGHT WALL', 0, 0);
-      ctx.restore();
     }
 
     function drawFloorPlanAreas() {
@@ -29812,11 +29846,9 @@
         }
 
         case 'lazy-susan': {
-          // LAZY SUSAN - L-shaped corner cabinet with rotating turntable shelves
-          // Plan view (top-down): L-shape with 24" depth arms, lazy susan circle in corner
+          // LAZY SUSAN - L-shaped corner cabinet with rotating pie-wheel shelves
+          // Plan view (top-down): L-shape with open corner showing pie wheel
           const lsArmD = pixelsPerFoot * 2; // 24" standard cabinet depth for each arm
-          const lsInnerW = w - lsArmD; // exposed portion of bottom arm
-          const lsInnerH = h - lsArmD; // exposed portion of right arm
 
           // L-shape cabinet body
           ctx.fillStyle = el.color;
@@ -29830,103 +29862,76 @@
           ctx.closePath();
           ctx.fill();
 
-          // Dark interior in corner overlap area
-          ctx.fillStyle = 'rgba(20,20,25,0.5)';
-          ctx.fillRect(x + 2, y + 2, lsArmD - 4, lsArmD - 4);
+          // Dark interior in corner area
+          ctx.fillStyle = 'rgba(30,25,20,0.7)';
+          ctx.beginPath();
+          ctx.moveTo(x + 3, y + 3);
+          ctx.lineTo(x + w - 3, y + 3);
+          ctx.lineTo(x + w - 3, y + lsArmD - 3);
+          ctx.lineTo(x + lsArmD - 3, y + lsArmD - 3);
+          ctx.lineTo(x + lsArmD - 3, y + h - 3);
+          ctx.lineTo(x + 3, y + h - 3);
+          ctx.closePath();
+          ctx.fill();
 
-          // Lazy susan turntable (circle in corner area)
-          const lsRadius = Math.min(lsArmD, lsArmD) * 0.42;
-          const lsCx = x + lsArmD * 0.5;
-          const lsCy = y + lsArmD * 0.5;
+          // Lazy susan pie wheel - larger and more prominent
+          const lsRadius = Math.min(w, h) * 0.38;
+          const lsCx = x + w * 0.35;
+          const lsCy = y + h * 0.35;
 
-          // Turntable base circle
-          ctx.fillStyle = 'rgba(180,160,120,0.35)';
+          // Outer ring (shelf edge)
+          ctx.strokeStyle = 'rgba(120,100,70,0.9)';
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.arc(lsCx, lsCy, lsRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Pie shelf surface
+          ctx.fillStyle = 'rgba(160,140,100,0.6)';
+          ctx.beginPath();
+          ctx.arc(lsCx, lsCy, lsRadius - 2, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+
+          // Pie dividers (kidney-shaped sections - 270 degrees with cutout)
+          ctx.strokeStyle = 'rgba(80,60,40,0.7)';
+          ctx.lineWidth = 2;
+          // Draw 3 pie sections (each 90 degrees, leaving one section open)
+          for (let i = 0; i < 3; i++) {
+            const angle = (Math.PI / 2) * i + Math.PI * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(lsCx, lsCy);
+            ctx.lineTo(lsCx + Math.cos(angle) * (lsRadius - 2), lsCy + Math.sin(angle) * (lsRadius - 2));
+            ctx.stroke();
+          }
+
+          // Center pivot pole (chrome)
+          ctx.fillStyle = '#888888';
+          ctx.beginPath();
+          ctx.arc(lsCx, lsCy, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#666666';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Rotation arrow
+          ctx.strokeStyle = 'rgba(100,80,50,0.5)';
           ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          // Pie-shaped shelf dividers (4 quadrants)
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(lsCx - lsRadius, lsCy);
-          ctx.lineTo(lsCx + lsRadius, lsCy);
-          ctx.moveTo(lsCx, lsCy - lsRadius);
-          ctx.lineTo(lsCx, lsCy + lsRadius);
-          ctx.stroke();
-
-          // Center pivot
-          ctx.fillStyle = '#A0A0A0';
-          ctx.beginPath();
-          ctx.arc(lsCx, lsCy, 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Rotation arrow hint
-          ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(lsCx, lsCy, lsRadius * 0.7, -0.3, Math.PI * 1.2);
+          ctx.arc(lsCx, lsCy, lsRadius * 0.6, 0, Math.PI * 1.5);
           ctx.stroke();
           // Arrowhead
-          const arrowAngle = Math.PI * 1.2;
-          const arrowR = lsRadius * 0.7;
+          const arrowAngle = Math.PI * 1.5;
+          const arrowR = lsRadius * 0.6;
           const ax = lsCx + Math.cos(arrowAngle) * arrowR;
           const ay = lsCy + Math.sin(arrowAngle) * arrowR;
           ctx.beginPath();
-          ctx.moveTo(ax + 4, ay - 3);
+          ctx.moveTo(ax - 4, ay - 4);
           ctx.lineTo(ax, ay);
-          ctx.lineTo(ax + 5, ay + 2);
+          ctx.lineTo(ax + 4, ay - 4);
           ctx.stroke();
-
-          // Diagonal door line (where bi-fold doors meet at 45°)
-          ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(x + lsArmD, y + lsArmD);
-          ctx.lineTo(x + lsArmD + lsInnerW, y + lsArmD - lsInnerH);
-          ctx.stroke();
-
-          // Door on bottom arm (front-facing, at x + lsArmD edge going down)
-          const lsBottomDoorY = y + lsArmD + 3;
-          const lsBottomDoorH = h - lsArmD - 6;
-          const lsBottomDoorW = lsArmD - 6;
-          if (lsBottomDoorH > 8) {
-            ctx.fillStyle = el.color;
-            ctx.fillRect(x + 3, lsBottomDoorY, lsBottomDoorW, lsBottomDoorH);
-            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x + 3.5, lsBottomDoorY + 0.5, lsBottomDoorW - 1, lsBottomDoorH - 1);
-            const lsInset = Math.min(8, lsBottomDoorW * 0.12);
-            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-            ctx.strokeRect(x + 3 + lsInset, lsBottomDoorY + lsInset, lsBottomDoorW - lsInset * 2, lsBottomDoorH - lsInset * 2);
-            // Handle
-            ctx.fillStyle = '#C0C0C0';
-            ctx.fillRect(x + 3 + lsBottomDoorW - 7, lsBottomDoorY + lsBottomDoorH / 2 - 8, 3, 16);
-          }
-
-          // Door on right arm (front-facing, at y + lsArmD edge going right)
-          const lsRightDoorX = x + lsArmD + 3;
-          const lsRightDoorW = w - lsArmD - 6;
-          const lsRightDoorH = lsArmD - 6;
-          if (lsRightDoorW > 8) {
-            ctx.fillStyle = el.color;
-            ctx.fillRect(lsRightDoorX, y + 3, lsRightDoorW, lsRightDoorH);
-            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(lsRightDoorX + 0.5, y + 3.5, lsRightDoorW - 1, lsRightDoorH - 1);
-            const lsInset2 = Math.min(8, lsRightDoorH * 0.12);
-            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-            ctx.strokeRect(lsRightDoorX + lsInset2, y + 3 + lsInset2, lsRightDoorW - lsInset2 * 2, lsRightDoorH - lsInset2 * 2);
-            // Handle
-            ctx.fillStyle = '#C0C0C0';
-            ctx.fillRect(lsRightDoorX + lsRightDoorW / 2 - 8, y + 3 + lsRightDoorH - 7, 16, 3);
-          }
 
           // Cabinet outline
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.strokeStyle = 'rgba(0,0,0,0.4)';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(x, y);
@@ -30036,6 +30041,81 @@
           ctx.lineTo(x, y + h);
           ctx.closePath();
           ctx.stroke();
+          break;
+        }
+
+        case 'filler': {
+          // FILLER STRIP - Narrow vertical piece to fill gaps between cabinets and walls
+          // Solid wood strip matching cabinet color
+          const fillerToeH = Math.max(4, h * 0.12);
+          const fillerBodyH = h - fillerToeH;
+
+          // Filler body
+          ctx.fillStyle = el.color || '#654321';
+          ctx.fillRect(x, y, w, fillerBodyH);
+
+          // Wood grain texture lines
+          ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+          ctx.lineWidth = 0.5;
+          const grainSpacing = Math.max(2, w / 3);
+          for (let gx = x + grainSpacing; gx < x + w; gx += grainSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(gx, y + 2);
+            ctx.lineTo(gx, y + fillerBodyH - 2);
+            ctx.stroke();
+          }
+
+          // Toe kick area
+          ctx.fillStyle = '#0a0a0e';
+          ctx.fillRect(x, y + fillerBodyH, w, fillerToeH);
+
+          // Border
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, y, w, h);
+
+          // Label
+          if (w > 8) {
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.save();
+            ctx.translate(x + w/2, y + h/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('F', 0, 0);
+            ctx.restore();
+          }
+          break;
+        }
+
+        case 'scribe': {
+          // SCRIBE MOLDING - Very thin trim piece for fitting against irregular walls
+          // Even narrower than filler, used to cover gaps at wall edges
+
+          // Scribe body - darker wood
+          ctx.fillStyle = el.color || '#4A3520';
+          ctx.fillRect(x, y, w, h);
+
+          // Subtle shadow on one edge (simulating the angled scribe cut)
+          ctx.fillStyle = 'rgba(0,0,0,0.2)';
+          ctx.fillRect(x, y, Math.max(1, w * 0.3), h);
+
+          // Border
+          ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, w, h);
+
+          // Tiny "S" label if wide enough
+          if (w > 4) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '6px Arial';
+            ctx.textAlign = 'center';
+            ctx.save();
+            ctx.translate(x + w/2, y + h/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('S', 0, 0);
+            ctx.restore();
+          }
           break;
         }
 
@@ -33223,6 +33303,8 @@
       'base-cabinet': 11,
       'drawer-base': 11,
       'sink-base': 11,
+      'filler': 11,
+      'scribe': 11,
       'corner-cabinet': 12,
       'lazy-susan': 12,
       'tall-cabinet': 13,
@@ -37127,29 +37209,43 @@
       const newType = typeSelect ? typeSelect.value : 'base-cabinet';
       const newWidth = widthSelect ? parseFloat(widthSelect.value) : 2;
 
-      // Handle filler types specially
+      // Handle filler and scribe types specially
       let actualType = newType;
       let isFiller = false;
-      if (newType === 'filler-3') {
-        actualType = 'base-cabinet';
+      let isScribe = false;
+      const fillerSizes = {
+        'filler-1.5': 0.125,  // 1.5"
+        'filler-3': 0.25,     // 3"
+        'filler-6': 0.5       // 6"
+      };
+      const scribeSizes = {
+        'scribe-0.5': 0.042,  // 0.5"
+        'scribe-0.75': 0.0625, // 0.75"
+        'scribe-1.5': 0.125   // 1.5"
+      };
+
+      if (fillerSizes[newType]) {
+        actualType = 'filler';
         isFiller = true;
-        cabinetToReplace.width = 0.25; // 3"
-      } else if (newType === 'filler-6') {
-        actualType = 'base-cabinet';
-        isFiller = true;
-        cabinetToReplace.width = 0.5; // 6"
+        cabinetToReplace.width = fillerSizes[newType];
+      } else if (scribeSizes[newType]) {
+        actualType = 'scribe';
+        isScribe = true;
+        cabinetToReplace.width = scribeSizes[newType];
       } else {
         cabinetToReplace.width = newWidth;
       }
 
       // Get cabinet style info
-      const widthInches = Math.round(cabinetToReplace.width * 12);
+      const widthInches = Math.round(cabinetToReplace.width * 12 * 10) / 10; // Allow decimal for small sizes
       const styles = {
         'base-cabinet': { color: '#8B4513', label: `Base ${widthInches}"` },
         'drawer-base': { color: '#8B5A2B', label: `Drawer ${widthInches}"` },
         'sink-base': { color: '#6B4423', label: `Sink Base ${widthInches}"` },
         'corner-cabinet': { color: '#A0522D', label: 'Corner 36"' },
         'lazy-susan': { color: '#A0522D', label: 'Lazy Susan' },
+        'filler': { color: '#654321', label: `Filler ${widthInches}"` },
+        'scribe': { color: '#4A3520', label: `Scribe ${widthInches}"` },
         'blind-corner': { color: '#7B5513', label: 'Blind Corner' },
         'wall-cabinet': { color: '#D2691E', label: `Wall ${widthInches}"` },
         'tall-cabinet': { color: '#5D4037', label: `Tall ${widthInches}"` },
@@ -37162,13 +37258,14 @@
         'microwave-cabinet': { color: '#5D4037', label: 'Microwave Cab' }
       };
 
-      const style = isFiller ? { color: '#654321', label: `Filler ${widthInches}"` } : (styles[actualType] || { color: '#8B4513', label: `${widthInches}"` });
+      const style = styles[actualType] || { color: '#8B4513', label: `${widthInches}"` };
 
       // Update the cabinet
       cabinetToReplace.type = actualType;
       cabinetToReplace.color = style.color;
       cabinetToReplace.label = style.label;
       cabinetToReplace.isFiller = isFiller;
+      cabinetToReplace.isScribe = isScribe;
 
       // Update depth based on type
       if (actualType === 'wall-cabinet') {
@@ -37288,6 +37385,23 @@
         case 'blind-corner':
           depthSelect.value = '2';
           layoutMode.cabinetDepth = 2;
+          break;
+
+        // Fillers and scribes - 24" deep (match base cabinets)
+        case 'filler-1.5':
+        case 'filler-3':
+        case 'filler-6':
+        case 'scribe-0.5':
+        case 'scribe-0.75':
+        case 'scribe-1.5':
+          depthSelect.value = '2';
+          layoutMode.cabinetDepth = 2;
+          // Set appropriate width for filler/scribe
+          const widths = {
+            'filler-1.5': 0.125, 'filler-3': 0.25, 'filler-6': 0.5,
+            'scribe-0.5': 0.042, 'scribe-0.75': 0.0625, 'scribe-1.5': 0.125
+          };
+          layoutMode.cabinetWidth = widths[select.value] || 0.25;
           break;
 
         // Tall cabinets - 24" deep
@@ -40093,6 +40207,8 @@
         if (t.startsWith('drawer-base-')) return 'drawer-base';
         if (t.startsWith('sink-base-')) return 'sink-base';
         if (t.startsWith('corner-cabinet-')) return 'corner-cabinet';
+        if (t.startsWith('filler-')) return 'filler';
+        if (t.startsWith('scribe-')) return 'scribe';
         return t;
       };
       type = normalizeTypeFor3DHeight(type);
@@ -40120,6 +40236,8 @@
         'tall-cabinet': 7,        // 84 inches
         'corner-cabinet': 2.9,
         'lazy-susan': 2.9,        // 35 inches (corner base)
+        'filler': 2.9,            // 35 inches (matches base cabinet height)
+        'scribe': 2.9,            // 35 inches (matches base cabinet height)
         'island': 3,              // 36 inches with countertop
         'countertop': 0.12,       // 1.5 inch thick
         'backsplash': 1.5,        // 18 inches
@@ -40303,6 +40421,8 @@
         case 'lazy-susan':
         case 'blind-corner':
         case 'island':
+        case 'filler':
+        case 'scribe':
           return height / 2; // Base sits on floor
 
         // Counter height items (on top of base cabinets at ~35")
@@ -41445,8 +41565,17 @@
     }
 
     function create3DElement(el) {
-      const w = el.width;
-      const d = el.height; // In 2D, height is depth in 3D
+      // For elements rotated 90/270 degrees, width and height are swapped in 2D
+      // We need to swap them back for correct 3D geometry
+      const rotation = (el.rotation || 0) % 360;
+      const isRotated90 = (rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270);
+
+      // w = width of 3D object (along its local X axis)
+      // d = depth of 3D object (along its local Z axis)
+      // For rotation 0/180: 2D width = 3D width, 2D height = 3D depth
+      // For rotation 90/270: 2D width = 3D depth, 2D height = 3D width (swapped in template)
+      const w = isRotated90 ? el.height : el.width;
+      const d = isRotated90 ? el.width : el.height;
       const h = get3DHeight(el);
 
       // Parse color
@@ -43133,6 +43262,68 @@
           break;
         }
 
+        case 'filler': {
+          // FILLER STRIP - Solid wood strip to fill gaps between cabinets and walls
+          const fillerToeKickH = 0.33;
+          const fillerBodyH = h - fillerToeKickH;
+
+          // Create wood grain material
+          const fillerMat = new THREE.MeshStandardMaterial({
+            color: color || 0x654321,
+            roughness: 0.4,
+            metalness: 0.02
+          });
+
+          // Filler body
+          const fillerBody = new THREE.Mesh(
+            new THREE.BoxGeometry(w, fillerBodyH, d),
+            fillerMat
+          );
+          fillerBody.position.y = fillerToeKickH / 2;
+          group.add(fillerBody);
+
+          // Toe kick void
+          const tkMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.95 });
+          const toeKick = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.7, fillerToeKickH, d * 0.6),
+            tkMat
+          );
+          toeKick.position.set(0, -h/2 + fillerToeKickH/2, d * 0.15);
+          group.add(toeKick);
+
+          break;
+        }
+
+        case 'scribe': {
+          // SCRIBE MOLDING - Very thin trim piece for irregular wall fitting
+          const scribeMat = new THREE.MeshStandardMaterial({
+            color: color || 0x4A3520,
+            roughness: 0.5,
+            metalness: 0.02
+          });
+
+          // Scribe body - full height thin strip
+          const scribeBody = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, d),
+            scribeMat
+          );
+          group.add(scribeBody);
+
+          // Angled edge detail (simulating scribe cut)
+          const edgeMat = new THREE.MeshStandardMaterial({
+            color: 0x3A2510,
+            roughness: 0.6
+          });
+          const edge = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.3, h, d * 0.1),
+            edgeMat
+          );
+          edge.position.set(-w * 0.35, 0, d * 0.45);
+          group.add(edge);
+
+          break;
+        }
+
         case 'sink-base': {
           // Sink base cabinet - false drawer front + double doors, open interior
           const sbToeKickHeight = 0.33;
@@ -43503,60 +43694,30 @@
             group.add(rim);
           }
 
-          // DIAGONAL BI-FOLD DOORS (characteristic of lazy susan cabinets)
-          const diagP1 = { x: -w/2 + armDepth, z: d/2 };
-          const diagP2 = { x: w/2, z: -d/2 + armDepth };
-          const diagDoorWidth = Math.sqrt(Math.pow(diagP2.x - diagP1.x, 2) + Math.pow(diagP1.z - diagP2.z, 2));
-          const doorHeight = cabinetBodyHeight - 0.15;
-          const halfDoorWidth = (diagDoorWidth - 0.1) / 2;
+          // NO DOORS - Open corner design to show the pie-wheel lazy susan
+          // Add a subtle frame around the diagonal opening
+          const diagFrameMat = new THREE.MeshStandardMaterial({
+            color: adjustColorBrightness(color, -15),
+            roughness: 0.4
+          });
 
-          const diagCenterX = (diagP1.x + diagP2.x) / 2;
-          const diagCenterZ = (diagP1.z + diagP2.z) / 2;
+          // Frame pieces along diagonal opening
+          const frameThickness = 0.04;
+          const frameDepth = 0.06;
+          const diagLength = Math.sqrt(Math.pow(w - armDepth, 2) + Math.pow(d - armDepth, 2));
 
-          // Create two doors (bi-fold style)
-          for (let doorIdx = 0; doorIdx < 2; doorIdx++) {
-            const doorGroup = new THREE.Group();
+          const diagFrame = new THREE.Mesh(
+            new THREE.BoxGeometry(diagLength, frameThickness, frameDepth),
+            diagFrameMat
+          );
+          diagFrame.rotation.y = Math.PI / 4;
+          diagFrame.position.set(0, bodyYOffset + cabinetBodyHeight/2 - frameThickness/2, 0);
+          group.add(diagFrame);
 
-            // Door panel
-            const doorPanel = new THREE.Mesh(
-              new THREE.BoxGeometry(halfDoorWidth, doorHeight, panelThickness),
-              doorMat
-            );
-            doorGroup.add(doorPanel);
-
-            // Shaker inset
-            const insetW = halfDoorWidth - 0.15;
-            const insetH = doorHeight - 0.2;
-            const inset = new THREE.Mesh(
-              new THREE.BoxGeometry(insetW, insetH, 0.02),
-              new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -10), roughness: 0.5 })
-            );
-            inset.position.z = panelThickness/2 + 0.01;
-            doorGroup.add(inset);
-
-            // Modern bar handle
-            const handleLen = Math.min(doorHeight * 0.3, 0.2);
-            const lsHandleFinish = el.handleFinish || 'brushed-nickel';
-            const handle = createModernBarHandle(handleLen, lsHandleFinish);
-            const handleXPos = doorIdx === 0 ? halfDoorWidth/2 - 0.1 : -halfDoorWidth/2 + 0.1;
-            handle.position.set(handleXPos, 0, panelThickness/2 + 0.04);
-            handle.rotation.z = Math.PI / 2; // Vertical
-            doorGroup.add(handle);
-
-            // Position door
-            const doorXOffset = doorIdx === 0 ? -halfDoorWidth/2 - 0.02 : halfDoorWidth/2 + 0.02;
-            doorGroup.rotation.y = Math.PI / 4;
-
-            // Calculate position along diagonal
-            const offsetDir = doorIdx === 0 ? -1 : 1;
-            const offsetAmount = halfDoorWidth/2 + 0.02;
-            doorGroup.position.set(
-              diagCenterX + offsetDir * offsetAmount * Math.cos(Math.PI/4) * 0.5,
-              bodyYOffset,
-              diagCenterZ + offsetDir * offsetAmount * Math.sin(Math.PI/4) * 0.5
-            );
-            group.add(doorGroup);
-          }
+          // Bottom frame
+          const diagFrameBottom = diagFrame.clone();
+          diagFrameBottom.position.y = bodyYOffset - cabinetBodyHeight/2 + frameThickness/2 + 0.02;
+          group.add(diagFrameBottom);
 
           // TOE KICK (same orientation as body, inset by recess)
           const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
@@ -54858,50 +55019,6 @@
         }
       }
 
-      // Wall labels (3D text sprites)
-      function createWallLabel(text) {
-        const canvas = document.createElement('canvas');
-        const ctx2d = canvas.getContext('2d');
-        canvas.width = 256;
-        canvas.height = 64;
-        ctx2d.fillStyle = 'rgba(99, 102, 241, 0.85)';
-        ctx2d.roundRect(0, 8, 256, 48, 8);
-        ctx2d.fill();
-        ctx2d.fillStyle = '#ffffff';
-        ctx2d.font = 'bold 28px Inter, Arial, sans-serif';
-        ctx2d.textAlign = 'center';
-        ctx2d.textBaseline = 'middle';
-        ctx2d.fillText(text, 128, 32);
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-        const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(3, 0.75, 1);
-        sprite.userData.isRoomStructure = true;
-        return sprite;
-      }
-
-      // Back wall label
-      const backLabel = createWallLabel(isOutdoor ? 'BACK' : 'BACK WALL');
-      backLabel.position.set(roomWidth / 2, isOutdoor ? 3 : wallHeight - 0.5, 0.3);
-      structure.push(backLabel);
-
-      if (!isOutdoor) {
-        // Left wall label
-        const leftLabel = createWallLabel('LEFT WALL');
-        leftLabel.position.set(0.3, wallHeight - 0.5, roomDepth / 2);
-        structure.push(leftLabel);
-
-        // Right wall label
-        const rightLabel = createWallLabel('RIGHT WALL');
-        rightLabel.position.set(roomWidth - 0.3, wallHeight - 0.5, roomDepth / 2);
-        structure.push(rightLabel);
-
-        // Front wall label
-        const frontLabel = createWallLabel('FRONT WALL');
-        frontLabel.position.set(roomWidth / 2, wallHeight - 0.5, roomDepth - 0.3);
-        structure.push(frontLabel);
-      }
-
       // Add all to scene
       structure.forEach(mesh => scene.add(mesh));
 
@@ -55190,14 +55307,16 @@
               // Left wall - cabinet faces right into room (+x direction)
               group.rotation.y = -Math.PI / 2;  // -90° so front faces +x
               autoRotated = true;
-              xPos = el.height / 2; // Position from left wall using depth (el.height in 2D)
-              zPos = (el.y / pixelsPerFoot) + el.width / 2; // Use width for Z position
+              // For rotation 90/270: el.width = depth from wall, el.height = length along wall
+              xPos = el.width / 2; // Position from left wall using depth (el.width for rotated)
+              zPos = (el.y / pixelsPerFoot) + el.height / 2; // Use height for Z position (length along wall)
             } else if (manualRotation === 90 && isAgainstRightWall) {
               // Right wall - cabinet faces left into room (-x direction)
               group.rotation.y = Math.PI / 2;  // +90° so front faces -x
               autoRotated = true;
-              xPos = roomWidth - el.height / 2;
-              zPos = (el.y / pixelsPerFoot) + el.width / 2;
+              // For rotation 90/270: el.width = depth from wall, el.height = length along wall
+              xPos = roomWidth - el.width / 2;
+              zPos = (el.y / pixelsPerFoot) + el.height / 2;
             } else if (manualRotation === 180 && isAgainstFrontWall) {
               // Front wall - cabinet rotated to face back
               group.rotation.y = Math.PI;

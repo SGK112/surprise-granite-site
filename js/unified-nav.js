@@ -25,7 +25,7 @@
     // Load sg-auth.js if not already loaded
     if (!window.SgAuth && !document.querySelector('script[src*="sg-auth"]')) {
       const authScript = document.createElement('script');
-      authScript.src = '/js/sg-auth.js?v=20260109f';
+      authScript.src = '/js/sg-auth.js?v=20260205a';
       authScript.async = true;
       document.head.appendChild(authScript);
     }

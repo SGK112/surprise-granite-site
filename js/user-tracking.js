@@ -105,6 +105,11 @@
       }
       // Note: Removed manual session restoration - Supabase handles this with persistSession: true
     } catch (e) {
+      // Suppress AbortError - known Supabase localhost issue
+      if (e.name === 'AbortError') {
+        console.debug('Session check aborted (non-critical)');
+        return;
+      }
       console.warn('Session check error:', e);
     }
   }

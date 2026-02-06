@@ -11,8 +11,16 @@
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260201h"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <script defer src="/js/unified-nav.js?v=20260201h"></script>
-  <script src="/js/sg-auth.js"></script>
+  <script>
+    // Suppress Supabase AbortError globally (known localhost issue)
+    window.addEventListener('unhandledrejection', function(e) {
+      if (e.reason && (e.reason.name === 'AbortError' || String(e.reason).includes('AbortError'))) {
+        e.preventDefault();
+      }
+    });
+  </script>
+  <script defer src="/js/unified-nav.js?v=20260205b"></script>
+  <script src="/js/sg-auth.js?v=20260205b"></script>
   <script src="/js/pricing-config.js"></script>
   <script src="/js/pricing-service.js"></script>
   <style>
@@ -42,37 +50,44 @@
     }
     .page-header {
       background: linear-gradient(135deg, var(--navy) 0%, #0f1a24 100%);
-      padding: 80px 24px 80px;
+      padding: 60px 24px 60px;
       color: #fff;
       position: relative;
       overflow: hidden;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
     }
     .page-header::before {
       content: '';
       position: absolute;
       top: 0;
       right: 0;
-      width: 50%;
+      width: 55%;
       height: 100%;
       background: url('https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb23e1afbc3d6_dekton-surprise-granite-domoos-quartz-sink-scene.jpeg') center/cover;
-      opacity: 0.4;
-      mask-image: linear-gradient(to left, rgba(0,0,0,0.8), transparent);
-      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.6), transparent);
+      opacity: 0.35;
+      mask-image: linear-gradient(to left, rgba(0,0,0,0.9), transparent);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.8), transparent);
     }
     .page-header-inner {
       max-width: 1200px;
       margin: 0 auto;
       position: relative;
       z-index: 1;
+      width: 100%;
     }
     .page-header h1 {
-      font-size: 2.5rem;
+      font-size: 3rem;
       font-weight: 800;
-      margin-bottom: 8px;
+      margin-bottom: 16px;
+      line-height: 1.1;
     }
     .page-header p {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       opacity: 0.85;
+      max-width: 550px;
+      line-height: 1.6;
     }
     .main {
       max-width: 1200px;
@@ -269,17 +284,20 @@
     .pricing-banner-btn:hover { background: #cca600; }
 
     @media (max-width: 991px) {
-      .page-header { padding: 60px 20px 60px; }
-      .page-header::before { width: 100%; opacity: 0.3; }
+      .page-header { padding: 50px 20px 50px; min-height: 280px; }
+      .page-header::before { width: 100%; opacity: 0.25; }
+      .page-header h1 { font-size: 2.5rem; }
     }
     @media (max-width: 768px) {
-      .page-header { padding: 32px 16px 24px; }
-      .page-header h1 { font-size: 1.75rem; }
+      .page-header { padding: 40px 16px 40px; min-height: 240px; }
+      .page-header h1 { font-size: 2rem; }
+      .page-header p { font-size: 1.1rem; }
       .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .product-info { padding: 12px; }
       .product-title { font-size: 13px; }
     }
     @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.75rem; }
       .products-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -401,7 +419,7 @@
 
     async function loadProducts() {
       try {
-        const response = await fetch('/data/sinks.json');
+        const response = await fetch('/data/sinks.json?v=' + Date.now());
         const products = await response.json();
         allProductsData = products;
 

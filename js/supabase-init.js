@@ -8,6 +8,14 @@
 (function() {
   'use strict';
 
+  // Suppress AbortError from Supabase (known localhost issue, non-critical)
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.name === 'AbortError') {
+      event.preventDefault();
+      console.debug('Supabase AbortError suppressed');
+    }
+  });
+
   // Only create if not already created
   if (window._sgSupabaseClient) {
     return;

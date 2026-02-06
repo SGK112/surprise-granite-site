@@ -12,6 +12,14 @@
 (function() {
   'use strict';
 
+  // Suppress AbortError from Supabase globally (known localhost issue, non-critical)
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.name === 'AbortError' || String(event.reason).includes('AbortError')) {
+      event.preventDefault();
+      console.debug('Supabase AbortError suppressed');
+    }
+  });
+
   // Use centralized config or fallback to defaults
   const config = window.SG_CONFIG || {};
   const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
@@ -147,7 +155,12 @@
         });
       }
     } catch (e) {
-      console.error('Auth state error:', e);
+      // Suppress AbortError - it's a known non-critical Supabase issue on localhost
+      if (e.name === 'AbortError' || String(e).includes('AbortError')) {
+        console.debug('Auth: AbortError suppressed (non-critical)');
+      } else {
+        console.error('Auth state error:', e);
+      }
     }
   }
 

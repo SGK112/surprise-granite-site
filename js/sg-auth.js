@@ -9,6 +9,14 @@
 (function() {
   'use strict';
 
+  // Suppress AbortError from Supabase globally (known localhost issue, non-critical)
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.name === 'AbortError') {
+      event.preventDefault();
+      console.debug('Supabase AbortError suppressed');
+    }
+  });
+
   // Use centralized config or fallback to defaults
   const config = window.SG_CONFIG || {};
   const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
