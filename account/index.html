@@ -34113,43 +34113,38 @@
 
         console.log('[QuickPay] Creating payment link for:', name, email, amount);
 
-        // Create payment link via API with timeout
+        // Create payment link via VoiceNow CRM Surprise Granite endpoint
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
 
         let paymentUrl = null;
-        let result = null;
 
-        // Try the email API first (has Stripe integration)
         try {
-          const response = await apiCall('/api/payment-links', {
+          const response = await fetch(`${VOICENOW_API}/api/surprise-granite/quick-pay`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
               amount: amount,
               description: description,
-              customer_email: email,
-              customer_name: name
+              customerEmail: email,
+              customerName: name,
+              customerPhone: phone,
+              sendSMS: false // We'll send SMS separately if needed
             })
           });
           clearTimeout(timeoutId);
-          result = await response.json();
+          const result = await response.json();
           console.log('[QuickPay] API response:', result);
 
-          if (response.ok && result.success && result.payment_link?.url) {
-            paymentUrl = result.payment_link.url;
+          if (response.ok && result.success && result.paymentLink?.url) {
+            paymentUrl = result.paymentLink.url;
+          } else {
+            throw new Error(result.error || 'Failed to create payment link');
           }
         } catch (apiErr) {
-          console.warn('[QuickPay] Primary API failed:', apiErr.message);
-        }
-
-        // If API failed, create a simple Stripe checkout URL (fallback)
-        if (!paymentUrl) {
-          // Use Stripe payment link with pre-filled amount
-          // This is the Surprise Granite Stripe account payment page
-          const stripePaymentPage = `https://buy.stripe.com/test_00g5kK6YE1Zd9l66oo?prefilled_email=${encodeURIComponent(email)}&client_reference_id=${encodeURIComponent(name)}`;
-          paymentUrl = stripePaymentPage;
-          console.log('[QuickPay] Using fallback Stripe link');
+          console.error('[QuickPay] API error:', apiErr.message);
+          throw new Error('Failed to create payment link. Please try again.');
         }
 
         // Store data for sharing
@@ -34260,12 +34255,12 @@
         }
 
         try {
-          // Send SMS via VoiceNow CRM Twilio integration
-          const response = await fetch(`${VOICENOW_API}/api/twilio/sms/send`, {
+          // Send SMS via VoiceNow CRM Surprise Granite endpoint
+          const response = await fetch(`${VOICENOW_API}/api/surprise-granite/send-sms`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: phone.length === 10 ? `+1${phone}` : `+${phone}`,
+              to: phone,
               message: smsText
             })
           });
