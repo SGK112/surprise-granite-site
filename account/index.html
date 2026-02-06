@@ -31473,37 +31473,36 @@
         showToast(`Invoice #${invoiceNumber} created! Sending email...`, 'success');
         loadInvoices();
 
-        // Step 3: Create Stripe invoice via VoiceNow CRM (non-blocking)
+        // Step 3: Create Stripe invoice via surprise-granite-email-api (has correct Stripe keys)
         (async () => {
           try {
-            console.log('[Invoices] Starting VoiceNow CRM invoice for:', customerEmail);
+            console.log('[Invoices] Starting Stripe invoice for:', customerEmail);
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-            const response = await fetch(`${VOICENOW_API}/api/surprise-granite/invoice`, {
+            const response = await apiCall('/api/invoices', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               signal: controller.signal,
               body: JSON.stringify({
-                customerEmail: customerEmail,
-                customerName: customerName,
-                customerPhone: customerPhone,
+                customer_email: customerEmail,
+                customer_name: customerName,
+                customer_phone: customerPhone,
                 items: items,
-                dueDays: dueDays,
+                due_days: dueDays,
                 notes: notes,
-                autoSend: true,
-                ccRecipients: ccRecipients
+                auto_send: true,
+                cc_recipients: ccRecipients
               })
             });
 
             clearTimeout(timeoutId);
-            console.log('[Invoices] VoiceNow API response status:', response.status);
+            console.log('[Invoices] API response status:', response.status);
 
             if (response.ok) {
               const result = await response.json();
-              console.log('[Invoices] VoiceNow response:', result);
+              console.log('[Invoices] Stripe response:', result);
 
-              if (result.success && result.invoice?.id) {
+              if (result.invoice?.id) {
                 await supabaseClient
                   .from('invoices')
                   .update({
@@ -31514,24 +31513,24 @@
                   })
                   .eq('id', invoice.id);
 
-                console.log('[Invoices] Stripe invoice created and linked:', result.invoice.id);
+                console.log('[Invoices] Stripe invoice created:', result.invoice.id);
                 showToast(`Invoice emailed to ${customerEmail}!`, 'success');
-                loadInvoices(); // Refresh to show updated status
+                loadInvoices();
               } else {
-                console.error('[Invoices] VoiceNow response error:', result);
-                showToast(result.error || 'Invoice saved but email may not have sent', 'warning');
+                console.error('[Invoices] Missing invoice ID:', result);
+                showToast('Invoice saved but email may not have sent', 'warning');
               }
             } else {
               const errorText = await response.text();
-              console.error('[Invoices] VoiceNow API error:', response.status, errorText);
+              console.error('[Invoices] API error:', response.status, errorText);
               showToast(`Email delivery failed (${response.status}). Invoice saved locally.`, 'error');
             }
-          } catch (stripeErr) {
-            if (stripeErr.name === 'AbortError') {
-              console.error('[Invoices] VoiceNow API timed out after 30s');
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              console.error('[Invoices] API timed out');
               showToast('Email service timed out. Invoice saved, please resend manually.', 'warning');
             } else {
-              console.error('[Invoices] VoiceNow error:', stripeErr);
+              console.error('[Invoices] Error:', err);
               showToast('Email failed: ' + stripeErr.message, 'error');
             }
           }
