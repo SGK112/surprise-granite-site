@@ -71,19 +71,13 @@
   ];
 
   // Default configuration
+  // ALL leads go ONLY to Supabase leads table (powers /account page leads tab)
   const DEFAULT_CONFIG = {
     theme: 'dark', // 'dark' or 'light'
     addressMode: 'none', // 'none', 'simple', 'billing-service'
     defaultState: 'AZ',
     showProjectFields: true,
     showImageUpload: false,
-    submitEndpoints: {
-      supabase: true,
-      renderApi: true
-    },
-    supabaseUrl: (window.SG_CONFIG || {}).SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
-    supabaseKey: (window.SG_CONFIG || {}).SUPABASE_ANON_KEY || '',
-    renderApiUrl: (window.SG_CONFIG || {}).API_URL ? (window.SG_CONFIG.API_URL + '/api/leads') : 'https://surprise-granite-email-api.onrender.com/api/leads',
     source: 'unified-lead-form',
     formName: 'unified',
     onSubmit: null,
@@ -409,41 +403,58 @@
     }
 
     /**
-     * Submit to configured endpoints
+     * Submit to Supabase ONLY via centralized lead service
+     * ALL leads go to /account page leads tab
      */
     async submitToEndpoints(data) {
       const results = [];
 
-      // Supabase
-      if (this.config.submitEndpoints.supabase) {
+      // Use centralized lead service if available
+      if (window.SG_LeadService) {
+        const result = await window.SG_LeadService.submitLead({
+          name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          projectType: data.project_type,
+          timeline: data.timeline,
+          budget: data.budget,
+          message: data.message,
+          address: data.billing_address?.street,
+          city: data.billing_address?.city,
+          state: data.billing_address?.state,
+          zip: data.billing_address?.zip || data.zip_code,
+          formName: this.config.formName,
+          source: this.config.source
+        });
+        results.push({ endpoint: 'supabase', success: result.success, data: result.data });
+      } else {
+        // Fallback: Direct Supabase submission
+        const sgConfig = window.SG_CONFIG || {};
+        const supabaseUrl = sgConfig.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+        const supabaseKey = sgConfig.SUPABASE_ANON_KEY || '';
+
         try {
-          const response = await fetch(`${this.config.supabaseUrl}/rest/v1/leads`, {
+          const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': this.config.supabaseKey,
-              'Authorization': `Bearer ${this.config.supabaseKey}`,
+              'apikey': supabaseKey,
               'Prefer': 'return=representation'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify({
+              full_name: data.full_name,
+              email: data.email,
+              phone: data.phone,
+              project_type: data.project_type,
+              message: data.message,
+              source: 'website',
+              form_name: this.config.formName,
+              page_url: window.location.href
+            })
           });
           results.push({ endpoint: 'supabase', success: response.ok, status: response.status });
         } catch (err) {
           results.push({ endpoint: 'supabase', success: false, error: err.message });
-        }
-      }
-
-      // Render API
-      if (this.config.submitEndpoints.renderApi) {
-        try {
-          const response = await fetch(this.config.renderApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          results.push({ endpoint: 'renderApi', success: response.ok, status: response.status });
-        } catch (err) {
-          results.push({ endpoint: 'renderApi', success: false, error: err.message });
         }
       }
 

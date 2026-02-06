@@ -744,8 +744,9 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
     </div>
 
     <script>
-        const WEBHOOK_URL = 'https://remodely.app.n8n.cloud/webhook/surprise-granite-promo';
-        const SPAM_CHECK_URL = 'https://remodely.app.n8n.cloud/webhook/spam-check';
+        // All leads go ONLY to Supabase (powers /account page leads tab)
+        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
         // Email validation
         function isValidEmail(email) {
@@ -834,25 +835,14 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
             }
         }
 
-        async function checkSpam(data) {
-            try {
-                const response = await fetch(SPAM_CHECK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    return !result.isSpam;
-                }
-                return true; // Allow submission if spam check fails
-            } catch (error) {
-                console.error('Spam check error:', error);
-                return true; // Allow submission if spam check fails
-            }
+        // Simple client-side spam check (no external webhook needed)
+        function checkSpam(data) {
+            // Basic honeypot and rate limiting
+            if (data.website) return false; // Honeypot field
+            const lastSubmit = localStorage.getItem('sg_last_submit');
+            if (lastSubmit && Date.now() - parseInt(lastSubmit) < 5000) return false; // 5 second cooldown
+            localStorage.setItem('sg_last_submit', Date.now().toString());
+            return true;
         }
 
         document.getElementById('offerForm').addEventListener('submit', async function(e) {
@@ -885,30 +875,21 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
             
             try {
                 // Check for spam
-                const isLegitimate = await checkSpam(data);
-                
+                const isLegitimate = checkSpam(data);
+
                 if (!isLegitimate) {
                     alert('We could not process your request. Please try again or call us at (602) 833-3189');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit Request';
                     return;
                 }
-                
-                // Submit to webhook
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
 
-                // Also submit to Supabase for admin panel
-                fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                // Submit to Supabase ONLY (powers /account page leads tab)
+                const response = await fetch(SUPABASE_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+                        'apikey': SUPABASE_KEY,
                         'Prefer': 'return=minimal'
                     },
                     body: JSON.stringify({
@@ -916,12 +897,12 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
                         email: data.email,
                         phone: data.phone,
                         message: '[Special Offer: ' + data.offer + ']',
-                        source: 'special_offers',
+                        source: 'website',
                         form_name: 'special-offers-folder-form',
                         page_url: window.location.href,
                         raw_data: data
                     })
-                }).catch(err => console.log('Supabase error:', err));
+                });
 
                 if (response.ok) {
                     // Show success message

@@ -1260,42 +1260,7 @@
         timestamp: new Date().toISOString()
       };
 
-      try {
-        await fetch('https://voiceflow-crm.onrender.com/api/webhooks/website-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-      } catch (error) {
-        console.log('CRM webhook error, but lead captured locally');
-      }
-
-      // Submit to vendor leads API with images
-      try {
-        await fetch('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            homeowner_name: formData.name,
-            homeowner_email: formData.email,
-            homeowner_phone: formData.phone,
-            project_type: formData.projectType,
-            project_budget: formData.budget,
-            project_timeline: formData.timeline,
-            project_zip: formData.zipCode,
-            project_details: formData.message,
-            image_urls: imageUrls,
-            contact_method: formData.contactMethod,
-            appointment_date: formData.appointment_date,
-            appointment_time: formData.appointment_time,
-            source: 'website-estimate-form'
-          })
-        });
-      } catch (error) {
-        console.log('Vendor leads API error:', error);
-      }
-
-      // Submit to Supabase for admin panel with images
+      // Submit to Supabase ONLY (powers /account page leads tab)
       try {
         await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
@@ -1319,7 +1284,7 @@
             images: imageUrls.map((url, i) => ({ url, order: i })),
             appointment_date: formData.appointment_date,
             appointment_time: formData.appointment_time,
-            source: formData.source,
+            source: 'website',
             form_name: 'estimate-form',
             page_url: window.location.href,
             raw_data: formData

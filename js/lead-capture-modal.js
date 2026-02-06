@@ -734,58 +734,49 @@
     return false;
   }
 
-  // Submit lead to APIs
+  // Submit lead to Supabase ONLY (powers /account page leads tab)
   async function submitLead() {
     const leadData = {
-      homeowner_name: `${state.formData.firstName} ${state.formData.lastName}`,
-      homeowner_email: state.formData.email,
-      homeowner_phone: state.formData.phone,
-      project_type: state.formData.category,
-      project_zip: state.formData.zip,
-      project_details: state.formData.message,
-      image_urls: state.formData.imageUrls,
-      source: 'lead-capture-modal-v2'
+      name: `${state.formData.firstName} ${state.formData.lastName}`,
+      email: state.formData.email,
+      phone: state.formData.phone,
+      projectType: state.formData.category,
+      zip: state.formData.zip,
+      message: state.formData.message,
+      formName: 'lead-capture-modal',
+      imageUrls: state.formData.imageUrls
     };
 
-    // Submit to API
-    await fetch(`${CONFIG.apiUrl}/api/leads/with-images`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(leadData)
-    });
-
-    // Submit to Supabase
-    if (window.supabase) {
+    // Use centralized lead service if available
+    if (window.SG_LeadService) {
+      await window.SG_LeadService.submitLead(leadData);
+    } else {
+      // Fallback: Direct Supabase submission
       try {
-        const { createClient } = window.supabase;
-        // Use global client if available
-        const supabaseClient = window._sgSupabaseClient || createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'implicit',
-            lock: false
-          }
+        await fetch(`${CONFIG.supabaseUrl}/rest/v1/leads`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': CONFIG.supabaseKey,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            full_name: leadData.name,
+            first_name: state.formData.firstName,
+            last_name: state.formData.lastName,
+            email: leadData.email,
+            phone: leadData.phone,
+            zip_code: leadData.zip,
+            project_type: leadData.projectType,
+            message: leadData.message,
+            image_urls: leadData.imageUrls,
+            source: 'website',
+            form_name: 'lead-capture-modal',
+            page_url: window.location.href
+          })
         });
-        if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;
-        await supabaseClient.from('leads').insert([{
-          full_name: leadData.homeowner_name,
-          first_name: state.formData.firstName,
-          last_name: state.formData.lastName,
-          email: leadData.homeowner_email,
-          phone: leadData.homeowner_phone,
-          zip_code: leadData.project_zip,
-          project_type: leadData.project_type,
-          message: leadData.project_details,
-          image_urls: leadData.image_urls,
-          source: 'lead-capture-modal',
-          form_name: 'lcm-popup',
-          page_url: window.location.href
-        }]);
       } catch (e) {
-        console.warn('Supabase save failed:', e);
+        console.warn('Lead submission failed:', e);
       }
     }
   }

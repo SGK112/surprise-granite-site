@@ -1176,15 +1176,8 @@
       };
 
       try {
-        // Send to n8n webhook
-        const response = await fetch('https://remodely.app.n8n.cloud/webhook/surprise-granite-hero-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadData)
-        });
-
-        // Also send to Supabase for admin panel
-        fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        // Submit to Supabase ONLY (powers /account page leads tab)
+        const response = await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1202,7 +1195,7 @@
             page_url: window.location.href,
             raw_data: leadData
           })
-        }).catch(err => console.log('Supabase backup error:', err));
+        });
 
         if (response.ok) {
           alert('Thank you! We\'ll contact you within 2 business hours to schedule your estimate.');

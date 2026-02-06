@@ -646,17 +646,8 @@
       };
 
       try {
-        // Try to send to CRM webhook
-        const response = await fetch('https://voiceflow-crm.onrender.com/api/webhooks/website-lead', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-
-        // Also submit to Supabase for admin panel
-        fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        // Submit to Supabase ONLY (powers /account page leads tab)
+        await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -676,9 +667,9 @@
             page_url: window.location.href,
             raw_data: formData
           })
-        }).catch(err => console.log('Supabase error:', err));
+        });
 
-        // Show success regardless (form data captured)
+        // Show success
         form.style.display = 'none';
         successMessage.classList.add('show');
 

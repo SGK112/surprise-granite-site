@@ -940,44 +940,52 @@
       image_urls: imageUrls
     };
 
-    // Submit to API
-    try {
-      await fetch(`${API_URL}/api/leads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadData)
-      });
-    } catch (error) {
-      console.log('API error:', error);
-    }
-
-    // Submit to Supabase
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          full_name: `${formData.firstName} ${formData.lastName}`,
+    // Submit to Supabase ONLY (powers /account page leads tab)
+    // Use centralized lead service if available
+    if (window.SG_LeadService) {
+      try {
+        await window.SG_LeadService.submitLead({
+          name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           phone: formData.phone,
-          zip_code: formData.zip,
-          project_type: formData.category,
-          project_details: detailsString,
-          image_urls: imageUrls,
-          message: formData.message,
-          source: formData.source,
-          form_name: 'swipe-form',
-          page_url: window.location.href
-        })
-      });
-    } catch (error) {
-      console.log('Supabase error:', error);
+          projectType: formData.category,
+          message: `${detailsString}\n\n${formData.message}`.trim(),
+          zip: formData.zip,
+          formName: 'swipe-form',
+          imageUrls: imageUrls
+        });
+      } catch (error) {
+        console.log('Lead service error:', error);
+      }
+    } else {
+      // Fallback: Direct Supabase submission
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            phone: formData.phone,
+            zip_code: formData.zip,
+            project_type: formData.category,
+            project_details: detailsString,
+            image_urls: imageUrls,
+            message: formData.message,
+            source: 'website',
+            form_name: 'swipe-form',
+            page_url: window.location.href
+          })
+        });
+      } catch (error) {
+        console.log('Supabase error:', error);
+      }
     }
 
     // Show success
