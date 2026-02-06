@@ -1157,13 +1157,67 @@
     });
 
     // Form submission handling
-    document.getElementById('repair-form').addEventListener('submit', function(e) {
+    document.getElementById('repair-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      // In production, this would submit to your backend
-      // For now, redirect to the main estimate page with prefilled data
+
       const formData = new FormData(this);
-      const params = new URLSearchParams(formData).toString();
-      window.location.href = '/get-a-free-estimate/?' + params;
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      const leadData = {
+        name: formData.get('name'),
+        email: formData.get('email') || '',
+        phone: formData.get('phone'),
+        service_type: formData.get('service_type'),
+        message: formData.get('message') || '',
+        source: 'countertop-repair-page',
+        projectType: 'Countertop Repair - ' + formData.get('service_type')
+      };
+
+      try {
+        // Send to n8n webhook
+        const response = await fetch('https://remodely.app.n8n.cloud/webhook/surprise-granite-hero-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        });
+
+        // Also send to Supabase for admin panel
+        fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            full_name: leadData.name,
+            email: leadData.email,
+            phone: leadData.phone,
+            project_type: leadData.projectType,
+            message: leadData.message,
+            source: 'website',
+            form_name: 'countertop-repair-form',
+            page_url: window.location.href,
+            raw_data: leadData
+          })
+        }).catch(err => console.log('Supabase backup error:', err));
+
+        if (response.ok) {
+          alert('Thank you! We\'ll contact you within 2 business hours to schedule your estimate.');
+          this.reset();
+          window.location.href = '/contact-thank-you';
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong. Please call us directly at (602) 833-3189');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Get Free Estimate';
+      }
     });
   </script>
 </body>

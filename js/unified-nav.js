@@ -41,11 +41,31 @@
     }
   }
 
+  // Load analytics (GA4)
+  function loadAnalytics() {
+    if (!window._sgAnalyticsInitialized && !document.querySelector('script[src*="analytics.js"]')) {
+      // Load config first if not present
+      if (!window.SG_CONFIG && !document.querySelector('script[src*="config.js"]')) {
+        const configScript = document.createElement('script');
+        configScript.src = '/js/config.js';
+        document.head.appendChild(configScript);
+      }
+      // Load analytics
+      const analyticsScript = document.createElement('script');
+      analyticsScript.src = '/js/analytics.js?v=20260206';
+      analyticsScript.async = true;
+      document.head.appendChild(analyticsScript);
+    }
+  }
+
   // Load auth dependencies immediately
   loadAuthDependencies();
 
   // Load site search
   loadSiteSearch();
+
+  // Load analytics
+  loadAnalytics();
 
   // Configuration
   const CONFIG = {
