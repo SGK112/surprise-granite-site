@@ -28590,11 +28590,16 @@
             .order('created_at', { ascending: false });
 
           if (!invoices || invoices.length === 0) {
-            container.innerHTML = `<div class="empty-state"><p>No invoices for this customer yet.</p></div>`;
+            container.innerHTML = `
+              <div class="empty-state">
+                <p>No invoices for this customer yet.</p>
+                <button class="btn-modern primary" onclick="createInvoiceForCustomer()" style="margin-top: 12px;">Create Invoice</button>
+              </div>
+            `;
           } else {
             container.innerHTML = `
               <table>
-                <thead><tr><th>Invoice #</th><th>Status</th><th>Amount</th><th>Due Date</th></tr></thead>
+                <thead><tr><th>Invoice #</th><th>Status</th><th>Amount</th><th>Due Date</th><th>Actions</th></tr></thead>
                 <tbody>
                   ${invoices.map(inv => `
                     <tr>
@@ -28602,6 +28607,10 @@
                       <td><span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : 'lost'}">${inv.status}</span></td>
                       <td style="color: var(--gold-primary); font-weight: 600;">$${(inv.amount_due || 0).toFixed(2)}</td>
                       <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-'}</td>
+                      <td>
+                        ${inv.stripe_hosted_url ? `<a href="${inv.stripe_hosted_url}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px;">Pay</a>` : ''}
+                        ${inv.stripe_pdf_url ? `<a href="${inv.stripe_pdf_url}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;">PDF</a>` : ''}
+                      </td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -28953,11 +28962,7 @@
       showPage('jobs');
 
       setTimeout(() => {
-        if (typeof openCreateJobModal === 'function') {
-          openCreateJobModal(selectedCustomer);
-        } else {
-          showToast('Navigate to Jobs page to create a job', 'info');
-        }
+        openNewJobModal(selectedCustomer);
       }, 100);
     }
 
@@ -38395,11 +38400,28 @@
       `;
     }
 
-    function openNewJobModal() {
+    function openNewJobModal(customer = null) {
       document.getElementById('new-job-modal').classList.add('active');
       document.getElementById('new-job-form').reset();
       document.getElementById('new-customer-fields').style.display = 'none';
-      loadCustomersForSelect();
+      loadCustomersForSelect().then(() => {
+        // Pre-select customer if provided
+        if (customer) {
+          const select = document.getElementById('job-customer-select');
+          if (select && customer.id) {
+            select.value = customer.id;
+            // Also pre-fill address fields from customer
+            const addressField = document.getElementById('job-address');
+            const cityField = document.getElementById('job-city');
+            const stateField = document.getElementById('job-state');
+            const zipField = document.getElementById('job-zip');
+            if (addressField && customer.address) addressField.value = customer.address;
+            if (cityField && customer.city) cityField.value = customer.city;
+            if (stateField && customer.state) stateField.value = customer.state;
+            if (zipField && customer.zip) zipField.value = customer.zip;
+          }
+        }
+      });
     }
 
     function closeNewJobModal() {
@@ -46462,7 +46484,26 @@
 
     // Backward compatibility alias
     async function createEstimateForCustomer(customerId) {
-      return startEstimateFromCustomer(customerId);
+      // Use selectedCustomer if no ID provided
+      const id = customerId || selectedCustomer?.id;
+      if (!id) {
+        showToast('No customer selected', 'warning');
+        return;
+      }
+      return startEstimateFromCustomer(id);
+    }
+
+    // Create invoice for selected customer
+    function createInvoiceForCustomer() {
+      if (!selectedCustomer) {
+        showToast('No customer selected', 'warning');
+        return;
+      }
+      closeCustomerModal();
+      showPage('invoices');
+      setTimeout(() => {
+        openInvoiceModal(selectedCustomer);
+      }, 100);
     }
 
     async function loadCustomersModal() {
