@@ -128,6 +128,8 @@
       items: [
         { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
         { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
+        { label: 'Countertop Installation', href: '/services/countertop-installation/' },
+        { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' },
         { label: 'Project Gallery', href: '/company/project-gallery' },
         { label: 'Contact Us', href: '/contact-us' }
@@ -169,7 +171,8 @@
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
       { name: 'Bathroom Remodeling', desc: 'Modern upgrades', href: '/services/home/bathroom-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
-      { name: 'Countertop Install', desc: 'Professional installation', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
+      { name: 'Countertop Install', desc: 'Professional installation', href: '/services/countertop-installation/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
+      { name: 'Repair & Sink Replacement', desc: 'Polish, repair, restore', href: '/services/countertop-polish-repair/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c6dd1826b3168b6915efc_countertop-polish-and-repair-service_thumb.avif' },
       { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ],
     marketplace: [
