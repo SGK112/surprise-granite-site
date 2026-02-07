@@ -18343,6 +18343,16 @@
           Messages
           <span class="tab-badge muted" id="tab-badge-messages">0</span>
         </button>
+        <button class="profile-tab" data-tab="estimates" onclick="switchProfileTab('estimates')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          Estimates
+          <span class="tab-badge" id="tab-badge-estimates" style="background: var(--gold-primary); color: #1a1a2e;">0</span>
+        </button>
+        <button class="profile-tab" data-tab="invoices" onclick="switchProfileTab('invoices')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Invoices
+          <span class="tab-badge" id="tab-badge-invoices" style="background: #10b981; color: white;">0</span>
+        </button>
         <button class="profile-tab" data-tab="activity" onclick="switchProfileTab('activity')">
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Activity
@@ -18597,6 +18607,52 @@
               </div>
               <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Messages Yet</div>
               <div style="font-size: 13px;">Send an email to start the conversation</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estimates Tab -->
+        <div id="profile-tab-estimates" class="profile-tab-content" style="display: none;">
+          <div class="profile-section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              Estimates
+            </div>
+            <button class="btn-modern primary" style="font-size: 12px; padding: 6px 12px;" onclick="createEstimateFromProfile()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Estimate
+            </button>
+          </div>
+          <div id="profile-estimates-list">
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(249,203,0,0.1), rgba(249,203,0,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Estimates Yet</div>
+              <div style="font-size: 13px;">Create an estimate to send a quote to this lead</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoices Tab -->
+        <div id="profile-tab-invoices" class="profile-tab-content" style="display: none;">
+          <div class="profile-section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              Invoices
+            </div>
+            <button class="btn-modern primary" style="font-size: 12px; padding: 6px 12px;" onclick="createInvoiceFromProfile()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Invoice
+            </button>
+          </div>
+          <div id="profile-invoices-list">
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Invoices Yet</div>
+              <div style="font-size: 13px;">Create an invoice after converting an estimate</div>
             </div>
           </div>
         </div>
@@ -41999,12 +42055,16 @@
       loadProfileNotes(data.id);
       loadProfileActivity(data.id);
       loadProfileMessages(data.id);
+      loadProfileEstimateCounts(data);
+      loadProfileInvoiceCounts(data);
 
       // Reset tab badges (will be updated by load functions)
       document.getElementById('tab-badge-appointments').textContent = '0';
       document.getElementById('tab-badge-notes').textContent = '0';
       document.getElementById('tab-badge-files').textContent = '0';
       document.getElementById('tab-badge-messages').textContent = '0';
+      document.getElementById('tab-badge-estimates').textContent = '0';
+      document.getElementById('tab-badge-invoices').textContent = '0';
       document.getElementById('profile-stat-appointments').textContent = '0';
       document.getElementById('profile-stat-messages').textContent = '0';
 
@@ -42141,6 +42201,222 @@
       });
       const targetContent = document.getElementById(`profile-tab-${tabName}`);
       if (targetContent) targetContent.style.display = 'block';
+
+      // Load data for specific tabs
+      if (currentProfileData) {
+        if (tabName === 'estimates') {
+          loadProfileEstimates(currentProfileData);
+        } else if (tabName === 'invoices') {
+          loadProfileInvoices(currentProfileData);
+        }
+      }
+    }
+
+    // Load estimates for profile panel
+    async function loadProfileEstimates(lead) {
+      const container = document.getElementById('profile-estimates-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
+
+      try {
+        const email = lead.email || lead.homeowner_email || '';
+        const leadId = lead.id;
+
+        // Query by lead_id or customer_email
+        let query = supabaseClient.from('estimates').select('*');
+        if (leadId) {
+          query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
+        } else if (email) {
+          query = query.ilike('customer_email', email);
+        }
+
+        const { data: estimates, error } = await query.order('created_at', { ascending: false });
+
+        // Update badge
+        const count = estimates?.length || 0;
+        const badge = document.getElementById('tab-badge-estimates');
+        if (badge) badge.textContent = count;
+
+        if (error || !estimates || estimates.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(249,203,0,0.1), rgba(249,203,0,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Estimates Yet</div>
+              <div style="font-size: 13px;">Create an estimate to send a quote</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = estimates.map(est => `
+          <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">${est.estimate_number || 'Draft'}</div>
+                <div style="font-size: 13px; color: var(--text-muted);">${est.project_name || 'Untitled Project'}</div>
+              </div>
+              <span class="status-badge status-${est.status}" style="font-size: 11px;">${est.status || 'draft'}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${(est.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+              <div style="display: flex; gap: 8px;">
+                ${est.status !== 'converted' ? `<button onclick="convertToInvoice('${est.id}')" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">Convert to Invoice</button>` : ''}
+                <button onclick="viewEstimate && viewEstimate('${est.id}')" class="btn-modern primary" style="font-size: 11px; padding: 6px 10px;">View</button>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">${new Date(est.created_at).toLocaleDateString()}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load profile estimates error:', err);
+        container.innerHTML = `<div style="color: var(--error); padding: 20px; text-align: center;">Error loading estimates</div>`;
+      }
+    }
+
+    // Load invoices for profile panel
+    async function loadProfileInvoices(lead) {
+      const container = document.getElementById('profile-invoices-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
+
+      try {
+        const email = lead.email || lead.homeowner_email || '';
+        const leadId = lead.id;
+
+        // Query by lead_id or customer_email
+        let query = supabaseClient.from('invoices').select('*');
+        if (leadId) {
+          query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
+        } else if (email) {
+          query = query.ilike('customer_email', email);
+        }
+
+        const { data: invoices, error } = await query.order('created_at', { ascending: false });
+
+        // Update badge
+        const count = invoices?.length || 0;
+        const badge = document.getElementById('tab-badge-invoices');
+        if (badge) badge.textContent = count;
+
+        if (error || !invoices || invoices.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Invoices Yet</div>
+              <div style="font-size: 13px;">Create an invoice or convert an estimate</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = invoices.map(inv => {
+          const statusColors = { paid: '#10b981', unpaid: '#f59e0b', overdue: '#ef4444', draft: '#6b7280' };
+          const statusColor = statusColors[inv.status] || '#6b7280';
+          return `
+            <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div>
+                  <div style="font-weight: 600; color: var(--text-primary);">${inv.invoice_number || 'Draft'}</div>
+                  <div style="font-size: 13px; color: var(--text-muted);">${inv.project_name || 'Invoice'}</div>
+                </div>
+                <span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">${inv.status || 'draft'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${(inv.amount_due || inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                  ${inv.due_date ? `<div style="font-size: 12px; color: var(--text-muted);">Due: ${new Date(inv.due_date).toLocaleDateString()}</div>` : ''}
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  ${inv.stripe_hosted_url ? `<a href="${inv.stripe_hosted_url}" target="_blank" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">Pay</a>` : ''}
+                  ${inv.stripe_pdf_url ? `<a href="${inv.stripe_pdf_url}" target="_blank" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">PDF</a>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Load profile invoices error:', err);
+        container.innerHTML = `<div style="color: var(--error); padding: 20px; text-align: center;">Error loading invoices</div>`;
+      }
+    }
+
+    // Create estimate from profile panel
+    function createEstimateFromProfile() {
+      if (!currentProfileData) return;
+      closeProfilePanel();
+      if (currentProfileType === 'lead') {
+        startEstimateFromLead(currentProfileData.id);
+      } else {
+        startEstimateFromCustomer(currentProfileData.id);
+      }
+    }
+
+    // Create invoice from profile panel
+    function createInvoiceFromProfile() {
+      if (!currentProfileData) return;
+      closeProfilePanel();
+      showPage('invoices');
+      setTimeout(() => {
+        openInvoiceModal({
+          email: currentProfileData.email || currentProfileData.homeowner_email,
+          name: currentProfileData.full_name || currentProfileData.name,
+          phone: currentProfileData.phone || currentProfileData.homeowner_phone
+        });
+      }, 100);
+    }
+
+    // Load estimate counts for badge
+    async function loadProfileEstimateCounts(lead) {
+      try {
+        const email = lead.email || lead.homeowner_email || '';
+        const leadId = lead.id;
+
+        let query = supabaseClient.from('estimates').select('id', { count: 'exact', head: true });
+        if (leadId) {
+          query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
+        } else if (email) {
+          query = query.ilike('customer_email', email);
+        }
+
+        const { count } = await query;
+        const badge = document.getElementById('tab-badge-estimates');
+        if (badge) {
+          badge.textContent = count || 0;
+          badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+      } catch (err) {
+        console.error('Load estimate counts error:', err);
+      }
+    }
+
+    // Load invoice counts for badge
+    async function loadProfileInvoiceCounts(lead) {
+      try {
+        const email = lead.email || lead.homeowner_email || '';
+        const leadId = lead.id;
+
+        let query = supabaseClient.from('invoices').select('id', { count: 'exact', head: true });
+        if (leadId) {
+          query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
+        } else if (email) {
+          query = query.ilike('customer_email', email);
+        }
+
+        const { count } = await query;
+        const badge = document.getElementById('tab-badge-invoices');
+        if (badge) {
+          badge.textContent = count || 0;
+          badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+      } catch (err) {
+        console.error('Load invoice counts error:', err);
+      }
     }
 
     async function loadProfileAppointments(entityId) {
