@@ -19424,7 +19424,7 @@
         </div>
 
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="quick-share-link" readonly style="flex: 1; background: var(--bg-tertiary); font-size: 13px; padding: 10px 12px;" placeholder="Click Generate to create invite link...">
+          <input type="text" id="quick-share-link" readonly style="flex: 1; background: var(--bg-tertiary); color: var(--text-primary); font-size: 13px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px;" placeholder="Click Generate to create invite link...">
           <button type="button" class="btn-modern primary" id="copy-link-btn" onclick="generateAndCopyShareLink()" style="white-space: nowrap;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
             Generate Link
@@ -45358,7 +45358,9 @@
           await navigator.clipboard.writeText(linkInput.value);
           copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Copied!';
           showToast('Link copied to clipboard!', 'success');
-          setTimeout(() => { copyBtn.innerHTML = originalBtnHtml; }, 2000);
+          setTimeout(() => {
+            copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> Copy Link';
+          }, 2000);
           return;
         } catch (err) {
           showToast('Failed to copy', 'error');
@@ -45413,7 +45415,10 @@
         await navigator.clipboard.writeText(inviteLink);
         copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Copied!';
         showToast('Link generated and copied!', 'success');
-        setTimeout(() => { copyBtn.innerHTML = originalBtnHtml; }, 2000);
+        // Change to "Copy Link" after showing "Copied!"
+        setTimeout(() => {
+          copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> Copy Link';
+        }, 2000);
 
       } catch (err) {
         console.error('Quick share error:', err);
