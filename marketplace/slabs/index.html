@@ -1479,6 +1479,7 @@
         <option value="quartz">Quartz</option>
         <option value="marble">Marble</option>
         <option value="quartzite">Quartzite</option>
+        <option value="dekton">Dekton</option>
         <option value="porcelain">Porcelain</option>
         <option value="soapstone">Soapstone</option>
       </select>
@@ -2061,6 +2062,42 @@
         created_at: new Date().toISOString(),
         originCountry: 'USA',
         originFlag: '🇺🇸'
+      },
+      {
+        id: 'sample-13',
+        product_name: 'Super White Quartzite',
+        brand: 'Arizona Tile',
+        material_type: 'quartzite',
+        color_family: 'White',
+        price_per_sqft: 125,
+        length_inches: 126,
+        width_inches: 72,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg'],
+        distributor: { company_name: 'Arizona Tile' },
+        slug: 'super-white-quartzite-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'Brazil',
+        originFlag: '🇧🇷'
+      },
+      {
+        id: 'sample-14',
+        product_name: 'Taj Mahal Quartzite',
+        brand: 'MSI Surfaces',
+        material_type: 'quartzite',
+        color_family: 'Beige',
+        price_per_sqft: 115,
+        length_inches: 126,
+        width_inches: 72,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg'],
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'taj-mahal-quartzite-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'Brazil',
+        originFlag: '🇧🇷'
       }
     ];
 
@@ -2423,8 +2460,8 @@
           slab.color_family?.toLowerCase().includes(search) ||
           slab.description?.toLowerCase().includes(search);
 
-        const matchesMaterial = !material || slab.material_type === material;
-        const matchesColor = !color || slab.color_family === color;
+        const matchesMaterial = !material || slab.material_type?.toLowerCase() === material.toLowerCase();
+        const matchesColor = !color || slab.color_family?.toLowerCase() === color.toLowerCase();
         const matchesBrand = !brand || slab.brand?.toLowerCase().includes(brand.toLowerCase());
 
         return matchesSearch && matchesMaterial && matchesColor && matchesBrand;
