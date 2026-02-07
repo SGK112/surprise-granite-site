@@ -1938,4 +1938,19 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
+<!-- Fix broken images -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const placeholder = 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg';
+  document.querySelectorAll('img').forEach(function(img) {
+    img.onerror = function() {
+      this.onerror = null;
+      this.src = placeholder;
+    };
+    if (img.complete && img.naturalHeight === 0 && img.src && !img.src.includes('data:')) {
+      img.src = placeholder;
+    }
+  });
+});
+</script>
 </body></html>
