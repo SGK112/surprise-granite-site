@@ -19413,19 +19413,26 @@
 
       <!-- Quick Share Link Section -->
       <div class="modal-body" style="border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-        <div style="text-align: center; margin-bottom: 12px;">
-          <span style="font-size: 13px; color: var(--text-muted);">Share your invite link</span>
+        <div style="text-align: center; margin-bottom: 16px;">
+          <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Share your invite link or QR code</span>
         </div>
+
+        <!-- QR Code Display -->
+        <div id="invite-qr-container" style="text-align: center; margin-bottom: 16px; display: none;">
+          <div id="invite-qr-code" style="display: inline-block; padding: 12px; background: white; border-radius: 8px;"></div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Scan to join your contractor network</div>
+        </div>
+
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="quick-share-link" readonly style="flex: 1; background: var(--bg-tertiary); font-size: 13px; padding: 10px 12px;" placeholder="Click to generate link...">
+          <input type="text" id="quick-share-link" readonly style="flex: 1; background: var(--bg-tertiary); font-size: 13px; padding: 10px 12px;" placeholder="Click Generate to create invite link...">
           <button type="button" class="btn-modern primary" id="copy-link-btn" onclick="generateAndCopyShareLink()" style="white-space: nowrap;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-            Copy Link
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            Generate Link
           </button>
         </div>
       </div>
 
-      <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 12px;">or send via email</div>
+      <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 12px;">or send a direct email invite</div>
 
       <form id="invite-contractor-form" onsubmit="sendContractorInvitation(event)">
         <div class="modal-body" style="padding-top: 0;">
@@ -41596,7 +41603,7 @@
       }
 
       container.innerHTML = allContractors.map(c => {
-        const name = c.name || c.company_name || c.email || 'Unknown';
+        const name = c.name || c.company || c.email || 'Unknown';
         const specialty = c.specialty || 'Contractor';
         const email = c.email || '';
         const phone = c.phone || '';
@@ -43281,7 +43288,7 @@
       const listContainer = document.getElementById('contractor-picker-list');
       if (allContractors && allContractors.length > 0) {
         listContainer.innerHTML = allContractors.map(c => {
-          const name = c.name || c.company_name || c.email || 'Unknown';
+          const name = c.name || c.company || c.email || 'Unknown';
           const specialty = c.specialty ? c.specialty.replace('_', ' ') : '';
           const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
           const isAssigned = schedulerContractors.some(sc => sc.id === c.id);
@@ -43353,7 +43360,7 @@
       }
 
       container.innerHTML = schedulerContractors.map(c => {
-        const name = c.name || c.company_name || 'Contractor';
+        const name = c.name || c.company || 'Contractor';
         const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
         const specialty = c.specialty ? c.specialty.replace('_', ' ') : '';
         return `
@@ -43454,10 +43461,11 @@
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) return;
 
-        // Load from contractors table
+        // Load from general_collaborators table
         const { data: contractors, error } = await supabaseClient
-          .from('contractors')
-          .select('id, name, company_name, email, phone, specialty, status')
+          .from('general_collaborators')
+          .select('id, name, company, email, phone, role, status')
+          .eq('invited_by', user.id)
           .order('name');
 
         if (error) {
@@ -43474,7 +43482,7 @@
               name: u.full_name || u.email,
               email: u.email,
               phone: u.phone,
-              specialty: u.account_type
+              role: u.account_type
             }));
           }
         } else {
@@ -43495,7 +43503,7 @@
       // Add contractors from allContractors
       if (allContractors && allContractors.length > 0) {
         allContractors.forEach(c => {
-          const name = c.name || c.company_name || c.email || 'Unknown';
+          const name = c.name || c.company || c.email || 'Unknown';
           const specialty = c.specialty ? ` (${c.specialty})` : '';
           select.innerHTML += `<option value="${c.id}" data-email="${c.email || ''}" data-phone="${c.phone || ''}" data-name="${escapeHtml(name)}">${escapeHtml(name)}${specialty}</option>`;
         });
@@ -44491,7 +44499,7 @@
         return;
       }
       const roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
-      const role = roleMap[contractor.type] || 'contractor';
+      const role = roleMap[contractor.role] || contractor.role || 'contractor';
       openInviteToProjectModal(null, contractor.email || '', role);
     }
 
@@ -44505,7 +44513,7 @@
       }
       const contractor = allCollaborators.find(function(c) { return c.id === contractorId; });
       const email = contractor ? contractor.email : '';
-      let role = (jc && jc.role) || (contractor && contractor.type) || 'contractor';
+      let role = (jc && jc.role) || (contractor && contractor.role) || 'contractor';
       const roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
       role = roleMap[role] || 'contractor';
       openInviteToProjectModal(currentJobId, email, role);
@@ -44638,8 +44646,8 @@
           collaborators = typeof allCollaborators !== 'undefined' ? allCollaborators : [];
         }
         collaborators.forEach(function(c) {
-          const name = c.name || c.company_name || c.email || 'Unknown';
-          const cType = (c.type || c.contractor_type || '').toLowerCase();
+          const name = c.name || c.company || c.email || 'Unknown';
+          const cType = (c.role || '').toLowerCase();
           if (cType === 'fabricator' || cType === 'stone_fabricator') {
             const opt = document.createElement('option');
             opt.value = c.id;
@@ -45212,10 +45220,10 @@
                     <span style="font-weight: 600; font-size: 15px;">${c.name}</span>
                     ${isClaimed ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--gold-primary)" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>' : ''}
                   </div>
-                  <div style="font-size: 12px; color: var(--text-muted);">${c.company_name || ''}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.company || ''}</div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                  <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px; padding: 4px 10px;">${c.type || 'other'}</span>
+                  <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px; padding: 4px 10px;">${c.role || 'contractor'}</span>
                   <div style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 10px; background: ${trust.bg};">
                     <span style="font-size: 11px; font-weight: 700; color: ${trust.color};">${c.trust_score || 0}</span>
                     <span style="font-size: 9px; color: ${trust.color};">${trust.label}</span>
@@ -45289,7 +45297,7 @@
       // If they have email, offer to send or invite as collaborator
       if (contractor.email) {
         const action = prompt(
-          `Portal link copied for ${contractor.company_name || contractor.name}!\n\nAdditional actions:\n1. Send email invite (type "email")\n2. Invite as project collaborator (type "collab")\n3. Done (press Enter)`,
+          `Portal link copied for ${contractor.company || contractor.name}!\n\nAdditional actions:\n1. Send email invite (type "email")\n2. Invite as project collaborator (type "collab")\n3. Done (press Enter)`,
           ''
         );
         if (action === 'email') {
@@ -45319,6 +45327,13 @@
     function openInviteCollaboratorModal() {
       document.getElementById('invite-collaborator-modal').classList.add('active');
       document.getElementById('invite-contractor-form').reset();
+      // Reset quick share state
+      const linkInput = document.getElementById('quick-share-link');
+      if (linkInput) linkInput.value = '';
+      const qrContainer = document.getElementById('invite-qr-container');
+      if (qrContainer) qrContainer.style.display = 'none';
+      const copyBtn = document.getElementById('copy-link-btn');
+      if (copyBtn) copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> Generate Link';
     }
 
     function closeInviteCollaboratorModal() {
@@ -45326,8 +45341,10 @@
       // Reset the quick share link
       const linkInput = document.getElementById('quick-share-link');
       if (linkInput) linkInput.value = '';
+      const qrContainer = document.getElementById('invite-qr-container');
+      if (qrContainer) qrContainer.style.display = 'none';
       const copyBtn = document.getElementById('copy-link-btn');
-      if (copyBtn) copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> Copy Link';
+      if (copyBtn) copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> Generate Link';
     }
 
     async function generateAndCopyShareLink() {
@@ -45349,22 +45366,51 @@
         }
       }
 
-      // Generate a new link
+      // Generate a new link client-side
       copyBtn.disabled = true;
       copyBtn.innerHTML = '<span>Generating...</span>';
 
       try {
-        const response = await apiCall('/api/collaboration/quick-share', { method: 'POST' });
-        const data = await response.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in first');
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to generate link');
+        // Generate a unique invite token
+        const token = btoa(user.id + '-' + Date.now() + '-' + Math.random().toString(36).substring(2, 10))
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .substring(0, 32);
+
+        // Create a pending collaborator invite placeholder
+        const { data: invite, error } = await supabaseClient
+          .from('general_collaborators')
+          .insert([{
+            invited_by: user.id,
+            email: `pending-${token}@invite.local`,
+            name: 'Pending Invite',
+            role: 'contractor',
+            status: 'pending',
+            token_hash: token,
+            token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Generate the invite link
+        const inviteLink = `${window.location.origin}/contractor-portal/?invite=${token}`;
+        linkInput.value = inviteLink;
+
+        // Generate and display QR code
+        const qrContainer = document.getElementById('invite-qr-container');
+        const qrCode = document.getElementById('invite-qr-code');
+        if (qrContainer && qrCode) {
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}`;
+          qrCode.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 150px; height: 150px;">`;
+          qrContainer.style.display = 'block';
         }
 
-        linkInput.value = data.link;
-
         // Copy to clipboard
-        await navigator.clipboard.writeText(data.link);
+        await navigator.clipboard.writeText(inviteLink);
         copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Copied!';
         showToast('Link generated and copied!', 'success');
         setTimeout(() => { copyBtn.innerHTML = originalBtnHtml; }, 2000);
@@ -45440,16 +45486,20 @@
         if (!user) throw new Error('Please log in');
 
         const contractorData = {
-          user_id: user.id,
+          invited_by: user.id,
           name: document.getElementById('contractor-name').value.trim(),
-          type: document.getElementById('contractor-type').value,
-          email: document.getElementById('contractor-email').value.trim() || null,
+          email: document.getElementById('contractor-email').value.trim(),
+          role: document.getElementById('contractor-type').value || 'contractor',
           phone: document.getElementById('contractor-phone').value.trim() || null,
-          company_name: document.getElementById('contractor-company').value.trim() || null,
-          hourly_rate: parseFloat(document.getElementById('contractor-rate').value) || null,
-          license_number: document.getElementById('contractor-license').value.trim() || null,
-          notes: document.getElementById('contractor-notes').value.trim() || null
+          company: document.getElementById('contractor-company').value.trim() || null,
+          notes: document.getElementById('contractor-notes').value.trim() || null,
+          status: 'accepted'
         };
+
+        // Validate required fields
+        if (!contractorData.name || !contractorData.email) {
+          throw new Error('Name and email are required');
+        }
 
         const { error } = await supabaseClient.from('general_collaborators').insert([contractorData]);
         if (error) throw error;
@@ -45533,8 +45583,8 @@
         if (collaborators && collaborators.length > 0) {
           select.innerHTML += '<option disabled>──────────────</option>';
           (collaborators || []).forEach(c => {
-            const displayName = c.company_name ? `${c.name} - ${c.company_name}` : c.name;
-            select.innerHTML += `<option value="${c.id}">${displayName} (${c.type})</option>`;
+            const displayName = c.company ? `${c.name} - ${c.company}` : c.name;
+            select.innerHTML += `<option value="${c.id}">${displayName} (${c.role || 'contractor'})</option>`;
           });
         }
       } catch (err) {
@@ -45558,14 +45608,18 @@
           const newName = document.getElementById('inline-contractor-name').value.trim();
           if (!newName) throw new Error('Please enter contractor name');
 
-          const role = document.getElementById('assign-contractor-role').value;
+          const role = document.getElementById('assign-contractor-role').value || 'contractor';
+          const email = document.getElementById('inline-contractor-email').value.trim();
+          if (!email) throw new Error('Email is required for new contractors');
+
           const contractorData = {
-            user_id: user.id,
+            invited_by: user.id,
             name: newName,
-            type: role, // Use the selected role as the contractor type
-            company_name: document.getElementById('inline-contractor-company').value.trim() || null,
-            email: document.getElementById('inline-contractor-email').value.trim() || null,
-            phone: document.getElementById('inline-contractor-phone').value.trim() || null
+            email: email,
+            role: role,
+            company: document.getElementById('inline-contractor-company').value.trim() || null,
+            phone: document.getElementById('inline-contractor-phone').value.trim() || null,
+            status: 'accepted'
           };
 
           const { data: newContractor, error: createError } = await supabaseClient
@@ -46911,10 +46965,10 @@
 
       // Populate profile
       document.getElementById('contractor-profile-name').textContent = contractor.name || 'Unknown';
-      document.getElementById('contractor-profile-company').textContent = contractor.company_name || '';
+      document.getElementById('contractor-profile-company').textContent = contractor.company || '';
       document.getElementById('contractor-profile-email').textContent = contractor.email || '-';
       document.getElementById('contractor-profile-phone').textContent = contractor.phone || '-';
-      document.getElementById('contractor-profile-type').textContent = (contractor.type || '-').replace('_', ' ');
+      document.getElementById('contractor-profile-type').textContent = (contractor.role || '-').replace('_', ' ');
       document.getElementById('contractor-profile-license').textContent = contractor.license_number || '-';
 
       // Trust score
@@ -47058,7 +47112,7 @@
       const checklistItems = [
         { key: 'email', label: 'Email Address', subtitle: 'Contact information', points: 5, completed: !!contractor.email },
         { key: 'phone', label: 'Phone Number', subtitle: 'Contact information', points: 5, completed: !!contractor.phone },
-        { key: 'company_name', label: 'Business Name', subtitle: 'Company details', points: 5, completed: !!contractor.company_name },
+        { key: 'company', label: 'Business Name', subtitle: 'Company details', points: 5, completed: !!contractor.company },
         { key: 'license', label: 'License Number', subtitle: 'Trade license', points: 10, completed: !!contractor.license_number },
         { key: 'claimed', label: 'Profile Claimed', subtitle: 'Account linked', points: 10, completed: !!contractor.claimed_by },
         { key: 'insurance', label: 'Insurance Certificate', subtitle: 'General liability', points: 25, completed: false }, // Check docs
