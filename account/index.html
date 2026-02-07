@@ -46204,12 +46204,21 @@
           continue;
         }
 
-        // Check for City, State ZIP pattern
-        const cityStateZipMatch = line.match(/^([A-Za-z\s]+),?\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)?$/i);
-        if (cityStateZipMatch) {
-          result.city = cityStateZipMatch[1].trim();
-          result.state = cityStateZipMatch[2].toUpperCase();
-          if (cityStateZipMatch[3]) result.zip = cityStateZipMatch[3];
+        // Check for City, State ZIP pattern (require comma OR zip code to avoid false positives)
+        // Pattern 1: "City, ST" or "City, ST 85383" (comma required)
+        const cityStateComma = line.match(/^([A-Za-z\s]+),\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)?$/i);
+        if (cityStateComma) {
+          result.city = cityStateComma[1].trim();
+          result.state = cityStateComma[2].toUpperCase();
+          if (cityStateComma[3]) result.zip = cityStateComma[3];
+          continue;
+        }
+        // Pattern 2: "City ST 85383" (no comma but zip required)
+        const cityStateZip = line.match(/^([A-Za-z\s]+)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/i);
+        if (cityStateZip) {
+          result.city = cityStateZip[1].trim();
+          result.state = cityStateZip[2].toUpperCase();
+          result.zip = cityStateZip[3];
           continue;
         }
 
