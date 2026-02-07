@@ -2294,6 +2294,9 @@
 
             // Convert Shopify format to slab format
             shopifySlabs.forEach(product => {
+              // Skip unavailable/discontinued products
+              if (product.available === false) return;
+
               const price = parseFloat(product.price) || 0;
               const material = (product.productType || '').toLowerCase();
 
@@ -2361,6 +2364,14 @@
               'msi surfaces': { country: 'USA', flag: '🇺🇸' }
             };
 
+            // Build set of existing product names for deduplication (normalize spaces, strip " Sample")
+            const existingNames = new Set();
+            slabs.forEach(s => {
+              const name = (s.product_name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+              existingNames.add(name);
+              existingNames.add(name.replace(/ sample$/, ''));
+            });
+
             // Convert products to slab format
             let slabId = 100;
             const brands = Object.keys(productsData.by_brand || {});
@@ -2372,6 +2383,9 @@
 
               // Take first 15 products per brand
               for (const product of products.slice(0, 15)) {
+                // Skip duplicates already loaded from slabs.json
+                const pName = product.name?.toLowerCase().trim() || '';
+                if (existingNames.has(pName) || existingNames.has(pName.replace(/ sample$/, ''))) continue;
                 const priceRange = PRICING[product.type] || PRICING.default;
                 const price = Math.floor(priceRange.min + Math.random() * (priceRange.max - priceRange.min));
 

@@ -240,6 +240,7 @@
       flex-direction: column;
       z-index: 100;
       transition: width 0.3s ease, transform 0.3s ease;
+      overflow-x: hidden;
       /* Position context for toggle button */
       isolation: isolate;
     }
@@ -264,6 +265,13 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+    }
+
+    .sidebar.collapsed #god-mode-nav {
+      margin: 4px !important;
+      padding: 4px 0 !important;
+      border: none !important;
+      background: none !important;
     }
 
     .sidebar.collapsed .nav-item {
@@ -446,6 +454,14 @@
       font-weight: 500;
       transition: all 0.2s;
       cursor: pointer;
+      overflow: hidden;
+    }
+
+    .nav-item-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .nav-item:hover {
@@ -475,6 +491,7 @@
       width: 20px;
       height: 20px;
       opacity: 0.7;
+      flex-shrink: 0;
     }
 
     .nav-item.active svg {
@@ -703,8 +720,11 @@
     }
 
     #god-mode-nav .nav-item-text {
-      display: inline !important;
-      opacity: 1 !important;
+      /* Only force-show text when sidebar is expanded, not collapsed */
+      opacity: 1;
+    }
+    .sidebar.collapsed #god-mode-nav .nav-item-text {
+      display: none !important;
     }
 
     /* ==================== GOD MODE MOBILE RESPONSIVE ==================== */
@@ -12938,7 +12958,7 @@
         </div>
 
         <!-- GOD MODE Section (GOD_MODE_EMAILS ONLY) -->
-        <div class="nav-section hidden" id="god-mode-nav" style="display: none; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; margin: 8px; padding: 8px;">
+        <div class="nav-section hidden" id="god-mode-nav" style="display: none; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; margin: 4px 0; padding: 6px 0; overflow: hidden;">
           <div class="nav-section-title" style="color: #a855f7; font-weight: bold;">
             <span style="margin-right: 6px;">⚡</span> GOD MODE
           </div>

@@ -306,8 +306,11 @@ return countertopSamples;
       const price = matchedProduct.priceRange?.minVariantPrice?.amount
         ? parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toFixed(2)
         : null;
-      const url = matchedProduct.onlineStoreUrl ||
-        `https://${SHOPIFY_CONFIG.domain}/products/${matchedProduct.handle}`;
+      const variantGid = matchedProduct.variants?.edges?.[0]?.node?.id || '';
+      const variantNumericId = variantGid.split('/').pop();
+      const url = variantNumericId
+        ? `https://${SHOPIFY_CONFIG.domain}/cart/${variantNumericId}:1`
+        : (matchedProduct.onlineStoreUrl || `https://${SHOPIFY_CONFIG.domain}/products/${matchedProduct.handle}`);
       const available = matchedProduct.variants?.edges?.[0]?.node?.availableForSale;
 
       html += `
@@ -364,8 +367,11 @@ return countertopSamples;
         const price = product.priceRange?.minVariantPrice?.amount
           ? parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)
           : null;
-        const url = product.onlineStoreUrl ||
-          `https://${SHOPIFY_CONFIG.domain}/products/${product.handle}`;
+        const relVariantGid = product.variants?.edges?.[0]?.node?.id || '';
+        const relVariantId = relVariantGid.split('/').pop();
+        const url = relVariantId
+          ? `https://${SHOPIFY_CONFIG.domain}/cart/${relVariantId}:1`
+          : (product.onlineStoreUrl || `https://${SHOPIFY_CONFIG.domain}/products/${product.handle}`);
 
         html += `
           <a href="${url}" target="_blank" class="shopify-related-card">

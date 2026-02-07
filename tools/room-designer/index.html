@@ -4310,6 +4310,7 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 8px;
       margin-bottom: 8px;
+      flex-shrink: 1;
     }
 
     .validation-section .panel-title {
@@ -4409,16 +4410,20 @@
 
     /* Quote Panel */
     .quote-section {
-      flex: 1;
+      flex-shrink: 1;
+      flex-grow: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      min-height: 200px;
+      overflow: hidden;
     }
 
     .quote-items {
-      flex: 1;
+      flex: 1 1 auto;
       overflow-y: auto;
       padding: 0 16px;
+      min-height: 0;
+      max-height: 300px;
     }
 
     .quote-item {
@@ -6106,6 +6111,7 @@
 
     .quote-summary {
       margin-top: 10px;
+      flex-shrink: 0;
     }
 
     .quote-row {
@@ -12382,22 +12388,13 @@
       max-height: calc(100vh - 56px - 48px); /* Account for demo banner (~48px) */
     }
 
-    /* Ensure right panel sections can grow/shrink properly */
+    /* Right panel sections - all flex-shrink:0 so panel scrolls instead of overlapping */
     .right-panel .panel-section#itemPickerSection {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      flex: 1 1 auto;
-    }
-
-    .right-panel .panel-section#itemPickerSection .item-picker-list {
-      flex: 1 1 auto;
-      min-height: 100px;
-      max-height: none;
+      flex-shrink: 0;
     }
 
     .right-panel .panel-section#propertiesPanel {
-      flex-shrink: 1;
+      flex-shrink: 0;
       overflow-y: auto;
       max-height: 350px;
     }
@@ -17290,8 +17287,36 @@
           return false;
         }
 
+        // Localhost/dev bypass - auto-unlock pricing for admin development
+        const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocalDev) {
+          PRICING_ACCESS.isSubscribed = true;
+          PRICING_ACCESS.accountType = 'super_admin';
+          PRICING_ACCESS.canViewPricing = true;
+          PRICING_ACCESS.checkedAt = Date.now();
+          console.log('Dev mode detected - full pricing access granted');
+          updatePricingVisibility();
+          return true;
+        }
+
         const user = window.SgAuth?.getUser();
         let profile = null;
+
+        // GOD access check - super admin emails always get full access
+        // Check this FIRST before any async calls to avoid race conditions
+        const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+        const isSuperAdmin = user && SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+        const isGodMode = isSuperAdmin || hasGodAccess();
+
+        if (isGodMode) {
+          PRICING_ACCESS.accountType = 'super_admin';
+          PRICING_ACCESS.isSubscribed = true;
+          PRICING_ACCESS.canViewPricing = true;
+          PRICING_ACCESS.checkedAt = Date.now();
+          console.log('GOD access detected - full pricing access granted');
+          updatePricingVisibility();
+          return true;
+        }
 
         // If force refresh, fetch directly from database
         if (forceRefresh && user) {
@@ -17311,21 +17336,11 @@
 
         PRICING_ACCESS.checkedAt = Date.now();
 
-        // Super admin emails always get full access
-        const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
-        const isSuperAdmin = user && SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
-
         if (!user) {
           // Guest user - no pricing access
           PRICING_ACCESS.isSubscribed = false;
           PRICING_ACCESS.accountType = 'guest';
           PRICING_ACCESS.canViewPricing = false;
-        } else if (isSuperAdmin) {
-          // Super admin - full access regardless of account_type
-          PRICING_ACCESS.accountType = 'super_admin';
-          PRICING_ACCESS.isSubscribed = true;
-          PRICING_ACCESS.canViewPricing = true;
-          console.log('Super Admin detected - full pricing access granted');
         } else if (profile) {
           PRICING_ACCESS.accountType = (profile.account_type || 'homeowner').toLowerCase();
           PRICING_ACCESS.isSubscribed = PAID_ACCOUNT_TYPES.includes(PRICING_ACCESS.accountType);
@@ -17343,6 +17358,15 @@
         return PRICING_ACCESS.canViewPricing;
       } catch (err) {
         console.warn('Error checking pricing access:', err);
+        // Even on error, check GOD access as fallback
+        if (hasGodAccess()) {
+          PRICING_ACCESS.accountType = 'super_admin';
+          PRICING_ACCESS.isSubscribed = true;
+          PRICING_ACCESS.canViewPricing = true;
+          console.log('GOD access fallback - full pricing access granted despite error');
+          updatePricingVisibility();
+          return true;
+        }
         PRICING_ACCESS.canViewPricing = false;
         updatePricingVisibility();
         return false;
@@ -17351,10 +17375,20 @@
 
     // GOD ACCESS - Super admin only features (AI tools, etc.)
     function hasGodAccess() {
-      const user = window.SgAuth?.getUser();
-      if (!user) return false;
       const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
-      return SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+      // Try SgAuth first
+      const user = window.SgAuth?.getUser();
+      if (user && SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase())) return true;
+      // Fallback: check Supabase session directly (covers race condition where SgAuth isn't ready)
+      try {
+        const sb = getSupabaseClient();
+        if (sb && sb.auth) {
+          // Use synchronous session access if available (Supabase v2 stores in memory)
+          const session = sb.auth.session?.() || sb.auth._session;
+          if (session?.user?.email && SUPER_ADMIN_EMAILS.includes(session.user.email.toLowerCase())) return true;
+        }
+      } catch (e) { /* ignore */ }
+      return false;
     }
 
     // Wrapper for AI Room Scanner - available to all authenticated users
@@ -18980,7 +19014,8 @@
 
     // Update UI to show/hide pricing based on access
     function updatePricingVisibility() {
-      const canView = PRICING_ACCESS.canViewPricing;
+      // Always override for GOD access users, even if PRICING_ACCESS failed
+      const canView = PRICING_ACCESS.canViewPricing || hasGodAccess();
 
       // Pricing section in properties panel
       const pricingSection = document.getElementById('pricingSection');
@@ -18993,14 +19028,22 @@
         }
       }
 
-      // Quote panel
+      // Quote panel - NEVER apply pricing-locked to the whole panel
+      // It blocks pointer-events on all controls (room selector, buttons, etc.)
+      // Instead, only mask the price values themselves
       const quotePanel = document.getElementById('quotePanel');
       if (quotePanel) {
-        if (canView) {
-          quotePanel.classList.remove('pricing-locked');
-        } else {
-          quotePanel.classList.add('pricing-locked');
-        }
+        quotePanel.classList.remove('pricing-locked'); // Always remove - never lock the whole panel
+        // Mask/unmask individual price displays within the quote panel
+        quotePanel.querySelectorAll('.quote-item-value, .item-price, .element-price').forEach(el => {
+          if (canView) {
+            el.style.filter = '';
+            el.style.opacity = '';
+          } else {
+            el.style.filter = 'blur(4px)';
+            el.style.opacity = '0.5';
+          }
+        });
       }
 
       // Quote total
@@ -19066,7 +19109,7 @@
     function updatePricingLockedOverlay() {
       const existingOverlay = document.getElementById('pricingLockedOverlay');
 
-      if (PRICING_ACCESS.canViewPricing) {
+      if (PRICING_ACCESS.canViewPricing || hasGodAccess()) {
         // Remove overlay if it exists
         if (existingOverlay) existingOverlay.remove();
         return;
@@ -25678,7 +25721,12 @@
       initAuth();
 
       // Check pricing access based on subscription status
-      checkPricingAccess();
+      // Retry after delay if auth isn't ready yet (race condition with SgAuth)
+      checkPricingAccess().then(hasAccess => {
+        if (!hasAccess) {
+          setTimeout(() => checkPricingAccess(true), 2000);
+        }
+      });
 
       // Check for shared design URL
       checkSharedDesignUrl();
@@ -55280,15 +55328,16 @@
           if (!hasManualRotation) {
             // No rotation set - auto-rotate based on wall position
             // Cabinet geometry has front (doors) at +z local, back at -z local
-            // For right wall: need back at +x, front at -x → rotate +90° (counterclockwise)
-            // For left wall: need back at -x, front at +x → rotate -90° (clockwise)
+            // Three.js Y rotation: +z maps to +x at +90°, +z maps to -x at -90°
+            // For right wall: need front at -x (into room) → rotate -90°
+            // For left wall: need front at +x (into room) → rotate +90°
             if (isAgainstRightWall && !isAgainstBackWall) {
-              group.rotation.y = Math.PI / 2;  // +90° so front faces into room (-x direction)
+              group.rotation.y = -Math.PI / 2;  // -90° so front faces into room (-x direction)
               autoRotated = true;
               xPos = roomWidth - el.height / 2;
               zPos = (el.y / pixelsPerFoot) + el.width / 2;
             } else if (isAgainstLeftWall && !isAgainstBackWall) {
-              group.rotation.y = -Math.PI / 2;  // -90° so front faces into room (+x direction)
+              group.rotation.y = Math.PI / 2;  // +90° so front faces into room (+x direction)
               autoRotated = true;
               xPos = el.height / 2;
               zPos = (el.y / pixelsPerFoot) + el.width / 2;
@@ -55305,14 +55354,14 @@
             // rotation=0 means back wall (cabinet faces front into room)
             if (manualRotation === 270 && isAgainstLeftWall) {
               // Left wall - cabinet faces right into room (+x direction)
-              group.rotation.y = -Math.PI / 2;  // -90° so front faces +x
+              group.rotation.y = Math.PI / 2;  // +90° so front faces +x
               autoRotated = true;
               // For rotation 90/270: el.width = depth from wall, el.height = length along wall
               xPos = el.width / 2; // Position from left wall using depth (el.width for rotated)
               zPos = (el.y / pixelsPerFoot) + el.height / 2; // Use height for Z position (length along wall)
             } else if (manualRotation === 90 && isAgainstRightWall) {
               // Right wall - cabinet faces left into room (-x direction)
-              group.rotation.y = Math.PI / 2;  // +90° so front faces -x
+              group.rotation.y = -Math.PI / 2;  // -90° so front faces -x
               autoRotated = true;
               // For rotation 90/270: el.width = depth from wall, el.height = length along wall
               xPos = roomWidth - el.width / 2;
@@ -55486,12 +55535,12 @@
             case 'left':
               zPos = elCenterY;
               xPos = wallOffset;
-              group.rotation.y = -Math.PI / 2;  // Front faces +x (into room)
+              group.rotation.y = Math.PI / 2;  // Front faces +x (into room)
               break;
             case 'right':
               zPos = elCenterY;
               xPos = roomWidth - wallOffset;
-              group.rotation.y = Math.PI / 2;  // Front faces -x (into room)
+              group.rotation.y = -Math.PI / 2;  // Front faces -x (into room)
               break;
           }
         } else if (!autoRotated) {
@@ -67040,6 +67089,11 @@
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             // Clear cached designs to force reload
             allDesigns = { my: [], shared: [], recent: [] };
+          }
+          // Re-check pricing on ANY auth state change (including INITIAL_SESSION)
+          // This catches the case where SgAuth.onAuthChange didn't fire
+          if (session?.user) {
+            checkPricingAccess(true);
           }
         });
       }
