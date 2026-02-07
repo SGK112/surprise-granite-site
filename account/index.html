@@ -32578,7 +32578,7 @@
       const { count } = await supabaseClient
         .from('stone_listings')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.data.user.id)
+        .eq('invited_by', user.data.user.id)
         .eq('status', 'active');
 
       return {
@@ -32704,7 +32704,7 @@
         const { data: listings, error } = await supabaseClient
           .from('stone_listings')
           .select('*')
-          .eq('user_id', user.data.user.id)
+          .eq('invited_by', user.data.user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -33753,7 +33753,7 @@
         const { data: customers } = await supabaseClient
           .from('customers')
           .select('id, name, email, phone')
-          .eq('user_id', user.data.user.id)
+          .eq('invited_by', user.data.user.id)
           .limit(100);
 
         (customers || []).forEach(c => {
@@ -33787,9 +33787,9 @@
         // Load collaborators (may not exist for all users)
         try {
           const { data: collaborators } = await supabaseClient
-            .from('collaborators')
+            .from('general_collaborators')
             .select('id, name, email, phone')
-            .eq('user_id', user.data.user.id)
+            .eq('invited_by', user.data.user.id)
             .limit(50);
 
           (collaborators || []).forEach(c => {
@@ -37956,7 +37956,7 @@
           supabaseClient
             .from('general_collaborators')
             .select('id, name, email, phone, role, company, status')
-            .eq('user_id', user.id)
+            .eq('invited_by', user.id)
             .eq('status', 'active')
             .order('name', { ascending: true }),
           supabaseClient
@@ -39052,21 +39052,21 @@
       try {
         // Get or create contractor portal token
         const { data: contractor, error: fetchError } = await supabaseClient
-          .from('collaborators')
-          .select('id, name, company_name, email, phone, invite_token')
+          .from('general_collaborators')
+          .select('id, name, company, email, phone, token_hash')
           .eq('id', contractorId)
           .single();
 
         if (fetchError) throw fetchError;
         if (!contractor) throw new Error('Contractor not found');
 
-        let token = contractor.invite_token;
+        let token = contractor.token_hash;
         if (!token) {
           token = btoa(contractor.id + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
 
           const { error: updateError } = await supabaseClient
-            .from('collaborators')
-            .update({ invite_token: token })
+            .from('general_collaborators')
+            .update({ token_hash: token })
             .eq('id', contractor.id);
 
           if (updateError) throw updateError;
@@ -39075,7 +39075,7 @@
         const portalUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
 
         const action = prompt(
-          `Contractor Portal Link for ${contractor.company_name || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")\n4. Invite as collaborator (type "collab")`,
+          `Contractor Portal Link for ${contractor.company || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")\n4. Invite as collaborator (type "collab")`,
           'copy'
         );
 
@@ -39823,7 +39823,7 @@
         const { data: collaborators, error } = await supabaseClient
           .from('general_collaborators')
           .select('id, name, email, phone, role, company, status')
-          .eq('user_id', user.id)
+          .eq('invited_by', user.id)
           .eq('status', 'active')
           .order('name', { ascending: true });
 
@@ -40916,7 +40916,7 @@
           const { data: collaborators } = await supabaseClient
             .from('general_collaborators')
             .select('id, name, email, phone, company, role')
-            .eq('user_id', user.id)
+            .eq('invited_by', user.id)
             .eq('status', 'active')
             .limit(200);
 
@@ -45150,9 +45150,9 @@
         container.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
 
         const { data: collaborators, error } = await supabaseClient
-          .from('collaborators')
+          .from('general_collaborators')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('invited_by', user.id)
           .order('name');
 
         if (error) throw error;
@@ -45261,11 +45261,11 @@
       if (!contractor) return;
 
       // Generate invite link
-      let token = contractor.invite_token;
+      let token = contractor.token_hash;
       if (!token) {
         token = btoa(contractorId + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
         try {
-          await supabaseClient.from('collaborators').update({ invite_token: token }).eq('id', contractorId);
+          await supabaseClient.from('general_collaborators').update({ token_hash: token }).eq('id', contractorId);
         } catch (e) { console.log('Could not save token:', e); }
       }
 
@@ -45451,7 +45451,7 @@
           notes: document.getElementById('contractor-notes').value.trim() || null
         };
 
-        const { error } = await supabaseClient.from('collaborators').insert([contractorData]);
+        const { error } = await supabaseClient.from('general_collaborators').insert([contractorData]);
         if (error) throw error;
 
         closeNewCollaboratorModal();
@@ -45525,9 +45525,9 @@
         if (!user) return;
 
         const { data: collaborators } = await supabaseClient
-          .from('collaborators')
-          .select('id, name, type, company_name')
-          .eq('user_id', user.id)
+          .from('general_collaborators')
+          .select('id, name, role, company')
+          .eq('invited_by', user.id)
           .order('name');
 
         if (collaborators && collaborators.length > 0) {
@@ -45569,7 +45569,7 @@
           };
 
           const { data: newContractor, error: createError } = await supabaseClient
-            .from('collaborators')
+            .from('general_collaborators')
             .insert([contractorData])
             .select()
             .single();
@@ -46896,7 +46896,7 @@
       if (!contractor) {
         try {
           const { data, error } = await supabaseClient
-            .from('collaborators')
+            .from('general_collaborators')
             .select('*')
             .eq('id', contractorId)
             .single();
@@ -46981,15 +46981,15 @@
       const qrContainer = document.getElementById('contractor-qr-code');
 
       // Generate a simple token if not exists
-      let token = contractor.invite_token;
+      let token = contractor.token_hash;
       if (!token) {
         token = btoa(contractorId + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
 
         // Save token to database
         try {
           await supabaseClient
-            .from('collaborators')
-            .update({ invite_token: token })
+            .from('general_collaborators')
+            .update({ token_hash: token })
             .eq('id', contractorId);
         } catch (err) {
           console.log('Could not save invite token:', err);
