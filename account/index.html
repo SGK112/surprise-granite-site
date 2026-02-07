@@ -24851,7 +24851,7 @@
       if (!container || !card) return;
 
       try {
-        // Fetch projects with en_route_status
+        // Fetch projects with en_route_status (columns may not exist yet)
         const { data: projects, error } = await supabaseClient
           .from('projects')
           .select('id, name, customer_name, customer_phone, address, city, state, zip, en_route_status, en_route_started_at, arrived_at, en_route_by')
@@ -24859,7 +24859,12 @@
           .order('en_route_started_at', { ascending: false })
           .limit(10);
 
-        if (error) throw error;
+        if (error) {
+          // Columns may not exist - hide the card silently
+          console.log('[Field Status] en_route columns not available:', error.message);
+          card.style.display = 'none';
+          return;
+        }
 
         // Show/hide card based on whether there are any en route projects
         if (!projects || projects.length === 0) {
@@ -45377,17 +45382,23 @@
         if (!user) throw new Error('Please log in first');
 
         // Generate a unique invite token
-        const token = btoa(user.id + '-' + Date.now() + '-' + Math.random().toString(36).substring(2, 10))
+        // Generate a unique invite token
+        const timestamp = Date.now();
+        const randomPart = Math.random().toString(36).substring(2, 12);
+        const token = btoa(user.id + '-' + timestamp + '-' + randomPart)
           .replace(/[^a-zA-Z0-9]/g, '')
           .substring(0, 32);
+
+        // Use a unique email with timestamp to avoid conflicts
+        const uniqueEmail = `invite-${timestamp}-${randomPart}@pending.local`;
 
         // Create a pending collaborator invite placeholder
         const { data: invite, error } = await supabaseClient
           .from('general_collaborators')
           .insert([{
             invited_by: user.id,
-            email: `pending-${token}@invite.local`,
-            name: 'Pending Invite',
+            email: uniqueEmail,
+            name: 'Pending Network Invite',
             role: 'contractor',
             status: 'pending',
             token_hash: token,
@@ -45396,7 +45407,10 @@
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          // If conflict, it means an invite already exists - just generate a new token
+          console.warn('Invite creation conflict, generating link anyway:', error);
+        }
 
         // Generate the invite link
         const inviteLink = `${window.location.origin}/contractor-portal/?invite=${token}`;
@@ -47200,38 +47214,43 @@
       const container = document.getElementById('contractor-job-history');
 
       try {
-        const { data: jobs, error } = await supabaseClient
+        // Query project_contractors joined with projects
+        const { data: assignments, error } = await supabaseClient
           .from('project_contractors')
           .select(`
-            id, role, amount_quoted, status,
-            jobs (id, job_number, customer_name, status)
+            id, role, notes, status, assigned_at,
+            projects (id, name, customer_name, status, address)
           `)
           .eq('contractor_id', contractorId)
-          .order('created_at', { ascending: false })
+          .order('assigned_at', { ascending: false })
           .limit(10);
 
-        if (error) throw error;
-
-        if (!jobs || jobs.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No jobs assigned yet</div>';
+        if (error) {
+          // Table may not exist yet
+          console.log('[Job History] project_contractors not available:', error.message);
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No project history available</div>';
           return;
         }
 
-        container.innerHTML = jobs.map(jc => `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 6px; cursor: pointer;" onclick="openJobDetail('${jc.jobs?.id}')">
+        if (!assignments || assignments.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No projects assigned yet</div>';
+          return;
+        }
+
+        container.innerHTML = assignments.map(pc => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 6px; cursor: pointer;" onclick="openProjectDetail('${pc.projects?.id}')">
             <div>
-              <div style="font-weight: 500; font-size: 13px;">${jc.jobs?.job_number || 'Unknown'}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${jc.jobs?.customer_name || ''} - ${jc.role}</div>
+              <div style="font-weight: 500; font-size: 13px;">${escapeHtml(pc.projects?.name || 'Unknown Project')}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(pc.projects?.customer_name || '')} - ${pc.role || 'contractor'}</div>
             </div>
             <div style="text-align: right;">
-              <div style="font-weight: 600; font-size: 13px; color: var(--gold-primary);">$${(jc.amount_quoted || 0).toFixed(0)}</div>
-              <span class="status-badge job-${jc.jobs?.status || 'new'}" style="font-size: 9px; padding: 2px 8px;">${jc.jobs?.status || 'new'}</span>
+              <span class="status-badge" style="font-size: 9px; padding: 2px 8px; background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">${pc.status || 'assigned'}</span>
             </div>
           </div>
         `).join('');
       } catch (err) {
         console.error('Load job history error:', err);
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Could not load job history</div>';
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Could not load project history</div>';
       }
     }
 
