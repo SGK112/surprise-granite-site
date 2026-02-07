@@ -142,18 +142,60 @@
     };
   }
 
+  // Remove blog content from product areas
+  function removeBlogContent() {
+    // Keywords that indicate blog content
+    const blogKeywords = [
+      'top 10',
+      'best cambria',
+      'updated for 2024',
+      'updated for 2025',
+      'blog',
+      'article',
+      'tips',
+      'guide',
+      'how to'
+    ];
+
+    // Check all product cards and collection items
+    document.querySelectorAll('.w-dyn-item, .collection-item, .product-card, [sf-product]').forEach(item => {
+      const text = item.textContent?.toLowerCase() || '';
+      const isBlogContent = blogKeywords.some(keyword => text.includes(keyword));
+
+      // Check if this looks like a blog item (has blog-like text but no product image)
+      const hasProductImage = item.querySelector('img[src*="cdn.prod.website-files"], img[src*="shopify"]');
+      const hasNoImage = !item.querySelector('img') ||
+                         item.querySelector('img')?.naturalHeight === 0 ||
+                         !item.querySelector('img')?.src;
+
+      if (isBlogContent && (hasNoImage || !hasProductImage)) {
+        item.style.display = 'none';
+        item.remove();
+      }
+    });
+
+    // Also hide any standalone blog post elements in product grids
+    document.querySelectorAll('.banner-blog-post_list-item, [href*="/blog/"]').forEach(el => {
+      const parent = el.closest('.collection-list, .products-grid, .w-dyn-items');
+      if (parent && !parent.classList.contains('banner-blog-post_list')) {
+        el.style.display = 'none';
+      }
+    });
+  }
+
   // Initialize
   async function init() {
     suppressShopyflowErrors();
     await loadData();
 
-    // Fix images immediately
+    // Remove blog content and fix images immediately
+    removeBlogContent();
     fixProductImages();
 
     // Fix again after DOM updates (for dynamically loaded content)
-    setTimeout(fixProductImages, 1000);
-    setTimeout(fixProductImages, 3000);
-    setTimeout(fixProductImages, 5000);
+    setTimeout(() => { removeBlogContent(); fixProductImages(); }, 1000);
+    setTimeout(() => { removeBlogContent(); fixProductImages(); }, 3000);
+    setTimeout(() => { removeBlogContent(); fixProductImages(); }, 5000);
 
     // Watch for new images being added
     const observer = new MutationObserver((mutations) => {
