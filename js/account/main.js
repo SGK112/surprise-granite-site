@@ -20155,9 +20155,9 @@
           const inviteUrl = `${window.location.origin}/account/?invite=${inviteToken}`;
 
           try {
-            await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+            // Use the authenticated API call
+            const emailResp = await apiCall('/api/send-network-invite', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 to: email,
                 inviterName,
@@ -20167,8 +20167,10 @@
                 companyName: 'Surprise Granite'
               })
             });
+            const emailResult = await emailResp.json();
+            console.log('[Invite] Email API response:', emailResp.status, emailResult);
           } catch (emailErr) {
-            console.warn('Email send failed, but collaborator added:', emailErr);
+            console.warn('[Invite] Email send failed:', emailErr);
           }
         }
 
