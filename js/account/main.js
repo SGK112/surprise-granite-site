@@ -20152,12 +20152,19 @@
         // Send invite email if email provided
         if (email) {
           const inviterName = userProfile?.full_name || userProfile?.name || user.email?.split('@')[0] || 'A colleague';
-          const inviteUrl = `${window.location.origin}/account/?invite=${inviteToken}`;
+          const inviteUrl = `https://www.surprisegranite.com/account/?invite=${inviteToken}`;
 
           try {
-            // Use the authenticated API call
-            const emailResp = await apiCall('/api/send-network-invite', {
+            // Always use production email API (not localhost)
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const token = session?.access_token;
+
+            const emailResp = await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
               method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
               body: JSON.stringify({
                 to: email,
                 inviterName,
