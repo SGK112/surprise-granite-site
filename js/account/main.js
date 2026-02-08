@@ -17126,18 +17126,18 @@
 
         if (error || !project) throw error || new Error('Project not found');
 
-        // Fetch related data in parallel
-        const [tasksResult, activityResult, collaboratorsResult, estimatesResult, invoicesResult] = await Promise.all([
-          supabaseClient.from('project_tasks').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
-          supabaseClient.from('project_activity').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(20),
-          supabaseClient.from('project_collaborators').select('*').eq('project_id', projectId),
+        // Fetch related data in parallel (some tables may not exist yet)
+        const [tasksResult, activityResult, contractorsResult, estimatesResult, invoicesResult] = await Promise.all([
+          supabaseClient.from('project_tasks').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }).then(r => r).catch(() => ({ data: [] })),
+          supabaseClient.from('project_activity').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(20).then(r => r).catch(() => ({ data: [] })),
+          supabaseClient.from('project_contractors').select('*').eq('project_id', projectId).then(r => r).catch(() => ({ data: [] })),
           project.customer_email ? supabaseClient.from('estimates').select('id, estimate_number, status, total, created_at').eq('user_id', user.id).eq('customer_email', project.customer_email).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
           project.customer_email ? supabaseClient.from('invoices').select('id, invoice_number, status, total, created_at').eq('user_id', user.id).eq('customer_email', project.customer_email).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] })
         ]);
 
         const tasks = tasksResult.data || [];
         const activity = activityResult.data || [];
-        const collaborators = collaboratorsResult.data || [];
+        const collaborators = contractorsResult.data || [];
         const linkedEstimates = estimatesResult.data || [];
         const linkedInvoices = invoicesResult.data || [];
 
@@ -18752,7 +18752,11 @@
           .order('changed_at', { ascending: false })
           .limit(10);
 
-        if (error) throw error;
+        // Table may not exist yet - silently fail
+        if (error) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No activity yet.</div>';
+          return;
+        }
 
         if (!history || history.length === 0) {
           container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No activity yet.</div>';
