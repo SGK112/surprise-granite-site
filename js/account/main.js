@@ -19433,18 +19433,28 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const resp = await apiCall('/api/collaboration/my-projects?status=accepted');
-        const data = await resp.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        if (!resp.ok) {
-          if (resp.status === 403) {
-            container.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><h3>No collaborations yet</h3><p>When you\'re invited to collaborate on projects, they\'ll appear here.</p></div>';
-            return;
-          }
-          throw new Error(data.error || 'Failed to load');
+        // Load project collaborations from Supabase
+        // First check if project_collaborators table exists, if not fall back to project_contractors
+        let collabs = [];
+
+        // Try to load from project_contractors (contractor assignments to projects)
+        const { data: contractorAssignments, error: contractorError } = await supabaseClient
+          .from('project_contractors')
+          .select('*, projects(id, name, status, customer_name)')
+          .eq('contractor_id', user.id);
+
+        if (!contractorError && contractorAssignments) {
+          collabs = contractorAssignments.map(a => ({
+            project_id: a.project_id,
+            project: a.projects,
+            role: a.role || 'contractor',
+            access_level: 'write',
+            accepted_at: a.assigned_at || a.created_at
+          }));
         }
-
-        const collabs = data.collaborations || [];
 
         // Update badge
         const badge = document.getElementById('collaborations-count');
@@ -19888,23 +19898,28 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const resp = await apiCall('/api/collaboration/my-collaborators');
-        const data = await resp.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        if (!resp.ok) {
-          throw new Error(data.error || 'Failed to load network');
-        }
+        // Load collaborators directly from Supabase
+        const { data: collaborators, error } = await supabaseClient
+          .from('general_collaborators')
+          .select('id, name, email, phone, role, company, status, notes, created_at')
+          .eq('invited_by', user.id)
+          .order('name', { ascending: true });
 
-        const collaborators = data.collaborators || [];
+        if (error) throw error;
+
+        const collabList = collaborators || [];
 
         // Update badge
         const badge = document.getElementById('network-count-badge');
         if (badge) {
-          badge.textContent = collaborators.length;
-          badge.style.display = collaborators.length > 0 ? 'inline' : 'none';
+          badge.textContent = collabList.length;
+          badge.style.display = collabList.length > 0 ? 'inline' : 'none';
         }
 
-        if (collaborators.length === 0) {
+        if (collabList.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
@@ -19915,12 +19930,12 @@
           return;
         }
 
-        container.innerHTML = collaborators.map(c => {
+        container.innerHTML = collabList.map(c => {
           const roleLabel = (c.role || 'partner').charAt(0).toUpperCase() + (c.role || 'partner').slice(1);
-          const statusColor = c.status === 'accepted' ? '#10b981' : c.status === 'pending' ? '#f59e0b' : '#6b7280';
-          const statusLabel = c.status === 'accepted' ? 'Connected' : c.status === 'pending' ? 'Pending' : c.status;
-          const userName = c.user?.full_name || c.user?.email || c.email;
-          const dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : (c.invited_at ? 'Invited ' + new Date(c.invited_at).toLocaleDateString() : '');
+          const statusColor = c.status === 'active' ? '#10b981' : c.status === 'pending' ? '#f59e0b' : '#6b7280';
+          const statusLabel = c.status === 'active' ? 'Active' : c.status === 'pending' ? 'Pending' : (c.status || 'Unknown');
+          const userName = c.name || c.email;
+          const dateStr = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
 
           return `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">
@@ -20094,18 +20109,37 @@
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-small"></span> Sending...';
+      btn.innerHTML = '<span class="spinner-small"></span> Adding...';
 
       try {
-        const resp = await apiCall('/api/collaboration/invite-general', {
-          method: 'POST',
-          body: JSON.stringify({ email, phone, name, role })
-        });
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
+        // Check if collaborator already exists
+        let query = supabaseClient.from('general_collaborators').select('id').eq('invited_by', user.id);
+        if (email) query = query.eq('email', email);
+        else if (phone) query = query.eq('phone', phone);
 
-        showToast(data.message || `Invite sent to ${name}!`, 'success');
+        const { data: existing } = await query.maybeSingle();
+        if (existing) {
+          throw new Error('This person is already in your network');
+        }
+
+        // Insert new collaborator
+        const { error: insertError } = await supabaseClient
+          .from('general_collaborators')
+          .insert({
+            invited_by: user.id,
+            name,
+            email,
+            phone,
+            role,
+            status: 'active'
+          });
+
+        if (insertError) throw insertError;
+
+        showToast(`${name} added to your network!`, 'success');
         closeInviteToNetworkModal();
 
         // Reset form
