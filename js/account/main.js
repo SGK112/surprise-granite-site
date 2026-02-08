@@ -4658,13 +4658,21 @@
     }
 
     // Load field status - projects with team en route or on site
+    // Feature flag: set to true when en_route columns are added to projects table
+    const ENABLE_FIELD_STATUS = false;
+
     async function loadFieldStatus() {
       const container = document.getElementById('field-status-content');
       const card = document.getElementById('field-status-card');
       if (!container || !card) return;
 
+      // Skip if feature not enabled (columns don't exist yet)
+      if (!ENABLE_FIELD_STATUS) {
+        card.style.display = 'none';
+        return;
+      }
+
       try {
-        // Fetch projects with en_route_status (columns may not exist yet)
         const { data: projects, error } = await supabaseClient
           .from('projects')
           .select('id, name, customer_name, customer_phone, address, city, state, zip, en_route_status, en_route_started_at, arrived_at, en_route_by')
@@ -4673,8 +4681,6 @@
           .limit(10);
 
         if (error) {
-          // Columns may not exist - hide the card silently
-          console.log('[Field Status] en_route columns not available:', error.message);
           card.style.display = 'none';
           return;
         }
@@ -10066,11 +10072,14 @@
 
     // Reusable API call helper - auto-includes Supabase JWT auth token
     async function apiCall(endpoint, options = {}) {
+      // Skip API calls on static dev server (no backend)
+      const isStaticServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isStaticServer && endpoint.includes('/api/collaboration')) {
+        return new Response(JSON.stringify({ collaborations: [] }), { status: 200 });
+      }
+
       const { data: { session } } = await supabaseClient.auth.getSession();
       const token = session?.access_token;
-      if (!token) {
-        console.warn('[apiCall] No auth token available for', endpoint, '- session:', !!session);
-      }
       return fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers: {
