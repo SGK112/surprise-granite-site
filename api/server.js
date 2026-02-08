@@ -5516,6 +5516,79 @@ app.post('/api/send-lead-message', authenticateJWT, async (req, res) => {
   }
 });
 
+// Send network invite email
+app.post('/api/send-network-invite', async (req, res) => {
+  try {
+    const { to, inviterName, inviteeName, role, inviteUrl, companyName } = req.body;
+
+    if (!to || !inviterName || !inviteeName || !inviteUrl) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: to, inviterName, inviteeName, inviteUrl' });
+    }
+
+    const roleLabels = {
+      contractor: 'Contractor',
+      fabricator: 'Fabricator',
+      installer: 'Installer',
+      plumber: 'Plumber',
+      designer: 'Designer',
+      vendor: 'Vendor',
+      partner: 'Partner',
+      other: 'Team Member'
+    };
+    const roleLabel = roleLabels[role] || roleLabels.other;
+
+    const subject = `${inviterName} invited you to join their network on ${companyName || 'Surprise Granite'}`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a12; color: #ffffff; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #f9cb00, #cca600); padding: 30px; text-align: center;">
+          <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="width: 60px; height: 60px; border-radius: 12px; margin-bottom: 16px;" />
+          <h1 style="color: #1a1a2e; margin: 0; font-size: 24px;">You're Invited!</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+            Hi ${inviteeName},
+          </p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+            <strong>${inviterName}</strong> has invited you to join their professional network on ${companyName || COMPANY.shortName} as a <strong>${roleLabel}</strong>.
+          </p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
+            Click the button below to accept this invitation and connect with ${inviterName}.
+          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00, #cca600); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+              Accept Invitation
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888; margin-top: 32px;">
+            If you didn't expect this invitation, you can safely ignore this email.
+          </p>
+        </div>
+        <div style="background: #12121a; padding: 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+          <p style="margin: 0; font-size: 12px; color: #666;">
+            ${COMPANY.name}<br />
+            ${COMPANY.address}<br />
+            ${COMPANY.phone} | ${COMPANY.email}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const result = await sendNotification(to, subject, html);
+
+    if (result.success) {
+      logger.info('Network invite sent:', { to, inviterName, inviteeName, role });
+      res.json({ success: true, message: 'Invitation sent successfully' });
+    } else {
+      logger.warn('Network invite failed:', { to, reason: result.reason });
+      res.status(500).json({ success: false, error: 'Failed to send invitation', reason: result.reason });
+    }
+  } catch (error) {
+    logger.error('Send network invite error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Purchase a lead (a la carte)
 app.post('/api/purchase-lead', async (req, res) => {
   try {
