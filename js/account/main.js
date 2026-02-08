@@ -20129,8 +20129,11 @@
           throw new Error('This person is already in your network');
         }
 
-        // Insert new collaborator
-        const { error: insertError } = await supabaseClient
+        // Generate invite token
+        const inviteToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+        // Insert new collaborator with invite token
+        const { data: newCollab, error: insertError } = await supabaseClient
           .from('general_collaborators')
           .insert({
             invited_by: user.id,
@@ -20138,12 +20141,38 @@
             email,
             phone,
             role,
-            status: 'active'
-          });
+            status: 'pending',
+            token_hash: inviteToken
+          })
+          .select()
+          .single();
 
         if (insertError) throw insertError;
 
-        showToast(`${name} added to your network!`, 'success');
+        // Send invite email if email provided
+        if (email) {
+          const inviterName = userProfile?.full_name || userProfile?.name || user.email?.split('@')[0] || 'A colleague';
+          const inviteUrl = `${window.location.origin}/account/?invite=${inviteToken}`;
+
+          try {
+            await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: email,
+                inviterName,
+                inviteeName: name,
+                role,
+                inviteUrl,
+                companyName: 'Surprise Granite'
+              })
+            });
+          } catch (emailErr) {
+            console.warn('Email send failed, but collaborator added:', emailErr);
+          }
+        }
+
+        showToast(`Invite sent to ${name}!`, 'success');
         closeInviteToNetworkModal();
 
         // Reset form
