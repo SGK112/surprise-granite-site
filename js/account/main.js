@@ -12424,7 +12424,7 @@
       const { count } = await supabaseClient
         .from('stone_listings')
         .select('*', { count: 'exact', head: true })
-        .eq('invited_by', user.data.user.id)
+        .eq('user_id', user.data.user.id)
         .eq('status', 'active');
 
       return {
@@ -12550,7 +12550,7 @@
         const { data: listings, error } = await supabaseClient
           .from('stone_listings')
           .select('*')
-          .eq('invited_by', user.data.user.id)
+          .eq('user_id', user.data.user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
