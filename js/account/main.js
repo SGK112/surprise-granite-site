@@ -18,7 +18,6 @@
 
     // Listen for Google Maps ready event (dispatched by callback in head)
     document.addEventListener('googlemaps-ready', function() {
-      console.log('[GoogleMaps] Ready event received in main script');
       // Initialize autocomplete on location input if it exists and modal is open
       const locationInput = document.getElementById('cal-event-location');
       if (locationInput && document.getElementById('calendar-event-modal')?.classList.contains('active')) {
@@ -29,7 +28,6 @@
     // Initialize Places Autocomplete on an input element
     function initLocationAutocomplete(inputElement) {
       if (!googleMapsReady || !google?.maps?.places) {
-        console.log('[GoogleMaps] API not ready, skipping autocomplete init');
         return;
       }
 
@@ -47,7 +45,6 @@
           }
         });
 
-        console.log('[GoogleMaps] Autocomplete initialized on location input');
       } catch (err) {
         console.warn('[GoogleMaps] Failed to initialize autocomplete:', err);
       }
@@ -145,7 +142,6 @@
 
     function initEventDetailMap(address) {
       if (!googleMapsReady || !google?.maps) {
-        console.log('[GoogleMaps] API not ready for event detail map');
         return;
       }
 
@@ -209,7 +205,6 @@
     createAuthReadyPromise();
 
     function setAuthReady() {
-      console.log('[Auth] setAuthReady called');
       authReady = true;
       if (authReadyResolve) {
         authReadyResolve();
@@ -230,7 +225,6 @@
           console.error('[Auth] waitForAuth timeout or error:', err.message);
           // If we timeout, check if supabaseClient exists and try to proceed anyway
           if (supabaseClient) {
-            console.log('[Auth] supabaseClient exists, proceeding despite timeout');
             authReady = true;
             return true;
           }
@@ -308,34 +302,29 @@
       if (salesNavEl) {
         const showSalesNav = ['contractor', 'fabricator', 'admin'].includes(role);
         salesNavEl.classList.toggle('hidden', !showSalesNav);
-        console.log('Sales nav:', showSalesNav ? 'visible' : 'hidden');
       }
 
       // Operations section - visible to all roles for project management
       if (operationsNavEl) {
         operationsNavEl.classList.remove('hidden');
-        console.log('Operations nav: visible (enabled for all roles)');
       }
 
       // Finance section - visible to admins only
       if (financeNavEl) {
         const showFinanceNav = ['admin'].includes(role);
         financeNavEl.classList.toggle('hidden', !showFinanceNav);
-        console.log('Finance nav:', showFinanceNav ? 'visible' : 'hidden');
       }
 
       // Admin section - visible to super admins only
       if (adminNavEl) {
         const showAdminNav = isSuperAdmin || role === 'admin';
         adminNavEl.classList.toggle('hidden', !showAdminNav);
-        console.log('Admin nav:', showAdminNav ? 'visible' : 'hidden');
       }
 
       // Vendor/Store section - visible to vendors and admins
       if (vendorNavEl) {
         const showVendorNav = ['vendor', 'admin'].includes(role);
         vendorNavEl.classList.toggle('hidden', !showVendorNav);
-        console.log('Vendor nav:', showVendorNav ? 'visible' : 'hidden');
       }
 
       // GOD MODE section - visible ONLY to GOD_MODE_EMAILS
@@ -345,7 +334,6 @@
         godModeNavEl.classList.toggle('hidden', !showGodMode);
         // Also set inline display to ensure it's hidden
         godModeNavEl.style.display = showGodMode ? 'block' : 'none';
-        console.log('GOD MODE nav:', showGodMode ? 'visible (⚡ ENABLED)' : 'hidden');
 
         // Add special body class for GOD MODE users
         if (showGodMode) {
@@ -1343,7 +1331,6 @@
         if (updateError) {
           console.error('[findOrCreateCustomerFromLead] Error updating lead:', updateError);
         } else {
-          console.log('[findOrCreateCustomerFromLead] Updated lead with customer_id');
         }
 
         // Add to cache
@@ -1472,7 +1459,6 @@
         // Use global client or create our own
         supabaseClient = window._sgSupabaseClient;
         if (!supabaseClient) {
-          console.log('Creating local Supabase client');
           const { createClient } = window.supabase;
           supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
@@ -1532,18 +1518,15 @@
         }
 
         if (session) {
-          console.log('[Init] Session found, loading profile...');
           currentUser = session.user;
           // Load profile BEFORE showing dashboard so isAdmin is set correctly
           try {
             await loadUserProfile();
-            console.log('[Init] Profile loaded, showing dashboard...');
           } catch (err) {
             console.warn('[Init] Profile load failed:', err);
           }
           showDashboard();
         } else {
-          console.log('[Init] No session, showing auth');
           showAuth();
         }
       } catch (err) {
@@ -2217,7 +2200,6 @@
 
       // Mark auth as ready BEFORE handling hash navigation
       setAuthReady();
-      console.log('[Auth] Auth ready, supabaseClient initialized');
 
       // Check for invite acceptance tokens
       checkForInviteToken();
@@ -3080,7 +3062,6 @@
     async function loadOrders() {
       console.log('[Orders] loadOrders called, ordersLoaded:', ordersLoaded);
       if (ordersLoaded) {
-        console.log('[Orders] Already loaded, skipping');
         return;
       }
 
@@ -3101,7 +3082,6 @@
           emptyEl.style.display = 'block';
           return;
         }
-        console.log('[Orders] Fetching orders from database...');
         // Load ALL orders from shopify_orders
         const { data, error } = await supabaseClient
           .from('shopify_orders')
@@ -4460,7 +4440,6 @@
     async function sendNotification(type, action, entity, recipient, newStatus = null) {
       // Only send if we have recipient info
       if (!recipient?.email && !recipient?.phone) {
-        console.log('[Notify] No recipient info, skipping notification');
         return { email: { sent: false }, sms: { sent: false } };
       }
 
@@ -4765,7 +4744,6 @@
     }
 
     async function loadSubscriberStats() {
-      console.log('[SubscriberStats] Loading...');
       try {
         // Get total users count
         const { count: totalUsers, error: totalError } = await supabaseClient
@@ -4808,11 +4786,9 @@
     function setupDashboard() {
       // Prevent re-initialization which would reset stats
       if (dashboardInitialized) {
-        console.log('[Dashboard] Already initialized, skipping setup');
         return;
       }
       dashboardInitialized = true;
-      console.log('[Dashboard] Initializing dashboard...');
 
       // Setup stats and quick actions based on role
       const statsEl = document.getElementById('dashboard-stats');
@@ -5499,7 +5475,6 @@
     async function loadLeads() {
       if (isLoadingLeads) return;
       isLoadingLeads = true;
-      console.log('[Leads] loadLeads called');
       try {
         const { data, error } = await supabaseClient
           .from('leads')
@@ -5509,7 +5484,6 @@
         if (error) throw error;
 
         allLeads = data || [];
-        console.log('[Leads] Loaded', allLeads.length, 'leads');
         updateStats();
         renderLeads();
       } catch (err) {
@@ -7939,7 +7913,6 @@
 
         // Bulk insert new records
         if (toInsert.length > 0) {
-          console.log('[Customers] Consolidating', toInsert.length, 'new records into customers table');
           const { error } = await supabaseClient.from('customers').upsert(toInsert, { onConflict: 'user_id,email', ignoreDuplicates: true });
           if (error) {
             console.warn('[Customers] Consolidation error (non-fatal):', error.message);
@@ -10113,7 +10086,6 @@
     let invoiceItemCount = 1;
 
     async function loadInvoices() {
-      console.log('[Invoices] Loading invoices...');
       const invoicesList = document.getElementById('invoices-list');
       if (!invoicesList) {
         console.warn('[Invoices] No invoices-list container found');
@@ -10214,7 +10186,6 @@
         // Merge: Supabase first (source of truth), then Stripe-only records
         allInvoices = [...supabaseInvoices, ...stripeInvoices];
 
-        console.log('[Invoices] Loaded', supabaseInvoices.length, 'from Supabase,', stripeInvoices.length, 'from Stripe (total:', allInvoices.length, ')');
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
@@ -10231,7 +10202,6 @@
 
     // Sync paid invoices and customers from Stripe to local database
     async function syncFromStripe() {
-      console.log('[Sync] Starting sync from Stripe...');
       const btn = document.getElementById('sync-stripe-btn');
       if (!btn) {
         console.error('[Sync] Sync button not found');
@@ -10256,7 +10226,6 @@
         console.log('[Sync] User authenticated:', user.id);
 
         // Fetch paid invoices from Stripe via authenticated API (one-time import)
-        console.log('[Sync] Fetching paid invoices from Stripe...');
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -10277,7 +10246,6 @@
         if (!response.ok) throw new Error('Failed to fetch Stripe invoices: ' + response.status);
 
         const { invoices: stripeInvoices } = await response.json();
-        console.log('[Sync] Found', stripeInvoices?.length || 0, 'paid invoices');
 
         if (!stripeInvoices || stripeInvoices.length === 0) {
           showToast('No paid invoices found in Stripe', 'info');
@@ -10447,7 +10415,6 @@
                   console.error('[Sync] Job error:', jobErr.message);
                 }
               } else {
-                console.log('[Sync] Job already exists for customer');
               }
             } catch (e) {
               console.error('[Sync] Job exception:', e);
@@ -11136,7 +11103,6 @@
 
     // Preview invoice before sending
     async function previewInvoice() {
-      console.log('[Invoices] previewInvoice called');
       const formData = getInvoiceFormData();
       console.log('[Invoices] previewInvoice formData:', formData);
 
@@ -11247,18 +11213,15 @@
       }
       if (sendBtn) {
         sendBtn.onclick = () => {
-          console.log('[Invoices] Send button clicked');
           confirmSendInvoice();
         };
       }
 
       previewModal.classList.add('active');
-      console.log('[Invoices] Preview modal shown');
     }
 
     // Confirm and send invoice after preview
     async function confirmSendInvoice() {
-      console.log('[Invoices] confirmSendInvoice called');
       document.getElementById('invoice-preview-modal')?.classList.remove('active');
       try {
         await createInvoice(new Event('submit'));
@@ -11276,7 +11239,6 @@
 
       // Prevent double-submission
       if (isCreatingInvoice) {
-        console.log('[Invoices] Already creating an invoice, ignoring');
         return;
       }
       isCreatingInvoice = true;
@@ -11317,7 +11279,6 @@
       if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
 
       try {
-        console.log('[Invoices] Getting user...');
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
         if (authError) {
           console.error('[Invoices] Auth error:', authError);
@@ -12708,7 +12669,6 @@
     let notificationFilter = 'all';
 
     async function loadConversations() {
-      console.log('[Messages] loadConversations called');
       const listEl = document.getElementById('conversations-list');
       if (!listEl) {
         console.warn('[Messages] conversations-list element not found');
@@ -12723,7 +12683,6 @@
           listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Database not ready. Please refresh.</div>';
           return;
         }
-        console.log('[Messages] Getting user...');
         const user = await supabaseClient.auth.getUser();
         if (!user.data.user) {
           listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Please sign in to view messages</div>';
@@ -14276,7 +14235,6 @@
     let businessSettings = null;
 
     async function loadEstimates() {
-      console.log('[Estimates] Loading estimates...');
       const listContainer = document.getElementById('estimates-list');
       if (!listContainer) {
         console.warn('[Estimates] No estimates-list container found');
@@ -14316,7 +14274,6 @@
         }
 
         const { data: estimates, error } = await query;
-        console.log('[Estimates] Query result:', estimates?.length || 0, 'estimates', error ? 'Error: ' + error.message : '');
 
         if (error) throw error;
 
@@ -14802,7 +14759,6 @@
           }
         }
       } catch (err) {
-        console.log('No business settings found');
       }
     }
 
@@ -15010,7 +14966,6 @@
 
     async function handleCreateEstimate(event) {
       event.preventDefault();
-      console.log('[Estimate] Starting creation...');
 
       // Check supabaseClient
       if (!supabaseClient) {
@@ -15031,7 +14986,6 @@
       submitBtn.disabled = true;
 
       try {
-        console.log('[Estimate] Getting user...');
         const { data: { user }, error: userError } = await withTimeout(
           supabaseClient.auth.getUser(),
           10000,
@@ -15098,7 +15052,6 @@
         const customerName = document.getElementById('estimate-customer-name').value.trim();
 
         if (!customerId && customerEmail) {
-          console.log('[Estimate] No customer_id, creating customer from form...');
           const formData = {
             customerName: customerName,
             customerEmail: customerEmail,
@@ -15152,7 +15105,6 @@
         };
 
         console.log('[Estimate] Inserting estimate with data:', JSON.stringify(estimateData, null, 2));
-        console.log('[Estimate] Inserting estimate into database...');
         const { data: estimate, error: estimateError } = await withTimeout(
           supabaseClient.from('estimates').insert([estimateData]).select().single(),
           15000,
@@ -15179,7 +15131,6 @@
           category: item.category
         }));
 
-        console.log('[Estimate] Inserting line items...');
         const { error: itemsError } = await withTimeout(
           supabaseClient.from('estimate_items').insert(itemsToInsert),
           15000,
@@ -15190,10 +15141,8 @@
           console.error('[Estimate] Items error:', itemsError);
           throw itemsError;
         }
-        console.log('[Estimate] Items inserted');
 
         // Generate approval token
-        console.log('[Estimate] Creating token...');
         const token = crypto.randomUUID();
         try {
           const { error: tokenError } = await withTimeout(
@@ -15213,7 +15162,6 @@
           console.error('[Estimate] Token creation failed:', tokenErr.message);
           // Don't throw - estimate is already created
         }
-        console.log('[Estimate] Token created, closing modal...');
 
         // Open preview with option to send
         closeCreateEstimateModal();
@@ -16072,7 +16020,6 @@
           }
         }
       } catch (err) {
-        console.log('No business settings found');
       }
     }
 
@@ -16381,7 +16328,6 @@
           .limit(1);
 
         if (existingEvents && existingEvents.length > 0) {
-          console.log('Event already exists for this stage');
           return;
         }
 
@@ -20781,7 +20727,6 @@
           console.warn('[CalEvent] Collaborators table not available');
         }
 
-        console.log('[CalEvent] Loaded', calEventContactsCache.length, 'contacts for search');
         return calEventContactsCache;
 
       } catch (err) {
@@ -21651,7 +21596,6 @@
           });
         }
 
-        console.log(`Sent workflow invite emails to ${participants.length} participants`);
       } catch (err) {
         console.error('Error sending workflow emails:', err);
       }
@@ -21678,7 +21622,6 @@
           });
         }
 
-        console.log(`Sent SMS notifications to ${participants.filter(p => p.phone).length} participants`);
       } catch (err) {
         console.error('Error sending SMS:', err);
       }
@@ -23328,7 +23271,6 @@
           allContractors = contractors || [];
         }
 
-        console.log('[Contractors] Loaded', allContractors.length, 'contractors');
       } catch (err) {
         console.error('Error loading contractors:', err);
         allContractors = [];
@@ -23750,7 +23692,6 @@
               await supabaseClient
                 .from('calendar_event_participants')
                 .insert(participantRecords);
-              console.log('[Calendar] Added', participantRecords.length, 'participants to event');
             }
           }
         }
@@ -23767,7 +23708,6 @@
                 updated_at: new Date().toISOString()
               })
               .eq('id', leadId);
-            console.log('Lead appointment status updated');
           } catch (leadErr) {
             console.warn('Could not update lead status:', leadErr.message);
           }
@@ -25986,7 +25926,6 @@
         event.dataTransfer.dropEffect = 'move';
       }
       event.currentTarget.classList.add('drag-over');
-      console.log('[DragDrop] DragOver on:', event.currentTarget.dataset?.date || 'unknown');
     }
 
     function handleCalendarDragLeave(event) {
@@ -26020,13 +25959,11 @@
       event.dataTransfer.setData('application/json', dragData);
       event.dataTransfer.setData('text/plain', dragData); // Fallback for some browsers
 
-      console.log('[DragDrop] Data set, adding visual feedback');
       // Add visual feedback to calendar days
       setTimeout(() => {
         document.querySelectorAll('.calendar-day').forEach(day => {
           day.classList.add('drop-target-ready');
         });
-        console.log('[DragDrop] Visual feedback added to calendar days');
       }, 0);
     }
 
@@ -26059,13 +25996,11 @@
         if (!dragData) {
           dragData = event.dataTransfer.getData('text/plain');
         }
-        console.log('[DragDrop] Retrieved drag data:', dragData ? 'yes' : 'no');
 
         if (dragData) {
           const data = JSON.parse(dragData);
           console.log('[DragDrop] Parsed data:', data);
           if (data.isQuickAdd) {
-            console.log('[DragDrop] Quick add detected, opening modal');
             // Open event modal with prefilled data
             openCalendarEventModal(null, newDate, {
               type: data.eventType,
@@ -26556,7 +26491,6 @@
 
     async function saveCustomer(event) {
       event.preventDefault();
-      console.log('[SaveCustomer] Form submitted');
 
       const customerId = document.getElementById('edit-customer-id').value;
       const notesField = document.getElementById('cust-notes');
@@ -26582,7 +26516,6 @@
       }
 
       try {
-        console.log('[SaveCustomer] Getting user...');
         const { data: { user } } = await supabaseClient.auth.getUser();
         console.log('[SaveCustomer] User:', user?.id);
         if (!user) {
@@ -26602,7 +26535,6 @@
             .single();
         } else {
           // Create new customer
-          console.log('[SaveCustomer] Inserting new customer...');
           result = await supabaseClient
             .from('customers')
             .insert({ ...customerData, user_id: user.id })
@@ -28464,7 +28396,6 @@
 
     async function godLoadAnalytics() {
       if (!isGodMode()) return;
-      console.log('⚡ GOD MODE: Loading analytics...');
 
       const range = document.getElementById('god-analytics-range')?.value || 30;
 
@@ -28745,7 +28676,6 @@
 
     async function godLoadGAData() {
       if (!gaAccessToken) {
-        console.log('No GA access token, skipping GA data load');
         return;
       }
 
@@ -29150,7 +29080,6 @@
 
     async function godLoadSiteManager() {
       if (!isGodMode()) return;
-      console.log('⚡ GOD MODE: Loading site manager...');
 
       // Update site stats
       document.getElementById('god-site-status').textContent = 'Online';
@@ -29188,7 +29117,6 @@
 
     async function godLoadConfig() {
       if (!isGodMode()) return;
-      console.log('⚡ GOD MODE: Loading config...');
 
       // Set API URL
       const apiUrl = window.SG_CONFIG?.API_BASE_URL || 'Not configured';
@@ -29561,6 +29489,5 @@
         });
     }
 
-    console.log('⚡ GOD MODE functions loaded');
     // ==================== END GOD MODE FUNCTIONS ====================
 
