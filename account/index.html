@@ -1054,7 +1054,7 @@
       text-transform: uppercase;
     }
 
-    /* Page Toolbar (Quick Actions) */
+    /* Page Toolbar (Quick Actions) - Desktop only */
     .page-toolbar {
       position: fixed;
       left: var(--sidebar-width);
@@ -1063,12 +1063,19 @@
       width: 56px;
       background: var(--dark-surface);
       border-right: 1px solid var(--border-subtle);
-      display: flex;
+      display: none; /* Hidden by default, shown on large screens */
       flex-direction: column;
       padding: 16px 8px;
       gap: 8px;
       z-index: 99;
       transition: left 0.3s ease;
+    }
+
+    /* Only show toolbar on large desktop screens */
+    @media (min-width: 1200px) {
+      .page-toolbar {
+        display: flex;
+      }
     }
 
     body.sidebar-collapsed .page-toolbar {
