@@ -5185,8 +5185,8 @@
           await loadInvoices();
         }
 
-        // Load leads when that page is shown (if not already loaded by setupDashboard)
-        if (page === 'leads' && (!allLeads || allLeads.length === 0)) {
+        // Load leads when that page is shown
+        if (page === 'leads') {
           await loadLeads();
         }
 
