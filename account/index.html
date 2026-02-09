@@ -14,14 +14,20 @@
   <script>
     // Stub for Google Maps callback - will be replaced/enhanced by main script
     var googleMapsReady = false;
+    var googleMapsError = false;
     function initGoogleMaps() {
       console.log('[GoogleMaps] API loaded via callback');
       googleMapsReady = true;
-      // Dispatch event for main script to initialize components
       document.dispatchEvent(new CustomEvent('googlemaps-ready'));
     }
+    // Handle Google Maps API errors gracefully
+    window.gm_authFailure = function() {
+      console.warn('[GoogleMaps] API authentication failed - maps features disabled');
+      googleMapsError = true;
+      googleMapsReady = false;
+    };
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxOFaHXjn5lKZ4DKueRWdH0W-Cb9TOJZE&libraries=places&callback=initGoogleMaps" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxOFaHXjn5lKZ4DKueRWdH0W-Cb9TOJZE&libraries=places&callback=initGoogleMaps" async defer onerror="googleMapsError=true;console.warn('[GoogleMaps] Failed to load API');"></script>
   <script src="/js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
   <script src="/js/supabase-init.js"></script>
@@ -838,9 +844,30 @@
 
           <!-- Project Collaborations Tab -->
           <div id="collab-tab-collaborations" class="collab-tab-content">
+            <!-- Activity Feed -->
+            <div class="card" style="margin-bottom: 20px;">
+              <div class="card-header">
+                <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  Recent Activity
+                </h3>
+                <button class="btn-modern ghost" onclick="loadCollaborationActivity()" style="padding: 6px 10px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div id="collaboration-activity-feed" style="max-height: 200px; overflow-y: auto;">
+                  <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                    Activity from shared projects will appear here
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Collaborations -->
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">My Collaborations</h3>
+                <h3 class="card-title">Active Projects</h3>
                 <button class="btn-modern primary" onclick="openInviteToProjectModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                   Invite to Project
@@ -6423,6 +6450,49 @@
             Assign to Project
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collaborator Chat Modal -->
+  <div class="modal-overlay" id="collaborator-chat-modal" onclick="if(event.target === this) closeCollaboratorChat()">
+    <div class="modal" style="max-width: 500px; height: 70vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; background: var(--gold-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #1a1a2e;" id="chat-collaborator-avatar">?</div>
+          <div>
+            <h2 class="modal-title" id="chat-collaborator-name" style="margin: 0;">Chat</h2>
+            <div style="font-size: 12px; color: var(--text-muted);" id="chat-collaborator-email"></div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeCollaboratorChat()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column;">
+        <div id="collaborator-chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 16px;">
+          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="margin-bottom: 12px; opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            <p>Start a conversation</p>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 16px; border-top: 1px solid var(--border-subtle); flex-shrink: 0;">
+        <input type="hidden" id="chat-collaborator-id" />
+        <div style="display: flex; gap: 8px;">
+          <textarea id="collaborator-message-input" class="input-modern" placeholder="Type a message..." rows="2" style="flex: 1; resize: none;" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendCollaboratorMessage(); }"></textarea>
+          <button class="btn-modern primary" onclick="sendCollaboratorMessage()" style="padding: 12px 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+            <input type="radio" name="collab-msg-channel" value="in_app" checked style="margin: 0;"> In-App
+          </label>
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+            <input type="radio" name="collab-msg-channel" value="email" style="margin: 0;"> Email
+          </label>
+        </div>
       </div>
     </div>
   </div>

@@ -19159,29 +19159,21 @@
       select.innerHTML = '<option value="">Loading projects...</option>';
 
       try {
-        const resp = await apiCall('/api/collaboration/my-projects');
-        const data = await resp.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
         let projects = [];
 
-        if (resp.ok && data.collaborations) {
-          projects = data.collaborations.filter(function(c) {
-            return c.access_level === 'admin' || c.access_level === 'write';
-          });
-        }
+        // Load owned projects from Supabase
+        const { data: ownedProjects } = await supabaseClient
+          .from('projects')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-        // Also try to load owned projects from Supabase
-        if (supabaseClient && currentUser) {
-          try {
-            const result = await supabaseClient.from('projects').select('id, name').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
-            if (result.data) {
-              const existingIds = projects.map(function(p) { return p.project_id; });
-              result.data.forEach(function(proj) {
-                if (existingIds.indexOf(proj.id) === -1) {
-                  projects.push({ project_id: proj.id, project: { name: proj.name } });
-                }
-              });
-            }
-          } catch (e) { /* projects table may not exist */ }
+        if (ownedProjects) {
+          projects = ownedProjects.map(p => ({ project_id: p.id, project: { name: p.name } }));
         }
 
         // Also add jobs as invitable contexts
@@ -19844,7 +19836,140 @@
       // Load data for the active tab
       if (tab === 'network') loadMyNetwork();
       else if (tab === 'invitations') loadReceivedInvitations();
-      else if (tab === 'collaborations') loadCollaborations();
+      else if (tab === 'collaborations') {
+        loadCollaborations();
+        loadCollaborationActivity();
+      }
+    }
+
+    async function loadCollaborationActivity() {
+      const container = document.getElementById('collaboration-activity-feed');
+      if (!container) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        // Get recent activity from projects user is involved in
+        // This includes: project updates, new collaborators, messages, status changes
+        const activities = [];
+
+        // Get recent project notes (activity)
+        const { data: notes } = await supabaseClient
+          .from('project_notes')
+          .select('id, content, created_at, project_id, user_id, projects(name)')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (notes) {
+          notes.forEach(note => {
+            activities.push({
+              type: 'note',
+              message: note.content?.substring(0, 100) + (note.content?.length > 100 ? '...' : ''),
+              project: note.projects?.name,
+              project_id: note.project_id,
+              created_at: note.created_at,
+              icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+            });
+          });
+        }
+
+        // Get recent collaborator joins
+        const { data: recentCollabs } = await supabaseClient
+          .from('general_collaborators')
+          .select('id, name, role, status, created_at, accepted_at')
+          .eq('invited_by', user.id)
+          .eq('status', 'accepted')
+          .order('accepted_at', { ascending: false })
+          .limit(5);
+
+        if (recentCollabs) {
+          recentCollabs.forEach(collab => {
+            if (collab.accepted_at) {
+              activities.push({
+                type: 'collaborator',
+                message: `${collab.name} joined your network as ${collab.role}`,
+                created_at: collab.accepted_at,
+                icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'
+              });
+            }
+          });
+        }
+
+        // Get recent messages
+        const { data: recentMessages } = await supabaseClient
+          .from('collaborator_messages')
+          .select('id, message, created_at, sender_id, recipient_id')
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (recentMessages) {
+          recentMessages.forEach(msg => {
+            const isIncoming = msg.sender_id !== user.id;
+            activities.push({
+              type: 'message',
+              message: isIncoming ? 'New message received' : 'Message sent',
+              created_at: msg.created_at,
+              icon: '8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
+            });
+          });
+        }
+
+        // Sort by date
+        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (activities.length === 0) {
+          container.innerHTML = `
+            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+              No recent activity yet
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = activities.slice(0, 8).map(activity => {
+          const timeAgo = getTimeAgo(activity.created_at);
+          const typeColors = {
+            note: '#3b82f6',
+            collaborator: '#10b981',
+            message: '#f59e0b',
+            project: '#8b5cf6'
+          };
+          const color = typeColors[activity.type] || '#6b7280';
+
+          return `
+            <div style="display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle);" ${activity.project_id ? `onclick="viewCollaborationProject('${activity.project_id}')" style="cursor: pointer;"` : ''}>
+              <div style="width: 32px; height: 32px; background: ${color}20; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="${color}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M${activity.icon}"/></svg>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(activity.message)}</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                  ${activity.project ? escapeHtml(activity.project) + ' • ' : ''}${timeAgo}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading activity:', err);
+        container.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Activity from shared projects will appear here
+          </div>`;
+      }
+    }
+
+    function getTimeAgo(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+      return date.toLocaleDateString();
     }
 
     function switchTeamTab(tab) {
@@ -19870,10 +19995,27 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const resp = await apiCall('/api/collaboration/invitations');
-        const data = await resp.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        if (!resp.ok || !data.received || data.received.length === 0) {
+        // Query project collaborators where user is invited (by email)
+        const { data: projectInvites, error } = await supabaseClient
+          .from('project_collaborators')
+          .select('id, role, status, token_expires_at, created_at, project_id, invited_by')
+          .eq('email', user.email.toLowerCase())
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Filter out expired invitations
+        const now = new Date();
+        const validInvites = (projectInvites || []).filter(inv => {
+          if (!inv.token_expires_at) return true;
+          return new Date(inv.token_expires_at) > now;
+        });
+
+        if (validInvites.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -19883,30 +20025,78 @@
           return;
         }
 
-        container.innerHTML = data.received.map(inv => `
-          <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 8px;">
-            <div>
-              <div style="font-weight: 600;">${escapeHtml(inv.project?.name || 'Project')}</div>
-              <div style="font-size: 13px; color: var(--text-muted);">From: ${escapeHtml(inv.inviter?.full_name || inv.inviter?.email || 'Unknown')}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">Role: ${inv.role || 'Collaborator'}</div>
+        // Get project and inviter details
+        const projectIds = [...new Set(validInvites.map(inv => inv.project_id).filter(Boolean))];
+        const inviterIds = [...new Set(validInvites.map(inv => inv.invited_by).filter(Boolean))];
+
+        let projectsMap = {};
+        let invitersMap = {};
+
+        if (projectIds.length > 0) {
+          const { data: projects } = await supabaseClient
+            .from('projects')
+            .select('id, name')
+            .in('id', projectIds);
+          if (projects) {
+            projectsMap = Object.fromEntries(projects.map(p => [p.id, p]));
+          }
+        }
+
+        if (inviterIds.length > 0) {
+          const { data: inviters } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', inviterIds);
+          if (inviters) {
+            invitersMap = Object.fromEntries(inviters.map(p => [p.id, p]));
+          }
+        }
+
+        container.innerHTML = validInvites.map(inv => {
+          const project = projectsMap[inv.project_id];
+          const inviter = invitersMap[inv.invited_by];
+          const expiresStr = inv.token_expires_at ? getExpirationText(inv.token_expires_at) : '';
+
+          return `
+            <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 8px;">
+              <div>
+                <div style="font-weight: 600;">${escapeHtml(project?.name || 'Project')}</div>
+                <div style="font-size: 13px; color: var(--text-muted);">From: ${escapeHtml(inviter?.full_name || inviter?.email || 'Unknown')}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Role: ${inv.role || 'Collaborator'}</div>
+                ${expiresStr ? `<div style="font-size: 11px; color: var(--warning); margin-top: 4px;">${expiresStr}</div>` : ''}
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-modern primary" onclick="respondToInvitation('${inv.id}', 'accepted', false)">Accept</button>
+                <button class="btn-modern ghost" onclick="respondToInvitation('${inv.id}', 'declined', false)">Decline</button>
+              </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-modern primary" onclick="respondToInvitation('${inv.id}', 'accepted', false)">Accept</button>
-              <button class="btn-modern ghost" onclick="respondToInvitation('${inv.id}', 'declined', false)">Decline</button>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         // Update badge
         const badge = document.getElementById('team-invites-badge');
-        if (badge && data.received.length > 0) {
-          badge.textContent = data.received.length;
-          badge.style.display = 'inline';
+        if (badge) {
+          badge.textContent = validInvites.length;
+          badge.style.display = validInvites.length > 0 ? 'inline' : 'none';
         }
       } catch (err) {
         console.error('Load team invitations error:', err);
         container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading invitations</div>';
       }
+    }
+
+    // Helper to get expiration text
+    function getExpirationText(expiresAt) {
+      if (!expiresAt) return '';
+      const now = new Date();
+      const expiresDate = new Date(expiresAt);
+      if (expiresDate < now) return 'Expired';
+      const daysLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24));
+      const hoursLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60));
+      if (daysLeft <= 1) {
+        return hoursLeft <= 1 ? 'Expires in less than an hour' : `Expires in ${hoursLeft} hours`;
+      }
+      return `Expires in ${daysLeft} days`;
     }
 
     async function loadMyNetwork() {
@@ -19922,13 +20112,14 @@
         // Load collaborators directly from Supabase
         const { data: collaborators, error } = await supabaseClient
           .from('general_collaborators')
-          .select('id, name, email, phone, role, company, status, notes, created_at')
+          .select('id, name, email, phone, role, company, status, notes, created_at, token_expires_at')
           .eq('invited_by', user.id)
           .order('name', { ascending: true });
 
         if (error) throw error;
 
         const collabList = collaborators || [];
+        const now = new Date();
 
         // Update badge
         const badge = document.getElementById('network-count-badge');
@@ -19950,10 +20141,46 @@
 
         container.innerHTML = collabList.map(c => {
           const roleLabel = (c.role || 'partner').charAt(0).toUpperCase() + (c.role || 'partner').slice(1);
-          const statusColor = c.status === 'active' ? '#10b981' : c.status === 'pending' ? '#f59e0b' : '#6b7280';
-          const statusLabel = c.status === 'active' ? 'Active' : c.status === 'pending' ? 'Pending' : (c.status || 'Unknown');
           const userName = c.name || c.email;
           const dateStr = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+
+          // Check expiration for pending invites
+          let isExpired = false;
+          let expiresStr = '';
+          if (c.status === 'pending' && c.token_expires_at) {
+            const expiresDate = new Date(c.token_expires_at);
+            isExpired = expiresDate < now;
+            if (isExpired) {
+              expiresStr = 'Expired';
+            } else {
+              const daysLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24));
+              const hoursLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60));
+              if (daysLeft <= 1) {
+                expiresStr = hoursLeft <= 1 ? 'Expires in <1 hour' : `Expires in ${hoursLeft}h`;
+              } else {
+                expiresStr = `Expires in ${daysLeft}d`;
+              }
+            }
+          }
+
+          // Determine status display
+          let statusColor, statusLabel;
+          if (c.status === 'accepted') {
+            statusColor = '#10b981';
+            statusLabel = 'Active';
+          } else if (c.status === 'declined') {
+            statusColor = '#ef4444';
+            statusLabel = 'Declined';
+          } else if (isExpired) {
+            statusColor = '#ef4444';
+            statusLabel = 'Expired';
+          } else if (c.status === 'pending') {
+            statusColor = '#f59e0b';
+            statusLabel = 'Pending';
+          } else {
+            statusColor = '#6b7280';
+            statusLabel = c.status || 'Unknown';
+          }
 
           return `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">
@@ -19963,13 +20190,28 @@
                   <span style="font-size: 11px; padding: 2px 8px; background: rgba(249, 203, 0, 0.15); color: var(--gold-primary); border-radius: 4px; font-weight: 500;">${roleLabel}</span>
                   <span style="font-size: 11px; padding: 2px 8px; background: ${statusColor}20; color: ${statusColor}; border-radius: 4px; font-weight: 500;">${statusLabel}</span>
                 </div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(c.email)}${dateStr ? ' • ' + dateStr : ''}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(c.email || '')}${c.phone ? ' • ' + escapeHtml(c.phone) : ''}${dateStr ? ' • ' + dateStr : ''}</div>
+                ${expiresStr && !isExpired ? `<div style="font-size: 11px; color: var(--warning); margin-top: 4px;">${expiresStr}</div>` : ''}
                 ${c.notes ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">${escapeHtml(c.notes)}</div>` : ''}
               </div>
-              <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+              <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
                 ${c.status === 'accepted' ? `
+                  <button class="btn-modern ghost" style="padding: 6px 10px;" onclick="openCollaboratorChat('${c.id}', '${escapeHtml(userName)}', '${escapeHtml(c.email || '')}')" title="Message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  </button>
+                  ${c.email ? `<button class="btn-modern ghost" style="padding: 6px 10px;" onclick="window.open('mailto:${escapeHtml(c.email)}', '_blank')" title="Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  </button>` : ''}
+                  ${c.phone ? `<button class="btn-modern ghost" style="padding: 6px 10px;" onclick="window.open('tel:${escapeHtml(c.phone)}', '_self')" title="Call">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                  </button>` : ''}
                   <button class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openAssignToProjectModal('${c.id}', '${escapeHtml(userName)}')">
-                    Assign to Project
+                    Assign
+                  </button>
+                ` : ''}
+                ${isExpired || c.status === 'declined' ? `
+                  <button class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;" onclick="resendNetworkInvite('${c.id}')">
+                    Resend
                   </button>
                 ` : ''}
                 <button class="btn-modern ghost" style="padding: 6px 10px; color: var(--error);" onclick="removeNetworkCollaborator('${c.id}')" title="Remove">
@@ -19993,23 +20235,47 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const resp = await apiCall('/api/collaboration/my-invitations');
-        const data = await resp.json();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        if (!resp.ok) {
-          throw new Error(data.error || 'Failed to load invitations');
+        // Query invitations sent to the current user's email that are still pending
+        const { data: networkInvites, error: networkError } = await supabaseClient
+          .from('general_collaborators')
+          .select('id, name, email, role, notes, created_at, token_expires_at, invited_by')
+          .eq('email', user.email.toLowerCase())
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (networkError) throw networkError;
+
+        // Filter out expired invitations
+        const now = new Date();
+        const validInvites = (networkInvites || []).filter(inv => {
+          if (!inv.token_expires_at) return true; // No expiration set
+          return new Date(inv.token_expires_at) > now;
+        });
+
+        // Get inviter details
+        const inviterIds = [...new Set(validInvites.map(inv => inv.invited_by).filter(Boolean))];
+        let invitersMap = {};
+        if (inviterIds.length > 0) {
+          const { data: inviters } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', inviterIds);
+          if (inviters) {
+            invitersMap = Object.fromEntries(inviters.map(p => [p.id, p]));
+          }
         }
-
-        const invitations = data.invitations || [];
 
         // Update badge
         const badge = document.getElementById('invitations-count-badge');
         if (badge) {
-          badge.textContent = invitations.length;
-          badge.style.display = invitations.length > 0 ? 'inline' : 'none';
+          badge.textContent = validInvites.length;
+          badge.style.display = validInvites.length > 0 ? 'inline' : 'none';
         }
 
-        if (invitations.length === 0) {
+        if (validInvites.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -20020,29 +20286,43 @@
           return;
         }
 
-        container.innerHTML = invitations.map(inv => {
+        container.innerHTML = validInvites.map(inv => {
           const roleLabel = (inv.role || 'collaborator').charAt(0).toUpperCase() + (inv.role || 'collaborator').slice(1);
-          const inviterName = inv.inviter?.full_name || inv.inviter?.email || 'Someone';
-          const isNetwork = !inv.project_id;
-          const dateStr = inv.invited_at ? new Date(inv.invited_at).toLocaleDateString() : '';
+          const inviter = invitersMap[inv.invited_by];
+          const inviterName = inviter?.full_name || inviter?.email || 'Someone';
+          const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '';
+
+          // Calculate time remaining
+          let expiresStr = '';
+          if (inv.token_expires_at) {
+            const expiresDate = new Date(inv.token_expires_at);
+            const daysLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24));
+            const hoursLeft = Math.ceil((expiresDate - now) / (1000 * 60 * 60));
+            if (daysLeft <= 1) {
+              expiresStr = hoursLeft <= 1 ? 'Expires in less than an hour' : `Expires in ${hoursLeft} hours`;
+            } else {
+              expiresStr = `Expires in ${daysLeft} days`;
+            }
+          }
 
           return `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">
               <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">
-                  ${isNetwork ? 'Network Invitation' : `Project: ${escapeHtml(inv.project?.name || 'Unknown')}`}
+                  Network Invitation
                 </div>
                 <div style="font-size: 13px; color: var(--text-secondary);">
                   From: ${escapeHtml(inviterName)} • Role: ${roleLabel}
                 </div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${dateStr}</div>
+                ${expiresStr ? `<div style="font-size: 11px; color: var(--warning); margin-top: 4px;">${expiresStr}</div>` : ''}
                 ${inv.notes ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; font-style: italic;">"${escapeHtml(inv.notes)}"</div>` : ''}
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
-                <button class="btn-modern primary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'accepted', ${isNetwork})">
+                <button class="btn-modern primary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'accepted', true)">
                   Accept
                 </button>
-                <button class="btn-modern secondary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'declined', ${isNetwork})">
+                <button class="btn-modern secondary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'declined', true)">
                   Decline
                 </button>
               </div>
@@ -20058,17 +20338,50 @@
 
     async function respondToInvitation(invitationId, response, isNetwork) {
       try {
-        const endpoint = isNetwork
-          ? `/api/collaboration/network/respond/${invitationId}`
-          : `/api/collaboration/invitations/${invitationId}/respond`;
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        const resp = await apiCall(endpoint, {
-          method: 'POST',
-          body: JSON.stringify({ response })
-        });
+        // Update invitation status directly in Supabase
+        const tableName = isNetwork ? 'general_collaborators' : 'project_collaborators';
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Failed to respond');
+        // First verify this invitation is for the current user
+        const { data: invitation, error: fetchError } = await supabaseClient
+          .from(tableName)
+          .select('id, email, status, token_expires_at')
+          .eq('id', invitationId)
+          .single();
+
+        if (fetchError || !invitation) {
+          throw new Error('Invitation not found');
+        }
+
+        // Check if invitation has expired
+        if (invitation.token_expires_at && new Date(invitation.token_expires_at) < new Date()) {
+          throw new Error('This invitation has expired');
+        }
+
+        // Check if already responded
+        if (invitation.status !== 'pending') {
+          throw new Error('This invitation has already been responded to');
+        }
+
+        // Update the status
+        const updateData = {
+          status: response
+        };
+
+        // If accepting, link to user account and set accepted_at
+        if (response === 'accepted') {
+          updateData.user_id = user.id;
+          updateData.accepted_at = new Date().toISOString();
+        }
+
+        const { error: updateError } = await supabaseClient
+          .from(tableName)
+          .update(updateData)
+          .eq('id', invitationId);
+
+        if (updateError) throw updateError;
 
         showToast(response === 'accepted' ? 'Invitation accepted!' : 'Invitation declined', 'success');
         loadReceivedInvitations();
@@ -20146,7 +20459,8 @@
         // Generate invite token
         const inviteToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-        // Insert new collaborator with invite token
+        // Insert new collaborator with invite token (expires in 7 days)
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         const { data: newCollab, error: insertError } = await supabaseClient
           .from('general_collaborators')
           .insert({
@@ -20156,7 +20470,8 @@
             phone,
             role,
             status: 'pending',
-            token_hash: inviteToken
+            token_hash: inviteToken,
+            token_expires_at: expiresAt
           })
           .select()
           .single();
@@ -20219,18 +20534,92 @@
       if (!confirm('Remove this contact from your network?')) return;
 
       try {
-        const resp = await apiCall(`/api/collaboration/collaborators/${collaboratorId}`, {
-          method: 'DELETE'
-        });
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Failed to remove');
+        // Delete from Supabase directly
+        const { error } = await supabaseClient
+          .from('general_collaborators')
+          .delete()
+          .eq('id', collaboratorId)
+          .eq('invited_by', user.id); // Ensure user owns this record
+
+        if (error) throw error;
 
         showToast('Contact removed from network', 'success');
         loadMyNetwork();
       } catch (err) {
         console.error('Error removing collaborator:', err);
         showToast(err.message || 'Failed to remove contact', 'error');
+      }
+    }
+
+    async function resendNetworkInvite(collaboratorId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Get the existing collaborator record
+        const { data: collab, error: fetchError } = await supabaseClient
+          .from('general_collaborators')
+          .select('id, name, email, role')
+          .eq('id', collaboratorId)
+          .eq('invited_by', user.id)
+          .single();
+
+        if (fetchError || !collab) throw new Error('Collaborator not found');
+
+        // Generate new invite token and expiration
+        const inviteToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        // Update the record with new token, status, and expiration
+        const { error: updateError } = await supabaseClient
+          .from('general_collaborators')
+          .update({
+            status: 'pending',
+            token_hash: inviteToken,
+            token_expires_at: expiresAt,
+            accepted_at: null
+          })
+          .eq('id', collaboratorId);
+
+        if (updateError) throw updateError;
+
+        // Send new invite email if email provided
+        if (collab.email) {
+          const inviterName = userProfile?.full_name || userProfile?.name || user.email?.split('@')[0] || 'A colleague';
+          const inviteUrl = `https://www.surprisegranite.com/account/?invite=${inviteToken}`;
+
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const token = session?.access_token;
+
+            await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({
+                to: collab.email,
+                inviterName,
+                inviteeName: collab.name,
+                role: collab.role,
+                inviteUrl,
+                companyName: 'Surprise Granite'
+              })
+            });
+          } catch (emailErr) {
+            console.warn('[Resend] Email send failed:', emailErr);
+          }
+        }
+
+        showToast(`Invitation resent to ${collab.name}!`, 'success');
+        loadMyNetwork();
+      } catch (err) {
+        console.error('Error resending invite:', err);
+        showToast(err.message || 'Failed to resend invitation', 'error');
       }
     }
 
@@ -20298,13 +20687,36 @@
       }
 
       try {
-        const resp = await apiCall(`/api/collaboration/collaborators/${collaboratorId}/assign-project`, {
-          method: 'POST',
-          body: JSON.stringify({ project_id: projectId, access_level: accessLevel })
-        });
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Failed to assign');
+        // Get the collaborator details
+        const { data: collab, error: collabError } = await supabaseClient
+          .from('general_collaborators')
+          .select('id, name, email, role, user_id')
+          .eq('id', collaboratorId)
+          .single();
+
+        if (collabError || !collab) throw new Error('Collaborator not found');
+
+        // Add to project_contractors table
+        const { error: insertError } = await supabaseClient
+          .from('project_contractors')
+          .insert({
+            project_id: projectId,
+            contractor_id: collab.user_id || collaboratorId,
+            role: collab.role || 'contractor',
+            status: 'assigned',
+            assigned_by: user.id
+          });
+
+        if (insertError) {
+          // Check if it's a duplicate
+          if (insertError.code === '23505') {
+            throw new Error('This collaborator is already assigned to this project');
+          }
+          throw insertError;
+        }
 
         showToast('Collaborator assigned to project!', 'success');
         closeAssignToProjectModal();
@@ -20315,6 +20727,138 @@
       }
 
       return false;
+    }
+
+    // =============================================
+    // COLLABORATOR CHAT SYSTEM
+    // =============================================
+
+    let currentChatCollaborator = null;
+
+    function openCollaboratorChat(collaboratorId, name, email) {
+      currentChatCollaborator = { id: collaboratorId, name, email };
+      document.getElementById('chat-collaborator-id').value = collaboratorId;
+      document.getElementById('chat-collaborator-name').textContent = name;
+      document.getElementById('chat-collaborator-email').textContent = email;
+      document.getElementById('chat-collaborator-avatar').textContent = (name || '?').charAt(0).toUpperCase();
+      document.getElementById('collaborator-message-input').value = '';
+      document.getElementById('collaborator-chat-modal').classList.add('active');
+      loadCollaboratorMessages(collaboratorId);
+    }
+
+    function closeCollaboratorChat() {
+      document.getElementById('collaborator-chat-modal').classList.remove('active');
+      currentChatCollaborator = null;
+    }
+
+    async function loadCollaboratorMessages(collaboratorId) {
+      const container = document.getElementById('collaborator-chat-messages');
+      container.innerHTML = '<div style="text-align: center; padding: 20px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Load messages between current user and collaborator
+        const { data: messages, error } = await supabaseClient
+          .from('collaborator_messages')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},recipient_id.eq.${collaboratorId}),and(sender_id.eq.${collaboratorId},recipient_id.eq.${user.id})`)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          // Table might not exist yet, show empty state
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="margin-bottom: 12px; opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              <p>Start a conversation with ${escapeHtml(currentChatCollaborator?.name || 'this collaborator')}</p>
+            </div>`;
+          return;
+        }
+
+        if (!messages || messages.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="margin-bottom: 12px; opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              <p>Start a conversation</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = messages.map(msg => {
+          const isOutbound = msg.sender_id === user.id;
+          const time = new Date(msg.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          return `
+            <div style="display: flex; justify-content: ${isOutbound ? 'flex-end' : 'flex-start'}; margin-bottom: 12px;">
+              <div style="max-width: 80%; padding: 10px 14px; border-radius: 16px; background: ${isOutbound ? 'var(--gold-primary)' : 'var(--dark-elevated)'}; color: ${isOutbound ? '#1a1a2e' : 'var(--text-primary)'};">
+                <div style="font-size: 14px; line-height: 1.4;">${escapeHtml(msg.message)}</div>
+                <div style="font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right;">${time}</div>
+              </div>
+            </div>`;
+        }).join('');
+
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+      } catch (err) {
+        console.error('Error loading messages:', err);
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load messages</div>';
+      }
+    }
+
+    async function sendCollaboratorMessage() {
+      const input = document.getElementById('collaborator-message-input');
+      const message = input.value.trim();
+      if (!message || !currentChatCollaborator) return;
+
+      const channel = document.querySelector('input[name="collab-msg-channel"]:checked')?.value || 'in_app';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Insert message
+        const { error: insertError } = await supabaseClient
+          .from('collaborator_messages')
+          .insert({
+            sender_id: user.id,
+            recipient_id: currentChatCollaborator.id,
+            message: message,
+            channel: channel
+          });
+
+        if (insertError) throw insertError;
+
+        // Clear input and reload messages
+        input.value = '';
+        loadCollaboratorMessages(currentChatCollaborator.id);
+
+        // Send email if channel is email
+        if (channel === 'email' && currentChatCollaborator.email) {
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            await fetch('https://surprise-granite-email-api.onrender.com/api/send-collaborator-message', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+              },
+              body: JSON.stringify({
+                to: currentChatCollaborator.email,
+                senderName: userProfile?.full_name || user.email,
+                recipientName: currentChatCollaborator.name,
+                message: message
+              })
+            });
+          } catch (emailErr) {
+            console.warn('Email delivery failed:', emailErr);
+          }
+        }
+
+        showToast('Message sent', 'success');
+      } catch (err) {
+        console.error('Error sending message:', err);
+        showToast('Failed to send message', 'error');
+      }
     }
 
     // =============================================
@@ -23694,6 +24238,9 @@
         const startDateTime = new Date(`${startDate}T${startTime}:00`);
         const endDateTime = new Date(`${startDate}T${endTime}:00`);
 
+        // Get contact address from selected contact data
+        const contactAddress = selectedContactData?.address || document.getElementById('cal-event-location')?.value?.trim() || '';
+
         const eventData = {
           created_by: user.id,
           title,
@@ -23708,6 +24255,7 @@
             contact_name: contactName,
             contact_email: contactEmail,
             contact_phone: contactPhone,
+            contact_address: contactAddress,
             contact_type: contactType,
             contact_id: contactId,
             meeting_details: meetingDetails
@@ -23937,6 +24485,66 @@
           .single();
 
         if (error) throw error;
+
+        // Try to get full address from metadata or linked records
+        let fullAddress = event.location || '';
+        let addressForMap = fullAddress;
+
+        // Check metadata for address fields
+        if (event.metadata) {
+          const meta = event.metadata;
+          // Build address from parts if available
+          if (meta.address || meta.street_address) {
+            const parts = [
+              meta.address || meta.street_address,
+              meta.city,
+              meta.state,
+              meta.zip || meta.zip_code || meta.postal_code
+            ].filter(Boolean);
+            if (parts.length > 1) {
+              fullAddress = parts.join(', ');
+              addressForMap = fullAddress;
+            }
+          }
+          // Also check for contact_address
+          if (meta.contact_address && meta.contact_address.length > fullAddress.length) {
+            fullAddress = meta.contact_address;
+            addressForMap = fullAddress;
+          }
+        }
+
+        // If we have a lead_id, try to get the lead's address
+        if (event.lead_id && (!fullAddress || fullAddress.length < 10)) {
+          const { data: lead } = await supabaseClient
+            .from('leads')
+            .select('address, city, state, zip, full_name')
+            .eq('id', event.lead_id)
+            .single();
+          if (lead) {
+            const parts = [lead.address, lead.city, lead.state, lead.zip].filter(Boolean);
+            if (parts.length > 1) {
+              fullAddress = parts.join(', ');
+              addressForMap = fullAddress;
+            }
+          }
+        }
+
+        // If we have a customer_id, try to get the customer's address
+        if (event.customer_id && (!fullAddress || fullAddress.length < 10)) {
+          const { data: customer } = await supabaseClient
+            .from('customers')
+            .select('address, city, state, zip, name')
+            .eq('id', event.customer_id)
+            .single();
+          if (customer) {
+            const parts = [customer.address, customer.city, customer.state, customer.zip].filter(Boolean);
+            if (parts.length > 1) {
+              fullAddress = parts.join(', ');
+              addressForMap = fullAddress;
+            }
+          }
+        }
+
         const typeColors = {
           appointment: '#3b82f6',
           measurement: '#f59e0b',
@@ -23983,15 +24591,15 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span style="font-size: 14px;">${startTime.toLocaleTimeString('en-US', timeOptions)} - ${endTime.toLocaleTimeString('en-US', timeOptions)}</span>
             </div>
-            ${event.location ? `
-            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              <span style="font-size: 14px;">${escapeHtml(event.location)}</span>
-              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank" style="color: var(--gold-primary); font-size: 12px; margin-left: auto;">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Map
+            ${fullAddress ? `
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); flex-shrink: 0; margin-top: 2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span style="font-size: 14px; flex: 1;">${escapeHtml(fullAddress)}</span>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressForMap)}" target="_blank" style="color: var(--gold-primary); font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-diamond-turn-right"></i> Directions
               </a>
             </div>
-            <div id="event-detail-map" style="margin-top: 10px; border-radius: 8px; overflow: hidden; height: 120px;"></div>
+            ${addressForMap.length > 10 ? `<div id="event-detail-map" style="margin-top: 10px; border-radius: 8px; overflow: hidden; height: 120px;"></div>` : ''}
             ` : ''}
           </div>
 
@@ -24057,9 +24665,9 @@
           </button>
         `;
 
-        // Initialize map for location if Google Maps is ready
-        if (event.location && googleMapsReady) {
-          initEventDetailMap(event.location);
+        // Initialize map for location if Google Maps is ready and we have a valid address
+        if (addressForMap && addressForMap.length > 10 && googleMapsReady && !googleMapsError) {
+          initEventDetailMap(addressForMap);
         }
 
       } catch (err) {

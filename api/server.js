@@ -5589,6 +5589,62 @@ app.post('/api/send-network-invite', async (req, res) => {
   }
 });
 
+// Send collaborator message via email
+app.post('/api/send-collaborator-message', async (req, res) => {
+  try {
+    const { to, senderName, recipientName, message } = req.body;
+
+    if (!to || !senderName || !message) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: to, senderName, message' });
+    }
+
+    const subject = `New message from ${senderName}`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a12; color: #ffffff; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #f9cb00, #cca600); padding: 24px; text-align: center;">
+          <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="width: 50px; height: 50px; border-radius: 10px; margin-bottom: 12px;" />
+          <h1 style="color: #1a1a2e; margin: 0; font-size: 20px;">New Message</h1>
+        </div>
+        <div style="padding: 28px;">
+          <p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+            Hi ${recipientName || 'there'},
+          </p>
+          <p style="font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+            <strong>${senderName}</strong> sent you a message:
+          </p>
+          <div style="background: #1a1a2e; border-left: 4px solid #f9cb00; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
+            <p style="font-size: 15px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+          </div>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="https://www.surprisegranite.com/account/#collaborations" style="display: inline-block; background: linear-gradient(135deg, #f9cb00, #cca600); color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 14px;">
+              Reply in App
+            </a>
+          </div>
+        </div>
+        <div style="background: #12121a; padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+          <p style="margin: 0; font-size: 11px; color: #666;">
+            ${COMPANY.name} | ${COMPANY.phone}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const result = await sendNotification(to, subject, html);
+
+    if (result.success) {
+      logger.info('Collaborator message sent:', { to, senderName });
+      res.json({ success: true, message: 'Message sent successfully' });
+    } else {
+      logger.warn('Collaborator message failed:', { to, reason: result.reason });
+      res.status(500).json({ success: false, error: 'Failed to send message', reason: result.reason });
+    }
+  } catch (error) {
+    logger.error('Send collaborator message error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Purchase a lead (a la carte)
 app.post('/api/purchase-lead', async (req, res) => {
   try {
