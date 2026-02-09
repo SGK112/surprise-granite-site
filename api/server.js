@@ -5589,6 +5589,63 @@ app.post('/api/send-network-invite', async (req, res) => {
   }
 });
 
+// Send contractor portal invite email
+app.post('/api/collaborators/send-invite', async (req, res) => {
+  try {
+    const { email, invite_link, contractor_name } = req.body;
+
+    if (!email || !invite_link) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: email, invite_link' });
+    }
+
+    const subject = `Your Contractor Portal Access - ${COMPANY.shortName}`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a12; color: #ffffff; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #f9cb00, #cca600); padding: 30px; text-align: center;">
+          <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="width: 60px; height: 60px; border-radius: 12px; margin-bottom: 16px;" />
+          <h1 style="color: #1a1a2e; margin: 0; font-size: 24px;">Contractor Portal Access</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+            Hi${contractor_name ? ' ' + contractor_name : ''},
+          </p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+            You've been given access to the ${COMPANY.shortName} Contractor Portal. Use the link below to view your assigned projects, schedules, and more.
+          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${invite_link}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00, #cca600); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+              Access Portal
+            </a>
+          </div>
+          <p style="font-size: 14px; color: #888; margin-top: 32px;">
+            This is your personal access link. Please don't share it with others.
+          </p>
+        </div>
+        <div style="background: #12121a; padding: 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+          <p style="margin: 0; font-size: 12px; color: #666;">
+            ${COMPANY.name}<br />
+            ${COMPANY.phone} | ${COMPANY.email}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const result = await sendNotification(email, subject, html);
+
+    if (result.success) {
+      logger.info('Contractor portal invite sent:', { email });
+      res.json({ success: true, message: 'Portal invite sent successfully' });
+    } else {
+      logger.warn('Contractor portal invite failed:', { email, reason: result.reason });
+      res.status(500).json({ success: false, error: 'Failed to send invite', reason: result.reason });
+    }
+  } catch (error) {
+    logger.error('Send contractor invite error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Send collaborator message via email
 app.post('/api/send-collaborator-message', async (req, res) => {
   try {
