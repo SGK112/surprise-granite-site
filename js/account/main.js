@@ -17894,9 +17894,10 @@
       if (!listEl) return;
 
       try {
+        // Get project contractors
         const { data: contractors, error } = await supabaseClient
           .from('project_contractors')
-          .select('id, role, status, contractor_id, general_collaborators(id, name, email, phone, role, company)')
+          .select('id, role, status, contractor_id')
           .eq('project_id', projectId);
 
         if (error) throw error;
@@ -17904,6 +17905,19 @@
         if (!contractors || contractors.length === 0) {
           listEl.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px;">No team members assigned yet<br><small>Click "Assign" to add from your network</small></div>';
           return;
+        }
+
+        // Get collaborator details separately
+        const contractorIds = contractors.map(c => c.contractor_id).filter(Boolean);
+        let collaboratorMap = {};
+
+        if (contractorIds.length > 0) {
+          const { data: collaborators } = await supabaseClient
+            .from('general_collaborators')
+            .select('id, name, email, phone, role, company')
+            .in('id', contractorIds);
+
+          (collaborators || []).forEach(c => { collaboratorMap[c.id] = c; });
         }
 
         const roleColors = {
@@ -17917,7 +17931,7 @@
         };
 
         listEl.innerHTML = contractors.map(pc => {
-          const c = pc.general_collaborators;
+          const c = collaboratorMap[pc.contractor_id];
           if (!c) return '';
           const color = roleColors[pc.role] || roleColors.other;
 
