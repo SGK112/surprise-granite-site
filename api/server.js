@@ -2507,6 +2507,64 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 // No existing invoice found, that's OK
               }
 
+              // Convert lead to customer if lead_id exists
+              if (existingInvoiceData?.lead_id && !customerId) {
+                try {
+                  const { data: lead } = await supabase
+                    .from('leads')
+                    .select('*')
+                    .eq('id', existingInvoiceData.lead_id)
+                    .single();
+
+                  if (lead) {
+                    // Create customer from lead
+                    const { data: newCust, error: custError } = await supabase
+                      .from('customers')
+                      .insert({
+                        user_id: adminUserId,
+                        name: lead.full_name || lead.homeowner_name || lead.name || 'Customer',
+                        email: lead.email || lead.homeowner_email,
+                        phone: lead.phone || lead.homeowner_phone,
+                        address: lead.address || lead.homeowner_address,
+                        city: lead.city,
+                        state: lead.state,
+                        zip: lead.zip,
+                        source: 'converted_lead',
+                        lead_id: lead.id,
+                        stripe_customer_id: invoice.customer,
+                        notes: `Converted from lead on ${new Date().toLocaleDateString()}`
+                      })
+                      .select()
+                      .single();
+
+                    if (!custError && newCust) {
+                      customerId = newCust.id;
+                      logger.info('Converted lead to customer:', lead.id, '->', customerId);
+
+                      // Update lead status to converted
+                      await supabase
+                        .from('leads')
+                        .update({
+                          status: 'converted',
+                          customer_id: customerId,
+                          converted_at: new Date().toISOString()
+                        })
+                        .eq('id', lead.id);
+
+                      // Update invoice with customer_id
+                      if (existingInvoiceData.id) {
+                        await supabase
+                          .from('invoices')
+                          .update({ customer_id: customerId })
+                          .eq('id', existingInvoiceData.id);
+                      }
+                    }
+                  }
+                } catch (leadErr) {
+                  logger.error('Error converting lead to customer:', leadErr.message);
+                }
+              }
+
               // Create job record with full traceability
               const jobData = {
                 user_id: adminUserId,

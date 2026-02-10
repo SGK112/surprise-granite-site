@@ -2041,15 +2041,22 @@ router.post('/network/respond/:id',
 
     const newStatus = response === 'accept' ? 'accepted' : 'declined';
 
+    const updateData = {
+      status: newStatus,
+      user_id: req.user.id,
+      token_hash: null,
+      token_expires_at: null
+    };
+
+    if (response === 'accept') {
+      updateData.accepted_at = new Date().toISOString();
+    } else {
+      updateData.declined_at = new Date().toISOString();
+    }
+
     const { data: updated, error } = await supabase
       .from('general_collaborators')
-      .update({
-        status: newStatus,
-        user_id: req.user.id,
-        accepted_at: response === 'accept' ? new Date().toISOString() : null,
-        token_hash: null,
-        token_expires_at: null
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -2306,6 +2313,17 @@ router.get('/network/verify/:token', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'This invitation has expired' });
   }
 
+  // Track that the invite was viewed
+  await supabase
+    .from('general_collaborators')
+    .update({
+      viewed_at: invitation.viewed_at || new Date().toISOString(),
+      view_count: (invitation.view_count || 0) + 1
+    })
+    .eq('id', invitation.id);
+
+  logger.info('Invitation viewed', { invitationId: invitation.id, viewCount: (invitation.view_count || 0) + 1 });
+
   // Get inviter info
   const { data: inviter } = await supabase
     .from('sg_users')
@@ -2336,6 +2354,70 @@ router.get('/network/verify/:token', asyncHandler(async (req, res) => {
       expiresAt: invitation.token_expires_at
     }
   });
+}));
+
+/**
+ * POST /api/collaboration/network/decline/:token
+ * Decline a network invitation via token (public - no auth required)
+ */
+router.post('/network/decline/:token', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { token } = req.params;
+  const { reason } = req.body; // Optional decline reason
+
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'Invalid token format' });
+  }
+
+  const tokenHash = hashToken(token);
+
+  const { data: invitation } = await supabase
+    .from('general_collaborators')
+    .select('id, invited_by, email, role, status')
+    .eq('token_hash', tokenHash)
+    .single();
+
+  if (!invitation) {
+    return res.status(404).json({ error: 'Invitation not found' });
+  }
+
+  if (invitation.status !== 'pending') {
+    return res.status(400).json({ error: 'This invitation has already been ' + invitation.status });
+  }
+
+  // Update invitation to declined
+  const { data: updated, error } = await supabase
+    .from('general_collaborators')
+    .update({
+      status: 'declined',
+      declined_at: new Date().toISOString(),
+      token_hash: null,
+      token_expires_at: null,
+      metadata: {
+        decline_reason: reason || null
+      }
+    })
+    .eq('id', invitation.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Notify the inviter
+  await createCollaborationNotification(
+    invitation.invited_by,
+    'network_declined',
+    'Invitation Declined',
+    `The invitation to ${invitation.email} was declined`,
+    { collaboratorId: invitation.id, role: invitation.role, reason }
+  );
+
+  logger.info('Network invitation declined via token', { invitationId: invitation.id });
+
+  res.json({ success: true, message: 'Invitation declined' });
 }));
 
 // ============================================================

@@ -11421,7 +11421,7 @@
               showToast('Email service timed out. Invoice saved, please resend manually.', 'warning');
             } else {
               console.error('[Invoices] Error:', err);
-              showToast('Email failed: ' + stripeErr.message, 'error');
+              showToast('Email failed: ' + err.message, 'error');
             }
           }
         })();
@@ -11743,6 +11743,73 @@
 
         if (fetchError) throw fetchError;
 
+        // If invoice has lead_id but no customer_id, convert lead to customer
+        let customerId = invoice.customer_id;
+        if (invoice.lead_id && !customerId) {
+          console.log('[Invoice Paid] Converting lead to customer:', invoice.lead_id);
+          const { data: lead } = await supabaseClient
+            .from('leads')
+            .select('*')
+            .eq('id', invoice.lead_id)
+            .single();
+
+          if (lead) {
+            // Check if customer already exists by email
+            const { data: existingCustomer } = await supabaseClient
+              .from('customers')
+              .select('id')
+              .eq('user_id', user.id)
+              .ilike('email', lead.email || '')
+              .single();
+
+            if (existingCustomer) {
+              customerId = existingCustomer.id;
+            } else {
+              // Create new customer from lead
+              const { data: newCustomer, error: custErr } = await supabaseClient
+                .from('customers')
+                .insert({
+                  user_id: user.id,
+                  name: lead.full_name || lead.homeowner_name || lead.name || 'Customer',
+                  email: lead.email || lead.homeowner_email,
+                  phone: lead.phone || lead.homeowner_phone,
+                  address: lead.address || lead.homeowner_address,
+                  city: lead.city,
+                  state: lead.state,
+                  zip: lead.zip,
+                  source: 'converted_lead',
+                  lead_id: lead.id,
+                  notes: `Converted from lead on ${new Date().toLocaleDateString()}`
+                })
+                .select()
+                .single();
+
+              if (!custErr && newCustomer) {
+                customerId = newCustomer.id;
+                console.log('[Invoice Paid] Created customer from lead:', customerId);
+              }
+            }
+
+            // Update lead status to converted and link to customer
+            await supabaseClient
+              .from('leads')
+              .update({
+                status: 'converted',
+                customer_id: customerId,
+                converted_at: new Date().toISOString()
+              })
+              .eq('id', lead.id);
+
+            // Update invoice with customer_id
+            await supabaseClient
+              .from('invoices')
+              .update({ customer_id: customerId })
+              .eq('id', invoiceId);
+
+            console.log('[Invoice Paid] Lead converted:', lead.id, '-> Customer:', customerId);
+          }
+        }
+
         // Update invoice status
         const { error: updateError } = await supabaseClient
           .from('invoices')
@@ -11760,7 +11827,7 @@
         await supabaseClient.from('payments').insert({
           user_id: user.id,
           invoice_id: invoiceId,
-          customer_id: invoice.customer_id,
+          customer_id: customerId,
           amount: invoice.total,
           payment_method: 'manual',
           status: 'completed',
@@ -11768,11 +11835,11 @@
         });
 
         // Update customer totals if customer_id exists
-        if (invoice.customer_id) {
+        if (customerId) {
           const { data: customer } = await supabaseClient
             .from('customers')
             .select('total_spent, total_jobs')
-            .eq('id', invoice.customer_id)
+            .eq('id', customerId)
             .single();
 
           if (customer) {
@@ -11782,7 +11849,7 @@
                 total_spent: (customer.total_spent || 0) + invoice.total,
                 total_jobs: (customer.total_jobs || 0) + 1
               })
-              .eq('id', invoice.customer_id);
+              .eq('id', customerId);
           }
         }
 
@@ -11796,7 +11863,7 @@
         // Create job from paid invoice with full traceability
         const { data: newJob } = await supabaseClient.from('projects').insert({
           user_id: user.id,
-          customer_id: invoice.customer_id,
+          customer_id: customerId,
           invoice_id: invoiceId,
           estimate_id: invoice.estimate_id,
           lead_id: invoice.lead_id,  // Preserve lead reference for traceability
@@ -17272,6 +17339,11 @@
             <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.description)}</div>
           </div>` : ''}
 
+          ${project.scope_of_work ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px; border-left: 3px solid var(--gold-primary);">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Scope of Work</div>
+            <div style="font-size: 13px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(project.scope_of_work)}</div>
+          </div>` : ''}
+
           ${project.notes ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Internal Notes</div>
             <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.notes)}</div>
@@ -20112,7 +20184,7 @@
         // Load collaborators directly from Supabase
         const { data: collaborators, error } = await supabaseClient
           .from('general_collaborators')
-          .select('id, name, email, phone, role, company, status, notes, created_at, token_expires_at')
+          .select('id, name, email, phone, role, company, status, notes, created_at, token_expires_at, viewed_at, view_count, declined_at, resent_at')
           .eq('invited_by', user.id)
           .order('name', { ascending: true });
 
@@ -20164,19 +20236,31 @@
           }
 
           // Determine status display
-          let statusColor, statusLabel;
+          let statusColor, statusLabel, viewedInfo = '';
           if (c.status === 'accepted') {
             statusColor = '#10b981';
             statusLabel = 'Active';
           } else if (c.status === 'declined') {
             statusColor = '#ef4444';
             statusLabel = 'Declined';
+            if (c.declined_at) {
+              viewedInfo = 'Declined ' + new Date(c.declined_at).toLocaleDateString();
+            }
           } else if (isExpired) {
             statusColor = '#ef4444';
             statusLabel = 'Expired';
+            if (c.viewed_at) {
+              viewedInfo = 'Viewed but not accepted';
+            }
           } else if (c.status === 'pending') {
-            statusColor = '#f59e0b';
-            statusLabel = 'Pending';
+            if (c.viewed_at) {
+              statusColor = '#3b82f6';
+              statusLabel = 'Viewed';
+              viewedInfo = `Opened ${c.view_count || 1}x`;
+            } else {
+              statusColor = '#f59e0b';
+              statusLabel = 'Pending';
+            }
           } else {
             statusColor = '#6b7280';
             statusLabel = c.status || 'Unknown';
@@ -20191,6 +20275,7 @@
                   <span style="font-size: 11px; padding: 2px 8px; background: ${statusColor}20; color: ${statusColor}; border-radius: 4px; font-weight: 500;">${statusLabel}</span>
                 </div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(c.email || '')}${c.phone ? ' • ' + escapeHtml(c.phone) : ''}${dateStr ? ' • ' + dateStr : ''}</div>
+                ${viewedInfo ? `<div style="font-size: 11px; color: ${statusColor}; margin-top: 4px;">${viewedInfo}</div>` : ''}
                 ${expiresStr && !isExpired ? `<div style="font-size: 11px; color: var(--warning); margin-top: 4px;">${expiresStr}</div>` : ''}
                 ${c.notes ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">${escapeHtml(c.notes)}</div>` : ''}
               </div>
@@ -20374,6 +20459,9 @@
         if (response === 'accepted') {
           updateData.user_id = user.id;
           updateData.accepted_at = new Date().toISOString();
+        } else if (response === 'declined') {
+          updateData.declined_at = new Date().toISOString();
+          updateData.user_id = user.id;
         }
 
         const { error: updateError } = await supabaseClient
