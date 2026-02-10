@@ -12594,43 +12594,31 @@
           balanceDue = total - depositAmount;
         }
 
-        // Build metadata for deposit info and lead tracking (columns that don't exist in table)
-        const metadata = {};
-        if (depositEnabled && depositAmount > 0) {
-          metadata.deposit_requested = depositAmount;
-          metadata.deposit_percent = depositPercent;
-        }
-        if (depositAlreadyReceived && depositReceivedAmount > 0) {
-          metadata.deposit_paid = depositReceivedAmount;
-          metadata.deposit_paid_at = new Date().toISOString();
-          metadata.deposit_payment_method = depositPaymentMethod;
-        }
-        if (leadId) {
-          metadata.lead_id = leadId;
-          console.log('[Invoices] Linking invoice to lead via metadata:', leadId);
-        }
-
-        // Only include columns that exist in the invoices table
-        // Note: balance_due is a GENERATED column, don't insert it
+        // Only include columns that definitely exist in the invoices table
+        // Minimal set: user_id, invoice_number, customer_name, customer_email, total, status
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
-          customer_email: customerEmail,
           customer_name: customerName || 'Customer',
-          customer_phone: customerPhone,
-          subtotal: total,
+          customer_email: customerEmail,
+          customer_phone: customerPhone || null,
           total: total,
           amount_paid: amountPaid,
-          due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          notes: notes || '',
           status: invoiceStatus,
-          metadata: Object.keys(metadata).length > 0 ? metadata : {}
+          notes: notes || null
         };
 
-        // Include customer_id if creating from a customer
-        if (customerId) {
-          invoiceData.customer_id = customerId;
-          console.log('[Invoices] Linking invoice to customer:', customerId);
+        // These columns may or may not exist - add them only if they exist
+        // due_date, subtotal, customer_id are likely to exist
+        try {
+          invoiceData.subtotal = total;
+          invoiceData.due_date = new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          if (customerId) {
+            invoiceData.customer_id = customerId;
+            console.log('[Invoices] Linking invoice to customer:', customerId);
+          }
+        } catch (e) {
+          console.warn('[Invoices] Some optional fields may not exist');
         }
 
         const { data: invoice, error: invoiceError } = await supabaseClient
@@ -17901,38 +17889,28 @@
         const random = Math.random().toString(36).substring(2, 5).toUpperCase();
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
-        // Create invoice - only use columns that exist in the invoices table
-        // Store extra info (lead_id, project_name, discount details) in metadata
-        const metadata = {
-          lead_id: estimate.lead_id || null,
-          project_name: estimate.project_name || null,
-          discount_type: estimate.discount_type || null,
-          discount_value: estimate.discount_value || null,
-          payment_terms: estimate.payment_terms || null,
-          converted_from_estimate: estimateId
-        };
-
+        // Create invoice - only use columns that definitely exist
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
-          estimate_id: estimateId,
-          customer_id: estimate.customer_id || null,
           customer_name: estimate.customer_name || 'Customer',
           customer_email: estimate.customer_email,
-          customer_phone: estimate.customer_phone,
-          customer_address: estimate.customer_address || null,
-          subtotal: estimate.subtotal || estimate.total,
-          tax_rate: estimate.tax_rate || 0,
-          tax_amount: estimate.tax_amount || 0,
-          discount: estimate.discount_amount || 0,
+          customer_phone: estimate.customer_phone || null,
           total: estimate.total,
           amount_paid: 0,
-          terms: estimate.payment_terms || null,
-          notes: estimate.notes,
           status: 'sent',
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          metadata: metadata
+          notes: estimate.notes || null
         };
+
+        // Add optional columns that likely exist
+        try {
+          invoiceData.subtotal = estimate.subtotal || estimate.total;
+          invoiceData.due_date = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          if (estimate.customer_id) invoiceData.customer_id = estimate.customer_id;
+          if (estimateId) invoiceData.estimate_id = estimateId;
+        } catch (e) {
+          console.warn('[Invoices] Some optional fields may not exist');
+        }
 
         const { data: invoice, error } = await supabaseClient
           .from('invoices')
