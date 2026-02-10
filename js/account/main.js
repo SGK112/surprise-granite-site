@@ -7288,6 +7288,202 @@
       }
     }
 
+    // Save lead and immediately open estimate modal - streamlined workflow
+    async function saveLeadAndCreateEstimate() {
+      const btn = document.getElementById('save-lead-estimate-btn');
+      const originalBtnHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Saving...';
+
+      try {
+        // Validate required fields
+        const firstName = document.getElementById('new-lead-first-name').value.trim();
+        const lastName = document.getElementById('new-lead-last-name').value.trim();
+        const email = document.getElementById('new-lead-email').value.trim();
+
+        if (!firstName || !lastName || !email) {
+          showToast('Please fill in required fields (First Name, Last Name, Email)', 'error');
+          return;
+        }
+
+        // Get current user for lead ownership
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in to add leads');
+
+        const fullName = `${firstName} ${lastName}`.trim();
+        const phone = document.getElementById('new-lead-phone').value.trim() || null;
+        const projectType = document.getElementById('new-lead-project-type').value || null;
+
+        // Collect billing address
+        const billingStreet = document.getElementById('new-lead-billing-street').value.trim();
+        const billingAddress = billingStreet ? {
+          street: billingStreet,
+          street2: document.getElementById('new-lead-billing-street2').value.trim() || null,
+          city: document.getElementById('new-lead-billing-city').value.trim() || null,
+          state: document.getElementById('new-lead-billing-state').value || null,
+          zip: document.getElementById('new-lead-billing-zip').value.trim() || null
+        } : null;
+
+        // Check if service address is same as billing
+        const addressSame = document.getElementById('new-lead-address-same').checked;
+
+        // Collect service address if different
+        let serviceAddress = null;
+        if (!addressSame) {
+          const serviceStreet = document.getElementById('new-lead-service-street').value.trim();
+          if (serviceStreet) {
+            serviceAddress = {
+              street: serviceStreet,
+              street2: document.getElementById('new-lead-service-street2').value.trim() || null,
+              city: document.getElementById('new-lead-service-city').value.trim() || null,
+              state: document.getElementById('new-lead-service-state').value || null,
+              zip: document.getElementById('new-lead-service-zip').value.trim() || null
+            };
+          }
+        }
+
+        const userMessage = document.getElementById('new-lead-message').value.trim() || '';
+
+        const leadData = {
+          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone: phone,
+          project_type: projectType,
+          zip_code: document.getElementById('new-lead-zip').value.trim() || null,
+          message: userMessage || null,
+          source: document.getElementById('new-lead-source').value,
+          status: 'quoted', // Set to quoted since we're creating an estimate
+          billing_address: billingAddress,
+          service_address: serviceAddress,
+          address_same: addressSame,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          form_name: 'manual-entry-estimate'
+        };
+
+        // Insert the lead
+        const { data: lead, error } = await supabaseClient
+          .from('leads')
+          .insert([leadData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to local array
+        allLeads.unshift(lead);
+        updateStats();
+        renderLeads();
+
+        // Close the add lead modal
+        closeAddLeadModal();
+
+        showToast('Lead saved! Opening estimate form...', 'success');
+
+        // Small delay then open estimate modal with lead data
+        setTimeout(() => {
+          startEstimateFromLead(lead.id);
+        }, 300);
+
+      } catch (err) {
+        console.error('Error in save lead & estimate:', err);
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHTML;
+      }
+    }
+
+    // Save lead and immediately open invoice modal - for customers ready to pay
+    async function saveLeadAndCreateInvoice() {
+      const btn = document.getElementById('save-lead-invoice-btn');
+      const originalBtnHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Saving...';
+
+      try {
+        // Validate required fields
+        const firstName = document.getElementById('new-lead-first-name').value.trim();
+        const lastName = document.getElementById('new-lead-last-name').value.trim();
+        const email = document.getElementById('new-lead-email').value.trim();
+
+        if (!firstName || !lastName || !email) {
+          showToast('Please fill in required fields (First Name, Last Name, Email)', 'error');
+          return;
+        }
+
+        // Get current user for lead ownership
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in to add leads');
+
+        const fullName = `${firstName} ${lastName}`.trim();
+        const phone = document.getElementById('new-lead-phone').value.trim() || null;
+        const projectType = document.getElementById('new-lead-project-type').value || null;
+
+        // Collect billing address
+        const billingStreet = document.getElementById('new-lead-billing-street').value.trim();
+        const billingAddress = billingStreet ? {
+          street: billingStreet,
+          street2: document.getElementById('new-lead-billing-street2').value.trim() || null,
+          city: document.getElementById('new-lead-billing-city').value.trim() || null,
+          state: document.getElementById('new-lead-billing-state').value || null,
+          zip: document.getElementById('new-lead-billing-zip').value.trim() || null
+        } : null;
+
+        const userMessage = document.getElementById('new-lead-message').value.trim() || '';
+
+        const leadData = {
+          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone: phone,
+          project_type: projectType,
+          zip_code: document.getElementById('new-lead-zip').value.trim() || null,
+          message: userMessage || null,
+          source: document.getElementById('new-lead-source').value,
+          status: 'won', // Set to won since they're ready to pay
+          billing_address: billingAddress,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          form_name: 'manual-entry-invoice'
+        };
+
+        // Insert the lead
+        const { data: lead, error } = await supabaseClient
+          .from('leads')
+          .insert([leadData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to local array
+        allLeads.unshift(lead);
+        updateStats();
+        renderLeads();
+
+        // Close the add lead modal
+        closeAddLeadModal();
+
+        showToast('Lead saved! Opening invoice form...', 'success');
+
+        // Small delay then open invoice modal with lead data
+        setTimeout(() => {
+          startInvoiceFromLead(lead.id);
+        }, 300);
+
+      } catch (err) {
+        console.error('Error in save lead & invoice:', err);
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHTML;
+      }
+    }
+
     // Send welcome email to new lead
     async function sendLeadWelcomeEmail(leadInfo) {
       const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType, notes, portalUrl } = leadInfo;
@@ -10699,13 +10895,14 @@
     // Check QuickBooks connection status
     async function checkQuickBooksStatus() {
       try {
-        const response = await fetch('/api/quickbooks/status', {
+        const response = await fetch(`${API_BASE}/api/quickbooks/status`, {
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
         const data = await response.json();
         qboConnected = data.connected;
         updateQuickBooksUI();
       } catch (e) {
+        console.log('QuickBooks status check failed:', e);
         qboConnected = false;
       }
     }
@@ -10721,15 +10918,18 @@
     // Connect to QuickBooks
     async function connectQuickBooks() {
       try {
-        const response = await fetch('/api/quickbooks/connect', {
+        const response = await fetch(`${API_BASE}/api/quickbooks/connect`, {
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
         const data = await response.json();
         if (data.authUrl) {
           window.open(data.authUrl, 'QuickBooks Connect', 'width=600,height=700');
+        } else if (data.error) {
+          throw new Error(data.error);
         }
       } catch (e) {
-        showToast('Failed to connect to QuickBooks', 'error');
+        console.error('QuickBooks connect error:', e);
+        showToast('Failed to connect to QuickBooks: ' + e.message, 'error');
       }
     }
 
@@ -10738,7 +10938,7 @@
       if (!confirm('Are you sure you want to disconnect QuickBooks?')) return;
 
       try {
-        await fetch('/api/quickbooks/disconnect', {
+        await fetch(`${API_BASE}/api/quickbooks/disconnect`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -10759,7 +10959,7 @@
       }
 
       try {
-        const response = await fetch(`/api/quickbooks/sync/invoice/${invoiceId}`, {
+        const response = await fetch(`${API_BASE}/api/quickbooks/sync/invoice/${invoiceId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -10790,7 +10990,7 @@
       }
 
       try {
-        const response = await fetch(`/api/quickbooks/sync/estimate/${estimateId}`, {
+        const response = await fetch(`${API_BASE}/api/quickbooks/sync/estimate/${estimateId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -16831,7 +17031,7 @@
         const token = session.data.session?.access_token;
         if (!token) return;
 
-        const response = await fetch('/api/quickbooks/status', {
+        const response = await fetch(`${API_BASE}/api/quickbooks/status`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -16839,13 +17039,17 @@
         if (data.connected) {
           connectBtn.style.display = 'none';
           disconnectBtn.style.display = 'inline-flex';
-          statusText.textContent = 'Connected - syncing enabled';
-          statusText.style.color = '#22c55e';
+          if (statusText) {
+            statusText.textContent = 'Connected - syncing enabled';
+            statusText.style.color = '#22c55e';
+          }
         } else {
           connectBtn.style.display = 'inline-flex';
           disconnectBtn.style.display = 'none';
-          statusText.textContent = 'Sync invoices & estimates';
-          statusText.style.color = 'var(--text-muted)';
+          if (statusText) {
+            statusText.textContent = 'Sync invoices & estimates';
+            statusText.style.color = 'var(--text-muted)';
+          }
         }
       } catch (e) {
         console.error('QuickBooks status check failed:', e);
