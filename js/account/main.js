@@ -12930,94 +12930,34 @@
           return;
         }
 
-        // For Supabase invoices, fetch full details
-        const { data: invoice } = await supabaseClient
-          .from('invoices')
-          .select('*, invoice_items(*)')
-          .eq('id', invoiceId)
+        // For Supabase invoices, use the professional template via token
+        // Check for existing token or create one
+        const { data: tokenData } = await supabaseClient
+          .from('invoice_tokens')
+          .select('token')
+          .eq('invoice_id', invoiceId)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .single();
 
-        if (!invoice) {
-          alert('Invoice not found');
-          return;
+        let token;
+        if (tokenData) {
+          token = tokenData.token;
+        } else {
+          // Generate new token for viewing
+          token = crypto.randomUUID();
+          await supabaseClient
+            .from('invoice_tokens')
+            .insert([{
+              invoice_id: invoiceId,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              created_by: currentUser?.id
+            }]);
         }
 
-        // Create a simple invoice view modal or open in new tab
-        const invoiceHtml = `
-          <html>
-          <head><title>Invoice #${invoice.invoice_number}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-            .header { border-bottom: 3px solid #f9cb00; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { color: #1a1a2e; margin: 0; }
-            .header p { color: #666; margin: 5px 0 0; }
-            .info-row { display: flex; justify-content: space-between; margin-bottom: 30px; }
-            .info-box { background: #f8f9fa; padding: 15px; border-radius: 8px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-            th { background: #f8f9fa; font-weight: 600; }
-            .total-row { font-size: 18px; font-weight: bold; color: #f9cb00; }
-            .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-            .status-open { background: #fef3c7; color: #d97706; }
-            .status-paid { background: #d1fae5; color: #059669; }
-            @media print { body { padding: 20px; } }
-          </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>Surprise Granite</h1>
-              <p>Marble & Quartz</p>
-            </div>
-            <h2>Invoice #${invoice.invoice_number}</h2>
-            <div class="info-row">
-              <div class="info-box">
-                <strong>Bill To:</strong><br>
-                ${invoice.customer_name || 'N/A'}<br>
-                ${invoice.customer_email || ''}<br>
-                ${invoice.customer_phone || ''}
-              </div>
-              <div class="info-box">
-                <strong>Status:</strong> <span class="status status-${invoice.status}">${invoice.status}</span><br>
-                <strong>Due Date:</strong> ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}<br>
-                <strong>Created:</strong> ${new Date(invoice.created_at).toLocaleDateString()}
-              </div>
-            </div>
-            <table>
-              <thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-              <tbody>
-                ${(invoice.invoice_items || []).map(item => `
-                  <tr>
-                    <td>${item.description || item.name || 'Item'}</td>
-                    <td>${item.quantity || 1}</td>
-                    <td>$${(item.unit_price || 0).toFixed(2)}</td>
-                    <td>$${(item.total || 0).toFixed(2)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <table style="width: 300px; margin-left: auto;">
-              <tr><td>Subtotal:</td><td style="text-align: right;">$${(invoice.subtotal || invoice.total || 0).toFixed(2)}</td></tr>
-              ${invoice.tax_amount ? `<tr><td>Tax:</td><td style="text-align: right;">$${invoice.tax_amount.toFixed(2)}</td></tr>` : ''}
-              <tr class="total-row"><td>Total:</td><td style="text-align: right;">$${(invoice.total || 0).toFixed(2)}</td></tr>
-              <tr><td>Amount Paid:</td><td style="text-align: right;">$${(invoice.amount_paid || 0).toFixed(2)}</td></tr>
-              <tr style="font-weight: bold;"><td>Amount Due:</td><td style="text-align: right;">$${(invoice.amount_due || invoice.total || 0).toFixed(2)}</td></tr>
-            </table>
-            ${invoice.notes ? `<div style="margin-top: 30px; padding: 15px; background: #fffbeb; border-radius: 8px;"><strong>Notes:</strong><br>${invoice.notes}</div>` : ''}
-            <div style="margin-top: 40px; text-align: center; color: #999; font-size: 12px;">
-              <p>Surprise Granite | (602) 833-3189 | info@surprisegranite.com</p>
-            </div>
-            <div class="no-print" style="margin-top: 30px; text-align: center;">
-              <button onclick="window.print()" style="padding: 12px 24px; background: #f9cb00; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px;">Print / Save PDF</button>
-              <button onclick="window.close()" style="padding: 12px 24px; background: #333; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Close</button>
-            </div>
-            <style>@media print { .no-print { display: none !important; } }</style>
-          </body>
-          </html>
-        `;
-
-        const win = window.open('', '_blank');
-        win.document.write(invoiceHtml);
-        win.document.close();
+        // Open the professional template with print/download buttons
+        window.open(`/invoice/view/?token=${token}`, '_blank');
       } catch (err) {
         console.error('View invoice error:', err);
         alert('Error viewing invoice');
