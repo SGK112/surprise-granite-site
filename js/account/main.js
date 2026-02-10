@@ -12384,51 +12384,81 @@
 
     async function createInvoice(e) {
       console.log('[Invoices] createInvoice called, isCreating:', isCreatingInvoice);
-      if (e && e.preventDefault) e.preventDefault();
+      // Always prevent default to stop form submission/page refresh
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
       // Prevent double-submission
       if (isCreatingInvoice) {
-        return;
-      }
-      isCreatingInvoice = true;
-
-      const btn = document.getElementById('invoice-preview-btn');
-      const sendBtn = document.getElementById('preview-send-btn');
-
-      // Disable both buttons if they exist
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Creating...';
-      }
-      if (sendBtn) {
-        sendBtn.disabled = true;
-        sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+        console.log('[Invoices] Already creating, skipping');
+        return false;
       }
 
-      let formData;
+      // Global try/catch to log any unexpected errors
       try {
-        formData = getInvoiceFormData();
-        console.log('[Invoices] Form data:', formData);
-      } catch (formErr) {
-        console.error('[Invoices] Form data error:', formErr);
-        showToast('Error reading form data', 'error');
-        isCreatingInvoice = false;
+        isCreatingInvoice = true;
+        console.log('[Invoices] Set isCreatingInvoice = true');
+
+        const btn = document.getElementById('invoice-preview-btn');
+        const sendBtn = document.getElementById('preview-send-btn');
+
+        // Disable both buttons if they exist
         if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = 'Preview & Send';
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span> Creating...';
         }
-        return;
-      }
+        if (sendBtn) {
+          sendBtn.disabled = true;
+          sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+        }
+        console.log('[Invoices] Buttons disabled, getting form data...');
 
-      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent, depositAlreadyReceived, depositReceivedAmount, depositPaymentMethod, leadId } = formData;
+        let formData;
+        try {
+          formData = getInvoiceFormData();
+          console.log('[Invoices] Form data retrieved:', JSON.stringify(formData, null, 2));
+        } catch (formErr) {
+          console.error('[Invoices] Form data error:', formErr);
+          showToast('Error reading form data', 'error');
+          isCreatingInvoice = false;
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Preview & Send';
+          }
+          return false;
+        }
 
-      // Build CC recipients list
-      const ccRecipients = [];
-      if (ccMe && userProfile?.email) ccRecipients.push(userProfile.email);
-      if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
+        // Destructure with defaults to prevent errors
+        const items = formData.items || [];
+        const customerEmail = formData.customerEmail || '';
+        const customerName = formData.customerName || '';
+        const customerPhone = formData.customerPhone || '';
+        const dueDays = formData.dueDays || 30;
+        const notes = formData.notes || '';
+        const selectedTemplate = formData.selectedTemplate || 'classic';
+        const ccMe = formData.ccMe !== false;
+        const ccOther = formData.ccOther || '';
+        const depositEnabled = formData.depositEnabled || false;
+        const depositAmount = formData.depositAmount || 0;
+        const depositPercent = formData.depositPercent || 0;
+        const depositAlreadyReceived = formData.depositAlreadyReceived || false;
+        const depositReceivedAmount = formData.depositReceivedAmount || 0;
+        const depositPaymentMethod = formData.depositPaymentMethod || '';
+        const leadId = formData.leadId || null;
 
-      try {
+        console.log('[Invoices] Destructured - items:', items.length, 'email:', customerEmail, 'name:', customerName);
+
+        // Build CC recipients list
+        const ccRecipients = [];
+        if (ccMe && userProfile?.email) ccRecipients.push(userProfile.email);
+        if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
+
+        try {
+        console.log('[Invoices] Getting user...');
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        console.log('[Invoices] Got user result, error:', authError?.message);
         if (authError) {
           console.error('[Invoices] Auth error:', authError);
           throw new Error('Authentication error: ' + authError.message);
@@ -12618,6 +12648,13 @@
           sendBtn.innerHTML = 'Send Invoice';
         }
       }
+      } catch (globalErr) {
+        // Catch any unexpected errors at the top level
+        console.error('[Invoices] UNEXPECTED ERROR:', globalErr);
+        showToast('Unexpected error: ' + globalErr.message, 'error');
+        isCreatingInvoice = false;
+      }
+      return false;
     }
 
     async function sendReminder(invoiceId) {
