@@ -5650,10 +5650,31 @@
               </div>
               ${lead.project_type ? `<div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; background: var(--dark-surface); border-radius: 6px; color: var(--text-secondary); margin-bottom: 14px;"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>${escapeHtml(lead.project_type)}</div>` : ''}
               ${hasAppointment ? `<div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px;"><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;"><svg width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span style="font-size: 12px; font-weight: 600; color: #10b981; text-transform: uppercase;">Scheduled</span></div><div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">${lead.appointment_date}</div><div style="font-size: 13px; color: var(--text-secondary);">at ${lead.appointment_time}</div></div>` : `<button onclick="event.stopPropagation(); openScheduleLeadModal('${lead.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); border: none; border-radius: 8px; color: var(--dark-primary); font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 12px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Schedule Appointment</button>`}
+              <!-- Primary Actions Row -->
+              <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <button onclick="event.stopPropagation(); startEstimateFromLead('${lead.id}')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 600; cursor: pointer;" title="Create Estimate">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Estimate
+                </button>
+                <button onclick="event.stopPropagation(); startInvoiceFromLead('${lead.id}')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: linear-gradient(135deg, #f9cb00, #cca600); border: none; border-radius: 8px; color: #1a1a2e; font-size: 13px; font-weight: 600; cursor: pointer;" title="Create Invoice">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                  Invoice
+                </button>
+              </div>
+              <!-- Inline Status Selector -->
+              <div style="margin-bottom: 10px;" onclick="event.stopPropagation();">
+                <select onchange="inlineUpdateLeadStatus('${lead.id}', this.value)" style="width: 100%; padding: 8px 12px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-size: 13px; cursor: pointer;">
+                  <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New</option>
+                  <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                  <option value="qualified" ${lead.status === 'qualified' ? 'selected' : ''}>Qualified</option>
+                  <option value="quoted" ${lead.status === 'quoted' ? 'selected' : ''}>Quoted</option>
+                  <option value="won" ${lead.status === 'won' ? 'selected' : ''}>Won</option>
+                  <option value="lost" ${lead.status === 'lost' ? 'selected' : ''}>Lost</option>
+                </select>
+              </div>
               <div class="lead-quick-actions">
                 ${leadPhone ? `<button onclick="event.stopPropagation(); window.location.href='tel:${encodeURIComponent(leadPhone)}'" class="btn-action call" title="Call"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>Call</button>` : ''}
                 ${leadEmail ? `<button onclick="event.stopPropagation(); openLeadEmailModal('${lead.id}')" class="btn-action email" title="Email"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Email</button>` : ''}
-                <button onclick="event.stopPropagation(); quickChangeLeadStatus('${lead.id}', '${lead.status}')" class="btn-action status" title="Change Status"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>Status</button>
                 <button onclick="event.stopPropagation(); convertLeadToProject('${lead.id}')" class="btn-action project" title="Convert to Project"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>Project</button>
                 <button onclick="event.stopPropagation(); quickArchiveLead('${lead.id}')" class="btn-action archive" title="${lead.status === 'archived' ? 'Restore' : 'Archive'}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>${lead.status === 'archived' ? 'Restore' : 'Archive'}</button>
                 <button onclick="event.stopPropagation(); quickDeleteLead('${lead.id}')" class="btn-action delete" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>
@@ -6012,6 +6033,29 @@
 
         renderLeads();
         showToast(`Lead status changed to ${newStatus}`, 'success');
+      } catch (err) {
+        console.error('Error updating status:', err);
+        showToast('Failed to update status', 'error');
+      }
+    }
+
+    // Inline status update from dropdown - no modal needed
+    async function inlineUpdateLeadStatus(leadId, newStatus) {
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        // Update local data
+        const lead = allLeads.find(l => l.id === leadId);
+        if (lead) lead.status = newStatus;
+
+        // Update stats without full re-render to keep dropdown state
+        updateStats();
+        showToast(`Status → ${newStatus}`, 'success');
       } catch (err) {
         console.error('Error updating status:', err);
         showToast('Failed to update status', 'error');
@@ -10661,6 +10705,28 @@
       renderInvoices();
     }
 
+    // Inline status update for invoices - no modal needed
+    async function inlineUpdateInvoiceStatus(invoiceId, newStatus) {
+      try {
+        const { error } = await supabaseClient
+          .from('invoices')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', invoiceId);
+
+        if (error) throw error;
+
+        // Update local data
+        const invoice = allInvoices.find(i => i.id === invoiceId);
+        if (invoice) invoice.status = newStatus;
+
+        showToast(`Invoice → ${newStatus}`, 'success');
+        renderInvoices();
+      } catch (err) {
+        console.error('Error updating invoice status:', err);
+        showToast('Failed to update status', 'error');
+      }
+    }
+
     async function voidInvoice(invoiceId) {
       if (!confirm('Void this invoice? The customer will no longer be able to pay it.')) return;
 
@@ -10781,9 +10847,14 @@
               </div>
               <div class="list-item-meta" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                 <div style="font-weight: 700; font-size: 15px; color: var(--gold-primary);">$${(inv.amount_due || 0).toFixed(2)}</div>
-                <span class="badge-modern" style="background: ${statusColor}20; color: ${statusColor};">${inv.status}</span>
+                <select onchange="event.stopPropagation(); inlineUpdateInvoiceStatus('${inv.id}', this.value)" style="padding: 4px 8px; background: ${statusColor}20; border: 1px solid ${statusColor}40; border-radius: 6px; color: ${statusColor}; font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer;">
+                  <option value="draft" ${inv.status === 'draft' ? 'selected' : ''}>Draft</option>
+                  <option value="open" ${inv.status === 'open' ? 'selected' : ''}>Open</option>
+                  <option value="partial" ${inv.status === 'partial' ? 'selected' : ''}>Partial</option>
+                  <option value="paid" ${inv.status === 'paid' ? 'selected' : ''}>Paid</option>
+                  <option value="void" ${inv.status === 'void' ? 'selected' : ''}>Void</option>
+                </select>
                 ${showDepositBtn ? `<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); recordDeposit('${inv.id}')">Record Deposit</button>` : ''}
-                ${inv.status !== 'paid' && inv.status !== 'void' && !showDepositBtn ? `<button class="btn-modern ghost" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
                 ${qboConnected && !qboSynced ? `<button class="btn-modern ghost qbo-sync-btn" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); syncInvoiceToQBO('${inv.id}')" title="Sync to QuickBooks"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` : ''}
               </div>
             </div>
@@ -15288,6 +15359,30 @@
     let serviceCatalog = [];
     let businessSettings = null;
 
+    // Inline status update for estimates - no modal needed
+    async function inlineUpdateEstimateStatus(estimateId, newStatus) {
+      try {
+        const { error } = await supabaseClient
+          .from('estimates')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', estimateId);
+
+        if (error) throw error;
+
+        // Update local data
+        const estimate = allEstimates.find(e => e.id === estimateId);
+        if (estimate) estimate.status = newStatus;
+
+        showToast(`Estimate → ${newStatus}`, 'success');
+
+        // Refresh to update button visibility (e.g., Convert to Invoice)
+        loadEstimates();
+      } catch (err) {
+        console.error('Error updating estimate status:', err);
+        showToast('Failed to update status', 'error');
+      }
+    }
+
     async function loadEstimates() {
       const listContainer = document.getElementById('estimates-list');
       if (!listContainer) {
@@ -15379,9 +15474,12 @@
               <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
                   <span style="font-size: 18px; font-weight: 600;">${estimate.estimate_number || 'Draft'}</span>
-                  <span class="status-badge status-${estimate.status}" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
-                    ${estimate.status}
-                  </span>
+                  <select onchange="inlineUpdateEstimateStatus('${estimate.id}', this.value)" style="padding: 4px 8px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer;">
+                    <option value="draft" ${estimate.status === 'draft' ? 'selected' : ''}>Draft</option>
+                    <option value="sent" ${estimate.status === 'sent' ? 'selected' : ''}>Sent</option>
+                    <option value="approved" ${estimate.status === 'approved' ? 'selected' : ''}>Approved</option>
+                    <option value="rejected" ${estimate.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                  </select>
                 </div>
                 <div style="color: var(--text-secondary);">${estimate.customer_name}</div>
                 ${estimate.project_name ? `<div style="color: var(--text-muted); font-size: 13px;">${estimate.project_name}</div>` : ''}
