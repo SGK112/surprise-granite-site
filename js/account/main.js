@@ -12681,6 +12681,11 @@
                 <p><strong>Due Date:</strong> ${stripeOnlyInvoice.due_date ? new Date(stripeOnlyInvoice.due_date).toLocaleDateString() : 'N/A'}</p>
               </div>
               <p style="color: #666;">This invoice was created in Stripe. For full details, view in the Stripe Dashboard.</p>
+              <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <button onclick="window.print()" style="padding: 12px 24px; background: #f9cb00; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px;">Print / Save PDF</button>
+                <button onclick="window.close()" style="padding: 12px 24px; background: #333; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Close</button>
+              </div>
+              <style>@media print { .no-print { display: none !important; } }</style>
             </body>
             </html>
           `;
@@ -12766,6 +12771,11 @@
             <div style="margin-top: 40px; text-align: center; color: #999; font-size: 12px;">
               <p>Surprise Granite | (602) 833-3189 | info@surprisegranite.com</p>
             </div>
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+              <button onclick="window.print()" style="padding: 12px 24px; background: #f9cb00; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px;">Print / Save PDF</button>
+              <button onclick="window.close()" style="padding: 12px 24px; background: #333; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Close</button>
+            </div>
+            <style>@media print { .no-print { display: none !important; } }</style>
           </body>
           </html>
         `;
@@ -15959,7 +15969,12 @@
                   Send
                 </button>
               ` : ''}
-              ${estimate.status === 'approved' ? `
+              ${estimate.converted_to_invoice_id ? `
+                <button class="btn-modern secondary small" onclick="viewSupabaseInvoice('${estimate.converted_to_invoice_id}')" style="color: #22c55e;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  View Invoice
+                </button>
+              ` : (estimate.status === 'approved' || estimate.status === 'sent') ? `
                 <button class="btn-modern success small" onclick="convertToInvoice('${estimate.id}')" style="background: #22c55e;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   Convert to Invoice
