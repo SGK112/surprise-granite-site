@@ -11314,6 +11314,9 @@
     function openInvoiceModal(customer = null) {
       document.getElementById('invoice-modal').classList.add('active');
       document.getElementById('invoice-form').reset();
+
+      // Populate lead/customer dropdown
+      populateInvoiceContactSelect();
       document.getElementById('invoice-items').innerHTML = `
         <div class="invoice-item" data-index="0">
           <div class="form-row" style="align-items: flex-end;">
@@ -11363,26 +11366,115 @@
       const leadIdField = document.getElementById('invoice-lead-id');
       if (leadIdField) leadIdField.value = '';
 
+      // Reset customer_id field
+      const customerIdField = document.getElementById('invoice-customer-id');
+      if (customerIdField) customerIdField.value = '';
+
       // Pre-fill customer details if provided
       if (customer) {
-        if (customer.email) {
-          document.getElementById('invoice-email').value = customer.email;
-        }
-        if (customer.name) {
-          document.getElementById('invoice-name').value = customer.name;
-        }
-        if (customer.phone) {
-          document.getElementById('invoice-phone').value = customer.phone;
-        }
+        document.getElementById('invoice-email').value = customer.email || '';
+        document.getElementById('invoice-name').value = customer.name || '';
+        document.getElementById('invoice-phone').value = customer.phone || '';
+        document.getElementById('invoice-address').value = customer.address || '';
+        document.getElementById('invoice-city').value = customer.city || '';
+        document.getElementById('invoice-state').value = customer.state || '';
+        document.getElementById('invoice-zip').value = customer.zip || '';
+
         // Set lead_id if provided (for lead-to-invoice linking)
         if (customer.lead_id && leadIdField) {
           leadIdField.value = customer.lead_id;
+          // Select in dropdown
+          const select = document.getElementById('invoice-contact-select');
+          if (select) select.value = `lead:${customer.lead_id}`;
+        }
+
+        // Set customer_id if provided
+        if (customer.customer_id && customerIdField) {
+          customerIdField.value = customer.customer_id;
+          // Select in dropdown
+          const select = document.getElementById('invoice-contact-select');
+          if (select) select.value = `customer:${customer.customer_id}`;
         }
       }
     }
 
     function closeInvoiceModal() {
       document.getElementById('invoice-modal').classList.remove('active');
+    }
+
+    // Populate the lead/customer dropdown in invoice modal
+    function populateInvoiceContactSelect() {
+      const leadsGroup = document.getElementById('invoice-leads-optgroup');
+      const customersGroup = document.getElementById('invoice-customers-optgroup');
+      const select = document.getElementById('invoice-contact-select');
+
+      if (!leadsGroup || !customersGroup) return;
+
+      // Clear existing options
+      leadsGroup.innerHTML = '';
+      customersGroup.innerHTML = '';
+
+      // Add leads
+      if (allLeads && allLeads.length > 0) {
+        allLeads.forEach(lead => {
+          if (lead.email || lead.name) {
+            const option = document.createElement('option');
+            option.value = `lead:${lead.id}`;
+            option.textContent = `${lead.name || 'No Name'} - ${lead.email || 'No Email'}`;
+            leadsGroup.appendChild(option);
+          }
+        });
+      }
+
+      // Add customers
+      if (allCustomers && allCustomers.length > 0) {
+        allCustomers.forEach(customer => {
+          if (customer.email || customer.name) {
+            const option = document.createElement('option');
+            option.value = `customer:${customer.id}`;
+            option.textContent = `${customer.name || 'No Name'} - ${customer.email || 'No Email'}`;
+            customersGroup.appendChild(option);
+          }
+        });
+      }
+
+      // Reset selection
+      if (select) select.value = '';
+    }
+
+    // Handle lead/customer selection in invoice modal
+    function onInvoiceContactSelected(value) {
+      if (!value) return;
+
+      const [type, id] = value.split(':');
+      let contact = null;
+
+      if (type === 'lead') {
+        contact = allLeads.find(l => l.id === id);
+        if (contact) {
+          document.getElementById('invoice-lead-id').value = id;
+          document.getElementById('invoice-customer-id').value = '';
+        }
+      } else if (type === 'customer') {
+        contact = allCustomers.find(c => c.id === id);
+        if (contact) {
+          document.getElementById('invoice-customer-id').value = id;
+          document.getElementById('invoice-lead-id').value = '';
+        }
+      }
+
+      if (contact) {
+        // Auto-populate form fields
+        document.getElementById('invoice-email').value = contact.email || '';
+        document.getElementById('invoice-name').value = contact.name || '';
+        document.getElementById('invoice-phone').value = contact.phone || '';
+        document.getElementById('invoice-address').value = contact.address || '';
+        document.getElementById('invoice-city').value = contact.city || '';
+        document.getElementById('invoice-state').value = contact.state || '';
+        document.getElementById('invoice-zip').value = contact.zip || '';
+
+        showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
+      }
     }
 
     // Start invoice from a lead (quick action)
@@ -12165,8 +12257,12 @@
         customerEmail: document.getElementById('invoice-email').value,
         customerName: document.getElementById('invoice-name').value,
         customerPhone: document.getElementById('invoice-phone').value,
+        customerAddress: document.getElementById('invoice-address')?.value || '',
+        customerCity: document.getElementById('invoice-city')?.value || '',
+        customerState: document.getElementById('invoice-state')?.value || '',
+        customerZip: document.getElementById('invoice-zip')?.value || '',
         dueDays: parseInt(document.getElementById('invoice-due-days').value) || 30,
-        notes: document.getElementById('invoice-notes').value,
+        notes: document.getElementById('invoice-notes')?.value || '',
         selectedTemplate: document.querySelector('input[name="invoice-template"]:checked')?.value || 'classic',
         ccMe: document.getElementById('invoice-cc-me')?.checked ?? true,
         ccOther: document.getElementById('invoice-cc-other')?.value || '',
@@ -12177,7 +12273,8 @@
         depositAlreadyReceived,
         depositReceivedAmount,
         depositPaymentMethod,
-        leadId: document.getElementById('invoice-lead-id')?.value || null
+        leadId: document.getElementById('invoice-lead-id')?.value || null,
+        customerId: document.getElementById('invoice-customer-id')?.value || null
       };
     }
 
@@ -12429,8 +12526,8 @@
         return;
       }
 
-      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent, depositAlreadyReceived, depositReceivedAmount, depositPaymentMethod, leadId } = formData;
-      console.log('[Invoices] Destructured OK - items:', items?.length, 'email:', customerEmail);
+      const { items, customerEmail, customerName, customerPhone, customerAddress, customerCity, customerState, customerZip, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent, depositAlreadyReceived, depositReceivedAmount, depositPaymentMethod, leadId, customerId } = formData;
+      console.log('[Invoices] Destructured OK - items:', items?.length, 'email:', customerEmail, 'leadId:', leadId, 'customerId:', customerId);
 
       // Build CC recipients list
       const ccRecipients = [];
@@ -12500,6 +12597,10 @@
           customer_email: customerEmail,
           customer_name: customerName,
           customer_phone: customerPhone,
+          customer_address: customerAddress || null,
+          customer_city: customerCity || null,
+          customer_state: customerState || null,
+          customer_zip: customerZip || null,
           subtotal: total,
           total: total,
           amount_due: amountDue,
@@ -12519,6 +12620,12 @@
         if (leadId) {
           invoiceData.lead_id = leadId;
           console.log('[Invoices] Linking invoice to lead:', leadId);
+        }
+
+        // Include customer_id if creating from a customer
+        if (customerId) {
+          invoiceData.customer_id = customerId;
+          console.log('[Invoices] Linking invoice to customer:', customerId);
         }
 
         const { data: invoice, error: invoiceError } = await supabaseClient
@@ -16252,6 +16359,9 @@
       // Load business settings defaults
       loadBusinessDefaults();
 
+      // Populate lead/customer dropdown
+      populateEstimateContactSelect();
+
       // Reset category subtotals
       document.getElementById('subtotal-material').textContent = '$0.00';
       document.getElementById('subtotal-labor').textContent = '$0.00';
@@ -16259,6 +16369,88 @@
 
       // Reset totals
       calculateEstimateTotals();
+
+      // Reset contact select
+      const contactSelect = document.getElementById('estimate-contact-select');
+      if (contactSelect) contactSelect.value = '';
+    }
+
+    // Populate the lead/customer dropdown in estimate modal
+    function populateEstimateContactSelect() {
+      const leadsGroup = document.getElementById('estimate-leads-optgroup');
+      const customersGroup = document.getElementById('estimate-customers-optgroup');
+      const select = document.getElementById('estimate-contact-select');
+
+      if (!leadsGroup || !customersGroup) return;
+
+      // Clear existing options
+      leadsGroup.innerHTML = '';
+      customersGroup.innerHTML = '';
+
+      // Add leads
+      if (allLeads && allLeads.length > 0) {
+        allLeads.forEach(lead => {
+          if (lead.email || lead.name) {
+            const option = document.createElement('option');
+            option.value = `lead:${lead.id}`;
+            option.textContent = `${lead.name || 'No Name'} - ${lead.email || 'No Email'}`;
+            leadsGroup.appendChild(option);
+          }
+        });
+      }
+
+      // Add customers
+      if (allCustomers && allCustomers.length > 0) {
+        allCustomers.forEach(customer => {
+          if (customer.email || customer.name) {
+            const option = document.createElement('option');
+            option.value = `customer:${customer.id}`;
+            option.textContent = `${customer.name || 'No Name'} - ${customer.email || 'No Email'}`;
+            customersGroup.appendChild(option);
+          }
+        });
+      }
+
+      // Reset selection
+      if (select) select.value = '';
+    }
+
+    // Handle lead/customer selection in estimate modal
+    function onEstimateContactSelected(value) {
+      if (!value) return;
+
+      const [type, id] = value.split(':');
+      let contact = null;
+
+      if (type === 'lead') {
+        contact = allLeads.find(l => l.id === id);
+        if (contact) {
+          estimateModalState.leadId = id;
+          estimateModalState.customerId = null;
+        }
+      } else if (type === 'customer') {
+        contact = allCustomers.find(c => c.id === id);
+        if (contact) {
+          estimateModalState.customerId = id;
+          estimateModalState.leadId = null;
+        }
+      }
+
+      if (contact) {
+        // Auto-populate form fields
+        document.getElementById('estimate-customer-name').value = contact.name || '';
+        document.getElementById('estimate-customer-email').value = contact.email || '';
+        document.getElementById('estimate-customer-phone').value = contact.phone || '';
+        document.getElementById('estimate-customer-address').value = contact.address || '';
+        document.getElementById('estimate-customer-city').value = contact.city || '';
+        document.getElementById('estimate-customer-state').value = contact.state || 'AZ';
+
+        // Handle zip field
+        const zipField = document.getElementById('estimate-customer-zip');
+        if (zipField) zipField.value = contact.zip || '';
+
+        showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
+      }
     }
 
     function updateEstimateValidDate() {

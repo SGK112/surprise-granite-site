@@ -4060,9 +4060,20 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <form id="invoice-form" onsubmit="createInvoice(event)">
+      <form id="invoice-form" onsubmit="createInvoice(event); return false;">
         <input type="hidden" id="invoice-lead-id" value="">
+        <input type="hidden" id="invoice-customer-id" value="">
         <div class="modal-body">
+          <!-- Lead/Customer Selector -->
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>Link to Lead or Customer</label>
+            <select id="invoice-contact-select" onchange="onInvoiceContactSelected(this.value)" style="width: 100%;">
+              <option value="">-- Select or enter new contact --</option>
+              <optgroup label="Leads" id="invoice-leads-optgroup"></optgroup>
+              <optgroup label="Customers" id="invoice-customers-optgroup"></optgroup>
+            </select>
+          </div>
+
           <h4 style="margin-bottom: 16px; color: var(--text-secondary);">Customer Information</h4>
           <div class="form-row">
             <div class="form-group">
@@ -4074,9 +4085,29 @@
               <input type="text" id="invoice-name" placeholder="John Smith"/>
             </div>
           </div>
-          <div class="form-group">
-            <label>Customer Phone</label>
-            <input type="tel" id="invoice-phone" placeholder="(555) 123-4567"/>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer Phone</label>
+              <input type="tel" id="invoice-phone" placeholder="(555) 123-4567"/>
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" id="invoice-address" placeholder="123 Main St"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" id="invoice-city" placeholder="Phoenix"/>
+            </div>
+            <div class="form-group" style="flex: 0.5;">
+              <label>State</label>
+              <input type="text" id="invoice-state" placeholder="AZ" maxlength="2"/>
+            </div>
+            <div class="form-group" style="flex: 0.7;">
+              <label>ZIP</label>
+              <input type="text" id="invoice-zip" placeholder="85001"/>
+            </div>
           </div>
 
           <h4 style="margin: 24px 0 16px; color: var(--text-secondary);">Invoice Items</h4>
@@ -4716,6 +4747,15 @@
               <div class="form-section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 Customer Information
+              </div>
+              <!-- Lead/Customer Selector -->
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Load from Lead/Customer</label>
+                <select id="estimate-contact-select" onchange="onEstimateContactSelected(this.value)" style="width: 100%;">
+                  <option value="">-- Select or enter new contact --</option>
+                  <optgroup label="Leads" id="estimate-leads-optgroup"></optgroup>
+                  <optgroup label="Customers" id="estimate-customers-optgroup"></optgroup>
+                </select>
               </div>
               <div class="form-group" style="margin-bottom: 12px;">
                 <label style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Customer Name *</label>
@@ -7844,7 +7884,7 @@
     </div>
   </div>
 
-  <script src="/js/account/main.js?v=20260210e"></script>
+  <script src="/js/account/main.js?v=20260210f"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js"></script>
 
