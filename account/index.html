@@ -4036,6 +4036,46 @@
             </div>
           </div>
 
+          <!-- Deposit Section -->
+          <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" id="invoice-require-deposit" onchange="toggleInvoiceDeposit()" style="width: 18px; height: 18px;">
+                <span>Request Deposit</span>
+              </label>
+              <span style="font-size: 12px; color: var(--text-muted);">Collect upfront payment</span>
+            </div>
+            <div id="invoice-deposit-options" style="display: none;">
+              <div class="form-row" style="align-items: flex-end; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                  <label>Deposit Type</label>
+                  <select id="invoice-deposit-type" onchange="updateInvoiceDeposit()">
+                    <option value="percent">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label id="invoice-deposit-value-label">Deposit %</label>
+                  <input type="number" id="invoice-deposit-value" value="50" min="0" max="100" step="1" onchange="updateInvoiceDeposit()" style="text-align: center;"/>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label>Deposit Amount</label>
+                  <div id="invoice-deposit-amount" style="font-size: 20px; font-weight: 700; color: var(--gold-primary); padding: 8px 0;">$0.00</div>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 12px; background: rgba(249, 203, 0, 0.1); border-radius: 8px; margin-top: 12px;">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Balance Due</div>
+                  <div id="invoice-balance-due" style="font-size: 18px; font-weight: 600; color: var(--text-primary);">$0.00</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 11px; color: var(--text-muted);">Due after deposit</div>
+                  <div style="font-size: 12px; color: var(--text-secondary);">Upon project completion</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Email Template</label>
             <div class="template-selector">

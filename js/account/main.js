@@ -10151,7 +10151,11 @@
           stripe_hosted_url: inv.stripe_hosted_url,
           stripe_pdf_url: inv.stripe_pdf_url,
           invoice_items: inv.invoice_items,
-          view_count: inv.view_count || 0
+          view_count: inv.view_count || 0,
+          deposit_requested: inv.deposit_requested || 0,
+          deposit_paid: inv.deposit_paid || 0,
+          deposit_paid_at: inv.deposit_paid_at,
+          balance_due: inv.balance_due || inv.amount_due || inv.total || 0
         }));
 
         // Track Stripe IDs already in Supabase for deduplication
@@ -10517,30 +10521,51 @@
       invoicesList.innerHTML = `
         <div class="list-modern">
           ${filtered.map(inv => {
-            const statusColor = inv.status === 'paid' ? '#22c55e' : inv.status === 'open' ? '#3b82f6' : inv.status === 'void' ? '#ef4444' : inv.status === 'draft' ? '#6b7280' : '#f59e0b';
+            const statusColor = inv.status === 'paid' ? '#22c55e' : inv.status === 'open' ? '#3b82f6' : inv.status === 'void' ? '#ef4444' : inv.status === 'draft' ? '#6b7280' : inv.status === 'partial' ? '#f59e0b' : '#f59e0b';
             const viewedInfo = inv.view_count > 0 ? `Viewed ${inv.view_count}x` : '';
+
+            // Deposit info
+            const hasDeposit = inv.deposit_requested > 0;
+            const depositPaid = inv.deposit_paid > 0;
+            const depositRemaining = hasDeposit ? (inv.deposit_requested - (inv.deposit_paid || 0)) : 0;
+            let depositInfo = '';
+            if (hasDeposit) {
+              if (depositPaid && inv.deposit_paid >= inv.deposit_requested) {
+                depositInfo = '<span style="color: #22c55e; font-size: 11px;">Deposit Paid</span>';
+              } else if (depositPaid) {
+                depositInfo = '<span style="color: #f59e0b; font-size: 11px;">Partial Deposit ($' + (inv.deposit_paid || 0).toFixed(2) + ')</span>';
+              } else {
+                depositInfo = '<span style="color: #3b82f6; font-size: 11px;">Deposit Due: $' + inv.deposit_requested.toFixed(2) + '</span>';
+              }
+            }
+
+            // Show record deposit button for open invoices with deposit requested but not fully paid
+            const showDepositBtn = hasDeposit && inv.status !== 'paid' && (!depositPaid || inv.deposit_paid < inv.deposit_requested);
+
             return `
             <div class="list-item-modern"
-                 onclick="viewSupabaseInvoice('${inv.id}')"
                  data-context-menu="invoice"
                  data-item-id="${inv.id}"
                  data-item-data='${JSON.stringify({ invoice_number: inv.number, status: inv.status, hosted_invoice_url: inv.stripe_hosted_url, pdf_url: inv.stripe_pdf_url, customer_name: inv.customer_name, source: inv.source }).replace(/'/g, "&#39;")}'>
-              <div class="list-item-icon" style="background: ${statusColor}20; color: ${statusColor};">
+              <div class="list-item-icon" style="background: ${statusColor}20; color: ${statusColor};" onclick="viewSupabaseInvoice('${inv.id}')">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
               </div>
-              <div class="list-item-content">
+              <div class="list-item-content" onclick="viewSupabaseInvoice('${inv.id}')">
                 <div class="list-item-title">#${inv.number || inv.id.slice(-8)}</div>
                 <div class="list-item-subtitle">${inv.customer_name || 'No customer'} ${inv.customer_email ? '· ' + inv.customer_email : ''}</div>
                 <div class="list-item-subtitle" style="margin-top: 2px;">
                   Due: ${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'Not set'}
                   ${viewedInfo ? `<span style="color: #22c55e; margin-left: 8px;">${viewedInfo}</span>` : ''}
                 </div>
+                ${depositInfo ? `<div style="margin-top: 4px;">${depositInfo}</div>` : ''}
               </div>
-              <div class="list-item-meta">
-                <div style="font-weight: 700; font-size: 15px; color: var(--gold-primary); margin-bottom: 4px;">$${(inv.amount_due || 0).toFixed(2)}</div>
+              <div class="list-item-meta" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                <div style="font-weight: 700; font-size: 15px; color: var(--gold-primary);">$${(inv.amount_due || 0).toFixed(2)}</div>
                 <span class="badge-modern" style="background: ${statusColor}20; color: ${statusColor};">${inv.status}</span>
+                ${showDepositBtn ? `<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); recordDeposit('${inv.id}')">Record Deposit</button>` : ''}
+                ${inv.status !== 'paid' && inv.status !== 'void' && !showDepositBtn ? `<button class="btn-modern ghost" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
               </div>
             </div>
           `;}).join('')}
@@ -10573,6 +10598,17 @@
         </div>
       `;
       invoiceItemCount = 1;
+
+      // Reset deposit fields
+      const depositCheckbox = document.getElementById('invoice-require-deposit');
+      const depositOptions = document.getElementById('invoice-deposit-options');
+      if (depositCheckbox) depositCheckbox.checked = false;
+      if (depositOptions) depositOptions.style.display = 'none';
+      const depositValueEl = document.getElementById('invoice-deposit-value');
+      if (depositValueEl) depositValueEl.value = 50;
+      const depositTypeEl = document.getElementById('invoice-deposit-type');
+      if (depositTypeEl) depositTypeEl.value = 'percent';
+
       updateInvoiceTotal();
 
       // Pre-fill customer details if provided
@@ -11022,6 +11058,49 @@
         total += qty * amount;
       });
       document.getElementById('invoice-total').textContent = `$${total.toFixed(2)}`;
+      // Also update deposit if enabled
+      updateInvoiceDeposit();
+    }
+
+    function toggleInvoiceDeposit() {
+      const checkbox = document.getElementById('invoice-require-deposit');
+      const options = document.getElementById('invoice-deposit-options');
+      if (checkbox && options) {
+        options.style.display = checkbox.checked ? 'block' : 'none';
+        if (checkbox.checked) {
+          updateInvoiceDeposit();
+        }
+      }
+    }
+
+    function updateInvoiceDeposit() {
+      const depositEnabled = document.getElementById('invoice-require-deposit')?.checked;
+      if (!depositEnabled) return;
+
+      const totalText = document.getElementById('invoice-total')?.textContent || '$0.00';
+      const total = parseFloat(totalText.replace(/[$,]/g, '')) || 0;
+
+      const depositType = document.getElementById('invoice-deposit-type')?.value || 'percent';
+      const depositValue = parseFloat(document.getElementById('invoice-deposit-value')?.value) || 0;
+
+      let depositAmount = 0;
+      if (depositType === 'percent') {
+        depositAmount = total * (depositValue / 100);
+        document.getElementById('invoice-deposit-value-label').textContent = 'Deposit %';
+        document.getElementById('invoice-deposit-value').max = 100;
+      } else {
+        depositAmount = Math.min(depositValue, total);
+        document.getElementById('invoice-deposit-value-label').textContent = 'Amount ($)';
+        document.getElementById('invoice-deposit-value').max = total;
+      }
+
+      const balanceDue = total - depositAmount;
+
+      const depositAmountEl = document.getElementById('invoice-deposit-amount');
+      const balanceDueEl = document.getElementById('invoice-balance-due');
+
+      if (depositAmountEl) depositAmountEl.textContent = `$${depositAmount.toFixed(2)}`;
+      if (balanceDueEl) balanceDueEl.textContent = `$${balanceDue.toFixed(2)}`;
     }
 
     // Get invoice form data helper
@@ -11035,6 +11114,27 @@
         });
       });
 
+      // Calculate deposit if enabled
+      const depositEnabled = document.getElementById('invoice-require-deposit')?.checked || false;
+      let depositAmount = 0;
+      let depositPercent = 0;
+      let depositType = 'percent';
+
+      if (depositEnabled) {
+        const totalText = document.getElementById('invoice-total')?.textContent || '$0.00';
+        const total = parseFloat(totalText.replace(/[$,]/g, '')) || 0;
+        depositType = document.getElementById('invoice-deposit-type')?.value || 'percent';
+        const depositValue = parseFloat(document.getElementById('invoice-deposit-value')?.value) || 0;
+
+        if (depositType === 'percent') {
+          depositPercent = depositValue;
+          depositAmount = total * (depositValue / 100);
+        } else {
+          depositAmount = Math.min(depositValue, total);
+          depositPercent = total > 0 ? (depositAmount / total) * 100 : 0;
+        }
+      }
+
       return {
         items,
         customerEmail: document.getElementById('invoice-email').value,
@@ -11044,7 +11144,11 @@
         notes: document.getElementById('invoice-notes').value,
         selectedTemplate: document.querySelector('input[name="invoice-template"]:checked')?.value || 'classic',
         ccMe: document.getElementById('invoice-cc-me')?.checked ?? true,
-        ccOther: document.getElementById('invoice-cc-other')?.value || ''
+        ccOther: document.getElementById('invoice-cc-other')?.value || '',
+        depositEnabled,
+        depositAmount,
+        depositPercent,
+        depositType
       };
     }
 
@@ -11280,7 +11384,7 @@
         return;
       }
 
-      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther } = formData;
+      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent } = formData;
 
       // Build CC recipients list
       const ccRecipients = [];
@@ -11321,11 +11425,15 @@
             customer_phone: customerPhone,
             subtotal: total,
             total: total,
-            amount_due: total,
+            amount_due: depositEnabled ? depositAmount : total,
             amount_paid: 0,
             due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
             notes: notes,
-            status: 'draft'
+            status: 'draft',
+            deposit_requested: depositEnabled ? depositAmount : null,
+            deposit_percent: depositEnabled ? depositPercent : null,
+            deposit_paid: 0,
+            balance_due: depositEnabled ? (total - depositAmount) : total
           })
           .select()
           .single();
@@ -11893,6 +12001,325 @@
       } catch (err) {
         console.error('Mark paid error:', err);
         alert('Error marking invoice as paid: ' + err.message);
+      }
+    }
+
+    // Record deposit payment on an invoice
+    async function recordDeposit(invoiceId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get invoice details
+        const { data: invoice, error: fetchError } = await supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const depositRequested = invoice.deposit_requested || (invoice.total * 0.5);
+        const depositAlreadyPaid = invoice.deposit_paid || 0;
+
+        // Show deposit recording modal
+        const modalHtml = `
+          <div class="modal-overlay active" id="record-deposit-modal" onclick="if(event.target===this) closeRecordDepositModal()">
+            <div class="modal" style="max-width: 450px;">
+              <div class="modal-header">
+                <h2 class="modal-title">Record Deposit Payment</h2>
+                <button class="modal-close" onclick="closeRecordDepositModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Invoice Total</span>
+                    <span style="font-weight: 600;">$${(invoice.total || 0).toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Deposit Requested</span>
+                    <span style="font-weight: 600; color: var(--gold-primary);">$${depositRequested.toFixed(2)}</span>
+                  </div>
+                  ${depositAlreadyPaid > 0 ? `<div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Already Paid</span>
+                    <span style="font-weight: 600; color: #22c55e;">$${depositAlreadyPaid.toFixed(2)}</span>
+                  </div>` : ''}
+                </div>
+
+                <div class="form-group">
+                  <label>Deposit Amount Received</label>
+                  <input type="number" id="deposit-amount-input" value="${depositRequested.toFixed(2)}" min="0" max="${invoice.total}" step="0.01" style="font-size: 18px; font-weight: 600;"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Payment Method</label>
+                  <select id="deposit-payment-method">
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="transfer">Bank Transfer</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Notes (Optional)</label>
+                  <input type="text" id="deposit-notes" placeholder="e.g., Check #1234"/>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn-modern secondary" onclick="closeRecordDepositModal()">Cancel</button>
+                <button class="btn-modern primary" onclick="saveDepositPayment('${invoiceId}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  Record Deposit
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      } catch (err) {
+        console.error('Record deposit error:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function closeRecordDepositModal() {
+      const modal = document.getElementById('record-deposit-modal');
+      if (modal) modal.remove();
+    }
+
+    async function saveDepositPayment(invoiceId) {
+      const depositAmount = parseFloat(document.getElementById('deposit-amount-input')?.value) || 0;
+      const paymentMethod = document.getElementById('deposit-payment-method')?.value || 'other';
+      const notes = document.getElementById('deposit-notes')?.value || '';
+
+      if (depositAmount <= 0) {
+        showToast('Please enter a valid deposit amount', 'warning');
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get current invoice
+        const { data: invoice } = await supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        const previousDeposit = invoice.deposit_paid || 0;
+        const totalDepositPaid = previousDeposit + depositAmount;
+        const newAmountPaid = (invoice.amount_paid || 0) + depositAmount;
+        const newAmountDue = invoice.total - newAmountPaid;
+
+        // Update invoice with deposit
+        const { error: updateError } = await supabaseClient
+          .from('invoices')
+          .update({
+            deposit_paid: totalDepositPaid,
+            deposit_paid_at: new Date().toISOString(),
+            deposit_payment_method: paymentMethod,
+            amount_paid: newAmountPaid,
+            amount_due: Math.max(0, newAmountDue),
+            balance_due: Math.max(0, newAmountDue),
+            status: newAmountDue <= 0 ? 'paid' : 'partial'
+          })
+          .eq('id', invoiceId);
+
+        if (updateError) throw updateError;
+
+        // Record payment
+        await supabaseClient.from('payments').insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          customer_id: invoice.customer_id,
+          amount: depositAmount,
+          payment_method: paymentMethod,
+          payment_type: 'deposit',
+          status: 'completed',
+          notes: notes || 'Deposit payment'
+        });
+
+        closeRecordDepositModal();
+        showToast(`Deposit of $${depositAmount.toFixed(2)} recorded!`, 'success');
+        loadInvoices();
+
+      } catch (err) {
+        console.error('Save deposit error:', err);
+        showToast('Error saving deposit: ' + err.message, 'error');
+      }
+    }
+
+    // Record deposit payment on an estimate
+    async function recordEstimateDeposit(estimateId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get estimate details
+        const { data: estimate, error: fetchError } = await supabaseClient
+          .from('estimates')
+          .select('*')
+          .eq('id', estimateId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const depositRequested = estimate.deposit_amount || estimate.deposit_requested || (estimate.total * 0.5);
+        const depositAlreadyPaid = estimate.deposit_paid || 0;
+
+        // Show deposit recording modal
+        const modalHtml = `
+          <div class="modal-overlay active" id="record-estimate-deposit-modal" onclick="if(event.target===this) closeRecordEstimateDepositModal()">
+            <div class="modal" style="max-width: 450px;">
+              <div class="modal-header">
+                <h2 class="modal-title">Record Estimate Deposit</h2>
+                <button class="modal-close" onclick="closeRecordEstimateDepositModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Estimate Total</span>
+                    <span style="font-weight: 600;">$${(estimate.total || 0).toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Deposit Requested</span>
+                    <span style="font-weight: 600; color: var(--gold-primary);">$${depositRequested.toFixed(2)}</span>
+                  </div>
+                  ${depositAlreadyPaid > 0 ? `<div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Already Paid</span>
+                    <span style="font-weight: 600; color: #22c55e;">$${depositAlreadyPaid.toFixed(2)}</span>
+                  </div>` : ''}
+                </div>
+
+                <div class="form-group">
+                  <label>Deposit Amount Received</label>
+                  <input type="number" id="estimate-deposit-amount-input" value="${depositRequested.toFixed(2)}" min="0" max="${estimate.total}" step="0.01" style="font-size: 18px; font-weight: 600;"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Payment Method</label>
+                  <select id="estimate-deposit-payment-method">
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="transfer">Bank Transfer</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Notes (Optional)</label>
+                  <input type="text" id="estimate-deposit-notes" placeholder="e.g., Check #1234"/>
+                </div>
+
+                <div style="background: rgba(34, 197, 94, 0.1); border-radius: 8px; padding: 12px; margin-top: 16px;">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="estimate-deposit-convert" checked style="width: 18px; height: 18px;">
+                    <span style="font-size: 13px;">Convert to invoice after recording deposit</span>
+                  </label>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn-modern secondary" onclick="closeRecordEstimateDepositModal()">Cancel</button>
+                <button class="btn-modern primary" onclick="saveEstimateDepositPayment('${estimateId}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  Record Deposit
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      } catch (err) {
+        console.error('Record estimate deposit error:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function closeRecordEstimateDepositModal() {
+      const modal = document.getElementById('record-estimate-deposit-modal');
+      if (modal) modal.remove();
+    }
+
+    async function saveEstimateDepositPayment(estimateId) {
+      const depositAmount = parseFloat(document.getElementById('estimate-deposit-amount-input')?.value) || 0;
+      const paymentMethod = document.getElementById('estimate-deposit-payment-method')?.value || 'other';
+      const notes = document.getElementById('estimate-deposit-notes')?.value || '';
+      const convertToInvoice = document.getElementById('estimate-deposit-convert')?.checked ?? true;
+
+      if (depositAmount <= 0) {
+        showToast('Please enter a valid deposit amount', 'warning');
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get current estimate
+        const { data: estimate } = await supabaseClient
+          .from('estimates')
+          .select('*')
+          .eq('id', estimateId)
+          .single();
+
+        const previousDeposit = estimate.deposit_paid || 0;
+        const totalDepositPaid = previousDeposit + depositAmount;
+        const balanceDue = estimate.total - totalDepositPaid;
+
+        // Update estimate with deposit
+        const { error: updateError } = await supabaseClient
+          .from('estimates')
+          .update({
+            deposit_paid: totalDepositPaid,
+            deposit_paid_at: new Date().toISOString(),
+            balance_due: Math.max(0, balanceDue),
+            status: 'approved'
+          })
+          .eq('id', estimateId);
+
+        if (updateError) throw updateError;
+
+        // Record payment
+        await supabaseClient.from('payments').insert({
+          user_id: user.id,
+          estimate_id: estimateId,
+          amount: depositAmount,
+          payment_method: paymentMethod,
+          payment_type: 'deposit',
+          status: 'completed',
+          notes: notes || 'Estimate deposit payment'
+        });
+
+        closeRecordEstimateDepositModal();
+        showToast(`Deposit of $${depositAmount.toFixed(2)} recorded!`, 'success');
+
+        // Optionally convert to invoice
+        if (convertToInvoice) {
+          await createInvoiceFromEstimate(estimateId);
+        } else {
+          loadEstimates();
+        }
+
+      } catch (err) {
+        console.error('Save estimate deposit error:', err);
+        showToast('Error saving deposit: ' + err.message, 'error');
       }
     }
 
