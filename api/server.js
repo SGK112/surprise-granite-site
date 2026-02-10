@@ -294,6 +294,9 @@ const pricingRouter = require('./routes/pricing');
 // Scraper Management Routes
 const scrapersRouter = require('./routes/scrapers');
 
+// QuickBooks Integration Routes
+const quickbooksRouter = require('./routes/quickbooks');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -3502,6 +3505,9 @@ app.use('/api/marketplace', marketplaceRouter);
 
 // ============ STRIPE ROUTES (PAYMENTS, SUBSCRIPTIONS, WALLET) ============
 app.use('/api/stripe', stripeRouter);
+
+// ============ QUICKBOOKS ROUTES (ACCOUNTING SYNC) ============
+app.use('/api/quickbooks', quickbooksRouter);
 
 // ============ AI ROUTES (VISUALIZER, VIDEO, BLUEPRINT) ============
 app.use('/api/ai', aiRouter);

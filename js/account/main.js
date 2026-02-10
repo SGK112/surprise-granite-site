@@ -1025,6 +1025,9 @@
           case 'create-estimate':
             startEstimateFromLead(item.id);
             break;
+          case 'create-invoice':
+            startInvoiceFromLead(item.id);
+            break;
           case 'status':
             await updateLeadStatus(item.id, status);
             break;
@@ -2170,6 +2173,11 @@
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('dashboard-app').style.display = 'block';
       setupDashboard();
+
+      // Check QuickBooks connection status
+      if (typeof checkQuickBooksStatus === 'function') {
+        checkQuickBooksStatus();
+      }
 
       // Initialize StateManager with current user and sync all persisted data
       if (typeof StateManager !== 'undefined') {
@@ -10539,6 +10547,19 @@
               }
             }
 
+            // QuickBooks sync status
+            const qboStatus = inv.qbo_sync_status || 'pending';
+            const qboSynced = inv.qbo_id && qboStatus === 'synced';
+            const qboError = qboStatus === 'error';
+            let qboIndicator = '';
+            if (qboConnected) {
+              if (qboSynced) {
+                qboIndicator = '<span style="color: #22c55e; font-size: 10px;" title="Synced to QuickBooks">QB ✓</span>';
+              } else if (qboError) {
+                qboIndicator = '<span style="color: #ef4444; font-size: 10px;" title="' + (inv.qbo_sync_error || 'Sync error') + '">QB !</span>';
+              }
+            }
+
             // Show record deposit button for open invoices with deposit requested but not fully paid
             const showDepositBtn = hasDeposit && inv.status !== 'paid' && (!depositPaid || inv.deposit_paid < inv.deposit_requested);
 
@@ -10558,6 +10579,7 @@
                 <div class="list-item-subtitle" style="margin-top: 2px;">
                   Due: ${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'Not set'}
                   ${viewedInfo ? `<span style="color: #22c55e; margin-left: 8px;">${viewedInfo}</span>` : ''}
+                  ${qboIndicator ? `<span style="margin-left: 8px;">${qboIndicator}</span>` : ''}
                 </div>
                 ${depositInfo ? `<div style="margin-top: 4px;">${depositInfo}</div>` : ''}
               </div>
@@ -10566,6 +10588,7 @@
                 <span class="badge-modern" style="background: ${statusColor}20; color: ${statusColor};">${inv.status}</span>
                 ${showDepositBtn ? `<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); recordDeposit('${inv.id}')">Record Deposit</button>` : ''}
                 ${inv.status !== 'paid' && inv.status !== 'void' && !showDepositBtn ? `<button class="btn-modern ghost" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
+                ${qboConnected && !qboSynced ? `<button class="btn-modern ghost qbo-sync-btn" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); syncInvoiceToQBO('${inv.id}')" title="Sync to QuickBooks"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` : ''}
               </div>
             </div>
           `;}).join('')}
@@ -10599,7 +10622,7 @@
       `;
       invoiceItemCount = 1;
 
-      // Reset deposit fields
+      // Reset deposit request fields
       const depositCheckbox = document.getElementById('invoice-require-deposit');
       const depositOptions = document.getElementById('invoice-deposit-options');
       if (depositCheckbox) depositCheckbox.checked = false;
@@ -10609,7 +10632,21 @@
       const depositTypeEl = document.getElementById('invoice-deposit-type');
       if (depositTypeEl) depositTypeEl.value = 'percent';
 
+      // Reset deposit received fields
+      const depositReceivedCheckbox = document.getElementById('invoice-deposit-received');
+      const depositReceivedOptions = document.getElementById('invoice-deposit-received-options');
+      if (depositReceivedCheckbox) depositReceivedCheckbox.checked = false;
+      if (depositReceivedOptions) depositReceivedOptions.style.display = 'none';
+      const depositReceivedAmountEl = document.getElementById('invoice-deposit-received-amount');
+      if (depositReceivedAmountEl) depositReceivedAmountEl.value = '';
+      const depositPaymentMethodEl = document.getElementById('invoice-deposit-payment-method');
+      if (depositPaymentMethodEl) depositPaymentMethodEl.value = 'cash';
+
       updateInvoiceTotal();
+
+      // Reset lead_id hidden field
+      const leadIdField = document.getElementById('invoice-lead-id');
+      if (leadIdField) leadIdField.value = '';
 
       // Pre-fill customer details if provided
       if (customer) {
@@ -10622,11 +10659,219 @@
         if (customer.phone) {
           document.getElementById('invoice-phone').value = customer.phone;
         }
+        // Set lead_id if provided (for lead-to-invoice linking)
+        if (customer.lead_id && leadIdField) {
+          leadIdField.value = customer.lead_id;
+        }
       }
     }
 
     function closeInvoiceModal() {
       document.getElementById('invoice-modal').classList.remove('active');
+    }
+
+    // Start invoice from a lead (quick action)
+    function startInvoiceFromLead(leadId) {
+      const lead = leadId ? allLeads.find(l => l.id === leadId) : selectedLead;
+      if (!lead) {
+        showToast('Lead not found', 'error');
+        return;
+      }
+
+      // Navigate to invoices page and open modal with lead data
+      showPage('invoices');
+      setTimeout(() => {
+        openInvoiceModal({
+          email: lead.email || lead.homeowner_email,
+          name: lead.full_name || lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
+          phone: lead.phone || lead.homeowner_phone,
+          lead_id: lead.id
+        });
+      }, 300);
+    }
+
+    // =====================================================
+    // QUICKBOOKS SYNC FUNCTIONS
+    // =====================================================
+
+    let qboConnected = false;
+
+    // Check QuickBooks connection status
+    async function checkQuickBooksStatus() {
+      try {
+        const response = await fetch('/api/quickbooks/status', {
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+        const data = await response.json();
+        qboConnected = data.connected;
+        updateQuickBooksUI();
+      } catch (e) {
+        qboConnected = false;
+      }
+    }
+
+    // Update UI based on QuickBooks connection status
+    function updateQuickBooksUI() {
+      const qbBtns = document.querySelectorAll('.qbo-sync-btn');
+      qbBtns.forEach(btn => {
+        btn.style.display = qboConnected ? 'inline-flex' : 'none';
+      });
+    }
+
+    // Connect to QuickBooks
+    async function connectQuickBooks() {
+      try {
+        const response = await fetch('/api/quickbooks/connect', {
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+        const data = await response.json();
+        if (data.authUrl) {
+          window.open(data.authUrl, 'QuickBooks Connect', 'width=600,height=700');
+        }
+      } catch (e) {
+        showToast('Failed to connect to QuickBooks', 'error');
+      }
+    }
+
+    // Disconnect from QuickBooks
+    async function disconnectQuickBooks() {
+      if (!confirm('Are you sure you want to disconnect QuickBooks?')) return;
+
+      try {
+        await fetch('/api/quickbooks/disconnect', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+        qboConnected = false;
+        updateQuickBooksUI();
+        showToast('QuickBooks disconnected', 'info');
+      } catch (e) {
+        showToast('Failed to disconnect QuickBooks', 'error');
+      }
+    }
+
+    // Sync invoice to QuickBooks
+    async function syncInvoiceToQBO(invoiceId) {
+      const btn = event?.target?.closest('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+      }
+
+      try {
+        const response = await fetch(`/api/quickbooks/sync/invoice/${invoiceId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showToast('Invoice synced to QuickBooks', 'success');
+          loadInvoices(); // Refresh to show sync status
+        } else {
+          throw new Error(data.error || 'Sync failed');
+        }
+      } catch (e) {
+        showToast(`QuickBooks sync failed: ${e.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>';
+        }
+      }
+    }
+
+    // Sync estimate to QuickBooks
+    async function syncEstimateToQBO(estimateId) {
+      const btn = event?.target?.closest('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+      }
+
+      try {
+        const response = await fetch(`/api/quickbooks/sync/estimate/${estimateId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showToast('Estimate synced to QuickBooks', 'success');
+          loadEstimates(); // Refresh to show sync status
+        } else {
+          throw new Error(data.error || 'Sync failed');
+        }
+      } catch (e) {
+        showToast(`QuickBooks sync failed: ${e.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>';
+        }
+      }
+    }
+
+    // Sync all pending invoices
+    async function syncAllInvoicesToQBO() {
+      const btn = event?.target?.closest('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Syncing...';
+      }
+
+      try {
+        const response = await fetch('/api/quickbooks/sync/invoices', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadInvoices();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (e) {
+        showToast(`Sync failed: ${e.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Sync All to QuickBooks';
+        }
+      }
+    }
+
+    // Sync all pending estimates
+    async function syncAllEstimatesToQBO() {
+      const btn = event?.target?.closest('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Syncing...';
+      }
+
+      try {
+        const response = await fetch('/api/quickbooks/sync/estimates', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadEstimates();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (e) {
+        showToast(`Sync failed: ${e.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Sync All to QuickBooks';
+        }
+      }
     }
 
     // Template Preview Modal Functions
@@ -11058,15 +11303,26 @@
         total += qty * amount;
       });
       document.getElementById('invoice-total').textContent = `$${total.toFixed(2)}`;
-      // Also update deposit if enabled
+      // Also update deposit calculations if enabled
       updateInvoiceDeposit();
+      updateDepositReceived();
     }
 
     function toggleInvoiceDeposit() {
       const checkbox = document.getElementById('invoice-require-deposit');
       const options = document.getElementById('invoice-deposit-options');
+      const receivedCheckbox = document.getElementById('invoice-deposit-received');
+      const receivedOptions = document.getElementById('invoice-deposit-received-options');
+
       if (checkbox && options) {
         options.style.display = checkbox.checked ? 'block' : 'none';
+
+        // If checking "request deposit", uncheck "deposit received" (mutually exclusive)
+        if (checkbox.checked && receivedCheckbox) {
+          receivedCheckbox.checked = false;
+          if (receivedOptions) receivedOptions.style.display = 'none';
+        }
+
         if (checkbox.checked) {
           updateInvoiceDeposit();
         }
@@ -11103,6 +11359,46 @@
       if (balanceDueEl) balanceDueEl.textContent = `$${balanceDue.toFixed(2)}`;
     }
 
+    // Toggle deposit already received section
+    function toggleDepositReceived() {
+      const checkbox = document.getElementById('invoice-deposit-received');
+      const options = document.getElementById('invoice-deposit-received-options');
+      const requestCheckbox = document.getElementById('invoice-require-deposit');
+      const requestOptions = document.getElementById('invoice-deposit-options');
+
+      if (checkbox && options) {
+        options.style.display = checkbox.checked ? 'block' : 'none';
+
+        // If checking "deposit received", uncheck "request deposit" (mutually exclusive)
+        if (checkbox.checked && requestCheckbox) {
+          requestCheckbox.checked = false;
+          if (requestOptions) requestOptions.style.display = 'none';
+        }
+
+        if (checkbox.checked) {
+          updateDepositReceived();
+        }
+      }
+    }
+
+    // Update deposit received display
+    function updateDepositReceived() {
+      const depositReceived = document.getElementById('invoice-deposit-received')?.checked;
+      if (!depositReceived) return;
+
+      const totalText = document.getElementById('invoice-total')?.textContent || '$0.00';
+      const total = parseFloat(totalText.replace(/[$,]/g, '')) || 0;
+
+      const depositAmount = parseFloat(document.getElementById('invoice-deposit-received-amount')?.value) || 0;
+      const balanceRemaining = Math.max(0, total - depositAmount);
+
+      const depositDisplayEl = document.getElementById('invoice-deposit-received-display');
+      const balanceRemainingEl = document.getElementById('invoice-balance-remaining');
+
+      if (depositDisplayEl) depositDisplayEl.textContent = `$${depositAmount.toFixed(2)}`;
+      if (balanceRemainingEl) balanceRemainingEl.textContent = `$${balanceRemaining.toFixed(2)}`;
+    }
+
     // Get invoice form data helper
     function getInvoiceFormData() {
       const items = [];
@@ -11114,7 +11410,7 @@
         });
       });
 
-      // Calculate deposit if enabled
+      // Calculate deposit if requesting deposit
       const depositEnabled = document.getElementById('invoice-require-deposit')?.checked || false;
       let depositAmount = 0;
       let depositPercent = 0;
@@ -11135,6 +11431,16 @@
         }
       }
 
+      // Check if deposit already received
+      const depositAlreadyReceived = document.getElementById('invoice-deposit-received')?.checked || false;
+      let depositReceivedAmount = 0;
+      let depositPaymentMethod = '';
+
+      if (depositAlreadyReceived) {
+        depositReceivedAmount = parseFloat(document.getElementById('invoice-deposit-received-amount')?.value) || 0;
+        depositPaymentMethod = document.getElementById('invoice-deposit-payment-method')?.value || 'cash';
+      }
+
       return {
         items,
         customerEmail: document.getElementById('invoice-email').value,
@@ -11148,7 +11454,11 @@
         depositEnabled,
         depositAmount,
         depositPercent,
-        depositType
+        depositType,
+        depositAlreadyReceived,
+        depositReceivedAmount,
+        depositPaymentMethod,
+        leadId: document.getElementById('invoice-lead-id')?.value || null
       };
     }
 
@@ -11169,22 +11479,29 @@
         const random = Math.random().toString(36).substring(2, 5).toUpperCase();
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
+        const draftData = {
+          user_id: user.id,
+          invoice_number: invoiceNumber,
+          customer_email: formData.customerEmail,
+          customer_name: formData.customerName,
+          customer_phone: formData.customerPhone,
+          subtotal: total,
+          total: total,
+          amount_due: total,
+          amount_paid: 0,
+          due_date: new Date(Date.now() + formData.dueDays * 24 * 60 * 60 * 1000).toISOString(),
+          notes: formData.notes,
+          status: 'draft'
+        };
+
+        // Include lead_id if creating from a lead
+        if (formData.leadId) {
+          draftData.lead_id = formData.leadId;
+        }
+
         const { data: invoice, error } = await supabaseClient
           .from('invoices')
-          .insert({
-            user_id: user.id,
-            invoice_number: invoiceNumber,
-            customer_email: formData.customerEmail,
-            customer_name: formData.customerName,
-            customer_phone: formData.customerPhone,
-            subtotal: total,
-            total: total,
-            amount_due: total,
-            amount_paid: 0,
-            due_date: new Date(Date.now() + formData.dueDays * 24 * 60 * 60 * 1000).toISOString(),
-            notes: formData.notes,
-            status: 'draft'
-          })
+          .insert(draftData)
           .select()
           .single();
 
@@ -11384,7 +11701,7 @@
         return;
       }
 
-      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent } = formData;
+      const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent, depositAlreadyReceived, depositReceivedAmount, depositPaymentMethod, leadId } = formData;
 
       // Build CC recipients list
       const ccRecipients = [];
@@ -11415,26 +11732,60 @@
         console.log('[Invoices] Creating invoice:', invoiceNumber, 'for', customerEmail);
 
         // Step 1: Create invoice in Supabase (single source of truth)
+        let amountDue = total;
+        let amountPaid = 0;
+        let balanceDue = total;
+        let invoiceStatus = 'draft';
+
+        // Handle deposit scenarios
+        if (depositAlreadyReceived && depositReceivedAmount > 0) {
+          // Deposit already received - record it and calculate remaining balance
+          amountPaid = depositReceivedAmount;
+          balanceDue = Math.max(0, total - depositReceivedAmount);
+          amountDue = balanceDue;
+          // If fully paid, mark as paid; if partial, mark as partial
+          if (depositReceivedAmount >= total) {
+            invoiceStatus = 'paid';
+          } else {
+            invoiceStatus = 'partial';
+          }
+          console.log('[Invoices] Deposit already received:', depositReceivedAmount, 'Balance:', balanceDue);
+        } else if (depositEnabled && depositAmount > 0) {
+          // Requesting deposit - amount due is just the deposit
+          amountDue = depositAmount;
+          balanceDue = total - depositAmount;
+        }
+
+        const invoiceData = {
+          user_id: user.id,
+          invoice_number: invoiceNumber,
+          customer_email: customerEmail,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          subtotal: total,
+          total: total,
+          amount_due: amountDue,
+          amount_paid: amountPaid,
+          due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
+          notes: notes,
+          status: invoiceStatus,
+          deposit_requested: depositEnabled ? depositAmount : (depositAlreadyReceived ? depositReceivedAmount : null),
+          deposit_percent: depositEnabled ? depositPercent : null,
+          deposit_paid: depositAlreadyReceived ? depositReceivedAmount : 0,
+          deposit_paid_at: depositAlreadyReceived && depositReceivedAmount > 0 ? new Date().toISOString() : null,
+          deposit_payment_method: depositAlreadyReceived ? depositPaymentMethod : null,
+          balance_due: balanceDue
+        };
+
+        // Include lead_id if creating from a lead (for traceability)
+        if (leadId) {
+          invoiceData.lead_id = leadId;
+          console.log('[Invoices] Linking invoice to lead:', leadId);
+        }
+
         const { data: invoice, error: invoiceError } = await supabaseClient
           .from('invoices')
-          .insert({
-            user_id: user.id,
-            invoice_number: invoiceNumber,
-            customer_email: customerEmail,
-            customer_name: customerName,
-            customer_phone: customerPhone,
-            subtotal: total,
-            total: total,
-            amount_due: depositEnabled ? depositAmount : total,
-            amount_paid: 0,
-            due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
-            notes: notes,
-            status: 'draft',
-            deposit_requested: depositEnabled ? depositAmount : null,
-            deposit_percent: depositEnabled ? depositPercent : null,
-            deposit_paid: 0,
-            balance_due: depositEnabled ? (total - depositAmount) : total
-          })
+          .insert(invoiceData)
           .select()
           .single();
 
@@ -14837,7 +15188,11 @@
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${(estimate.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${new Date(estimate.created_at).toLocaleDateString()}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  ${new Date(estimate.created_at).toLocaleDateString()}
+                  ${qboConnected && estimate.qbo_id && estimate.qbo_sync_status === 'synced' ? '<span style="color: #22c55e; margin-left: 8px;" title="Synced to QuickBooks">QB ✓</span>' : ''}
+                  ${qboConnected && estimate.qbo_sync_status === 'error' ? '<span style="color: #ef4444; margin-left: 8px;" title="' + (estimate.qbo_sync_error || 'Sync error') + '">QB !</span>' : ''}
+                </div>
               </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -14873,6 +15228,12 @@
                 <button class="btn-modern secondary small" onclick="event.stopPropagation(); createProjectFromEstimate('${estimate.id}')" title="Create Project">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                   Project
+                </button>
+              ` : ''}
+              ${qboConnected && !estimate.qbo_id ? `
+                <button class="btn-modern secondary small qbo-sync-btn" onclick="event.stopPropagation(); syncEstimateToQBO('${estimate.id}')" title="Sync to QuickBooks">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  QB Sync
                 </button>
               ` : ''}
               ${estimate.archived_at ? `
@@ -23307,15 +23668,26 @@
     // Create invoice from profile panel
     function createInvoiceFromProfile() {
       if (!currentProfileData) return;
+
+      // Capture data before closing panel (in case it gets cleared)
+      const invoiceData = {
+        email: currentProfileData.email || currentProfileData.homeowner_email,
+        name: currentProfileData.full_name || currentProfileData.name,
+        phone: currentProfileData.phone || currentProfileData.homeowner_phone
+      };
+
+      // Include lead_id for traceability if this is a lead
+      if (currentProfileType === 'lead' && currentProfileData.id) {
+        invoiceData.lead_id = currentProfileData.id;
+      }
+
       closeProfilePanel();
       showPage('invoices');
+
+      // Use longer timeout to ensure page is fully rendered
       setTimeout(() => {
-        openInvoiceModal({
-          email: currentProfileData.email || currentProfileData.homeowner_email,
-          name: currentProfileData.full_name || currentProfileData.name,
-          phone: currentProfileData.phone || currentProfileData.homeowner_phone
-        });
-      }, 100);
+        openInvoiceModal(invoiceData);
+      }, 300);
     }
 
     // Load estimate counts for badge
@@ -23733,21 +24105,6 @@
       closeProfilePanel();
       if (data) {
         openJobScheduler(data);
-      }
-    }
-
-    function createEstimateFromProfile() {
-      // Save data before closing
-      const data = currentProfileData;
-      closeProfilePanel();
-      if (data) {
-        // Navigate to estimates and create new
-        showPage('estimates');
-        setTimeout(() => {
-          if (typeof openNewEstimateModal === 'function') {
-            openNewEstimateModal(data);
-          }
-        }, 300);
       }
     }
 

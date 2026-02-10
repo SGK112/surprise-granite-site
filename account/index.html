@@ -3976,6 +3976,7 @@
         </button>
       </div>
       <form id="invoice-form" onsubmit="createInvoice(event)">
+        <input type="hidden" id="invoice-lead-id" value="">
         <div class="modal-body">
           <h4 style="margin-bottom: 16px; color: var(--text-secondary);">Customer Information</h4>
           <div class="form-row">
@@ -4038,13 +4039,18 @@
 
           <!-- Deposit Section -->
           <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--border-subtle);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px;">
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
                 <input type="checkbox" id="invoice-require-deposit" onchange="toggleInvoiceDeposit()" style="width: 18px; height: 18px;">
                 <span>Request Deposit</span>
               </label>
-              <span style="font-size: 12px; color: var(--text-muted);">Collect upfront payment</span>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" id="invoice-deposit-received" onchange="toggleDepositReceived()" style="width: 18px; height: 18px;">
+                <span style="color: var(--success);">Deposit Already Received</span>
+              </label>
             </div>
+
+            <!-- Request Deposit Options -->
             <div id="invoice-deposit-options" style="display: none;">
               <div class="form-row" style="align-items: flex-end; gap: 12px;">
                 <div class="form-group" style="flex: 1;">
@@ -4071,6 +4077,37 @@
                 <div style="text-align: right;">
                   <div style="font-size: 11px; color: var(--text-muted);">Due after deposit</div>
                   <div style="font-size: 12px; color: var(--text-secondary);">Upon project completion</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deposit Already Received Options -->
+            <div id="invoice-deposit-received-options" style="display: none;">
+              <div class="form-row" style="align-items: flex-end; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                  <label>Amount Received ($)</label>
+                  <input type="number" id="invoice-deposit-received-amount" min="0" step="0.01" placeholder="0.00" onchange="updateDepositReceived()" style="text-align: center;"/>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label>Payment Method</label>
+                  <select id="invoice-deposit-payment-method">
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="card">Card</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 12px; background: rgba(76, 175, 80, 0.15); border-radius: 8px; margin-top: 12px; border: 1px solid rgba(76, 175, 80, 0.3);">
+                <div>
+                  <div style="font-size: 11px; color: var(--success); text-transform: uppercase;">Deposit Received</div>
+                  <div id="invoice-deposit-received-display" style="font-size: 20px; font-weight: 700; color: var(--success);">$0.00</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Balance Remaining</div>
+                  <div id="invoice-balance-remaining" style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$0.00</div>
                 </div>
               </div>
             </div>
