@@ -12599,32 +12599,38 @@
           balanceDue = total - depositAmount;
         }
 
+        // Build metadata for deposit info and lead tracking (columns that don't exist in table)
+        const metadata = {};
+        if (depositEnabled && depositAmount > 0) {
+          metadata.deposit_requested = depositAmount;
+          metadata.deposit_percent = depositPercent;
+        }
+        if (depositAlreadyReceived && depositReceivedAmount > 0) {
+          metadata.deposit_paid = depositReceivedAmount;
+          metadata.deposit_paid_at = new Date().toISOString();
+          metadata.deposit_payment_method = depositPaymentMethod;
+        }
+        if (leadId) {
+          metadata.lead_id = leadId;
+          console.log('[Invoices] Linking invoice to lead via metadata:', leadId);
+        }
+
+        // Only include columns that exist in the invoices table
+        // Note: balance_due is a GENERATED column, don't insert it
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
           customer_email: customerEmail,
-          customer_name: customerName,
+          customer_name: customerName || 'Customer',
           customer_phone: customerPhone,
           subtotal: total,
           total: total,
-          amount_due: amountDue,
           amount_paid: amountPaid,
-          due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
+          due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           notes: notes || '',
           status: invoiceStatus,
-          deposit_requested: depositEnabled ? depositAmount : (depositAlreadyReceived ? depositReceivedAmount : null),
-          deposit_percent: depositEnabled ? depositPercent : null,
-          deposit_paid: depositAlreadyReceived ? depositReceivedAmount : 0,
-          deposit_paid_at: depositAlreadyReceived && depositReceivedAmount > 0 ? new Date().toISOString() : null,
-          deposit_payment_method: depositAlreadyReceived ? depositPaymentMethod : null,
-          balance_due: balanceDue
+          metadata: Object.keys(metadata).length > 0 ? metadata : {}
         };
-
-        // Include lead_id if creating from a lead (for traceability)
-        if (leadId) {
-          invoiceData.lead_id = leadId;
-          console.log('[Invoices] Linking invoice to lead:', leadId);
-        }
 
         // Include customer_id if creating from a customer
         if (customerId) {
@@ -17900,31 +17906,37 @@
         const random = Math.random().toString(36).substring(2, 5).toUpperCase();
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
-        // Create invoice - preserve full traceability chain
-        // Note: address fields removed as they don't exist in invoices table
+        // Create invoice - only use columns that exist in the invoices table
+        // Store extra info (lead_id, project_name, discount details) in metadata
+        const metadata = {
+          lead_id: estimate.lead_id || null,
+          project_name: estimate.project_name || null,
+          discount_type: estimate.discount_type || null,
+          discount_value: estimate.discount_value || null,
+          payment_terms: estimate.payment_terms || null,
+          converted_from_estimate: estimateId
+        };
+
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
           estimate_id: estimateId,
-          lead_id: estimate.lead_id || null,  // Preserve lead reference for traceability
           customer_id: estimate.customer_id || null,
-          customer_name: estimate.customer_name,
+          customer_name: estimate.customer_name || 'Customer',
           customer_email: estimate.customer_email,
           customer_phone: estimate.customer_phone,
-          project_name: estimate.project_name,
-          subtotal: estimate.subtotal,
-          tax_rate: estimate.tax_rate,
-          tax_amount: estimate.tax_amount,
-          discount_type: estimate.discount_type,
-          discount_value: estimate.discount_value,
-          discount_amount: estimate.discount_amount,
+          customer_address: estimate.customer_address || null,
+          subtotal: estimate.subtotal || estimate.total,
+          tax_rate: estimate.tax_rate || 0,
+          tax_amount: estimate.tax_amount || 0,
+          discount: estimate.discount_amount || 0,
           total: estimate.total,
           amount_paid: 0,
-          amount_due: estimate.total,
-          payment_terms: estimate.payment_terms,
+          terms: estimate.payment_terms || null,
           notes: estimate.notes,
-          status: 'unpaid',
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          status: 'sent',
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          metadata: metadata
         };
 
         const { data: invoice, error } = await supabaseClient
