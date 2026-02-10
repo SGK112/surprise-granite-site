@@ -11403,51 +11403,116 @@
       document.getElementById('invoice-modal').classList.remove('active');
     }
 
-    // Populate the lead/customer dropdown in invoice modal
+    // Populate the searchable contact list in invoice modal
     function populateInvoiceContactSelect() {
-      const leadsGroup = document.getElementById('invoice-leads-optgroup');
-      const customersGroup = document.getElementById('invoice-customers-optgroup');
-      const select = document.getElementById('invoice-contact-select');
+      const searchInput = document.getElementById('invoice-contact-search');
+      const hiddenSelect = document.getElementById('invoice-contact-select');
 
-      if (!leadsGroup || !customersGroup) return;
+      // Clear any previous selection
+      if (searchInput) searchInput.value = '';
+      if (hiddenSelect) hiddenSelect.value = '';
 
-      // Clear existing options
-      leadsGroup.innerHTML = '';
-      customersGroup.innerHTML = '';
+      // Clear badge
+      const badge = document.getElementById('invoice-contact-badge');
+      if (badge) badge.style.display = 'none';
 
-      // Add leads
-      if (allLeads && allLeads.length > 0) {
-        allLeads.forEach(lead => {
-          if (lead.email || lead.name) {
-            const option = document.createElement('option');
-            option.value = `lead:${lead.id}`;
-            option.textContent = `${lead.name || 'No Name'} - ${lead.email || 'No Email'}`;
-            leadsGroup.appendChild(option);
-          }
-        });
-      }
-
-      // Add customers
-      if (allCustomers && allCustomers.length > 0) {
-        allCustomers.forEach(customer => {
-          if (customer.email || customer.name) {
-            const option = document.createElement('option');
-            option.value = `customer:${customer.id}`;
-            option.textContent = `${customer.name || 'No Name'} - ${customer.email || 'No Email'}`;
-            customersGroup.appendChild(option);
-          }
-        });
-      }
-
-      // Reset selection
-      if (select) select.value = '';
+      // Pre-render the contact list
+      renderInvoiceContactList('');
     }
 
-    // Handle lead/customer selection in invoice modal
-    function onInvoiceContactSelected(value) {
-      if (!value) return;
+    // Render the searchable contact list
+    function renderInvoiceContactList(filter) {
+      const listEl = document.getElementById('invoice-contact-list');
+      if (!listEl) return;
 
-      const [type, id] = value.split(':');
+      const filterLower = (filter || '').toLowerCase();
+      let html = '';
+
+      // Filter and render leads
+      const filteredLeads = (allLeads || []).filter(lead => {
+        if (!lead.email && !lead.name) return false;
+        const searchStr = `${lead.name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
+        return !filterLower || searchStr.includes(filterLower);
+      });
+
+      // Filter and render customers
+      const filteredCustomers = (allCustomers || []).filter(customer => {
+        if (!customer.email && !customer.name) return false;
+        const searchStr = `${customer.name || ''} ${customer.email || ''} ${customer.phone || ''}`.toLowerCase();
+        return !filterLower || searchStr.includes(filterLower);
+      });
+
+      if (filteredLeads.length > 0) {
+        html += '<div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; background: var(--dark-surface); border-bottom: 1px solid var(--border-subtle);">Leads</div>';
+        filteredLeads.slice(0, 10).forEach(lead => {
+          html += `
+            <div class="invoice-contact-item" onclick="selectInvoiceContact('lead', '${lead.id}')"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px;"
+                 onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
+              <span style="background: #3b82f6; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">LEAD</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.name || 'No Name'}</div>
+                <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.email || ''} ${lead.phone ? '· ' + lead.phone : ''}</div>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (filteredCustomers.length > 0) {
+        html += '<div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; background: var(--dark-surface); border-bottom: 1px solid var(--border-subtle);">Customers</div>';
+        filteredCustomers.slice(0, 10).forEach(customer => {
+          html += `
+            <div class="invoice-contact-item" onclick="selectInvoiceContact('customer', '${customer.id}')"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px;"
+                 onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
+              <span style="background: #22c55e; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">CUSTOMER</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${customer.name || 'No Name'}</div>
+                <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${customer.email || ''} ${customer.phone ? '· ' + customer.phone : ''}</div>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (!html) {
+        html = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No contacts found</div>';
+      }
+
+      listEl.innerHTML = html;
+    }
+
+    // Show contact list dropdown
+    function showInvoiceContactList() {
+      const listEl = document.getElementById('invoice-contact-list');
+      if (listEl) {
+        listEl.style.display = 'block';
+        renderInvoiceContactList(document.getElementById('invoice-contact-search')?.value || '');
+      }
+
+      // Close when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', hideInvoiceContactListOnClickOutside);
+      }, 100);
+    }
+
+    function hideInvoiceContactListOnClickOutside(e) {
+      const listEl = document.getElementById('invoice-contact-list');
+      const searchEl = document.getElementById('invoice-contact-search');
+      if (listEl && !listEl.contains(e.target) && e.target !== searchEl) {
+        listEl.style.display = 'none';
+        document.removeEventListener('click', hideInvoiceContactListOnClickOutside);
+      }
+    }
+
+    // Filter contacts as user types
+    function filterInvoiceContacts(value) {
+      const listEl = document.getElementById('invoice-contact-list');
+      if (listEl) listEl.style.display = 'block';
+      renderInvoiceContactList(value);
+    }
+
+    // Select a contact from the list
+    function selectInvoiceContact(type, id) {
       let contact = null;
 
       if (type === 'lead') {
@@ -11465,17 +11530,65 @@
       }
 
       if (contact) {
+        // Update search input to show selection
+        const searchInput = document.getElementById('invoice-contact-search');
+        if (searchInput) searchInput.value = contact.name || contact.email || '';
+
+        // Update hidden select
+        const hiddenSelect = document.getElementById('invoice-contact-select');
+        if (hiddenSelect) hiddenSelect.value = `${type}:${id}`;
+
+        // Show badge
+        const badge = document.getElementById('invoice-contact-badge');
+        if (badge) {
+          badge.textContent = type.toUpperCase();
+          badge.style.display = 'inline';
+          badge.style.background = type === 'lead' ? '#3b82f6' : '#22c55e';
+          badge.style.color = 'white';
+        }
+
         // Auto-populate form fields
         document.getElementById('invoice-email').value = contact.email || '';
         document.getElementById('invoice-name').value = contact.name || '';
         document.getElementById('invoice-phone').value = contact.phone || '';
-        document.getElementById('invoice-address').value = contact.address || '';
-        document.getElementById('invoice-city').value = contact.city || '';
-        document.getElementById('invoice-state').value = contact.state || '';
-        document.getElementById('invoice-zip').value = contact.zip || '';
+
+        const addrField = document.getElementById('invoice-address');
+        const cityField = document.getElementById('invoice-city');
+        const stateField = document.getElementById('invoice-state');
+        const zipField = document.getElementById('invoice-zip');
+
+        if (addrField) addrField.value = contact.address || '';
+        if (cityField) cityField.value = contact.city || '';
+        if (stateField) stateField.value = contact.state || '';
+        if (zipField) zipField.value = contact.zip || '';
+
+        // Hide the list
+        const listEl = document.getElementById('invoice-contact-list');
+        if (listEl) listEl.style.display = 'none';
 
         showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
       }
+    }
+
+    // Clear contact selection
+    function clearInvoiceContact() {
+      const searchInput = document.getElementById('invoice-contact-search');
+      const hiddenSelect = document.getElementById('invoice-contact-select');
+      const badge = document.getElementById('invoice-contact-badge');
+
+      if (searchInput) searchInput.value = '';
+      if (hiddenSelect) hiddenSelect.value = '';
+      if (badge) badge.style.display = 'none';
+
+      document.getElementById('invoice-lead-id').value = '';
+      document.getElementById('invoice-customer-id').value = '';
+    }
+
+    // Legacy function for backward compatibility
+    function onInvoiceContactSelected(value) {
+      if (!value) return;
+      const [type, id] = value.split(':');
+      selectInvoiceContact(type, id);
     }
 
     // Start invoice from a lead (quick action)
@@ -16422,50 +16535,106 @@
     }
 
     // Populate the lead/customer dropdown in estimate modal
+    // Populate the searchable contact list in estimate modal
     function populateEstimateContactSelect() {
-      const leadsGroup = document.getElementById('estimate-leads-optgroup');
-      const customersGroup = document.getElementById('estimate-customers-optgroup');
-      const select = document.getElementById('estimate-contact-select');
+      const searchInput = document.getElementById('estimate-contact-search');
+      const hiddenSelect = document.getElementById('estimate-contact-select');
 
-      if (!leadsGroup || !customersGroup) return;
+      if (searchInput) searchInput.value = '';
+      if (hiddenSelect) hiddenSelect.value = '';
 
-      // Clear existing options
-      leadsGroup.innerHTML = '';
-      customersGroup.innerHTML = '';
+      const badge = document.getElementById('estimate-contact-badge');
+      if (badge) badge.style.display = 'none';
 
-      // Add leads
-      if (allLeads && allLeads.length > 0) {
-        allLeads.forEach(lead => {
-          if (lead.email || lead.name) {
-            const option = document.createElement('option');
-            option.value = `lead:${lead.id}`;
-            option.textContent = `${lead.name || 'No Name'} - ${lead.email || 'No Email'}`;
-            leadsGroup.appendChild(option);
-          }
-        });
-      }
-
-      // Add customers
-      if (allCustomers && allCustomers.length > 0) {
-        allCustomers.forEach(customer => {
-          if (customer.email || customer.name) {
-            const option = document.createElement('option');
-            option.value = `customer:${customer.id}`;
-            option.textContent = `${customer.name || 'No Name'} - ${customer.email || 'No Email'}`;
-            customersGroup.appendChild(option);
-          }
-        });
-      }
-
-      // Reset selection
-      if (select) select.value = '';
+      renderEstimateContactList('');
     }
 
-    // Handle lead/customer selection in estimate modal
-    function onEstimateContactSelected(value) {
-      if (!value) return;
+    // Render the searchable contact list for estimates
+    function renderEstimateContactList(filter) {
+      const listEl = document.getElementById('estimate-contact-list');
+      if (!listEl) return;
 
-      const [type, id] = value.split(':');
+      const filterLower = (filter || '').toLowerCase();
+      let html = '';
+
+      const filteredLeads = (allLeads || []).filter(lead => {
+        if (!lead.email && !lead.name) return false;
+        const searchStr = `${lead.name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
+        return !filterLower || searchStr.includes(filterLower);
+      });
+
+      const filteredCustomers = (allCustomers || []).filter(customer => {
+        if (!customer.email && !customer.name) return false;
+        const searchStr = `${customer.name || ''} ${customer.email || ''} ${customer.phone || ''}`.toLowerCase();
+        return !filterLower || searchStr.includes(filterLower);
+      });
+
+      if (filteredLeads.length > 0) {
+        html += '<div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; background: var(--dark-surface);">Leads</div>';
+        filteredLeads.slice(0, 10).forEach(lead => {
+          html += `
+            <div onclick="selectEstimateContact('lead', '${lead.id}')"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px;"
+                 onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
+              <span style="background: #3b82f6; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">LEAD</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500;">${lead.name || 'No Name'}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${lead.email || ''} ${lead.phone ? '· ' + lead.phone : ''}</div>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (filteredCustomers.length > 0) {
+        html += '<div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; background: var(--dark-surface);">Customers</div>';
+        filteredCustomers.slice(0, 10).forEach(customer => {
+          html += `
+            <div onclick="selectEstimateContact('customer', '${customer.id}')"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px;"
+                 onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
+              <span style="background: #22c55e; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">CUSTOMER</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500;">${customer.name || 'No Name'}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${customer.email || ''} ${customer.phone ? '· ' + customer.phone : ''}</div>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (!html) {
+        html = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No contacts found</div>';
+      }
+
+      listEl.innerHTML = html;
+    }
+
+    function showEstimateContactList() {
+      const listEl = document.getElementById('estimate-contact-list');
+      if (listEl) {
+        listEl.style.display = 'block';
+        renderEstimateContactList(document.getElementById('estimate-contact-search')?.value || '');
+      }
+      setTimeout(() => {
+        document.addEventListener('click', hideEstimateContactListOnClickOutside);
+      }, 100);
+    }
+
+    function hideEstimateContactListOnClickOutside(e) {
+      const listEl = document.getElementById('estimate-contact-list');
+      const searchEl = document.getElementById('estimate-contact-search');
+      if (listEl && !listEl.contains(e.target) && e.target !== searchEl) {
+        listEl.style.display = 'none';
+        document.removeEventListener('click', hideEstimateContactListOnClickOutside);
+      }
+    }
+
+    function filterEstimateContacts(value) {
+      const listEl = document.getElementById('estimate-contact-list');
+      if (listEl) listEl.style.display = 'block';
+      renderEstimateContactList(value);
+    }
+
+    function selectEstimateContact(type, id) {
       let contact = null;
 
       if (type === 'lead') {
@@ -16483,6 +16652,17 @@
       }
 
       if (contact) {
+        const searchInput = document.getElementById('estimate-contact-search');
+        if (searchInput) searchInput.value = contact.name || contact.email || '';
+
+        const badge = document.getElementById('estimate-contact-badge');
+        if (badge) {
+          badge.textContent = type.toUpperCase();
+          badge.style.display = 'inline';
+          badge.style.background = type === 'lead' ? '#3b82f6' : '#22c55e';
+          badge.style.color = 'white';
+        }
+
         // Auto-populate form fields
         document.getElementById('estimate-customer-name').value = contact.name || '';
         document.getElementById('estimate-customer-email').value = contact.email || '';
@@ -16491,12 +16671,32 @@
         document.getElementById('estimate-customer-city').value = contact.city || '';
         document.getElementById('estimate-customer-state').value = contact.state || 'AZ';
 
-        // Handle zip field
         const zipField = document.getElementById('estimate-customer-zip');
         if (zipField) zipField.value = contact.zip || '';
 
+        const listEl = document.getElementById('estimate-contact-list');
+        if (listEl) listEl.style.display = 'none';
+
         showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
       }
+    }
+
+    function clearEstimateContact() {
+      const searchInput = document.getElementById('estimate-contact-search');
+      const badge = document.getElementById('estimate-contact-badge');
+
+      if (searchInput) searchInput.value = '';
+      if (badge) badge.style.display = 'none';
+
+      estimateModalState.leadId = null;
+      estimateModalState.customerId = null;
+    }
+
+    // Legacy function for backward compatibility
+    function onEstimateContactSelected(value) {
+      if (!value) return;
+      const [type, id] = value.split(':');
+      selectEstimateContact(type, id);
     }
 
     function updateEstimateValidDate() {
