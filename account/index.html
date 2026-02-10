@@ -1390,6 +1390,47 @@
             </div>
           </div>
 
+          <!-- Invoice Aging Report -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header" style="padding: 16px 20px;">
+              <h3 class="card-title" style="font-size: 16px;">Invoice Aging</h3>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-modern" onclick="sendOverdueReminders()" style="background: #ef4444; padding: 8px 14px; font-size: 13px;" id="send-reminders-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  Send Overdue Reminders
+                </button>
+                <button class="btn-modern secondary" onclick="exportInvoicesCSV()" style="padding: 8px 14px; font-size: 13px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border-subtle);">
+                <div style="padding: 20px; text-align: center; border-right: 1px solid var(--border-subtle);">
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Current</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #22c55e;" id="aging-current">$0</div>
+                  <div style="font-size: 12px; color: var(--text-muted);" id="aging-current-count">0 invoices</div>
+                </div>
+                <div style="padding: 20px; text-align: center; border-right: 1px solid var(--border-subtle);">
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">1-30 Days</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #f59e0b;" id="aging-30">$0</div>
+                  <div style="font-size: 12px; color: var(--text-muted);" id="aging-30-count">0 invoices</div>
+                </div>
+                <div style="padding: 20px; text-align: center; border-right: 1px solid var(--border-subtle);">
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">31-60 Days</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #f97316;" id="aging-60">$0</div>
+                  <div style="font-size: 12px; color: var(--text-muted);" id="aging-60-count">0 invoices</div>
+                </div>
+                <div style="padding: 20px; text-align: center;">
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">60+ Days</div>
+                  <div style="font-size: 24px; font-weight: 700; color: #ef4444;" id="aging-90">$0</div>
+                  <div style="font-size: 12px; color: var(--text-muted);" id="aging-90-count">0 invoices</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Invoices</h3>

@@ -379,6 +379,144 @@ router.post('/lead-welcome', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Send invoice payment reminder
+ * POST /api/email/invoice-reminder
+ */
+router.post('/invoice-reminder', asyncHandler(async (req, res) => {
+  const {
+    customer_email,
+    customer_name,
+    invoice_number,
+    amount_due,
+    due_date,
+    days_overdue,
+    payment_url
+  } = req.body;
+
+  if (!customer_email || !isValidEmail(customer_email)) {
+    return res.status(400).json({ error: 'Valid customer email required' });
+  }
+
+  if (!SMTP_USER) {
+    return res.status(500).json({ error: 'Email not configured' });
+  }
+
+  const name = customer_name || 'Valued Customer';
+  const invoiceNum = invoice_number || 'N/A';
+  const amount = parseFloat(amount_due) || 0;
+  const daysOver = parseInt(days_overdue) || 0;
+
+  // Determine urgency level
+  let urgencyColor = '#f59e0b'; // yellow/warning
+  let urgencyText = 'Payment Reminder';
+  if (daysOver > 60) {
+    urgencyColor = '#ef4444'; // red
+    urgencyText = 'Urgent: Payment Overdue';
+  } else if (daysOver > 30) {
+    urgencyColor = '#f97316'; // orange
+    urgencyText = 'Past Due Notice';
+  }
+
+  const dueDateFormatted = due_date ? new Date(due_date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : 'N/A';
+
+  const paymentButton = payment_url ? `
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${payment_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00, #cca600); color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Pay Now - $${amount.toFixed(2)}</a>
+    </div>
+  ` : '';
+
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: Arial, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1a1a2e, #2d2d44); padding: 30px; text-align: center;">
+          <h1 style="color: #f9cb00; margin: 0; font-size: 28px;">Surprise Granite</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Marble & Quartz</p>
+        </div>
+
+        <!-- Urgency Banner -->
+        <div style="background: ${urgencyColor}; color: white; padding: 12px; text-align: center; font-weight: 600;">
+          ${urgencyText}${daysOver > 0 ? ` - ${daysOver} Days Overdue` : ''}
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px;">
+          <p style="font-size: 16px; color: #333;">Hi ${name},</p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            This is a friendly reminder that payment is due for Invoice #<strong>${invoiceNum}</strong>.
+          </p>
+
+          <!-- Invoice Summary Box -->
+          <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin: 25px 0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
+              <span style="color: #666;">Invoice Number:</span>
+              <strong style="color: #333;">#${invoiceNum}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
+              <span style="color: #666;">Due Date:</span>
+              <strong style="color: ${daysOver > 0 ? urgencyColor : '#333'};">${dueDateFormatted}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #666;">Amount Due:</span>
+              <strong style="color: #f9cb00; font-size: 20px;">$${amount.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          ${paymentButton}
+
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            If you've already sent payment, please disregard this notice. If you have any questions about this invoice or need to discuss payment arrangements, please don't hesitate to contact us.
+          </p>
+
+          <p style="font-size: 16px; color: #333; margin-top: 25px;">
+            Thank you for your business!<br>
+            <strong>Surprise Granite Team</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0; color: #666; font-size: 14px;">
+            <strong>${COMPANY.name}</strong><br>
+            ${COMPANY.address}<br>
+            ${COMPANY.phone} | ${COMPANY.email}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      to: customer_email,
+      subject: `${urgencyText}: Invoice #${invoiceNum} - $${amount.toFixed(2)} Due`,
+      html: emailHtml
+    });
+
+    logger.info(`Invoice reminder sent to ${customer_email} for invoice #${invoiceNum}`);
+    res.json({ success: true, message: 'Payment reminder sent' });
+
+  } catch (err) {
+    logger.apiError(err, { context: 'Invoice reminder email failed' });
+    res.status(500).json({ error: 'Failed to send payment reminder' });
+  }
+}));
+
+/**
  * Generate and send daily digest email
  * POST /api/email/daily-digest
  */

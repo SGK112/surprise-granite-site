@@ -10484,6 +10484,202 @@
       if (statTotalPaid) statTotalPaid.textContent = formatCurrency(totalPaid);
       if (statOutstanding) statOutstanding.textContent = formatCurrency(outstanding);
       if (statDeposits) statDeposits.textContent = formatCurrency(depositsCollected);
+
+      // Update aging report
+      updateAgingReport();
+    }
+
+    // Calculate invoice aging buckets
+    function updateAgingReport() {
+      const now = new Date();
+      const formatCurrency = (val) => '$' + val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+      // Filter unpaid invoices
+      const unpaidInvoices = allInvoices.filter(inv =>
+        inv.status !== 'paid' && inv.status !== 'void' && inv.status !== 'draft'
+      );
+
+      // Calculate days overdue for each invoice
+      const aging = {
+        current: { amount: 0, count: 0 },
+        days30: { amount: 0, count: 0 },
+        days60: { amount: 0, count: 0 },
+        days90: { amount: 0, count: 0 }
+      };
+
+      unpaidInvoices.forEach(inv => {
+        const dueDate = inv.due_date ? new Date(inv.due_date) : new Date(inv.created_at);
+        const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
+        const amount = inv.amount_due || inv.balance_due || inv.total || 0;
+
+        if (daysOverdue <= 0) {
+          aging.current.amount += amount;
+          aging.current.count++;
+        } else if (daysOverdue <= 30) {
+          aging.days30.amount += amount;
+          aging.days30.count++;
+        } else if (daysOverdue <= 60) {
+          aging.days60.amount += amount;
+          aging.days60.count++;
+        } else {
+          aging.days90.amount += amount;
+          aging.days90.count++;
+        }
+      });
+
+      // Update UI
+      const updateEl = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      updateEl('aging-current', formatCurrency(aging.current.amount));
+      updateEl('aging-current-count', `${aging.current.count} invoice${aging.current.count !== 1 ? 's' : ''}`);
+      updateEl('aging-30', formatCurrency(aging.days30.amount));
+      updateEl('aging-30-count', `${aging.days30.count} invoice${aging.days30.count !== 1 ? 's' : ''}`);
+      updateEl('aging-60', formatCurrency(aging.days60.amount));
+      updateEl('aging-60-count', `${aging.days60.count} invoice${aging.days60.count !== 1 ? 's' : ''}`);
+      updateEl('aging-90', formatCurrency(aging.days90.amount));
+      updateEl('aging-90-count', `${aging.days90.count} invoice${aging.days90.count !== 1 ? 's' : ''}`);
+
+      // Show/hide reminder button based on overdue count
+      const overdueCount = aging.days30.count + aging.days60.count + aging.days90.count;
+      const reminderBtn = document.getElementById('send-reminders-btn');
+      if (reminderBtn) {
+        reminderBtn.style.display = overdueCount > 0 ? 'inline-flex' : 'none';
+      }
+    }
+
+    // Send payment reminders to all overdue invoices
+    async function sendOverdueReminders() {
+      const now = new Date();
+
+      // Get all overdue invoices (past due date, not paid)
+      const overdueInvoices = allInvoices.filter(inv => {
+        if (inv.status === 'paid' || inv.status === 'void' || inv.status === 'draft') return false;
+        const dueDate = inv.due_date ? new Date(inv.due_date) : null;
+        if (!dueDate) return false;
+        return now > dueDate && inv.customer_email;
+      });
+
+      if (overdueInvoices.length === 0) {
+        showToast('No overdue invoices with email addresses', 'info');
+        return;
+      }
+
+      if (!confirm(`Send payment reminders to ${overdueInvoices.length} overdue invoice${overdueInvoices.length > 1 ? 's' : ''}?`)) {
+        return;
+      }
+
+      const btn = document.getElementById('send-reminders-btn');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="width: 14px; height: 14px;"></span> Sending...';
+
+      let sent = 0;
+      let failed = 0;
+
+      for (const inv of overdueInvoices) {
+        try {
+          const dueDate = new Date(inv.due_date);
+          const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
+
+          const response = await apiCall('/api/email/invoice-reminder', {
+            method: 'POST',
+            body: JSON.stringify({
+              customer_email: inv.customer_email,
+              customer_name: inv.customer_name || 'Valued Customer',
+              invoice_number: inv.invoice_number || inv.number || inv.id.slice(-8),
+              amount_due: inv.amount_due || inv.balance_due || inv.total,
+              due_date: inv.due_date,
+              days_overdue: daysOverdue,
+              payment_url: inv.stripe_hosted_url || null
+            })
+          });
+
+          if (response.ok) {
+            sent++;
+            // Update last reminder sent timestamp
+            await supabaseClient
+              .from('invoices')
+              .update({ last_reminder_sent: new Date().toISOString() })
+              .eq('id', inv.id);
+          } else {
+            failed++;
+          }
+        } catch (err) {
+          console.error('Reminder error for invoice', inv.id, err);
+          failed++;
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+
+      if (sent > 0) {
+        showToast(`Sent ${sent} payment reminder${sent > 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}`, 'success');
+      } else {
+        showToast('Failed to send reminders', 'error');
+      }
+    }
+
+    // Export invoices to CSV
+    function exportInvoicesCSV() {
+      if (allInvoices.length === 0) {
+        showToast('No invoices to export', 'warning');
+        return;
+      }
+
+      // CSV headers
+      const headers = [
+        'Invoice Number',
+        'Customer Name',
+        'Customer Email',
+        'Status',
+        'Total',
+        'Amount Paid',
+        'Amount Due',
+        'Deposit Requested',
+        'Deposit Paid',
+        'Due Date',
+        'Created Date',
+        'Paid Date'
+      ];
+
+      // CSV rows
+      const rows = allInvoices.map(inv => [
+        inv.invoice_number || inv.number || inv.id.slice(-8),
+        (inv.customer_name || '').replace(/,/g, ' '),
+        inv.customer_email || '',
+        inv.status || '',
+        (inv.total || 0).toFixed(2),
+        (inv.amount_paid || 0).toFixed(2),
+        (inv.amount_due || inv.balance_due || 0).toFixed(2),
+        (inv.deposit_requested || 0).toFixed(2),
+        (inv.deposit_paid || 0).toFixed(2),
+        inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '',
+        inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '',
+        inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : ''
+      ]);
+
+      // Build CSV content
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `invoices_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Exported ${allInvoices.length} invoices to CSV`, 'success');
     }
 
     // Open payment history modal
