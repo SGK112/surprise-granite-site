@@ -10447,6 +10447,9 @@
         // Merge: Supabase first (source of truth), then Stripe-only records
         allInvoices = [...supabaseInvoices, ...stripeInvoices];
 
+        // Calculate and display accounting stats
+        updateAccountingStats();
+
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
@@ -10458,6 +10461,254 @@
             <button class="btn-modern primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice</button>
           </div>
         `;
+      }
+    }
+
+    // Calculate and display accounting summary stats
+    function updateAccountingStats() {
+      const totalInvoiced = allInvoices.reduce((sum, inv) => sum + (inv.total || inv.amount_due || 0), 0);
+      const totalPaid = allInvoices.reduce((sum, inv) => sum + (inv.amount_paid || (inv.status === 'paid' ? (inv.total || inv.amount_due || 0) : 0)), 0);
+      const outstanding = allInvoices
+        .filter(inv => inv.status !== 'paid' && inv.status !== 'void')
+        .reduce((sum, inv) => sum + (inv.amount_due || inv.balance_due || inv.total || 0), 0);
+      const depositsCollected = allInvoices.reduce((sum, inv) => sum + (inv.deposit_paid || 0), 0);
+
+      const formatCurrency = (val) => '$' + val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+      const statTotalInvoiced = document.getElementById('stat-total-invoiced');
+      const statTotalPaid = document.getElementById('stat-total-paid');
+      const statOutstanding = document.getElementById('stat-outstanding');
+      const statDeposits = document.getElementById('stat-deposits-collected');
+
+      if (statTotalInvoiced) statTotalInvoiced.textContent = formatCurrency(totalInvoiced);
+      if (statTotalPaid) statTotalPaid.textContent = formatCurrency(totalPaid);
+      if (statOutstanding) statOutstanding.textContent = formatCurrency(outstanding);
+      if (statDeposits) statDeposits.textContent = formatCurrency(depositsCollected);
+    }
+
+    // Open payment history modal
+    async function openPaymentHistoryModal() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Fetch all payments
+        const { data: payments, error } = await supabaseClient
+          .from('payments')
+          .select('*, invoices(invoice_number, customer_name)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+
+        const modalHtml = `
+          <div class="modal-overlay active" id="payment-history-modal" onclick="if(event.target===this) closePaymentHistoryModal()">
+            <div class="modal" style="max-width: 700px; max-height: 80vh;">
+              <div class="modal-header">
+                <h2 class="modal-title">Payment History</h2>
+                <button class="modal-close" onclick="closePaymentHistoryModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                ${payments && payments.length > 0 ? `
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${payments.map(p => `
+                      <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                          <div>
+                            <div style="font-weight: 600; font-size: 15px; color: #22c55e;">+$${(p.amount || 0).toFixed(2)}</div>
+                            <div style="font-size: 13px; color: var(--text-muted);">${p.invoices?.customer_name || 'Unknown'} · Invoice #${p.invoices?.invoice_number || 'N/A'}</div>
+                          </div>
+                          <div style="text-align: right;">
+                            <span style="display: inline-block; padding: 3px 8px; background: ${p.payment_type === 'deposit' ? 'rgba(249,203,0,0.2)' : 'rgba(34,197,94,0.2)'}; color: ${p.payment_type === 'deposit' ? '#f9cb00' : '#22c55e'}; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;">${p.payment_type || 'payment'}</span>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${p.payment_method || 'N/A'}</div>
+                          </div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                          ${new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          ${p.notes ? ` · ${p.notes}` : ''}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : `
+                  <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="opacity: 0.3; margin-bottom: 16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <p>No payments recorded yet</p>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      } catch (err) {
+        console.error('Payment history error:', err);
+        showToast('Error loading payment history', 'error');
+      }
+    }
+
+    function closePaymentHistoryModal() {
+      const modal = document.getElementById('payment-history-modal');
+      if (modal) modal.remove();
+    }
+
+    // Record a general payment on an invoice
+    async function recordPayment(invoiceId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get invoice details
+        const { data: invoice, error: fetchError } = await supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const amountDue = invoice.amount_due || invoice.balance_due || invoice.total || 0;
+        const amountPaid = invoice.amount_paid || 0;
+
+        const modalHtml = `
+          <div class="modal-overlay active" id="record-payment-modal" onclick="if(event.target===this) closeRecordPaymentModal()">
+            <div class="modal" style="max-width: 450px;">
+              <div class="modal-header">
+                <h2 class="modal-title">Record Payment</h2>
+                <button class="modal-close" onclick="closeRecordPaymentModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                  <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Invoice #${invoice.invoice_number || invoice.number || invoice.id.slice(-8)}</div>
+                  <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">${invoice.customer_name || 'Customer'}</div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Invoice Total</span>
+                    <span style="font-weight: 600;">$${(invoice.total || 0).toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted);">Already Paid</span>
+                    <span style="font-weight: 600; color: #22c55e;">$${amountPaid.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+                    <span style="color: var(--text-muted);">Balance Due</span>
+                    <span style="font-weight: 700; color: var(--gold-primary);">$${amountDue.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Payment Amount</label>
+                  <input type="number" id="payment-amount-input" value="${amountDue.toFixed(2)}" min="0" step="0.01" style="font-size: 18px; font-weight: 600;"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Payment Method</label>
+                  <select id="payment-method-select">
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="transfer">Bank Transfer</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="stripe">Stripe (Online)</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Notes (Optional)</label>
+                  <input type="text" id="payment-notes-input" placeholder="e.g., Check #1234, Final payment"/>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn-modern secondary" onclick="closeRecordPaymentModal()">Cancel</button>
+                <button class="btn-modern primary" onclick="savePayment('${invoiceId}')" style="background: #22c55e;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  Record Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      } catch (err) {
+        console.error('Record payment error:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function closeRecordPaymentModal() {
+      const modal = document.getElementById('record-payment-modal');
+      if (modal) modal.remove();
+    }
+
+    async function savePayment(invoiceId) {
+      const paymentAmount = parseFloat(document.getElementById('payment-amount-input')?.value) || 0;
+      const paymentMethod = document.getElementById('payment-method-select')?.value || 'other';
+      const notes = document.getElementById('payment-notes-input')?.value || '';
+
+      if (paymentAmount <= 0) {
+        showToast('Please enter a valid payment amount', 'warning');
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Get current invoice
+        const { data: invoice } = await supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        const previousPaid = invoice.amount_paid || 0;
+        const newAmountPaid = previousPaid + paymentAmount;
+        const newAmountDue = Math.max(0, (invoice.total || 0) - newAmountPaid);
+        const isFullyPaid = newAmountDue <= 0;
+
+        // Update invoice
+        const { error: updateError } = await supabaseClient
+          .from('invoices')
+          .update({
+            amount_paid: newAmountPaid,
+            amount_due: newAmountDue,
+            balance_due: newAmountDue,
+            status: isFullyPaid ? 'paid' : 'partial',
+            paid_at: isFullyPaid ? new Date().toISOString() : invoice.paid_at
+          })
+          .eq('id', invoiceId);
+
+        if (updateError) throw updateError;
+
+        // Record payment in payments table
+        await supabaseClient.from('payments').insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          customer_id: invoice.customer_id,
+          amount: paymentAmount,
+          payment_method: paymentMethod,
+          payment_type: isFullyPaid ? 'final' : 'partial',
+          status: 'completed',
+          notes: notes || (isFullyPaid ? 'Final payment' : 'Partial payment')
+        });
+
+        closeRecordPaymentModal();
+        showToast(`Payment of $${paymentAmount.toFixed(2)} recorded!${isFullyPaid ? ' Invoice paid in full!' : ''}`, 'success');
+        loadInvoices();
+
+      } catch (err) {
+        console.error('Save payment error:', err);
+        showToast('Error saving payment: ' + err.message, 'error');
       }
     }
 
@@ -10854,6 +11105,7 @@
                   <option value="paid" ${inv.status === 'paid' ? 'selected' : ''}>Paid</option>
                   <option value="void" ${inv.status === 'void' ? 'selected' : ''}>Void</option>
                 </select>
+                ${inv.status !== 'paid' && inv.status !== 'void' ? `<button class="btn-modern" style="padding: 4px 10px; font-size: 11px; background: #22c55e;" onclick="event.stopPropagation(); recordPayment('${inv.id}')">+ Payment</button>` : ''}
                 ${showDepositBtn ? `<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); recordDeposit('${inv.id}')">Record Deposit</button>` : ''}
                 ${qboConnected && !qboSynced ? `<button class="btn-modern ghost qbo-sync-btn" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); syncInvoiceToQBO('${inv.id}')" title="Sync to QuickBooks"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` : ''}
               </div>

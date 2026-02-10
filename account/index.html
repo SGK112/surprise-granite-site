@@ -1350,21 +1350,57 @@
 
         <!-- Invoices Page (Admin Only) -->
         <section id="page-invoices" class="page-section">
+          <!-- Accounting Summary Dashboard -->
+          <div class="stats-dashboard" style="margin-bottom: 24px;">
+            <div class="stat-card-enhanced" style="border-left: 4px solid #3b82f6;">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+              </div>
+              <div class="stat-value-large" id="stat-total-invoiced">$0</div>
+              <div class="stat-label-enhanced">Total Invoiced</div>
+            </div>
+            <div class="stat-card-enhanced" style="border-left: 4px solid #22c55e;">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper green">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+              </div>
+              <div class="stat-value-large" id="stat-total-paid">$0</div>
+              <div class="stat-label-enhanced">Total Collected</div>
+            </div>
+            <div class="stat-card-enhanced" style="border-left: 4px solid #f59e0b;">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+              </div>
+              <div class="stat-value-large" id="stat-outstanding">$0</div>
+              <div class="stat-label-enhanced">Outstanding</div>
+            </div>
+            <div class="stat-card-enhanced" style="border-left: 4px solid #f9cb00;">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper" style="background: rgba(249, 203, 0, 0.15);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#f9cb00" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+              </div>
+              <div class="stat-value-large" id="stat-deposits-collected">$0</div>
+              <div class="stat-label-enhanced">Deposits Collected</div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Invoices</h3>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn-modern secondary" onclick="openPaymentHistoryModal()" title="View all payments">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                  Payment History
+                </button>
                 <button class="btn-modern secondary" onclick="syncFromStripe()" id="sync-stripe-btn" title="Import paid invoices and customers from Stripe">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  Sync from Stripe
-                </button>
-                <button class="btn-modern secondary" onclick="openTemplatePreview()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                  Email Templates
-                </button>
-                <button class="btn-modern secondary" onclick="openInviteToProjectModal()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                  Invite Collaborator
+                  Sync Stripe
                 </button>
                 <button class="btn-modern secondary" onclick="openQuickPayModal()" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
