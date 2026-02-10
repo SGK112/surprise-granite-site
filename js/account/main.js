@@ -12421,14 +12421,17 @@
       }
 
       const { items, customerEmail, customerName, customerPhone, dueDays, notes, selectedTemplate, ccMe, ccOther, depositEnabled, depositAmount, depositPercent, depositAlreadyReceived, depositReceivedAmount, depositPaymentMethod, leadId } = formData;
+      console.log('[Invoices] Destructured OK - items:', items?.length, 'email:', customerEmail);
 
       // Build CC recipients list
       const ccRecipients = [];
       if (ccMe && userProfile?.email) ccRecipients.push(userProfile.email);
       if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
+      console.log('[Invoices] About to get user auth...');
 
       try {
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        console.log('[Invoices] Auth call returned');
         if (authError) {
           console.error('[Invoices] Auth error:', authError);
           throw new Error('Authentication error: ' + authError.message);
