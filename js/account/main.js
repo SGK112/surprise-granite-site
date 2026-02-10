@@ -12541,23 +12541,18 @@
       const ccRecipients = [];
       if (ccMe && userProfile?.email) ccRecipients.push(userProfile.email);
       if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
-      console.log('[Invoices] About to get user auth...');
-      console.log('[Invoices] supabaseClient exists:', !!supabaseClient);
+      console.log('[Invoices] Getting user...');
 
       try {
-        // Add timeout to auth call to prevent hanging
-        const authPromise = supabaseClient.auth.getUser();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth timeout after 10s')), 10000)
-        );
-
-        const { data: { user }, error: authError } = await Promise.race([authPromise, timeoutPromise]);
-        console.log('[Invoices] Auth call returned, user:', user?.id);
-        if (authError) {
-          console.error('[Invoices] Auth error:', authError);
-          throw new Error('Authentication error: ' + authError.message);
+        // Use cached currentUser first (set by auth state change listener)
+        // This avoids the hanging getUser() call
+        let user = currentUser;
+        if (!user) {
+          // Fallback: try to get from session (faster than getUser)
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          user = session?.user;
         }
-        if (!user) throw new Error('Not authenticated');
+        if (!user) throw new Error('Not authenticated - please refresh and log in again');
         console.log('[Invoices] User:', user.id);
 
         // Calculate total from items
