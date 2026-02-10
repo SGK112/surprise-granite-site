@@ -50,11 +50,13 @@ router.get('/callback', async (req, res) => {
 
     await qbo.exchangeCodeForTokens(code, realmId, userId);
 
-    // Redirect to settings page with success message
-    res.redirect('/account/#settings?qb=connected');
+    // Redirect to main website settings page with success message
+    const siteUrl = process.env.SITE_URL || 'https://www.surprisegranite.com';
+    res.redirect(`${siteUrl}/account/#settings?qb=connected`);
   } catch (error) {
     console.error('QuickBooks callback error:', error);
-    res.redirect('/account/#settings?qb=error');
+    const siteUrl = process.env.SITE_URL || 'https://www.surprisegranite.com';
+    res.redirect(`${siteUrl}/account/#settings?qb=error`);
   }
 });
 
