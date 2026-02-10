@@ -12386,11 +12386,20 @@
       console.log('[Invoices] createInvoice called, isCreating:', isCreatingInvoice);
       if (e && e.preventDefault) e.preventDefault();
 
+      // Check supabaseClient first
+      if (!supabaseClient) {
+        console.error('[Invoices] Supabase client not initialized');
+        alert('Error: Database connection not ready. Please refresh the page.');
+        return;
+      }
+
       // Prevent double-submission
       if (isCreatingInvoice) {
+        console.log('[Invoices] Already creating, skipping');
         return;
       }
       isCreatingInvoice = true;
+      console.log('[Invoices] Starting invoice creation...');
 
       const btn = document.getElementById('invoice-preview-btn');
       const sendBtn = document.getElementById('preview-send-btn');
@@ -12428,10 +12437,17 @@
       if (ccMe && userProfile?.email) ccRecipients.push(userProfile.email);
       if (ccOther && ccOther.trim()) ccRecipients.push(ccOther.trim());
       console.log('[Invoices] About to get user auth...');
+      console.log('[Invoices] supabaseClient exists:', !!supabaseClient);
 
       try {
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-        console.log('[Invoices] Auth call returned');
+        // Add timeout to auth call to prevent hanging
+        const authPromise = supabaseClient.auth.getUser();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth timeout after 10s')), 10000)
+        );
+
+        const { data: { user }, error: authError } = await Promise.race([authPromise, timeoutPromise]);
+        console.log('[Invoices] Auth call returned, user:', user?.id);
         if (authError) {
           console.error('[Invoices] Auth error:', authError);
           throw new Error('Authentication error: ' + authError.message);
@@ -16753,6 +16769,7 @@
     }
 
     async function handleCreateEstimate(event) {
+      console.log('[Estimate] handleCreateEstimate called');
       event.preventDefault();
 
       // Check supabaseClient
@@ -16761,6 +16778,7 @@
         alert('Error: Database connection not ready. Please refresh the page.');
         return;
       }
+      console.log('[Estimate] supabaseClient OK');
 
       // Button is in modal footer, not inside form, so find it by form attribute
       const submitBtn = document.querySelector('button[form="create-estimate-form"][type="submit"]');
@@ -16772,6 +16790,7 @@
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Creating...';
       submitBtn.disabled = true;
+      console.log('[Estimate] Button disabled, getting user...');
 
       try {
         const { data: { user }, error: userError } = await withTimeout(
@@ -16779,11 +16798,13 @@
           10000,
           'Getting user timed out'
         );
+        console.log('[Estimate] Got user response');
         if (userError) {
           console.error('[Estimate] User error:', userError);
           throw userError;
         }
         if (!user) throw new Error('Please log in');
+        console.log('[Estimate] User authenticated:', user.id);
 
         // Collect line items with category
         const lineItems = [];
