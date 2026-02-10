@@ -12918,6 +12918,166 @@
       }
     }
 
+    // ============ DOCUMENT SHARING FUNCTIONS ============
+
+    /**
+     * Share a document (estimate or invoice) via email, SMS, or secure link
+     * @param {string} type - 'estimate' or 'invoice'
+     * @param {string} id - Document ID
+     */
+    async function shareDocument(type, id) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Fetch document data
+        let doc, items;
+        if (type === 'estimate') {
+          const { data } = await supabaseClient.from('estimates').select('*, estimate_items(*)').eq('id', id).single();
+          doc = data;
+          items = data?.estimate_items || [];
+        } else {
+          const { data } = await supabaseClient.from('invoices').select('*, invoice_items(*)').eq('id', id).single();
+          doc = data;
+          items = data?.invoice_items || [];
+        }
+
+        if (!doc) throw new Error(`${type} not found`);
+
+        // Generate secure token
+        const token = crypto.randomUUID();
+        const tokenTable = type === 'estimate' ? 'estimate_tokens' : 'invoice_tokens';
+        const foreignKey = type === 'estimate' ? 'estimate_id' : 'invoice_id';
+
+        await supabaseClient.from(tokenTable).insert([{
+          [foreignKey]: id,
+          token: token,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: user.id
+        }]);
+
+        const viewUrl = `${window.location.origin}/${type}/view/?token=${token}`;
+        const docNumber = type === 'estimate' ? doc.estimate_number : doc.invoice_number;
+
+        // Show share modal
+        showShareModal(type, doc, viewUrl, docNumber);
+
+      } catch (err) {
+        console.error('Share document error:', err);
+        showToast('Error generating share link: ' + err.message, 'error');
+      }
+    }
+
+    function showShareModal(type, doc, viewUrl, docNumber) {
+      const typeCap = type.charAt(0).toUpperCase() + type.slice(1);
+      const amount = doc.total ? `$${parseFloat(doc.total).toFixed(2)}` : '';
+
+      let existingModal = document.getElementById('share-document-modal');
+      if (existingModal) existingModal.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'share-document-modal';
+      modal.className = 'modal-overlay active';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 500px;">
+          <div class="modal-header">
+            <h2 class="modal-title">Share ${typeCap}</h2>
+            <button class="modal-close" onclick="closeShareModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 600; font-size: 16px;">${docNumber}</div>
+                  <div style="color: var(--text-muted); font-size: 13px;">${doc.customer_name || doc.customer_email || 'Customer'}</div>
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">${amount}</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Secure Link</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="share-link-input" value="${viewUrl}" readonly style="flex: 1; padding: 12px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;">
+                <button onclick="copyShareLink()" class="btn-modern primary" style="padding: 12px 16px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  Copy
+                </button>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Link expires in 30 days</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+              <button onclick="shareViaEmail('${type}', '${doc.customer_email || ''}', '${docNumber}', '${viewUrl}')" class="btn-modern secondary" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <span>Email</span>
+              </button>
+              <button onclick="shareViaSMS('${doc.customer_phone || ''}', '${typeCap} ${docNumber}', '${viewUrl}')" class="btn-modern secondary" style="padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span>Text (SMS)</span>
+              </button>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+              <button onclick="openDocumentView('${viewUrl}')" class="btn-modern secondary" style="width: 100%;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Preview Customer View
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeShareModal();
+      });
+
+      document.body.appendChild(modal);
+    }
+
+    function closeShareModal() {
+      const modal = document.getElementById('share-document-modal');
+      if (modal) modal.remove();
+    }
+
+    function copyShareLink() {
+      const input = document.getElementById('share-link-input');
+      input.select();
+      document.execCommand('copy');
+      showToast('Link copied to clipboard!', 'success');
+    }
+
+    function shareViaEmail(type, email, docNumber, viewUrl) {
+      const typeCap = type.charAt(0).toUpperCase() + type.slice(1);
+      const subject = encodeURIComponent(`Your ${typeCap} from Surprise Granite - ${docNumber}`);
+      const body = encodeURIComponent(`Hello,\n\nPlease find your ${type} attached below:\n\n${docNumber}\n\nView your ${type} online:\n${viewUrl}\n\nIf you have any questions, please don't hesitate to contact us.\n\nThank you,\nSurprise Granite\n(602) 833-3189`);
+      window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+      closeShareModal();
+    }
+
+    function shareViaSMS(phone, title, viewUrl) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`${title} from Surprise Granite. View online: ${viewUrl}`);
+      window.open(`sms:${cleanPhone}?body=${message}`);
+      closeShareModal();
+    }
+
+    function openDocumentView(url) {
+      window.open(url, '_blank');
+    }
+
+    // Share invoice shortcut
+    function shareInvoice(invoiceId) {
+      shareDocument('invoice', invoiceId);
+    }
+
+    // Share estimate shortcut
+    function shareEstimate(estimateId) {
+      shareDocument('estimate', estimateId);
+    }
+
     async function markInvoicePaid(invoiceId) {
       if (!confirm('Mark this invoice as paid?')) return;
 

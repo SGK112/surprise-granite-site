@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>View Invoice | Surprise Granite</title>
+  <meta name="description" content="View and pay your invoice from Surprise Granite."/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script>const supabaseClient = window._sgSupabaseClient;</script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: var(--dark-deep); min-height: 100vh; color: var(--text-primary); padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .invoice-header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border-subtle); }
+    .company-logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark)); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 32px; color: var(--dark-primary); margin: 0 auto 16px; }
+    .company-logo-img { display: none; width: 80px; height: 80px; border-radius: 16px; object-fit: contain; margin: 0 auto 16px; }
+    .company-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .company-contact { font-size: 14px; color: var(--text-muted); }
+    .invoice-card { background: var(--dark-surface); border-radius: 16px; border: 1px solid var(--border-subtle); overflow: hidden; margin-bottom: 24px; }
+    .invoice-title { padding: 24px; background: var(--dark-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .invoice-number { font-size: 24px; font-weight: 700; }
+    .invoice-status { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+    .status-unpaid, .status-open { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-paid { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-partial { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .invoice-body { padding: 24px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .info-section h4 { font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px; }
+    .info-section p { font-size: 15px; line-height: 1.6; }
+    .line-items-section { margin-bottom: 32px; }
+    .line-items-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); }
+    .line-item { display: grid; grid-template-columns: 1fr auto auto auto; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); align-items: center; }
+    .line-item:last-child { border-bottom: none; }
+    .item-name { font-weight: 500; }
+    .item-desc { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .item-qty, .item-price, .item-total { text-align: right; white-space: nowrap; }
+    .item-qty, .item-price { color: var(--text-secondary); font-size: 14px; }
+    .item-total { font-weight: 600; min-width: 100px; }
+    @media (max-width: 600px) {
+      .line-item { grid-template-columns: 1fr; gap: 8px; }
+      .item-qty, .item-price, .item-total { text-align: left; }
+    }
+    .totals-section { background: var(--dark-elevated); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; }
+    .total-row.grand-total { font-size: 20px; font-weight: 700; color: var(--gold-primary); padding-top: 16px; margin-top: 8px; border-top: 2px solid var(--gold-primary); }
+    .amount-due-box { background: rgba(249, 203, 0, 0.1); border: 1px solid rgba(249, 203, 0, 0.3); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .amount-due-label { font-weight: 600; font-size: 18px; }
+    .amount-due-value { font-size: 28px; font-weight: 700; color: var(--gold-primary); }
+    .due-date-warning { text-align: center; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 24px; font-size: 14px; color: #ef4444; }
+    .due-date-info { text-align: center; padding: 12px; background: rgba(255, 184, 77, 0.1); border-radius: 8px; margin-bottom: 24px; font-size: 14px; color: #ffb84d; }
+    .notes-section { margin-bottom: 24px; }
+    .notes-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .notes-section p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; background: var(--dark-elevated); padding: 16px; border-radius: 8px; }
+    .action-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; padding-top: 24px; border-top: 1px solid var(--border-subtle); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 32px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-pay { background: var(--success); color: white; }
+    .btn-pay:hover { background: #16a34a; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
+    .btn-download { background: var(--dark-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-download:hover { background: var(--gold-primary); color: var(--dark-primary); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    .loading { text-align: center; padding: 100px 20px; color: var(--text-muted); }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-message { text-align: center; padding: 60px 20px; }
+    .error-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: var(--error); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+    .error-message h2 { font-size: 24px; margin-bottom: 12px; }
+    .error-message p { color: var(--text-secondary); max-width: 400px; margin: 0 auto; }
+    .footer { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+    .footer a { color: var(--gold-primary); text-decoration: none; }
+    @media print {
+      body { background: white; color: #1a1a2e; padding: 0; }
+      .invoice-card { border: 1px solid #ddd; box-shadow: none; }
+      .invoice-title, .totals-section { background: #f5f5f5 !important; }
+      .action-buttons, .footer { display: none; }
+      .status-unpaid, .status-open, .status-paid, .status-partial { border: 1px solid currentColor; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>Loading invoice...</p>
+    </div>
+
+    <div id="invoice-content" style="display: none;">
+      <div class="invoice-header" id="company-header">
+        <div class="company-logo" id="company-logo-text">SG</div>
+        <img class="company-logo-img" id="company-logo-img" src="" alt="Company Logo">
+        <div class="company-name" id="company-name">Surprise Granite</div>
+        <div class="company-contact" id="company-contact"></div>
+      </div>
+
+      <div class="invoice-card">
+        <div class="invoice-title">
+          <div>
+            <div class="invoice-number" id="invoice-number">INV-0000</div>
+            <div style="color: var(--text-muted); font-size: 14px; margin-top: 4px;" id="invoice-date">Created: --</div>
+          </div>
+          <div class="invoice-status status-unpaid" id="invoice-status">Unpaid</div>
+        </div>
+
+        <div class="invoice-body">
+          <div class="info-grid">
+            <div class="info-section">
+              <h4>Bill To</h4>
+              <p id="customer-info">Loading...</p>
+            </div>
+            <div class="info-section">
+              <h4>Invoice Details</h4>
+              <p id="invoice-details">--</p>
+            </div>
+          </div>
+
+          <div class="line-items-section">
+            <h3>Items & Services</h3>
+            <div id="line-items"></div>
+          </div>
+
+          <div class="totals-section">
+            <div class="total-row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+            <div class="total-row" id="tax-row" style="display: none;"><span>Tax</span><span id="tax-amount">$0.00</span></div>
+            <div class="total-row" id="discount-row" style="display: none;"><span>Discount</span><span id="discount-amount">-$0.00</span></div>
+            <div class="total-row grand-total"><span>Total</span><span id="total">$0.00</span></div>
+            <div class="total-row" id="paid-row" style="display: none;"><span>Amount Paid</span><span id="amount-paid" style="color: var(--success);">$0.00</span></div>
+          </div>
+
+          <div class="amount-due-box" id="amount-due-box">
+            <div class="amount-due-label">Amount Due</div>
+            <div class="amount-due-value" id="amount-due">$0.00</div>
+          </div>
+
+          <div id="due-date-display" class="due-date-info" style="display: none;"></div>
+
+          <div class="notes-section" id="notes-section" style="display: none;">
+            <h4>Notes</h4>
+            <p id="notes"></p>
+          </div>
+
+          <div class="action-buttons" id="action-buttons">
+            <a href="#" class="btn btn-pay" id="btn-pay" target="_blank">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              Pay Now
+            </a>
+            <button class="btn btn-download" onclick="window.print()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              Print / Save PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="error-message" class="error-message" style="display: none;">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <h2 id="error-title">Invoice Not Found</h2>
+      <p id="error-text">This invoice link may have expired or is invalid. Please contact us for assistance.</p>
+    </div>
+
+    <div class="footer">Powered by <a href="https://surprisegranite.com" target="_blank">Surprise Granite</a></div>
+  </div>
+
+  <script>
+    let invoiceData = null;
+    let tokenData = null;
+
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (!token) {
+        showError('Invalid Link', 'No invoice token provided. Please check your link and try again.');
+        return;
+      }
+
+      try {
+        const { data: tokenResult, error: tokenError } = await supabaseClient
+          .from('invoice_tokens')
+          .select('*, invoices(*, invoice_items(*))')
+          .eq('token', token)
+          .single();
+
+        if (tokenError || !tokenResult) {
+          showError('Invoice Not Found', 'This invoice link may have expired or is invalid. Please contact us for assistance.');
+          return;
+        }
+
+        tokenData = tokenResult;
+        invoiceData = tokenResult.invoices;
+
+        if (new Date(tokenResult.expires_at) < new Date()) {
+          showError('Link Expired', 'This invoice link has expired. Please contact us for a new link.');
+          return;
+        }
+
+        // Record view
+        await supabaseClient.from('invoice_tokens').update({ last_viewed_at: new Date().toISOString(), view_count: (tokenResult.view_count || 0) + 1 }).eq('id', tokenResult.id);
+
+        await loadBusinessInfo(invoiceData.user_id);
+        renderInvoice();
+      } catch (err) {
+        console.error('Error loading invoice:', err);
+        showError('Error Loading Invoice', 'There was an error loading this invoice. Please try again or contact us.');
+      }
+    }
+
+    async function loadBusinessInfo(userId) {
+      try {
+        const { data: settings } = await supabaseClient.from('business_settings').select('*').eq('user_id', userId).single();
+        if (settings) {
+          if (settings.company_name) {
+            document.getElementById('company-name').textContent = settings.company_name;
+            document.getElementById('company-logo-text').textContent = settings.company_name.substring(0, 2).toUpperCase();
+          }
+          if (settings.logo_url) {
+            document.getElementById('company-logo-img').src = settings.logo_url;
+            document.getElementById('company-logo-img').style.display = 'block';
+            document.getElementById('company-logo-text').style.display = 'none';
+          }
+          let contactParts = [];
+          if (settings.phone) contactParts.push(settings.phone);
+          if (settings.email) contactParts.push(settings.email);
+          if (settings.website) contactParts.push(settings.website);
+          document.getElementById('company-contact').textContent = contactParts.join(' | ');
+        }
+      } catch (err) { console.log('No business settings found'); }
+    }
+
+    function renderInvoice() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('invoice-content').style.display = 'block';
+
+      const inv = invoiceData;
+      document.getElementById('invoice-number').textContent = inv.invoice_number || 'Invoice';
+      document.getElementById('invoice-date').textContent = 'Created: ' + new Date(inv.created_at).toLocaleDateString();
+
+      // Status
+      const statusEl = document.getElementById('invoice-status');
+      let status = inv.status || 'unpaid';
+      const dueDate = inv.due_date ? new Date(inv.due_date) : null;
+      if (status !== 'paid' && dueDate && dueDate < new Date()) status = 'overdue';
+      statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      statusEl.className = 'invoice-status status-' + status;
+
+      // Customer info
+      let customerInfo = inv.customer_name || '';
+      if (inv.customer_address) customerInfo += '<br>' + inv.customer_address;
+      if (inv.customer_city || inv.customer_state || inv.customer_zip) customerInfo += '<br>' + [inv.customer_city, inv.customer_state, inv.customer_zip].filter(Boolean).join(', ');
+      if (inv.customer_email) customerInfo += '<br>' + inv.customer_email;
+      if (inv.customer_phone) customerInfo += '<br>' + inv.customer_phone;
+      document.getElementById('customer-info').innerHTML = customerInfo || 'N/A';
+
+      // Invoice details
+      let details = '';
+      if (inv.project_name) details += '<strong>Project:</strong> ' + inv.project_name + '<br>';
+      if (dueDate) details += '<strong>Due Date:</strong> ' + dueDate.toLocaleDateString();
+      document.getElementById('invoice-details').innerHTML = details || 'N/A';
+
+      // Line items
+      const itemsContainer = document.getElementById('line-items');
+      if (inv.invoice_items && inv.invoice_items.length > 0) {
+        itemsContainer.innerHTML = inv.invoice_items.map(item => `
+          <div class="line-item">
+            <div><div class="item-name">${item.name || item.description || 'Item'}</div>${item.description && item.name ? `<div class="item-desc">${item.description}</div>` : ''}</div>
+            <div class="item-qty">${item.quantity || 1} ${item.unit_type || ''}</div>
+            <div class="item-price">$${parseFloat(item.unit_price || 0).toFixed(2)}</div>
+            <div class="item-total">$${parseFloat(item.total || 0).toFixed(2)}</div>
+          </div>
+        `).join('');
+      } else {
+        itemsContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No line items</p>';
+      }
+
+      // Totals
+      document.getElementById('subtotal').textContent = '$' + parseFloat(inv.subtotal || inv.total || 0).toFixed(2);
+      if (inv.tax_amount && inv.tax_amount > 0) {
+        document.getElementById('tax-row').style.display = 'flex';
+        document.getElementById('tax-amount').textContent = '$' + parseFloat(inv.tax_amount).toFixed(2);
+      }
+      if (inv.discount_amount && inv.discount_amount > 0) {
+        document.getElementById('discount-row').style.display = 'flex';
+        document.getElementById('discount-amount').textContent = '-$' + parseFloat(inv.discount_amount).toFixed(2);
+      }
+      document.getElementById('total').textContent = '$' + parseFloat(inv.total || 0).toFixed(2);
+
+      if (inv.amount_paid && inv.amount_paid > 0) {
+        document.getElementById('paid-row').style.display = 'flex';
+        document.getElementById('amount-paid').textContent = '$' + parseFloat(inv.amount_paid).toFixed(2);
+      }
+
+      const amountDue = parseFloat(inv.amount_due || inv.total || 0);
+      document.getElementById('amount-due').textContent = '$' + amountDue.toFixed(2);
+
+      // Due date display
+      if (dueDate) {
+        const dueDateEl = document.getElementById('due-date-display');
+        dueDateEl.style.display = 'block';
+        if (dueDate < new Date() && amountDue > 0) {
+          dueDateEl.className = 'due-date-warning';
+          dueDateEl.innerHTML = '<strong>OVERDUE</strong> - This invoice was due on ' + dueDate.toLocaleDateString();
+        } else {
+          dueDateEl.className = 'due-date-info';
+          dueDateEl.textContent = 'Due by ' + dueDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+      }
+
+      // Notes
+      if (inv.notes) {
+        document.getElementById('notes-section').style.display = 'block';
+        document.getElementById('notes').textContent = inv.notes;
+      }
+
+      // Pay button
+      const payBtn = document.getElementById('btn-pay');
+      if (inv.status === 'paid' || amountDue <= 0) {
+        document.getElementById('amount-due-box').style.background = 'rgba(34, 197, 94, 0.1)';
+        document.getElementById('amount-due-box').style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        document.getElementById('amount-due').style.color = 'var(--success)';
+        document.getElementById('action-buttons').innerHTML = `
+          <div style="text-align: center; color: var(--success); padding: 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <div style="font-weight: 600;">This invoice has been paid</div>
+          </div>
+          <button class="btn btn-download" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Print / Save PDF
+          </button>
+        `;
+      } else if (inv.stripe_hosted_url) {
+        payBtn.href = inv.stripe_hosted_url;
+      } else {
+        payBtn.style.display = 'none';
+      }
+    }
+
+    function showError(title, message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error-message').style.display = 'block';
+      document.getElementById('error-title').textContent = title;
+      document.getElementById('error-text').textContent = message;
+    }
+
+    init();
+  </script>
+</body>
+</html>
