@@ -12601,17 +12601,30 @@
           notes: notes || null
         };
 
-        // These columns may or may not exist - add them only if they exist
-        // due_date, subtotal, customer_id are likely to exist
-        try {
-          invoiceData.subtotal = total;
-          invoiceData.due_date = new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          if (customerId) {
-            invoiceData.customer_id = customerId;
-            console.log('[Invoices] Linking invoice to customer:', customerId);
-          }
-        } catch (e) {
-          console.warn('[Invoices] Some optional fields may not exist');
+        // Add additional columns that likely exist from migrations
+        invoiceData.subtotal = total;
+        invoiceData.due_date = new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        if (customerId) {
+          invoiceData.customer_id = customerId;
+          console.log('[Invoices] Linking invoice to customer:', customerId);
+        }
+
+        // Deposit fields (from invoice-deposits-migration.sql)
+        if (depositEnabled && depositAmount > 0) {
+          invoiceData.deposit_requested = depositAmount;
+          invoiceData.deposit_percent = depositPercent || null;
+          invoiceData.balance_due = total - depositAmount;
+          console.log('[Invoices] Deposit requested:', depositAmount);
+        }
+
+        if (depositAlreadyReceived && depositReceivedAmount > 0) {
+          invoiceData.deposit_requested = depositReceivedAmount;
+          invoiceData.deposit_paid = depositReceivedAmount;
+          invoiceData.deposit_paid_at = new Date().toISOString();
+          invoiceData.deposit_payment_method = depositPaymentMethod || 'other';
+          invoiceData.balance_due = Math.max(0, total - depositReceivedAmount);
+          console.log('[Invoices] Deposit already received:', depositReceivedAmount);
         }
 
         const { data: invoice, error: invoiceError } = await supabaseClient
