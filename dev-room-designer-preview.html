@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Room Designer Pro - Dev Preview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a14; }
+
+    /* Spacer to test scroll */
+    .spacer { height: 50vh; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a14 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; }
+
+/* Room Designer Pro Section */
+.room-designer-pro {
+  position: relative;
+  min-height: 700px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #0f1a24 100%);
+}
+
+#designerCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.designer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(10,10,20,0.7) 100%);
+  z-index: 2;
+}
+
+.designer-content {
+  position: relative;
+  z-index: 3;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  text-align: center;
+  color: #fff;
+}
+
+.designer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(249, 203, 0, 0.15);
+  color: #f9cb00;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(249, 203, 0, 0.3);
+}
+
+.designer-content h2 {
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 800;
+  margin: 0 0 16px 0;
+  background: linear-gradient(135deg, #fff 0%, #f9cb00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.designer-content > p {
+  font-size: 18px;
+  color: rgba(255,255,255,0.8);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+.designer-features {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+}
+
+.designer-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(249, 203, 0, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-icon svg {
+  width: 20px;
+  height: 20px;
+  color: #f9cb00;
+}
+
+.designer-demo {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: center;
+  text-align: left;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+}
+
+/* Interactive Demo */
+.demo-interactive {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.demo-kitchen {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.kitchen-base {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.countertop-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background: linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 50%, #1a1a1a 100%);
+  mix-blend-mode: color;
+  opacity: 0.7;
+  transition: background 0.4s ease;
+  pointer-events: none;
+}
+
+.sample-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.picker-label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+}
+
+.samples {
+  display: flex;
+  gap: 8px;
+}
+
+.sample-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.sample-btn:hover {
+  transform: scale(1.1);
+}
+
+.sample-btn.active {
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.3), 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.sample-name {
+  font-size: 13px;
+  color: #f9cb00;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.demo-info h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #fff;
+}
+
+.demo-info p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+.demo-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.demo-buttons .btn-primary {
+  background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+  color: #1a1a2e;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(249, 203, 0, 0.3);
+}
+
+.demo-buttons .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(249, 203, 0, 0.4);
+}
+
+.demo-buttons .btn-secondary {
+  background: transparent;
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 2px solid rgba(255,255,255,0.3);
+  transition: all 0.3s ease;
+}
+
+.demo-buttons .btn-secondary:hover {
+  border-color: #f9cb00;
+  color: #f9cb00;
+}
+
+@media (max-width: 768px) {
+  .room-designer-pro { min-height: auto; }
+  .designer-content { padding: 60px 20px; }
+  .designer-features { gap: 20px; }
+  .designer-feature { font-size: 13px; }
+  .designer-demo {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .demo-info { order: -1; }
+  .demo-buttons { justify-content: center; }
+  .sample-picker { justify-content: center; }
+  .sample-name { margin-left: 0; margin-top: 8px; width: 100%; text-align: center; }
+}
+  </style>
+</head>
+<body>
+  <div class="spacer">↓ Scroll down to see parallax effect ↓</div>
+
+  <section class="room-designer-pro" id="roomDesignerPro">
+    <canvas id="designerCanvas"></canvas>
+    <div class="designer-overlay"></div>
+    <div class="designer-content">
+      <div class="designer-badge">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        New Feature
+      </div>
+      <h2>Room Designer Pro</h2>
+      <p>Visualize your dream kitchen or bathroom in stunning 3D. Try different countertops, cabinets, and finishes in real-time.</p>
+
+      <div class="designer-features">
+        <div class="designer-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <span>200+ Stone Samples</span>
+        </div>
+        <div class="designer-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          </div>
+          <span>True 3D Rendering</span>
+        </div>
+        <div class="designer-feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
+          </div>
+          <span>Export & Share</span>
+        </div>
+      </div>
+
+      <div class="designer-demo">
+        <div class="demo-interactive">
+          <div class="demo-kitchen" id="demoKitchen">
+            <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif" alt="Kitchen Preview" class="kitchen-base"/>
+            <div class="countertop-overlay" id="countertopOverlay"></div>
+          </div>
+          <div class="sample-picker">
+            <span class="picker-label">Try a sample:</span>
+            <div class="samples">
+              <button class="sample-btn active" data-color="#2d2d2d" data-name="Nero Marquina" style="background: linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 50%, #1a1a1a 100%)"></button>
+              <button class="sample-btn" data-color="#f5f0e6" data-name="Calacatta Gold" style="background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d0 50%, #d4c4a8 100%)"></button>
+              <button class="sample-btn" data-color="#8b7355" data-name="Taj Mahal" style="background: linear-gradient(135deg, #c4b49a 0%, #8b7355 50%, #a08060 100%)"></button>
+              <button class="sample-btn" data-color="#4a5568" data-name="Steel Grey" style="background: linear-gradient(135deg, #4a5568 0%, #718096 50%, #4a5568 100%)"></button>
+              <button class="sample-btn" data-color="#1e3a5f" data-name="Blue Pearl" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e4d7a 100%)"></button>
+            </div>
+            <span class="sample-name" id="sampleName">Nero Marquina</span>
+          </div>
+        </div>
+        <div class="demo-info">
+          <h3>Try It Yourself</h3>
+          <p>Click on the samples above to preview different countertop materials. In the full designer, upload your own photos and explore 200+ options.</p>
+          <div class="demo-buttons">
+            <a href="/tools/room-designer/" class="btn-primary">Launch Full Designer</a>
+            <a href="/get-a-free-estimate/" class="btn-secondary">Get Free Estimate</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer">↑ Scroll up to see parallax effect ↑</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+(function() {
+  const canvas = document.getElementById('designerCanvas');
+  if (!canvas || typeof THREE === 'undefined') return;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Lighting for 3D slabs
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(5, 10, 7);
+  scene.add(directionalLight);
+
+  const accentLight = new THREE.PointLight(0xf9cb00, 0.5, 50);
+  accentLight.position.set(-5, 5, 10);
+  scene.add(accentLight);
+
+  // Stone slab textures from the site
+  const slabTextures = [
+    'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg',
+    'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2b55efbb1f5_MSI%20Surfaces%20-%20Surprise%20Granite%20absolute-black-granite%20-%20close%20up.jpg',
+    'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2c5bafbc3c5_MSI%20Surfaces%20-%20Surprise%20Granite%20calacatta-classique-quartz-quartz-quartz-quartz-quartz-quartz-quartz%20-%20close%20up.jpg'
+  ];
+
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.crossOrigin = 'anonymous';
+
+  const slabs = [];
+  const slabGroup = new THREE.Group();
+
+  // Create main featured slab (large, center)
+  const mainSlabGeo = new THREE.BoxGeometry(8, 0.4, 5);
+
+  // Load textures and create slabs
+  slabTextures.forEach((url, index) => {
+    textureLoader.load(url, (texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+
+      const material = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.3,
+        metalness: 0.1
+      });
+
+      // Create edge material (darker)
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        roughness: 0.5
+      });
+
+      const materials = [
+        edgeMaterial, edgeMaterial, // sides
+        material, material, // top/bottom
+        edgeMaterial, edgeMaterial // front/back
+      ];
+
+      let slab;
+      if (index === 0) {
+        // Main large slab
+        slab = new THREE.Mesh(mainSlabGeo, materials);
+        slab.position.set(0, 0, -5);
+        slab.rotation.set(0.3, -0.2, 0);
+      } else {
+        // Smaller floating slabs
+        const smallGeo = new THREE.BoxGeometry(4, 0.25, 2.5);
+        slab = new THREE.Mesh(smallGeo, materials);
+        if (index === 1) {
+          slab.position.set(-6, 2, -8);
+          slab.rotation.set(0.2, 0.4, 0.1);
+        } else {
+          slab.position.set(7, -1.5, -6);
+          slab.rotation.set(-0.1, -0.3, -0.05);
+        }
+      }
+
+      slab.userData = {
+        baseY: slab.position.y,
+        baseRotY: slab.rotation.y,
+        floatOffset: Math.random() * Math.PI * 2,
+        floatSpeed: 0.3 + Math.random() * 0.2
+      };
+
+      slabGroup.add(slab);
+      slabs.push(slab);
+    });
+  });
+
+  scene.add(slabGroup);
+
+  // Add subtle particle dust effect
+  const particleCount = 100;
+  const particleGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 30;
+    positions[i + 1] = (Math.random() - 0.5) * 20;
+    positions[i + 2] = (Math.random() - 0.5) * 15 - 5;
+  }
+
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const particleMat = new THREE.PointsMaterial({
+    color: 0xf9cb00,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.6
+  });
+
+  const particles = new THREE.Points(particleGeo, particleMat);
+  scene.add(particles);
+
+  camera.position.z = 12;
+  camera.position.y = 2;
+
+  let scrollY = 0;
+  let time = 0;
+  let mouseX = 0;
+  let mouseY = 0;
+
+  // Track mouse for subtle interaction
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  }, { passive: true });
+
+  // Track scroll position
+  window.addEventListener('scroll', () => {
+    const section = document.getElementById('roomDesignerPro');
+    if (section) {
+      const rect = section.getBoundingClientRect();
+      const sectionCenter = rect.top + rect.height / 2;
+      const viewportCenter = window.innerHeight / 2;
+      scrollY = (viewportCenter - sectionCenter) / window.innerHeight;
+    }
+  }, { passive: true });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    time += 0.01;
+
+    // Animate slabs
+    slabs.forEach((slab, i) => {
+      // Gentle floating
+      slab.position.y = slab.userData.baseY + Math.sin(time * slab.userData.floatSpeed + slab.userData.floatOffset) * 0.3;
+
+      // Slow rotation
+      slab.rotation.y = slab.userData.baseRotY + time * 0.05 + scrollY * 0.3;
+
+      // Mouse interaction
+      slab.rotation.x += mouseY * 0.001;
+    });
+
+    // Rotate entire group slightly based on scroll
+    slabGroup.rotation.y = scrollY * 0.2;
+    slabGroup.rotation.x = scrollY * 0.1;
+
+    // Animate particles
+    particles.rotation.y = time * 0.02;
+    particles.rotation.x = time * 0.01;
+
+    // Camera responds to scroll and mouse
+    camera.position.y = 2 + scrollY * 2;
+    camera.position.x = mouseX * 0.5;
+    camera.lookAt(0, 0, -5);
+
+    // Animate accent light
+    accentLight.position.x = Math.sin(time * 0.5) * 8;
+    accentLight.position.z = 10 + Math.cos(time * 0.3) * 3;
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Handle resize
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+  </script>
+
+  <!-- Sample Picker Interactivity -->
+  <script>
+  (function() {
+    const samples = document.querySelectorAll('.sample-btn');
+    const overlay = document.getElementById('countertopOverlay');
+    const nameDisplay = document.getElementById('sampleName');
+
+    const gradients = {
+      '#2d2d2d': 'linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 50%, #1a1a1a 100%)',
+      '#f5f0e6': 'linear-gradient(135deg, #f5f0e6 0%, #e8e0d0 50%, #d4c4a8 100%)',
+      '#8b7355': 'linear-gradient(135deg, #c4b49a 0%, #8b7355 50%, #a08060 100%)',
+      '#4a5568': 'linear-gradient(135deg, #4a5568 0%, #718096 50%, #4a5568 100%)',
+      '#1e3a5f': 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e4d7a 100%)'
+    };
+
+    samples.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        samples.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update overlay color
+        const color = btn.dataset.color;
+        if (overlay && gradients[color]) {
+          overlay.style.background = gradients[color];
+        }
+
+        // Update name
+        if (nameDisplay) {
+          nameDisplay.textContent = btn.dataset.name;
+        }
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

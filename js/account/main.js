@@ -16815,6 +16815,41 @@
       const modal = document.getElementById('business-settings-modal');
       modal.classList.add('active');
       loadBusinessSettings();
+      updateQuickBooksSettingsUI();
+    }
+
+    // Update QuickBooks UI in settings modal
+    async function updateQuickBooksSettingsUI() {
+      const connectBtn = document.getElementById('qbo-connect-btn');
+      const disconnectBtn = document.getElementById('qbo-disconnect-btn');
+      const statusText = document.getElementById('qbo-status-text');
+
+      if (!connectBtn || !disconnectBtn) return;
+
+      try {
+        const session = await supabaseClient.auth.getSession();
+        const token = session.data.session?.access_token;
+        if (!token) return;
+
+        const response = await fetch('/api/quickbooks/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.connected) {
+          connectBtn.style.display = 'none';
+          disconnectBtn.style.display = 'inline-flex';
+          statusText.textContent = 'Connected - syncing enabled';
+          statusText.style.color = '#22c55e';
+        } else {
+          connectBtn.style.display = 'inline-flex';
+          disconnectBtn.style.display = 'none';
+          statusText.textContent = 'Sync invoices & estimates';
+          statusText.style.color = 'var(--text-muted)';
+        }
+      } catch (e) {
+        console.error('QuickBooks status check failed:', e);
+      }
     }
 
     function closeBusinessSettings() {
