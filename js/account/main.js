@@ -11026,26 +11026,19 @@
               invoiceId = existingInvoice.id;
               console.log('[Sync] Invoice already exists:', invoiceId);
             } else {
-              // Try with all columns first
+              // Use only columns that definitely exist
               const invoiceData = {
                 user_id: user.id,
                 invoice_number: inv.number || `STR-${inv.id.slice(-8)}`,
-                customer_id: customerId,
                 customer_name: inv.customer_name || 'Customer',
                 customer_email: inv.customer_email,
                 total: inv.amount_paid || 0,
-                status: 'paid',
-                paid_at: new Date().toISOString()
+                amount_paid: inv.amount_paid || 0,
+                status: 'paid'
               };
 
-              // Add optional stripe columns (may not exist)
-              try {
-                invoiceData.amount_paid = inv.amount_paid || 0;
-                invoiceData.amount_due = 0;
-                invoiceData.stripe_invoice_id = inv.id;
-                invoiceData.stripe_hosted_url = inv.hosted_invoice_url;
-                invoiceData.stripe_pdf_url = inv.pdf;
-              } catch (e) {}
+              // Add optional columns
+              if (customerId) invoiceData.customer_id = customerId;
 
               const { data: newInvoice, error: invErr } = await supabaseClient
                 .from('invoices')
@@ -12922,14 +12915,13 @@
         } else {
           // Generate new token for viewing
           token = crypto.randomUUID();
-          const { data: { user } } = await supabaseClient.auth.getUser();
           await supabaseClient
             .from('invoice_tokens')
             .insert([{
               invoice_id: invoiceId,
               token: token,
               expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              created_by: user?.id
+              created_by: currentUser?.id
             }]);
         }
         // Open with print=true parameter to trigger auto-print
@@ -13078,8 +13070,13 @@
      */
     async function shareDocument(type, id) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
+        // Use cached currentUser to avoid hanging getUser() call
+        let user = currentUser;
+        if (!user) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          user = session?.user;
+        }
+        if (!user) throw new Error('Not authenticated - please refresh');
 
         // Fetch document data
         let doc, items;
