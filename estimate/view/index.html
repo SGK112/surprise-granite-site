@@ -773,6 +773,13 @@
         // Render estimate
         renderEstimate();
 
+        // Auto-print if requested via URL parameter
+        if (urlParams.get('print') === 'true') {
+          setTimeout(() => {
+            window.print();
+          }, 500); // Small delay to ensure content is fully rendered
+        }
+
       } catch (err) {
         console.error('Error loading estimate:', err);
         showError('Error Loading Estimate', 'There was an error loading this estimate. Please try again or contact us.');

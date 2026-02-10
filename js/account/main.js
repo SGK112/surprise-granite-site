@@ -11304,6 +11304,14 @@
                 ${inv.status !== 'paid' && inv.status !== 'void' ? `<button class="btn-modern" style="padding: 4px 10px; font-size: 11px; background: #22c55e;" onclick="event.stopPropagation(); recordPayment('${inv.id}')">+ Payment</button>` : ''}
                 ${showDepositBtn ? `<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="event.stopPropagation(); recordDeposit('${inv.id}')">Record Deposit</button>` : ''}
                 ${qboConnected && !qboSynced ? `<button class="btn-modern ghost qbo-sync-btn" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); syncInvoiceToQBO('${inv.id}')" title="Sync to QuickBooks"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>` : ''}
+                <div style="display: flex; gap: 4px; margin-top: 4px;">
+                  <button class="btn-modern ghost" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); viewSupabaseInvoice('${inv.id}')" title="View & Print">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+                  </button>
+                  <button class="btn-modern ghost" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); shareDocument('invoice', '${inv.id}')" title="Share Invoice">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           `;}).join('')}
@@ -12597,16 +12605,12 @@
           customer_email: customerEmail,
           customer_name: customerName,
           customer_phone: customerPhone,
-          customer_address: customerAddress || null,
-          customer_city: customerCity || null,
-          customer_state: customerState || null,
-          customer_zip: customerZip || null,
           subtotal: total,
           total: total,
           amount_due: amountDue,
           amount_paid: amountPaid,
           due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
-          notes: notes,
+          notes: notes || '',
           status: invoiceStatus,
           deposit_requested: depositEnabled ? depositAmount : (depositAlreadyReceived ? depositReceivedAmount : null),
           deposit_percent: depositEnabled ? depositPercent : null,
@@ -12909,6 +12913,41 @@
       } catch (err) {
         console.error('View invoice error:', err);
         alert('Error viewing invoice');
+      }
+    }
+
+    async function printInvoice(invoiceId) {
+      // Use the token-based invoice view page with auto-print
+      try {
+        const { data: tokenData } = await supabaseClient
+          .from('invoice_tokens')
+          .select('token')
+          .eq('invoice_id', invoiceId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        let token;
+        if (tokenData) {
+          token = tokenData.token;
+        } else {
+          // Generate new token for viewing
+          token = crypto.randomUUID();
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          await supabaseClient
+            .from('invoice_tokens')
+            .insert([{
+              invoice_id: invoiceId,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              created_by: user?.id
+            }]);
+        }
+        // Open with print=true parameter to trigger auto-print
+        window.open(`/invoice/view/?token=${token}&print=true`, '_blank');
+      } catch (err) {
+        console.error('Print invoice error:', err);
+        showToast('Error preparing invoice for print', 'error');
       }
     }
 
@@ -16242,6 +16281,14 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 View
               </button>
+              <button class="btn-modern secondary small" onclick="event.stopPropagation(); printEstimate('${estimate.id}')" title="Print Estimate">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+                Print
+              </button>
+              <button class="btn-modern secondary small" onclick="event.stopPropagation(); shareDocument('estimate', '${estimate.id}')" title="Share Estimate">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                Share
+              </button>
               <button class="btn-modern secondary small" onclick="scheduleForEstimate('${estimate.id}', '${(estimate.estimate_number || '').replace(/'/g, '')}', '${(estimate.customer_name || '').replace(/'/g, '')}', '${(estimate.customer_email || '').replace(/'/g, '')}')" title="Schedule Follow-up">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 Schedule
@@ -17549,6 +17596,39 @@
       }
     }
 
+    async function printEstimate(estimateId) {
+      // Open estimate with auto-print parameter
+      try {
+        const { data: tokenData } = await supabaseClient
+          .from('estimate_tokens')
+          .select('token')
+          .eq('estimate_id', estimateId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        let token;
+        if (tokenData) {
+          token = tokenData.token;
+        } else {
+          // Generate new token for viewing
+          token = crypto.randomUUID();
+          await supabaseClient
+            .from('estimate_tokens')
+            .insert([{
+              estimate_id: estimateId,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }]);
+        }
+        // Open with print=true parameter to trigger auto-print
+        window.open(`/estimate/view/?token=${token}&print=true`, '_blank');
+      } catch (err) {
+        console.error('Print estimate error:', err);
+        showToast('Error preparing estimate for print', 'error');
+      }
+    }
+
     async function deleteEstimate(estimateId) {
       if (!confirm('Delete this draft estimate?')) return;
 
@@ -17821,6 +17901,7 @@
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
         // Create invoice - preserve full traceability chain
+        // Note: address fields removed as they don't exist in invoices table
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
@@ -17830,10 +17911,6 @@
           customer_name: estimate.customer_name,
           customer_email: estimate.customer_email,
           customer_phone: estimate.customer_phone,
-          customer_address: estimate.customer_address,
-          customer_city: estimate.customer_city,
-          customer_state: estimate.customer_state,
-          customer_zip: estimate.customer_zip,
           project_name: estimate.project_name,
           subtotal: estimate.subtotal,
           tax_rate: estimate.tax_rate,

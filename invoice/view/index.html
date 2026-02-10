@@ -220,6 +220,13 @@
 
         await loadBusinessInfo(invoiceData.user_id);
         renderInvoice();
+
+        // Auto-print if requested via URL parameter
+        if (urlParams.get('print') === 'true') {
+          setTimeout(() => {
+            window.print();
+          }, 500);
+        }
       } catch (err) {
         console.error('Error loading invoice:', err);
         showError('Error Loading Invoice', 'There was an error loading this invoice. Please try again or contact us.');
