@@ -27899,6 +27899,11 @@
       // Use series grain type if defined, otherwise use cabinetSettings (flat for painted finishes)
       const grainType = series.grainType || (finishType === 'painted' || finishType === 'matte' || finishType === 'gloss' ? 'flat' : cabinetSettings.grainType || 'oak');
 
+      // Map catalog depth to cabinetHeight (catalog depth = vertical 3D height for wall/tall cabs)
+      // ProCraft wall cabs: depth 2.5=30", 3=36", 3.5=42" (vertical height, not front-to-back)
+      // ProCraft tall cabs: depth 7.5=90", 8=96" (vertical height)
+      const cabinetHeight = cab.depth && cab.depth !== cab.height ? cab.depth : undefined;
+
       const element = {
         id: Date.now() + Math.random(),
         type: cab.type,
@@ -27917,6 +27922,8 @@
         skuWidth: cab.width,  // Original box width (e.g., 3 for 36" cabinet)
         skuHeight: cab.height, // Original box depth
         skuName: cab.name,
+        // 3D vertical height from catalog (for wall/tall cabs where depth != front-to-back)
+        ...(cabinetHeight !== undefined && { cabinetHeight }),
         // Cabinet settings - use series finish type for wood grain colors
         construction: cabinetSettings.construction,
         doorStyle: cabinetSettings.doorStyle,
@@ -40245,6 +40252,17 @@
       }
       if (el?.height3D !== undefined) {
         return el.height3D;
+      }
+
+      // Check cabinetHeight for catalog cabinets (ProCraft 36"/42" wall cabs, 90"/96" tall cabs)
+      if (el?.cabinetHeight !== undefined && el.cabinetHeight > 0) {
+        const cabTypes = ['wall-cabinet', 'tall-cabinet', 'base-cabinet', 'corner-cabinet',
+                          'drawer-base', 'sink-base', 'fridge-cabinet', 'double-oven-cabinet',
+                          'single-oven-cabinet', 'tall-oven'];
+        const elType = el.type || '';
+        if (cabTypes.some(ct => elType === ct || elType.startsWith(ct + '-'))) {
+          return el.cabinetHeight;
+        }
       }
 
       // Normalize sized cabinet types to base types (e.g., base-cabinet-12 -> base-cabinet)
@@ -56734,8 +56752,8 @@
           { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
           { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher 24"', rotation: 0 },
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
-          // Countertop: base depth 2' + 1.5" overhang = 2.125' total
-          { type: 'countertop', x: 2.875, y: -0.04, width: 7.25, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Countertop: starts after fridge (x=3), depth 2' + 1.5" overhang = 2.125' total
+          { type: 'countertop', x: 3, y: -0.04, width: 7.125, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 7.5, y: 0.25, width: 2.5, height: 1.5, label: 'Undermount Sink', rotation: 0 },
           // Wall cabinets: 12" (1') deep, mounted 18" above counter
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
@@ -56796,7 +56814,7 @@
           { type: 'range-hood', x: 5.25, y: 7, width: 2.5, height: 1, label: 'Range Hood', rotation: 180 },
           { type: 'base-cabinet', x: 7.5, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
           { type: 'base-cabinet', x: 9.5, y: 6, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
-          { type: 'countertop', x: 2.875, y: 5.835, width: 9.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 3, y: 5.835, width: 9.125, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           // Wall cabinets: 12" (1') deep
           { type: 'wall-cabinet', x: 3, y: 7, width: 2, height: 1, label: 'Upper 24"', rotation: 180 },
           { type: 'wall-cabinet', x: 7.5, y: 7, width: 4.5, height: 1, label: 'Uppers 54"', rotation: 180 },
@@ -56867,7 +56885,7 @@
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
           { type: 'base-cabinet', x: 10, y: 0, width: 1.5, height: 2, label: 'Base 18"', rotation: 0 },
           { type: 'range', x: 11.5, y: 0, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 0 },
-          { type: 'countertop', x: 2.875, y: -0.04, width: 8.75, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 3, y: -0.04, width: 8.625, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
           { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
@@ -56893,7 +56911,7 @@
           { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
           { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
-          { type: 'countertop', x: 2.875, y: -0.04, width: 9.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 3, y: -0.04, width: 9.125, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
           { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
@@ -57145,7 +57163,7 @@
           { type: 'base-cabinet', x: 3, y: 0, width: 3, height: 2, rotation: 0 },
           { type: 'dishwasher', x: 6, y: 0, width: 2, height: 2, rotation: 0 },
           { type: 'sink-base', x: 8, y: 0, width: 3, height: 2, rotation: 0 },
-          { type: 'countertop', x: 2.875, y: -0.04, width: 8.25, height: 2.165, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 3, y: -0.04, width: 8.125, height: 2.165, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 8.5, y: 0.25, width: 2, height: 1.5, rotation: 0 },
           // Island with waterfall
           { type: 'island', x: 3, y: 5, width: 6, height: 3, rotation: 0 },
@@ -57178,7 +57196,7 @@
           { type: 'refrigerator', x: 0, y: 0, width: 2.5, height: 2, label: 'Compact Fridge', rotation: 0 },
           { type: 'base-cabinet', x: 2.5, y: 0, width: 1.5, height: 2, label: 'Base 18"', rotation: 0 },
           { type: 'sink-base', x: 4, y: 0, width: 2.5, height: 2, label: 'Sink Base 30"', rotation: 0 },
-          { type: 'countertop', x: 2.375, y: -0.04, width: 4.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 2.5, y: -0.04, width: 4.125, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 4.25, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
           { type: 'wall-cabinet', x: 2.5, y: 0, width: 4, height: 1, label: 'Uppers', rotation: 0 },
 
@@ -57614,6 +57632,64 @@
           roomId: currentRoom
         };
         elements.push(el);
+      });
+
+      // ===== POST-PROCESSING: Resolve countertop-through-tall-item collisions =====
+      // Prevent countertops from clipping through refrigerators, tall cabinets, etc.
+      const tallItemTypes = ['refrigerator', 'tall-cabinet', 'fridge-cabinet', 'single-oven-cabinet',
+                             'tall-oven', 'double-oven-cabinet'];
+      const tallItems = elements.filter(el => tallItemTypes.some(t => el.type === t || el.type?.startsWith(t + '-')));
+      const countertops = elements.filter(el => el.type === 'countertop' || el.type === 'countertop-l' || el.type === 'countertop-u');
+
+      countertops.forEach(counter => {
+        tallItems.forEach(tall => {
+          // Get bounding boxes in feet (x/y are in pixels, width/height in feet)
+          const cxFt = counter.x / pixelsPerFoot;
+          const cyFt = counter.y / pixelsPerFoot;
+          const cRot = (counter.rotation || 0) % 360;
+          const cW = (cRot === 90 || cRot === 270) ? counter.height : counter.width;
+          const cH = (cRot === 90 || cRot === 270) ? counter.width : counter.height;
+
+          const txFt = tall.x / pixelsPerFoot;
+          const tyFt = tall.y / pixelsPerFoot;
+          const tRot = (tall.rotation || 0) % 360;
+          const tW = (tRot === 90 || tRot === 270) ? tall.height : tall.width;
+          const tH = (tRot === 90 || tRot === 270) ? tall.width : tall.height;
+
+          // Check X-axis overlap
+          const overlapX = Math.min(cxFt + cW, txFt + tW) - Math.max(cxFt, txFt);
+          const overlapY = Math.min(cyFt + cH, tyFt + tH) - Math.max(cyFt, tyFt);
+
+          if (overlapX > 0.05 && overlapY > 0.05) {
+            // There IS a collision - adjust the countertop to avoid it
+            // Determine which side the tall item is on and shrink the counter away from it
+            if (Math.abs(cxFt - txFt) < 0.5 && cW > tW) {
+              // Tall item is at the LEFT edge of the counter - move counter right
+              const newX = txFt + tW;
+              const shrinkAmount = newX - cxFt;
+              counter.x = newX * pixelsPerFoot;
+              counter.width -= shrinkAmount;
+              if (counter.overhangLeft) counter.overhangLeft = 0;
+            } else if (Math.abs((cxFt + cW) - (txFt + tW)) < 0.5 && cW > tW) {
+              // Tall item is at the RIGHT edge of the counter - shrink counter
+              const shrinkAmount = (cxFt + cW) - txFt;
+              counter.width -= shrinkAmount;
+              if (counter.overhangRight) counter.overhangRight = 0;
+            } else if (Math.abs(cyFt - tyFt) < 0.5 && cH > tH) {
+              // Tall item at BACK edge - move counter forward
+              const newY = tyFt + tH;
+              const shrinkAmount = newY - cyFt;
+              counter.y = newY * pixelsPerFoot;
+              counter.height -= shrinkAmount;
+              if (counter.overhangBack) counter.overhangBack = 0;
+            } else if (Math.abs((cyFt + cH) - (tyFt + tH)) < 0.5 && cH > tH) {
+              // Tall item at FRONT edge - shrink counter depth
+              const shrinkAmount = (cyFt + cH) - tyFt;
+              counter.height -= shrinkAmount;
+              if (counter.overhangFront) counter.overhangFront = 0;
+            }
+          }
+        });
       });
 
       // Update everything (no need to call fitToScreen again)
@@ -69485,33 +69561,45 @@
           { type: 'linen-tower', label: 'Linen Tower 24"', width: 2, height: 1.75, actualHeight: 84, icon: '🧺', dims: '24" × 21" × 84"', color: '#8B7355' }
         ],
         // ProCraft manufacturer catalog
-        procraft: Object.values(procraftCabinets).flat().map(cab => ({
-          type: cab.type,
-          label: `${cab.name}`,
-          width: cab.width,
-          height: cab.height || cab.depth || 2,
-          actualHeight: cab.type.includes('tall') || cab.type.includes('pantry') ? 84 : cab.type.includes('wall') ? 30 : 34.5,
-          icon: cab.type.includes('wall') ? '🗄️' : cab.type.includes('tall') || cab.type.includes('pantry') ? '📦' : '🗄️',
-          dims: `${Math.round(cab.width * 12)}" × ${Math.round((cab.depth || 2) * 12)}"`,
-          sku: cab.sku,
-          price: cab.price,
-          color: '#8B7355',
-          catalog: 'procraft'
-        })),
+        procraft: Object.values(procraftCabinets).flat().map(cab => {
+          // For wall/tall cabs, catalog depth = vertical height in feet (2.5=30", 3=36", 7.5=90")
+          // For base cabs, catalog depth = front-to-back depth (same as height), vertical = 2.875ft (34.5")
+          const isWall = cab.type?.includes('wall');
+          const isTall = cab.type?.includes('tall') || cab.type?.includes('pantry') || cab.type?.includes('oven');
+          const verticalHeightFt = (isWall || isTall) && cab.depth !== cab.height ? cab.depth : (isTall ? 7 : isWall ? 2.5 : 2.875);
+          return {
+            type: cab.type,
+            label: `${cab.name}`,
+            width: cab.width,
+            height: cab.height || (isWall ? 1 : 2),
+            cabinetHeight: verticalHeightFt,
+            icon: isWall ? '🗄️' : isTall ? '📦' : '🗄️',
+            dims: `${Math.round(cab.width * 12)}" × ${Math.round((verticalHeightFt) * 12)}"H`,
+            sku: cab.sku,
+            price: cab.price,
+            color: '#8B7355',
+            catalog: 'procraft'
+          };
+        }),
         // MSI manufacturer catalog
-        msi: Object.values(msiCabinets).flat().map(cab => ({
-          type: cab.type,
-          label: `${cab.name}`,
-          width: cab.width,
-          height: cab.height || cab.depth || 2,
-          actualHeight: cab.type.includes('tall') || cab.type.includes('pantry') ? 84 : cab.type.includes('wall') ? 30 : 34.5,
-          icon: cab.type.includes('wall') ? '🗄️' : cab.type.includes('tall') || cab.type.includes('pantry') ? '📦' : '🗄️',
-          dims: `${Math.round(cab.width * 12)}" × ${Math.round((cab.depth || 2) * 12)}"`,
-          sku: cab.sku,
-          price: cab.price,
-          color: '#8B7355',
-          catalog: 'msi'
-        })),
+        msi: Object.values(msiCabinets).flat().map(cab => {
+          const isWall = cab.type?.includes('wall');
+          const isTall = cab.type?.includes('tall') || cab.type?.includes('pantry') || cab.type?.includes('oven');
+          const verticalHeightFt = (isWall || isTall) && cab.depth !== cab.height ? cab.depth : (isTall ? 7 : isWall ? 2.5 : 2.875);
+          return {
+            type: cab.type,
+            label: `${cab.name}`,
+            width: cab.width,
+            height: cab.height || (isWall ? 1 : 2),
+            cabinetHeight: verticalHeightFt,
+            icon: isWall ? '🗄️' : isTall ? '📦' : '🗄️',
+            dims: `${Math.round(cab.width * 12)}" × ${Math.round((verticalHeightFt) * 12)}"H`,
+            sku: cab.sku,
+            price: cab.price,
+            color: '#8B7355',
+            catalog: 'msi'
+          };
+        }),
         // User's custom uploaded cabinets
         custom: customCabinets
       };
@@ -69717,8 +69805,10 @@
           if (cabinetData.height) {
             selectedElement.height = cabinetData.height;
           }
-          // Apply 3D height (convert inches to feet for get3DHeight compatibility)
-          if (cabinetData.actualHeight) {
+          // Apply 3D height - cabinetHeight is in feet, actualHeight is in inches
+          if (cabinetData.cabinetHeight) {
+            selectedElement.cabinetHeight = cabinetData.cabinetHeight;
+          } else if (cabinetData.actualHeight) {
             selectedElement.height3D = cabinetData.actualHeight / 12;
           }
           // Apply color
@@ -69968,7 +70058,8 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
         selectedElement.width = cabinet.width || cabinet.customWidth || 3;
         selectedElement.height = cabinet.height || 2;
         selectedElement.label = cabinet.label || cabinet.name;
-        selectedElement.actualHeight = cabinet.actualHeight || 34.5;
+        // Convert actualHeight from inches to feet for get3DHeight compatibility
+        selectedElement.height3D = (cabinet.cabinetHeight) || (cabinet.actualHeight ? cabinet.actualHeight / 12 : undefined);
         if (cabinet.price) selectedElement.priceOverride = cabinet.price;
         draw();
         updateProperties();
