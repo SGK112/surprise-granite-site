@@ -18736,9 +18736,10 @@
     function addAICabinet(params) {
       const { type = 'base-cabinet', wall = 'top', width = 36, position = null, label = null } = params;
 
-      const widthFt = width / 12;
+      const faceFt = width / 12;
       const depthFt = type.includes('wall') ? 1 : 2;
       const heightFt = type.includes('wall') ? 2.5 : depthFt;
+      const isVerticalWall = (wall === 'left' || wall === 'right');
 
       let x, y, rotation = 0;
       const padding = 0.5;
@@ -18748,7 +18749,12 @@
         el.aiWall === wall || (wall === 'top' && el.y < roomDepth * pixelsPerFoot / 3)
       );
       const lastCab = wallCabs[wallCabs.length - 1];
-      const offset = lastCab ? (lastCab.x / pixelsPerFoot + lastCab.width + 0.1) : padding;
+      // For side walls, offset runs along Y axis; for top/bottom, along X axis
+      const offset = lastCab
+        ? (isVerticalWall
+            ? (lastCab.y / pixelsPerFoot + lastCab.height + 0.1)
+            : (lastCab.x / pixelsPerFoot + lastCab.width + 0.1))
+        : padding;
 
       switch (wall) {
         case 'top':
@@ -18772,13 +18778,14 @@
           break;
       }
 
+      // Store as physical (X,Y) extents: for side walls, width=depth, height=face
       const element = {
         id: Date.now() + Math.random(),
         type: type,
         x: x * pixelsPerFoot,
         y: y * pixelsPerFoot,
-        width: widthFt,
-        height: depthFt,
+        width: isVerticalWall ? depthFt : faceFt,
+        height: isVerticalWall ? faceFt : depthFt,
         rotation,
         color: type.includes('wall') ? '#B8860B' : '#8B4513',
         label: label || `${type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${width}"`,
@@ -18800,15 +18807,20 @@
     function addAIAppliance(params) {
       const { type = 'refrigerator', wall = 'right', width = 36 } = params;
 
-      const widthFt = width / 12;
+      const faceFt = width / 12;
       const depthFt = type === 'refrigerator' ? 2.5 : 2;
+      const isVerticalWall = (wall === 'left' || wall === 'right');
       let x, y, rotation = 0;
       const padding = 0.5;
 
-      // Find position
+      // Find position - for side walls, offset runs along Y axis
       const wallItems = elements.filter(el => el.aiWall === wall);
       const offset = wallItems.length > 0
-        ? Math.max(...wallItems.map(el => el.x / pixelsPerFoot + el.width)) + 0.2
+        ? Math.max(...wallItems.map(el =>
+            isVerticalWall
+              ? (el.y / pixelsPerFoot + el.height)
+              : (el.x / pixelsPerFoot + el.width)
+          )) + 0.2
         : padding;
 
       switch (wall) {
@@ -18826,13 +18838,14 @@
           break;
       }
 
+      // Store as physical (X,Y) extents: for side walls, width=depth, height=face
       const element = {
         id: Date.now() + Math.random(),
         type,
         x: x * pixelsPerFoot,
         y: y * pixelsPerFoot,
-        width: widthFt,
-        height: depthFt,
+        width: isVerticalWall ? depthFt : faceFt,
+        height: isVerticalWall ? faceFt : depthFt,
         rotation,
         color: '#C0C0C0',
         label: type.charAt(0).toUpperCase() + type.slice(1),
@@ -33633,10 +33646,26 @@
     const texturePatternCache = new Map();
 
     function drawElement(el, isSelected) {
-      const x = el.x;
-      const y = el.y;
-      const w = el.width * pixelsPerFoot;
-      const h = el.height * pixelsPerFoot;
+      let x = el.x;
+      let y = el.y;
+      let w = el.width * pixelsPerFoot;
+      let h = el.height * pixelsPerFoot;
+
+      // For side-wall elements (90°/270° rotation), swap width/height.
+      // Templates and layout tool store width/height as physical (X,Y) extents,
+      // so for side walls: width=depth, height=face. Swapping before the canvas
+      // rotation ensures drawElementDetails renders doors along the face dimension
+      // and the canvas rotation places the element at its correct physical position.
+      const rot = ((el.rotation || 0) % 360 + 360) % 360;
+      if (rot === 90 || rot === 270) {
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        const tmp = w;
+        w = h;
+        h = tmp;
+        x = cx - w / 2;
+        y = cy - h / 2;
+      }
 
       ctx.save();
       ctx.translate(x + w/2, y + h/2);
@@ -34508,16 +34537,10 @@
       // Element-to-element snapping (for placing cabinets together)
       const snapDistance = pixelsPerFoot * 0.4; // Reduced from 0.5 for less aggressive snap
 
-      // Account for rotation when calculating effective dimensions
-      // When rotated 90 or 270 degrees, width and height are effectively swapped
-      const rotation = (selectedElement.rotation || 0) % 360;
-      const isRotated90 = (rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270);
-      const elW = isRotated90
-        ? selectedElement.height * pixelsPerFoot
-        : selectedElement.width * pixelsPerFoot;
-      const elH = isRotated90
-        ? selectedElement.width * pixelsPerFoot
-        : selectedElement.height * pixelsPerFoot;
+      // Element dimensions in physical coordinates (X,Y extents on canvas).
+      // drawElement handles the visual rotation swap, so physical coords = screen footprint.
+      const elW = selectedElement.width * pixelsPerFoot;
+      const elH = selectedElement.height * pixelsPerFoot;
 
       // Check if this is a cabinet-type element for stricter alignment
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
@@ -35094,18 +35117,31 @@
     }
 
     function isPointInElement(px, py, el) {
-      const w = el.width * pixelsPerFoot;
-      const h = el.height * pixelsPerFoot;
+      let w = el.width * pixelsPerFoot;
+      let h = el.height * pixelsPerFoot;
+      let ex = el.x, ey = el.y;
       const rotation = (el.rotation || 0) * Math.PI / 180;
+
+      // Match the same dimension swap as drawElement for side-wall elements
+      const rot = ((el.rotation || 0) % 360 + 360) % 360;
+      if (rot === 90 || rot === 270) {
+        const cx = ex + w / 2;
+        const cy = ey + h / 2;
+        const tmp = w;
+        w = h;
+        h = tmp;
+        ex = cx - w / 2;
+        ey = cy - h / 2;
+      }
 
       // If no rotation, use simple bounds check
       if (rotation === 0) {
-        return px >= el.x && px <= el.x + w && py >= el.y && py <= el.y + h;
+        return px >= ex && px <= ex + w && py >= ey && py <= ey + h;
       }
 
       // For rotated elements, transform the click point to element's local space
-      const cx = el.x + w / 2;
-      const cy = el.y + h / 2;
+      const cx = ex + w / 2;
+      const cy = ey + h / 2;
 
       // Translate point to origin (element center)
       const dx = px - cx;
@@ -35150,7 +35186,22 @@
           break;
         case 'r':
           if (selectedElement && !selectedElement.locked) {
+            const oldRot = ((selectedElement.rotation || 0) % 360 + 360) % 360;
             selectedElement.rotation = ((selectedElement.rotation || 0) + 90) % 360;
+            const newRot = (selectedElement.rotation % 360 + 360) % 360;
+            // When transitioning between horizontal (0/180) and vertical (90/270),
+            // swap width/height to maintain physical (X,Y) coordinate convention
+            const wasVert = (oldRot === 90 || oldRot === 270);
+            const isVert = (newRot === 90 || newRot === 270);
+            if (wasVert !== isVert) {
+              const cx = selectedElement.x + selectedElement.width * pixelsPerFoot / 2;
+              const cy = selectedElement.y + selectedElement.height * pixelsPerFoot / 2;
+              const tmp = selectedElement.width;
+              selectedElement.width = selectedElement.height;
+              selectedElement.height = tmp;
+              selectedElement.x = cx - selectedElement.width * pixelsPerFoot / 2;
+              selectedElement.y = cy - selectedElement.height * pixelsPerFoot / 2;
+            }
             updateProperties();
             draw();
           }
@@ -37161,7 +37212,20 @@
       switch(action) {
         case 'rotate':
           if (!contextMenuElement.locked) {
+            const oldR = ((contextMenuElement.rotation || 0) % 360 + 360) % 360;
             contextMenuElement.rotation = ((contextMenuElement.rotation || 0) + 90) % 360;
+            const newR = (contextMenuElement.rotation % 360 + 360) % 360;
+            const wasV = (oldR === 90 || oldR === 270);
+            const isV = (newR === 90 || newR === 270);
+            if (wasV !== isV) {
+              const cx = contextMenuElement.x + contextMenuElement.width * pixelsPerFoot / 2;
+              const cy = contextMenuElement.y + contextMenuElement.height * pixelsPerFoot / 2;
+              const tmp = contextMenuElement.width;
+              contextMenuElement.width = contextMenuElement.height;
+              contextMenuElement.height = tmp;
+              contextMenuElement.x = cx - contextMenuElement.width * pixelsPerFoot / 2;
+              contextMenuElement.y = cy - contextMenuElement.height * pixelsPerFoot / 2;
+            }
           }
           break;
         case 'duplicate':
