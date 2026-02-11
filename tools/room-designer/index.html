@@ -44812,8 +44812,8 @@
           // For 2cm counters, add plywood and drop edge to create full thickness appearance
           const totalVisibleHeight = is2cm ? 0.1 : slabThickness; // 2cm appears same as 3cm with buildup
 
-          // Seam gap for clean butting between adjacent countertops
-          const seamGap = 0.01;
+          // Minimal seam gap only between adjacent countertops (not against walls)
+          const seamGap = 0.002; // Barely visible seam for realism
 
           // WATERFALL SIDES: NO overhang on waterfall sides
           // The countertop edge must be flush with the waterfall panel (perfect 90° corner)
@@ -44827,11 +44827,43 @@
           // The waterfall drops from the countertop's outer edge (including overhang)
           // No overhang reduction needed - the waterfall IS the edge, it just goes vertical
 
-          // Slab dimensions - full width/depth with small seam gap
-          const slabW = w - seamGap;
-          const slabD = d - seamGap;
-          const slabOffsetX = 0;
-          const slabOffsetZ = 0;
+          // Detect wall adjacency for flush positioning (caulked to wall)
+          const el2DX = el.x / pixelsPerFoot;
+          const el2DY = el.y / pixelsPerFoot;
+          const elRot = ((el.rotation || 0) % 360 + 360) % 360;
+          const isRotated = (elRot === 90 || elRot === 270);
+          const effectiveW = isRotated ? el.height : el.width;
+          const effectiveD = isRotated ? el.width : el.height;
+          const wallFlushThreshold = 0.3; // Within 0.3ft of wall = flush
+
+          const flushBack = el2DY < wallFlushThreshold;
+          const flushLeft = el2DX < wallFlushThreshold;
+          const flushRight = (roomWidth - (el2DX + effectiveW)) < wallFlushThreshold;
+          const flushFront = (roomDepth - (el2DY + effectiveD)) < wallFlushThreshold;
+
+          // Slab dimensions - extend to wall where flush (caulked joint)
+          let slabW = w - seamGap;
+          let slabD = d - seamGap;
+          let slabOffsetX = 0;
+          let slabOffsetZ = 0;
+
+          // Push slab flush against walls (simulates caulked joint)
+          if (flushBack) {
+            slabD += seamGap / 2 + 0.005; // Extend back edge to wall
+            slabOffsetZ -= seamGap / 4 + 0.0025;
+          }
+          if (flushLeft) {
+            slabW += seamGap / 2 + 0.005;
+            slabOffsetX -= seamGap / 4 + 0.0025;
+          }
+          if (flushRight) {
+            slabW += seamGap / 2 + 0.005;
+            slabOffsetX += seamGap / 4 + 0.0025;
+          }
+          if (flushFront) {
+            slabD += seamGap / 2 + 0.005;
+            slabOffsetZ += seamGap / 4 + 0.0025;
+          }
 
           const edgeProfile = el.edgeProfile || 'eased';
 
