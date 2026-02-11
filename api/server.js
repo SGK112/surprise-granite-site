@@ -4406,6 +4406,79 @@ app.get('/api/leads/:id/attachments', authenticateJWT, async (req, res) => {
   }
 });
 
+// Upload attachment to a lead
+app.post('/api/leads/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id: leadId } = req.params;
+    const {
+      file_name,
+      file_url,
+      file_type,
+      mime_type,
+      file_size,
+      category = 'general',
+      description,
+      visible_to_customer = false
+    } = req.body;
+
+    if (!file_name || !file_url) {
+      return res.status(400).json({ error: 'File name and URL are required' });
+    }
+
+    // Verify user owns the lead
+    const { data: lead, error: leadError } = await supabase
+      .from('leads')
+      .select('id, user_id')
+      .eq('id', leadId)
+      .single();
+
+    if (leadError || !lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    if (lead.user_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check attachment limit
+    const { count } = await supabase
+      .from('attachments')
+      .select('*', { count: 'exact', head: true })
+      .eq('lead_id', leadId);
+
+    if (count >= 10) {
+      return res.status(400).json({ error: 'Maximum 10 attachments per lead' });
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .insert({
+        user_id: userId,
+        lead_id: leadId,
+        file_name,
+        file_url,
+        file_type,
+        mime_type,
+        file_size,
+        category,
+        description,
+        visible_to_customer,
+        uploaded_by: userId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('Lead attachment uploaded:', { leadId, fileName: file_name });
+    res.json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Upload lead attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Get attachments for an estimate
 app.get('/api/estimates/:id/attachments', authenticateJWT, async (req, res) => {
   try {
@@ -4446,6 +4519,409 @@ app.get('/api/invoices/:id/attachments', authenticateJWT, async (req, res) => {
     res.json({ success: true, attachments: data || [] });
   } catch (error) {
     logger.error('Get invoice attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get attachments for a project (includes collaborator uploads)
+app.get('/api/projects/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    // Verify user is project owner or collaborator
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('id, user_id')
+      .eq('id', id)
+      .single();
+
+    if (projectError || !project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const isOwner = project.user_id === userId;
+
+    // If not owner, check if collaborator
+    if (!isOwner) {
+      const { data: collab } = await supabase
+        .from('project_collaborators')
+        .select('id, access_level')
+        .eq('project_id', id)
+        .eq('user_id', userId)
+        .eq('status', 'accepted')
+        .single();
+
+      if (!collab) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('project_id', id)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Filter for collaborators - they only see visible_to_collaborators = true
+    let attachments = data || [];
+    if (!isOwner) {
+      attachments = attachments.filter(a => a.visible_to_collaborators !== false);
+    }
+
+    res.json({ success: true, attachments });
+  } catch (error) {
+    logger.error('Get project attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Upload attachment to a project
+app.post('/api/projects/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id: projectId } = req.params;
+    const {
+      file_name,
+      file_url,
+      file_type,
+      mime_type,
+      file_size,
+      category = 'general',
+      description,
+      visible_to_customer = false,
+      visible_to_collaborators = true
+    } = req.body;
+
+    if (!file_name || !file_url) {
+      return res.status(400).json({ error: 'File name and URL are required' });
+    }
+
+    // Verify user is project owner or collaborator with write access
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('id, user_id')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError || !project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const isOwner = project.user_id === userId;
+    let collaboratorId = null;
+
+    if (!isOwner) {
+      const { data: collab } = await supabase
+        .from('project_collaborators')
+        .select('id, access_level')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .eq('status', 'accepted')
+        .single();
+
+      if (!collab || !['write', 'admin'].includes(collab.access_level)) {
+        return res.status(403).json({ error: 'Write access required' });
+      }
+      collaboratorId = collab.id;
+    }
+
+    // Check attachment limit (10 per project)
+    const { count } = await supabase
+      .from('attachments')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', projectId);
+
+    if (count >= 10) {
+      return res.status(400).json({ error: 'Maximum 10 attachments per project' });
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .insert({
+        user_id: isOwner ? userId : project.user_id, // Owner ID for RLS
+        project_id: projectId,
+        file_name,
+        file_url,
+        file_type,
+        mime_type,
+        file_size,
+        category,
+        description,
+        visible_to_customer,
+        visible_to_collaborators,
+        uploaded_by: userId,
+        uploaded_by_collaborator: collaboratorId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('Project attachment uploaded:', { projectId, fileName: file_name, byCollaborator: !!collaboratorId });
+    res.json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Upload project attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get attachments for a customer
+app.get('/api/customers/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    // Verify user owns the customer
+    const { data: customer, error: customerError } = await supabase
+      .from('customers')
+      .select('id, user_id')
+      .eq('id', id)
+      .single();
+
+    if (customerError || !customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    if (customer.user_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('customer_id', id)
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, attachments: data || [] });
+  } catch (error) {
+    logger.error('Get customer attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Upload attachment to a customer
+app.post('/api/customers/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id: customerId } = req.params;
+    const {
+      file_name,
+      file_url,
+      file_type,
+      mime_type,
+      file_size,
+      category = 'general',
+      description,
+      visible_to_customer = false
+    } = req.body;
+
+    if (!file_name || !file_url) {
+      return res.status(400).json({ error: 'File name and URL are required' });
+    }
+
+    // Verify user owns the customer
+    const { data: customer, error: customerError } = await supabase
+      .from('customers')
+      .select('id, user_id')
+      .eq('id', customerId)
+      .single();
+
+    if (customerError || !customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    if (customer.user_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check attachment limit
+    const { count } = await supabase
+      .from('attachments')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', customerId);
+
+    if (count >= 10) {
+      return res.status(400).json({ error: 'Maximum 10 attachments per customer' });
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .insert({
+        user_id: userId,
+        customer_id: customerId,
+        file_name,
+        file_url,
+        file_type,
+        mime_type,
+        file_size,
+        category,
+        description,
+        visible_to_customer,
+        uploaded_by: userId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('Customer attachment uploaded:', { customerId, fileName: file_name });
+    res.json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Upload customer attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Send customer portal link via email
+app.post('/api/customers/send-portal-link', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { customer_id, email, name, portal_url } = req.body;
+
+    if (!email || !portal_url) {
+      return res.status(400).json({ error: 'Email and portal URL are required' });
+    }
+
+    // Verify user owns this customer
+    if (customer_id) {
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .select('id, user_id')
+        .eq('id', customer_id)
+        .single();
+
+      if (customerError || !customer || customer.user_id !== userId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    // Get business settings for branding
+    const { data: settings } = await supabase
+      .from('business_settings')
+      .select('company_name, phone, email')
+      .eq('user_id', userId)
+      .single();
+
+    const companyName = settings?.company_name || 'Surprise Granite';
+    const companyPhone = settings?.phone || '(602) 833-3189';
+    const companyEmail = settings?.email || 'info@surprisegranite.com';
+
+    // Send email via nodemailer
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #1a1a2e, #2d2d44); padding: 30px; text-align: center; }
+          .header h1 { color: #f9cb00; margin: 0; font-size: 28px; }
+          .content { padding: 30px; }
+          .btn { display: inline-block; background: #f9cb00; color: #1a1a2e; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; }
+          .footer { background: #f5f5f5; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${companyName}</h1>
+          </div>
+          <div class="content">
+            <p>Hi${name ? ' ' + name : ''},</p>
+            <p>You now have access to your personal customer portal where you can view your estimates, invoices, and project details.</p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${portal_url}" class="btn">Access Your Portal</a>
+            </p>
+            <p style="color: #666; font-size: 14px;">This link is unique to you. Please keep it safe and don't share it with others.</p>
+          </div>
+          <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>${companyPhone} | ${companyEmail}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || process.env.EMAIL_USER,
+        pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      from: `"${companyName}" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Your Customer Portal Access - ${companyName}`,
+      html
+    });
+
+    logger.info('Customer portal link sent:', { customerId: customer_id, email: email.substring(0, 3) + '***' });
+    res.json({ success: true, message: 'Portal link sent successfully' });
+  } catch (error) {
+    logger.error('Send portal link error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Update attachment visibility
+app.patch('/api/attachments/:id/visibility', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { visible_to_customer, visible_to_collaborators } = req.body;
+
+    // First verify ownership
+    const { data: attachment, error: fetchError } = await supabase
+      .from('attachments')
+      .select('*, projects!attachments_project_id_fkey(user_id)')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    // Check if user owns the attachment or the parent project
+    const isOwner = attachment.user_id === userId ||
+      (attachment.projects && attachment.projects.user_id === userId);
+
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Only the owner can change visibility' });
+    }
+
+    const updates = {};
+    if (typeof visible_to_customer === 'boolean') {
+      updates.visible_to_customer = visible_to_customer;
+    }
+    if (typeof visible_to_collaborators === 'boolean') {
+      updates.visible_to_collaborators = visible_to_collaborators;
+    }
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Update attachment visibility error:', error);
     return handleApiError(res, error);
   }
 });

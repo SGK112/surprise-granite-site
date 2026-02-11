@@ -956,4 +956,231 @@ router.post('/workflow-invite', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Send estimate to customer
+ * POST /api/email/send-estimate
+ */
+router.post('/send-estimate', asyncHandler(async (req, res) => {
+  const { to, estimate_url, customer_name, estimate_number, total } = req.body;
+
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  if (!estimate_url) {
+    return res.status(400).json({ error: 'Estimate URL required' });
+  }
+
+  if (!SMTP_USER) {
+    return res.status(500).json({ error: 'Email not configured' });
+  }
+
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #1a1a2e, #2d2d44); padding: 30px; text-align: center; }
+          .header h1 { color: #f9cb00; margin: 0; font-size: 28px; }
+          .content { padding: 30px; }
+          .content p { color: #333; line-height: 1.6; margin-bottom: 20px; }
+          .btn { display: inline-block; background: #f9cb00; color: #1a1a2e; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; }
+          .footer { background: #f5f5f5; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${COMPANY.name}</h1>
+          </div>
+          <div class="content">
+            <p>Hi${customer_name ? ' ' + sanitizeString(customer_name) : ''},</p>
+            <p>Thank you for your interest! We've prepared an estimate for your project${estimate_number ? ' (#' + sanitizeString(estimate_number) + ')' : ''}.</p>
+            ${total ? `<p style="font-size: 24px; font-weight: bold; color: #f9cb00;">Total: $${parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>` : ''}
+            <p>Click below to view your detailed estimate:</p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${estimate_url}" class="btn">View Your Estimate</a>
+            </p>
+            <p style="color: #666; font-size: 14px;">This estimate is valid for 30 days. If you have any questions, please don't hesitate to contact us.</p>
+          </div>
+          <div class="footer">
+            <p><strong>${COMPANY.name}</strong></p>
+            <p>${COMPANY.phone} | ${COMPANY.email}</p>
+            <p>${COMPANY.address}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      to,
+      subject: `Your Estimate from ${COMPANY.name}${estimate_number ? ' - ' + estimate_number : ''}`,
+      html
+    });
+
+    logger.emailSent('send-estimate', true, { to: to.substring(0, 3) + '***' });
+    res.json({ success: true, message: 'Estimate sent successfully' });
+
+  } catch (err) {
+    logger.apiError(err, { context: 'Send estimate email failed' });
+    res.status(500).json({ error: 'Failed to send estimate: ' + err.message });
+  }
+}));
+
+/**
+ * Send invoice to customer
+ * POST /api/email/send-invoice
+ */
+router.post('/send-invoice', asyncHandler(async (req, res) => {
+  const { to, invoice_url, customer_name, invoice_number, total, due_date } = req.body;
+
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  if (!invoice_url) {
+    return res.status(400).json({ error: 'Invoice URL required' });
+  }
+
+  if (!SMTP_USER) {
+    return res.status(500).json({ error: 'Email not configured' });
+  }
+
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #1a1a2e, #2d2d44); padding: 30px; text-align: center; }
+          .header h1 { color: #f9cb00; margin: 0; font-size: 28px; }
+          .content { padding: 30px; }
+          .content p { color: #333; line-height: 1.6; margin-bottom: 20px; }
+          .btn { display: inline-block; background: #f9cb00; color: #1a1a2e; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; }
+          .footer { background: #f5f5f5; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+          .amount-box { background: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${COMPANY.name}</h1>
+          </div>
+          <div class="content">
+            <p>Hi${customer_name ? ' ' + sanitizeString(customer_name) : ''},</p>
+            <p>Please find your invoice${invoice_number ? ' (#' + sanitizeString(invoice_number) + ')' : ''} attached below.</p>
+            <div class="amount-box">
+              ${total ? `<p style="font-size: 14px; color: #666; margin: 0;">Amount Due</p><p style="font-size: 32px; font-weight: bold; color: #1a1a2e; margin: 10px 0;">$${parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>` : ''}
+              ${due_date ? `<p style="font-size: 14px; color: #666; margin: 0;">Due by ${new Date(due_date).toLocaleDateString()}</p>` : ''}
+            </div>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${invoice_url}" class="btn">View & Pay Invoice</a>
+            </p>
+            <p style="color: #666; font-size: 14px;">If you have any questions about this invoice, please contact us.</p>
+          </div>
+          <div class="footer">
+            <p><strong>${COMPANY.name}</strong></p>
+            <p>${COMPANY.phone} | ${COMPANY.email}</p>
+            <p>${COMPANY.address}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      to,
+      subject: `Invoice from ${COMPANY.name}${invoice_number ? ' - ' + invoice_number : ''}`,
+      html
+    });
+
+    logger.emailSent('send-invoice', true, { to: to.substring(0, 3) + '***' });
+    res.json({ success: true, message: 'Invoice sent successfully' });
+
+  } catch (err) {
+    logger.apiError(err, { context: 'Send invoice email failed' });
+    res.status(500).json({ error: 'Failed to send invoice: ' + err.message });
+  }
+}));
+
+/**
+ * Send invoice payment reminder
+ * POST /api/email/send-invoice-reminder
+ */
+router.post('/send-invoice-reminder', asyncHandler(async (req, res) => {
+  const { to, invoice_url, customer_name, invoice_number, total, days_overdue } = req.body;
+
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  if (!SMTP_USER) {
+    return res.status(500).json({ error: 'Email not configured' });
+  }
+
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #dc2626, #b91c1c); padding: 30px; text-align: center; }
+          .header h1 { color: #fff; margin: 0; font-size: 24px; }
+          .content { padding: 30px; }
+          .content p { color: #333; line-height: 1.6; margin-bottom: 20px; }
+          .btn { display: inline-block; background: #dc2626; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; }
+          .footer { background: #f5f5f5; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Payment Reminder</h1>
+          </div>
+          <div class="content">
+            <p>Hi${customer_name ? ' ' + sanitizeString(customer_name) : ''},</p>
+            <p>This is a friendly reminder that your invoice${invoice_number ? ' (#' + sanitizeString(invoice_number) + ')' : ''} is ${days_overdue ? days_overdue + ' days ' : ''}overdue.</p>
+            ${total ? `<p style="font-size: 24px; font-weight: bold; color: #dc2626;">Amount Due: $${parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>` : ''}
+            <p>Please make your payment at your earliest convenience to avoid any late fees.</p>
+            ${invoice_url ? `<p style="text-align: center; margin: 30px 0;"><a href="${invoice_url}" class="btn">Pay Now</a></p>` : ''}
+            <p style="color: #666; font-size: 14px;">If you've already made this payment, please disregard this reminder. Contact us if you have any questions.</p>
+          </div>
+          <div class="footer">
+            <p><strong>${COMPANY.name}</strong></p>
+            <p>${COMPANY.phone} | ${COMPANY.email}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      to,
+      subject: `Payment Reminder - Invoice${invoice_number ? ' ' + invoice_number : ''} Overdue`,
+      html
+    });
+
+    logger.emailSent('send-invoice-reminder', true, { to: to.substring(0, 3) + '***' });
+    res.json({ success: true, message: 'Reminder sent successfully' });
+
+  } catch (err) {
+    logger.apiError(err, { context: 'Send invoice reminder failed' });
+    res.status(500).json({ error: 'Failed to send reminder: ' + err.message });
+  }
+}));
+
 module.exports = router;

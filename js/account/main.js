@@ -12461,7 +12461,7 @@
       }
     }
 
-    // Preview invoice before sending
+    // Preview invoice using the professional template
     async function previewInvoice() {
       const formData = getInvoiceFormData();
       console.log('[Invoices] previewInvoice formData:', formData);
@@ -12475,10 +12475,216 @@
         return;
       }
 
+      const btn = document.getElementById('invoice-preview-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Generating Preview...';
+      }
+
+      try {
+        // Get user
+        let user = currentUser;
+        if (!user) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          user = session?.user;
+        }
+        if (!user) throw new Error('Not authenticated');
+
+        const total = formData.items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
+
+        // Generate invoice number
+        const invoicePrefix = businessSettings?.invoice_prefix || 'INV-';
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
+
+        // Save as draft first
+        const invoiceData = {
+          user_id: user.id,
+          invoice_number: invoiceNumber,
+          customer_name: formData.customerName || 'Customer',
+          customer_email: formData.customerEmail,
+          customer_phone: formData.customerPhone || null,
+          total: total,
+          subtotal: total,
+          amount_paid: 0,
+          status: 'draft',
+          notes: formData.notes || null,
+          due_date: new Date(Date.now() + formData.dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        };
+
+        if (formData.customerId) invoiceData.customer_id = formData.customerId;
+
+        // Handle deposits
+        if (formData.depositEnabled && formData.depositAmount > 0) {
+          invoiceData.deposit_requested = formData.depositAmount;
+          invoiceData.deposit_percent = formData.depositPercent || null;
+        }
+        if (formData.depositAlreadyReceived && formData.depositReceivedAmount > 0) {
+          invoiceData.deposit_paid = formData.depositReceivedAmount;
+          invoiceData.deposit_paid_at = new Date().toISOString();
+          invoiceData.amount_paid = formData.depositReceivedAmount;
+        }
+
+        const { data: invoice, error } = await supabaseClient
+          .from('invoices')
+          .insert(invoiceData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Save line items
+        if (formData.items.length > 0) {
+          const invoiceItems = formData.items.map(item => ({
+            invoice_id: invoice.id,
+            description: item.description,
+            name: item.description,
+            quantity: item.quantity,
+            unit_price: item.amount,
+            total: item.quantity * item.amount
+          }));
+          await supabaseClient.from('invoice_items').insert(invoiceItems);
+        }
+
+        // Generate token for preview
+        const token = crypto.randomUUID();
+        await supabaseClient.from('invoice_tokens').insert([{
+          invoice_id: invoice.id,
+          token: token,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: user.id
+        }]);
+
+        // Store invoice ID for sending later
+        window._pendingInvoiceId = invoice.id;
+        window._pendingInvoiceToken = token;
+
+        // Show preview modal with iframe
+        showInvoiceTemplatePreview(token, formData.customerEmail);
+
+      } catch (err) {
+        console.error('[Invoices] Preview error:', err);
+        showToast('Error generating preview: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        }
+      }
+    }
+
+    // Show the professional template in a preview modal
+    function showInvoiceTemplatePreview(token, customerEmail) {
+      const previewUrl = `/invoice/view/?token=${token}`;
+
+      const previewHtml = `
+        <div style="display: flex; flex-direction: column; height: 90vh; max-height: 800px;">
+          <div style="padding: 16px; background: var(--dark-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0; color: var(--gold-primary);">Invoice Preview</h3>
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 13px;">This is exactly how your customer will see the invoice</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-modern secondary" onclick="window.open('${previewUrl}', '_blank')" title="Open in new tab">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                Open Full
+              </button>
+              <button class="btn-modern secondary" onclick="window.open('${previewUrl}&print=true', '_blank')" title="Print or save as PDF">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+                Print/PDF
+              </button>
+            </div>
+          </div>
+          <div style="flex: 1; overflow: hidden; background: #1a1a2e;">
+            <iframe src="${previewUrl}" style="width: 100%; height: 100%; border: none;"></iframe>
+          </div>
+          <div style="padding: 16px; background: var(--dark-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: var(--text-secondary); font-size: 13px;">
+              Will be sent to: <strong>${customerEmail}</strong>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-modern secondary" id="preview-edit-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
+              <button class="btn-modern primary" id="preview-send-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                Send Invoice
+              </button>
+            </div>
+          </div>
+        </div>`;
+
+      // Remove old preview modal
+      let oldModal = document.getElementById('invoice-preview-modal');
+      if (oldModal) oldModal.remove();
+
+      // Create new preview modal
+      const previewModal = document.createElement('div');
+      previewModal.id = 'invoice-preview-modal';
+      previewModal.className = 'modal-overlay active';
+      previewModal.innerHTML = `<div class="modal" style="max-width: 900px; padding: 0; overflow: hidden;">${previewHtml}</div>`;
+      previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) previewModal.classList.remove('active');
+      });
+      document.body.appendChild(previewModal);
+
+      // Attach button handlers
+      document.getElementById('preview-edit-btn').onclick = () => {
+        previewModal.classList.remove('active');
+        // Delete the draft invoice since user wants to edit
+        if (window._pendingInvoiceId) {
+          supabaseClient.from('invoices').delete().eq('id', window._pendingInvoiceId);
+          supabaseClient.from('invoice_tokens').delete().eq('invoice_id', window._pendingInvoiceId);
+          window._pendingInvoiceId = null;
+          window._pendingInvoiceToken = null;
+        }
+      };
+
+      document.getElementById('preview-send-btn').onclick = async () => {
+        const sendBtn = document.getElementById('preview-send-btn');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+
+        try {
+          // Update status to sent
+          await supabaseClient
+            .from('invoices')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', window._pendingInvoiceId);
+
+          // Send email notification
+          const viewUrl = `${window.location.origin}/invoice/view/?token=${window._pendingInvoiceToken}`;
+          await apiCall('/api/email/send-invoice', {
+            method: 'POST',
+            body: JSON.stringify({
+              to: customerEmail,
+              invoice_url: viewUrl
+            })
+          });
+
+          showToast('Invoice sent successfully!', 'success');
+          previewModal.classList.remove('active');
+          closeInvoiceModal();
+          loadInvoices();
+
+          window._pendingInvoiceId = null;
+          window._pendingInvoiceToken = null;
+
+        } catch (err) {
+          console.error('[Invoices] Send error:', err);
+          showToast('Error sending invoice: ' + err.message, 'error');
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Send Invoice';
+        }
+      };
+    }
+
+    // Legacy preview function - keeping for backward compatibility
+    function showLegacyInvoicePreview(formData) {
       const total = formData.items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
       const dueDate = new Date(Date.now() + formData.dueDays * 24 * 60 * 60 * 1000);
-
-      // Build CC list for display
       const ccList = [];
       if (formData.ccMe && userProfile?.email) ccList.push(userProfile.email);
       if (formData.ccOther) ccList.push(formData.ccOther);
@@ -13014,18 +13220,15 @@
         }
 
         // Send via email API
-        const response = await apiCall('/api/send-invoice-email', {
+        const response = await apiCall('/api/email/send-invoice', {
           method: 'POST',
           body: JSON.stringify({
-            customer_email: invoice.customer_email,
+            to: invoice.customer_email,
             customer_name: invoice.customer_name,
             invoice_number: invoice.invoice_number,
-            items: invoice.invoice_items,
-            subtotal: invoice.subtotal,
-            tax_amount: invoice.tax_amount,
             total: invoice.total,
             due_date: invoice.due_date,
-            notes: invoice.notes
+            invoice_url: `${window.location.origin}/invoice/view/?token=${invoice.token || ''}`
           })
         });
 
@@ -13099,15 +13302,14 @@
             return;
           }
 
-          const response = await apiCall('/api/send-invoice-reminder', {
+          const response = await apiCall('/api/email/send-invoice-reminder', {
             method: 'POST',
             body: JSON.stringify({
-              customer_email: invoice.customer_email,
+              to: invoice.customer_email,
               customer_name: invoice.customer_name,
               invoice_number: invoice.invoice_number,
-              amount_due: invoice.amount_due || invoice.total,
-              due_date: invoice.due_date,
-              payment_url: invoice.stripe_hosted_url || null
+              total: invoice.amount_due || invoice.total,
+              invoice_url: invoice.stripe_hosted_url || `${window.location.origin}/invoice/view/?token=${invoice.token || ''}`
             })
           });
 
@@ -16749,24 +16951,21 @@
       }
     }
 
-    function previewEstimate() {
-      // Collect all form data and generate a preview
-      const customerName = document.getElementById('estimate-customer-name').value.trim() || 'Customer Name';
-      const projectName = document.getElementById('estimate-project-name').value.trim() || 'Project';
+    // Preview estimate using the professional template
+    async function previewEstimate() {
+      const customerName = document.getElementById('estimate-customer-name').value.trim();
+      const customerEmail = document.getElementById('estimate-customer-email').value.trim();
+      const customerPhone = document.getElementById('estimate-customer-phone').value.trim();
+      const customerAddress = document.getElementById('estimate-customer-address').value.trim();
+      const customerCity = document.getElementById('estimate-customer-city').value.trim();
+      const projectName = document.getElementById('estimate-project-name').value.trim();
       const estimateNumber = document.getElementById('estimate-number-display').textContent;
-      const estimateDate = document.getElementById('estimate-date-display').textContent;
 
-      // Get business settings for branding
-      const companyName = businessSettings?.company_name || 'Your Company Name';
-      const companyPhone = businessSettings?.phone || '';
-      const companyEmail = businessSettings?.email || '';
-      const companyWebsite = businessSettings?.website || '';
-      const companyLogo = businessSettings?.logo_url || '';
-      const companyAddress = [
-        businessSettings?.address,
-        [businessSettings?.city, businessSettings?.state, businessSettings?.zip].filter(Boolean).join(', ')
-      ].filter(Boolean).join(', ');
-      const companyContact = [companyPhone, companyEmail].filter(Boolean).join(' | ');
+      // Validation
+      if (!customerEmail) {
+        showToast('Please enter customer email', 'warning');
+        return;
+      }
 
       // Collect line items
       const lineItems = [];
@@ -16784,127 +16983,217 @@
         }
       });
 
-      // Get totals
-      const subtotal = document.getElementById('estimate-subtotal').textContent;
-      const taxAmount = document.getElementById('estimate-tax-amount').textContent;
-      const discountAmount = document.getElementById('estimate-discount-amount').textContent;
-      const total = document.getElementById('estimate-total').textContent;
-      const depositAmount = document.getElementById('estimate-deposit-amount').textContent;
+      if (lineItems.length === 0) {
+        showToast('Please add at least one line item', 'warning');
+        return;
+      }
 
-      // Generate preview HTML
+      const btn = document.querySelector('#create-estimate-modal .btn-modern.primary');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Generating Preview...';
+      }
+
+      try {
+        // Get user
+        let user = currentUser;
+        if (!user) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          user = session?.user;
+        }
+        if (!user) throw new Error('Not authenticated');
+
+        // Calculate totals
+        const subtotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        const taxRate = parseFloat(document.getElementById('estimate-tax-rate').value) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const discountVal = parseFloat(document.getElementById('estimate-discount-value').value) || 0;
+        const discountType = document.getElementById('estimate-discount-type').value;
+        const discount = discountType === 'percent' ? subtotal * (discountVal / 100) : discountVal;
+        const total = subtotal + taxAmount - discount;
+        const depositPercent = parseFloat(document.getElementById('estimate-deposit-percent').value) || 0;
+        const depositAmount = total * (depositPercent / 100);
+
+        // Get additional fields
+        const validDays = parseInt(document.getElementById('estimate-valid-days').value) || 30;
+        const paymentSchedule = document.getElementById('payment-schedule-type').value || 'deposit-balance';
+        const projectType = document.getElementById('estimate-project-type')?.value || 'countertops';
+        const notes = document.getElementById('estimate-notes').value.trim();
+        const terms = document.getElementById('estimate-terms').value.trim();
+        const warranty = document.getElementById('estimate-warranty').value.trim();
+
+        // Save as draft first
+        const estimateData = {
+          user_id: user.id,
+          estimate_number: estimateNumber,
+          customer_name: customerName || 'Customer',
+          customer_email: customerEmail,
+          customer_phone: customerPhone || null,
+          customer_address: [customerAddress, customerCity].filter(Boolean).join(', ') || null,
+          title: projectName || 'Project Estimate',
+          description: notes || null,
+          line_items: lineItems,
+          subtotal: subtotal,
+          tax_rate: taxRate,
+          tax_amount: taxAmount,
+          discount: discount,
+          total: total,
+          status: 'draft',
+          valid_until: new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString(),
+          deposit_percent: depositPercent,
+          deposit_amount: depositAmount,
+          payment_schedule_type: paymentSchedule,
+          project_type: projectType,
+          terms_conditions: terms || null,
+          warranty_terms: warranty || null
+        };
+
+        // Check for linked customer
+        const modal = document.getElementById('create-estimate-modal');
+        if (modal?.dataset.customerId) {
+          estimateData.customer_id = modal.dataset.customerId;
+        }
+
+        const { data: estimate, error } = await supabaseClient
+          .from('estimates')
+          .insert(estimateData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Generate token for preview
+        const token = crypto.randomUUID();
+        await supabaseClient.from('estimate_tokens').insert([{
+          estimate_id: estimate.id,
+          token: token,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: user.id
+        }]);
+
+        // Store estimate ID for sending later
+        window._pendingEstimateId = estimate.id;
+        window._pendingEstimateToken = token;
+
+        // Show preview modal with iframe
+        showEstimateTemplatePreview(token, customerEmail);
+
+      } catch (err) {
+        console.error('[Estimates] Preview error:', err);
+        showToast('Error generating preview: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        }
+      }
+    }
+
+    // Show the professional estimate template in a preview modal
+    function showEstimateTemplatePreview(token, customerEmail) {
+      const previewUrl = `/estimate/view/?token=${token}`;
+
       const previewHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Estimate Preview - ${estimateNumber}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-            .estimate-preview { max-width: 800px; margin: 0 auto; background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
-            .header { background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: #fff; padding: 30px; display: flex; justify-content: space-between; align-items: center; }
-            .header h1 { font-size: 28px; color: #f9cb00; }
-            .header .est-number { font-size: 14px; color: #aaa; }
-            .header .est-number strong { color: #f9cb00; }
-            .customer-section { padding: 20px 30px; border-bottom: 1px solid #eee; }
-            .customer-section h3 { font-size: 12px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
-            .customer-section p { font-size: 15px; line-height: 1.6; }
-            .items-section { padding: 20px 30px; }
-            .items-section h3 { font-size: 14px; margin-bottom: 15px; color: #333; }
-            .items-table { width: 100%; border-collapse: collapse; }
-            .items-table th { background: #f5f5f5; padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #666; }
-            .items-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
-            .items-table .category-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-            .totals-section { padding: 20px 30px; background: #f9f9f9; }
-            .totals-row { display: flex; justify-content: space-between; padding: 8px 0; }
-            .totals-row.total { font-size: 20px; font-weight: bold; border-top: 2px solid #f9cb00; padding-top: 15px; margin-top: 10px; }
-            .deposit-box { background: linear-gradient(135deg, rgba(249,203,0,0.1), rgba(249,203,0,0.05)); border: 1px solid rgba(249,203,0,0.3); padding: 15px 20px; border-radius: 8px; margin-top: 15px; }
-            .footer { padding: 20px 30px; background: #1a1a1a; color: #888; font-size: 12px; text-align: center; }
-            .preview-banner { background: #f9cb00; color: #1a1a1a; padding: 10px; text-align: center; font-weight: bold; }
-            @media print { .preview-banner { display: none; } body { padding: 0; } .estimate-preview { box-shadow: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="preview-banner">PREVIEW - This is how your estimate will appear to the customer</div>
-          <div class="estimate-preview">
-            <div class="header">
-              <div style="display: flex; align-items: center; gap: 20px;">
-                ${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="height: 60px; width: auto; max-width: 120px; object-fit: contain; border-radius: 8px;">` : `<div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f9cb00, #cca600); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; color: #1a1a1a;">${companyName.substring(0,2).toUpperCase()}</div>`}
-                <div>
-                  <div style="font-size: 22px; font-weight: 700;">${companyName}</div>
-                  ${companyAddress ? `<div style="font-size: 12px; color: #aaa; margin-top: 4px;">${companyAddress}</div>` : ''}
-                  ${companyContact ? `<div style="font-size: 12px; color: #aaa;">${companyContact}</div>` : ''}
-                </div>
-              </div>
-              <div style="text-align: right;">
-                <h1 style="font-size: 28px; color: #f9cb00; margin: 0;">ESTIMATE</h1>
-                <div class="est-number" style="margin-top: 8px;">Estimate #: <strong>${estimateNumber}</strong></div>
-                <div style="font-size: 12px; color: #888;">Date: ${estimateDate}</div>
-              </div>
+        <div style="display: flex; flex-direction: column; height: 90vh; max-height: 800px;">
+          <div style="padding: 16px; background: var(--dark-elevated); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0; color: var(--gold-primary);">Estimate Preview</h3>
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 13px;">This is exactly how your customer will see the estimate</p>
             </div>
-
-            <div class="customer-section">
-              <h3>Prepared For</h3>
-              <p><strong>${customerName}</strong></p>
-              <p>${document.getElementById('estimate-customer-address').value || ''} ${document.getElementById('estimate-customer-city').value || ''}</p>
-              <p style="margin-top: 10px;"><strong>Project:</strong> ${projectName}</p>
-            </div>
-
-            <div class="items-section">
-              <h3>Items & Services</h3>
-              <table class="items-table">
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th>Unit</th>
-                    <th style="text-align:center;">Qty</th>
-                    <th style="text-align:right;">Price</th>
-                    <th style="text-align:right;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${lineItems.map(item => {
-                    const colors = { material: '#3b82f6', labor: '#22c55e', service: '#a855f7', other: '#6b7280' };
-                    return `<tr>
-                      <td><span class="category-dot" style="background:${colors[item.category] || '#6b7280'}"></span>${item.name}${item.description ? '<br><small style="color:#888">' + item.description + '</small>' : ''}</td>
-                      <td>${item.unit}</td>
-                      <td style="text-align:center;">${item.quantity}</td>
-                      <td style="text-align:right;">$${item.unit_price.toFixed(2)}</td>
-                      <td style="text-align:right;">$${(item.quantity * item.unit_price).toFixed(2)}</td>
-                    </tr>`;
-                  }).join('')}
-                  ${lineItems.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">No items added</td></tr>' : ''}
-                </tbody>
-              </table>
-            </div>
-
-            <div class="totals-section">
-              <div class="totals-row"><span>Subtotal</span><span>${subtotal}</span></div>
-              <div class="totals-row"><span>Tax</span><span>${taxAmount}</span></div>
-              <div class="totals-row"><span>Discount</span><span>${discountAmount}</span></div>
-              <div class="totals-row total"><span>TOTAL</span><span style="color:#f9cb00;">${total}</span></div>
-              <div class="deposit-box">
-                <div style="display:flex;justify-content:space-between;"><span><strong>Deposit Required</strong></span><span style="font-size:18px;font-weight:bold;color:#f9cb00;">${depositAmount}</span></div>
-                <div style="font-size:12px;color:#666;margin-top:5px;">Due upon approval to begin project</div>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Thank you for choosing <strong>${companyName}</strong>!</p>
-              ${companyWebsite ? `<p style="margin-top: 5px;">${companyWebsite}</p>` : ''}
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-modern secondary" onclick="window.open('${previewUrl}', '_blank')" title="Open in new tab">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                Open Full
+              </button>
+              <button class="btn-modern secondary" onclick="window.open('${previewUrl}&print=true', '_blank')" title="Print or save as PDF">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
+                Print/PDF
+              </button>
             </div>
           </div>
-          <div style="text-align:center;margin-top:20px;">
-            <button onclick="window.print()" style="padding:10px 20px;background:#f9cb00;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Print Preview</button>
-            <button onclick="window.close()" style="padding:10px 20px;background:#333;color:#fff;border:none;border-radius:5px;cursor:pointer;margin-left:10px;">Close</button>
+          <div style="flex: 1; overflow: hidden; background: #1a1a2e;">
+            <iframe src="${previewUrl}" style="width: 100%; height: 100%; border: none;"></iframe>
           </div>
-        </body>
-        </html>
-      `;
+          <div style="padding: 16px; background: var(--dark-elevated); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: var(--text-secondary); font-size: 13px;">
+              Will be sent to: <strong>${customerEmail}</strong>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-modern secondary" id="estimate-preview-edit-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
+              <button class="btn-modern primary" id="estimate-preview-send-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                Send Estimate
+              </button>
+            </div>
+          </div>
+        </div>`;
 
-      // Open in new window
-      const previewWindow = window.open('', '_blank', 'width=900,height=700');
-      previewWindow.document.write(previewHtml);
-      previewWindow.document.close();
+      // Remove old preview modal
+      let oldModal = document.getElementById('estimate-preview-modal');
+      if (oldModal) oldModal.remove();
+
+      // Create new preview modal
+      const previewModal = document.createElement('div');
+      previewModal.id = 'estimate-preview-modal';
+      previewModal.className = 'modal-overlay active';
+      previewModal.innerHTML = `<div class="modal" style="max-width: 900px; padding: 0; overflow: hidden;">${previewHtml}</div>`;
+      previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) previewModal.classList.remove('active');
+      });
+      document.body.appendChild(previewModal);
+
+      // Attach button handlers
+      document.getElementById('estimate-preview-edit-btn').onclick = () => {
+        previewModal.classList.remove('active');
+        // Delete the draft estimate since user wants to edit
+        if (window._pendingEstimateId) {
+          supabaseClient.from('estimates').delete().eq('id', window._pendingEstimateId);
+          supabaseClient.from('estimate_tokens').delete().eq('estimate_id', window._pendingEstimateId);
+          window._pendingEstimateId = null;
+          window._pendingEstimateToken = null;
+        }
+      };
+
+      document.getElementById('estimate-preview-send-btn').onclick = async () => {
+        const sendBtn = document.getElementById('estimate-preview-send-btn');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+
+        try {
+          // Update status to sent
+          await supabaseClient
+            .from('estimates')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', window._pendingEstimateId);
+
+          // Send email notification
+          const viewUrl = `${window.location.origin}/estimate/view/?token=${window._pendingEstimateToken}`;
+          await apiCall('/api/email/send-estimate', {
+            method: 'POST',
+            body: JSON.stringify({
+              to: customerEmail,
+              estimate_url: viewUrl
+            })
+          });
+
+          showToast('Estimate sent successfully!', 'success');
+          previewModal.classList.remove('active');
+          closeCreateEstimateModal();
+          loadEstimates();
+
+          window._pendingEstimateId = null;
+          window._pendingEstimateToken = null;
+
+        } catch (err) {
+          console.error('[Estimates] Send error:', err);
+          showToast('Error sending estimate: ' + err.message, 'error');
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Send Estimate';
+        }
+      };
     }
 
     function closeCreateEstimateModal() {
@@ -19510,6 +19799,24 @@
               }).join('') + '</div>' : ''}
           </div>
 
+          <!-- Documents & Files Section -->
+          <div id="project-documents-section" style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="none" stroke="var(--gold-primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Documents & Files</span>
+                <span id="project-docs-count" style="font-size: 10px; background: var(--gold-primary); color: #1a1a2e; padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+              </div>
+              <button class="btn-modern primary" style="font-size: 11px; padding: 4px 10px;" onclick="uploadProjectDocument('${project.id}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 2px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                Upload
+              </button>
+            </div>
+            <div id="project-documents-list" data-project-id="${project.id}" style="min-height: 40px;">
+              <div style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 12px;">Loading documents...</div>
+            </div>
+          </div>
+
           ${project.description ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
             <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.description)}</div>
@@ -19616,11 +19923,12 @@
           </div>
         `;
 
-        // Load team members, design handoffs, comments and collaborator listings for this project
+        // Load team members, design handoffs, comments, documents and collaborator listings for this project
         loadProjectTeam(projectId);
         loadProjectHandoffs(projectId);
         loadProjectComments(projectId);
         loadCollaboratorListings(projectId);
+        loadProjectDocuments(projectId);
 
       } catch (err) {
         console.error('Error loading project detail:', err);
@@ -20219,6 +20527,169 @@
       } catch (err) {
         console.error('Error removing team member:', err);
         showToast('Failed to remove team member', 'error');
+      }
+    }
+
+    // Load project documents
+    async function loadProjectDocuments(projectId) {
+      const listEl = document.getElementById('project-documents-list');
+      const countEl = document.getElementById('project-docs-count');
+      if (!listEl) return;
+
+      try {
+        const response = await apiCall(`${API_BASE}/api/projects/${projectId}/attachments`);
+        const attachments = response.attachments || [];
+
+        if (countEl) countEl.textContent = attachments.length;
+
+        if (!attachments || attachments.length === 0) {
+          listEl.innerHTML = `
+            <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity: 0.5; margin-bottom: 8px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              <div style="font-size: 12px;">No documents yet</div>
+              <div style="font-size: 11px; margin-top: 4px;">Upload photos, contracts, or receipts</div>
+            </div>
+          `;
+          return;
+        }
+
+        listEl.innerHTML = attachments.map(att => {
+          const isImage = att.mime_type?.startsWith('image/');
+          const isPdf = att.mime_type === 'application/pdf';
+          const categoryColors = {
+            project_photo: '#3b82f6',
+            contract: '#10b981',
+            receipt: '#f59e0b',
+            drawing: '#8b5cf6',
+            material: '#ec4899',
+            before: '#6366f1',
+            after: '#22c55e',
+            general: '#6b7280'
+          };
+          const categoryColor = categoryColors[att.category] || '#6b7280';
+          const categoryLabel = (att.category || 'general').replace(/_/g, ' ');
+          const isCollaboratorUpload = att.uploaded_by_collaborator || att.collaborator_email;
+          const visibilityBadge = att.visible_to_customer ?
+            '<span title="Visible to customer" style="color: #10b981; margin-left: 4px;">&#128065;</span>' : '';
+          const collabBadge = isCollaboratorUpload ?
+            '<span style="font-size: 10px; background: #8b5cf620; color: #8b5cf6; padding: 2px 5px; border-radius: 4px; margin-left: 4px;">Contractor</span>' : '';
+
+          return `
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--dark-border);">
+              <div style="width: 40px; height: 40px; border-radius: 6px; background: ${isImage ? `url(${att.file_url}) center/cover` : `${categoryColor}15`}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                ${!isImage ? `<svg width="18" height="18" fill="none" stroke="${categoryColor}" stroke-width="2" viewBox="0 0 24 24"><path d="${isPdf ? 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6' : '21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48'}"/></svg>` : ''}
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(att.file_name)}${visibilityBadge}${collabBadge}</div>
+                <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                  <span style="font-size: 10px; background: ${categoryColor}20; color: ${categoryColor}; padding: 2px 5px; border-radius: 4px; text-transform: uppercase;">${categoryLabel}</span>
+                  <span style="font-size: 10px; color: var(--text-muted);">${att.file_size ? formatFileSize(att.file_size) : ''}</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 4px;">
+                <button onclick="window.open('${att.file_url}', '_blank')" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px;" title="View">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                </button>
+                <button onclick="deleteProjectDocument('${att.id}', '${projectId}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px;" title="Delete">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading project documents:', err);
+        listEl.innerHTML = '<div style="text-align: center; padding: 8px; color: var(--error); font-size: 12px;">Failed to load documents</div>';
+      }
+    }
+
+    // Upload document to project
+    async function uploadProjectDocument(projectId) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp,image/heic,application/pdf';
+      input.multiple = true;
+
+      input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        showToast('Uploading files...', 'info');
+
+        try {
+          let user = currentUser;
+          if (!user) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            user = session?.user;
+          }
+          if (!user) throw new Error('Not authenticated');
+
+          for (const file of files) {
+            if (file.size > 25 * 1024 * 1024) {
+              showToast(`${file.name} exceeds 25MB limit`, 'error');
+              continue;
+            }
+
+            // Upload to Supabase Storage
+            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            const filePath = `${user.id}/projects/${projectId}/${fileName}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+              .from('document-attachments')
+              .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) {
+              console.error('Upload error:', uploadError);
+              showToast(`Failed to upload ${file.name}`, 'error');
+              continue;
+            }
+
+            const { data: { publicUrl } } = supabaseClient.storage
+              .from('document-attachments')
+              .getPublicUrl(filePath);
+
+            let category = 'general';
+            if (file.type.startsWith('image/')) category = 'project_photo';
+            else if (file.type === 'application/pdf') category = 'contract';
+
+            await apiCall(`${API_BASE}/api/projects/${projectId}/attachments`, {
+              method: 'POST',
+              body: JSON.stringify({
+                file_name: file.name,
+                file_url: publicUrl,
+                file_type: file.name.split('.').pop().toLowerCase(),
+                mime_type: file.type,
+                file_size: file.size,
+                category: category,
+                visible_to_customer: false,
+                visible_to_collaborators: true
+              })
+            });
+          }
+
+          showToast('Files uploaded successfully!', 'success');
+          loadProjectDocuments(projectId);
+        } catch (err) {
+          console.error('Upload project document error:', err);
+          showToast('Error uploading files: ' + err.message, 'error');
+        }
+      };
+
+      input.click();
+    }
+
+    // Delete project document
+    async function deleteProjectDocument(attachmentId, projectId) {
+      if (!confirm('Delete this file? This cannot be undone.')) return;
+
+      try {
+        await apiCall(`${API_BASE}/api/attachments/${attachmentId}`, { method: 'DELETE' });
+        showToast('File deleted', 'success');
+        loadProjectDocuments(projectId);
+      } catch (err) {
+        console.error('Delete project document error:', err);
+        showToast('Error deleting file', 'error');
       }
     }
 
@@ -24904,6 +25375,8 @@
           loadProfileEstimates(currentProfileData);
         } else if (tabName === 'invoices') {
           loadProfileInvoices(currentProfileData);
+        } else if (tabName === 'attachments') {
+          loadProfileAttachments(currentProfileData);
         }
       }
     }
@@ -25039,6 +25512,248 @@
       } catch (err) {
         console.error('Load profile invoices error:', err);
         container.innerHTML = `<div style="color: var(--error); padding: 20px; text-align: center;">Error loading invoices</div>`;
+      }
+    }
+
+    // Load attachments for profile panel
+    async function loadProfileAttachments(entity) {
+      const container = document.getElementById('profile-attachments-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
+
+      try {
+        const entityId = entity.id;
+        const entityType = currentProfileType; // 'lead' or 'customer'
+
+        // Determine which endpoint to use
+        let endpoint;
+        if (entityType === 'lead') {
+          endpoint = `${API_BASE}/api/leads/${entityId}/attachments`;
+        } else if (entityType === 'customer') {
+          endpoint = `${API_BASE}/api/customers/${entityId}/attachments`;
+        } else {
+          endpoint = `${API_BASE}/api/projects/${entityId}/attachments`;
+        }
+
+        const response = await apiCall(endpoint);
+        const attachments = response.attachments || [];
+
+        // Update badge
+        const count = attachments.length;
+        const badge = document.getElementById('tab-badge-files');
+        if (badge) badge.textContent = count;
+
+        if (attachments.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Files Attached</div>
+              <div style="font-size: 13px;">Upload photos, contracts, or other documents</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = attachments.map(att => {
+          const isImage = att.mime_type?.startsWith('image/');
+          const isPdf = att.mime_type === 'application/pdf';
+          const categoryColors = {
+            project_photo: '#3b82f6',
+            contract: '#10b981',
+            receipt: '#f59e0b',
+            drawing: '#8b5cf6',
+            material: '#ec4899',
+            before: '#6366f1',
+            after: '#22c55e',
+            general: '#6b7280'
+          };
+          const categoryColor = categoryColors[att.category] || '#6b7280';
+          const categoryLabel = (att.category || 'general').replace(/_/g, ' ');
+          const fileSize = att.file_size ? formatFileSize(att.file_size) : '';
+          const uploadDate = att.uploaded_at ? new Date(att.uploaded_at).toLocaleDateString() : '';
+          const visibilityIcon = att.visible_to_customer ?
+            '<span title="Visible to customer" style="color: #10b981;">&#128065;</span>' :
+            '<span title="Internal only" style="color: #6b7280;">&#128274;</span>';
+
+          return `
+            <div class="attachment-item" style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; gap: 12px; align-items: center;">
+              <div style="width: 48px; height: 48px; border-radius: 8px; background: ${isImage ? `url(${att.file_url}) center/cover` : `linear-gradient(135deg, ${categoryColor}20, ${categoryColor}10)`}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                ${!isImage ? `<svg width="24" height="24" fill="none" stroke="${categoryColor}" stroke-width="2" viewBox="0 0 24 24"><path d="${isPdf ? 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6' : '21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48'}"/></svg>` : ''}
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${att.file_name}</div>
+                <div style="font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                  <span style="background: ${categoryColor}20; color: ${categoryColor}; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase;">${categoryLabel}</span>
+                  ${fileSize ? `<span>${fileSize}</span>` : ''}
+                  ${uploadDate ? `<span>${uploadDate}</span>` : ''}
+                  ${visibilityIcon}
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button onclick="window.open('${att.file_url}', '_blank')" class="btn-modern ghost" style="padding: 6px 10px; font-size: 11px;" title="View">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                </button>
+                <button onclick="toggleAttachmentVisibility('${att.id}', ${!att.visible_to_customer})" class="btn-modern ghost" style="padding: 6px 10px; font-size: 11px;" title="${att.visible_to_customer ? 'Hide from customer' : 'Show to customer'}">
+                  ${att.visible_to_customer ?
+                    '<svg width="14" height="14" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' :
+                    '<svg width="14" height="14" fill="none" stroke="#6b7280" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'}
+                </button>
+                <button onclick="deleteAttachment('${att.id}')" class="btn-modern ghost" style="padding: 6px 10px; font-size: 11px; color: #ef4444;" title="Delete">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Load profile attachments error:', err);
+        container.innerHTML = `<div style="color: var(--error); padding: 20px; text-align: center;">Error loading attachments</div>`;
+      }
+    }
+
+    // Format file size helper
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Upload attachment to profile entity
+    async function uploadAttachment() {
+      if (!currentProfileData) {
+        showToast('No entity selected', 'error');
+        return;
+      }
+
+      // Create hidden file input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp,image/heic,application/pdf';
+      input.multiple = true;
+
+      input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        // Check count limit
+        const existingCount = parseInt(document.getElementById('tab-badge-files')?.textContent || '0');
+        if (existingCount + files.length > 10) {
+          showToast(`Maximum 10 files per ${currentProfileType}. You have ${existingCount} files.`, 'warning');
+          return;
+        }
+
+        showToast('Uploading files...', 'info');
+
+        try {
+          let user = currentUser;
+          if (!user) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            user = session?.user;
+          }
+          if (!user) throw new Error('Not authenticated');
+
+          for (const file of files) {
+            // Check file size (25MB limit)
+            if (file.size > 25 * 1024 * 1024) {
+              showToast(`${file.name} exceeds 25MB limit`, 'error');
+              continue;
+            }
+
+            // Upload to Supabase Storage
+            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            const filePath = `${user.id}/${currentProfileType}s/${currentProfileData.id}/${fileName}`;
+
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
+              .from('document-attachments')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (uploadError) {
+              console.error('Upload error:', uploadError);
+              showToast(`Failed to upload ${file.name}`, 'error');
+              continue;
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabaseClient.storage
+              .from('document-attachments')
+              .getPublicUrl(filePath);
+
+            // Determine category based on file type
+            let category = 'general';
+            if (file.type.startsWith('image/')) {
+              category = 'project_photo';
+            } else if (file.type === 'application/pdf') {
+              category = 'contract';
+            }
+
+            // Create attachment record via API
+            const endpoint = currentProfileType === 'lead'
+              ? `${API_BASE}/api/leads/${currentProfileData.id}/attachments`
+              : currentProfileType === 'customer'
+                ? `${API_BASE}/api/customers/${currentProfileData.id}/attachments`
+                : `${API_BASE}/api/projects/${currentProfileData.id}/attachments`;
+
+            await apiCall(endpoint, {
+              method: 'POST',
+              body: JSON.stringify({
+                file_name: file.name,
+                file_url: publicUrl,
+                file_type: file.name.split('.').pop().toLowerCase(),
+                mime_type: file.type,
+                file_size: file.size,
+                category: category,
+                visible_to_customer: false
+              })
+            });
+          }
+
+          showToast('Files uploaded successfully!', 'success');
+          loadProfileAttachments(currentProfileData);
+        } catch (err) {
+          console.error('Upload attachment error:', err);
+          showToast('Error uploading files: ' + err.message, 'error');
+        }
+      };
+
+      input.click();
+    }
+
+    // Toggle attachment visibility to customer
+    async function toggleAttachmentVisibility(attachmentId, newVisibility) {
+      try {
+        await apiCall(`${API_BASE}/api/attachments/${attachmentId}/visibility`, {
+          method: 'PATCH',
+          body: JSON.stringify({ visible_to_customer: newVisibility })
+        });
+
+        showToast(newVisibility ? 'Now visible to customer' : 'Hidden from customer', 'success');
+        loadProfileAttachments(currentProfileData);
+      } catch (err) {
+        console.error('Toggle visibility error:', err);
+        showToast('Error updating visibility', 'error');
+      }
+    }
+
+    // Delete attachment
+    async function deleteAttachment(attachmentId) {
+      if (!confirm('Delete this file? This cannot be undone.')) return;
+
+      try {
+        await apiCall(`${API_BASE}/api/attachments/${attachmentId}`, {
+          method: 'DELETE'
+        });
+
+        showToast('File deleted', 'success');
+        loadProfileAttachments(currentProfileData);
+      } catch (err) {
+        console.error('Delete attachment error:', err);
+        showToast('Error deleting file', 'error');
       }
     }
 
@@ -25375,88 +26090,6 @@
       } catch (err) {
         console.error('Error saving note:', err);
         showToast('Error saving note: ' + err.message, 'error');
-      }
-    }
-
-    // File Upload functionality
-    function uploadAttachment() {
-      if (!currentProfileData) {
-        showToast('No profile selected', 'warning');
-        return;
-      }
-
-      // Create file input dynamically
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx';
-      fileInput.multiple = true;
-      fileInput.style.display = 'none';
-
-      fileInput.onchange = async (e) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        showToast(`Uploading ${files.length} file(s)...`, 'info');
-
-        for (const file of files) {
-          try {
-            // Check file size (max 10MB)
-            if (file.size > 10 * 1024 * 1024) {
-              showToast(`${file.name} is too large (max 10MB)`, 'error');
-              continue;
-            }
-
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const fileName = `${currentProfileType}_${currentProfileData.id}/${Date.now()}_${file.name}`;
-
-            // Upload to Supabase Storage
-            const { data, error } = await supabaseClient.storage
-              .from('attachments')
-              .upload(fileName, file);
-
-            if (error) throw error;
-
-            // Get public URL
-            const { data: urlData } = supabaseClient.storage
-              .from('attachments')
-              .getPublicUrl(fileName);
-
-            // Add to attachments display
-            addAttachmentToDisplay(file.name, urlData.publicUrl, file.type);
-
-            showToast(`${file.name} uploaded`, 'success');
-          } catch (err) {
-            console.error('Upload error:', err);
-            showToast(`Error uploading ${file.name}: ${err.message}`, 'error');
-          }
-        }
-      };
-
-      document.body.appendChild(fileInput);
-      fileInput.click();
-      document.body.removeChild(fileInput);
-    }
-
-    function addAttachmentToDisplay(name, url, type) {
-      const container = document.getElementById('profile-attachments-list');
-      const icon = type.includes('image') ? '🖼️' : type.includes('pdf') ? '📄' : '📎';
-
-      const attachmentHtml = `
-        <div class="attachment-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px;">
-          <span style="font-size: 24px;">${icon}</span>
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</div>
-            <div style="font-size: 12px; color: var(--text-muted);">Just now</div>
-          </div>
-          <a href="${url}" target="_blank" class="btn-modern ghost" style="padding: 6px 12px; font-size: 12px;">View</a>
-        </div>
-      `;
-
-      // Remove empty state if present
-      if (container.querySelector('svg')) {
-        container.innerHTML = attachmentHtml;
-      } else {
-        container.insertAdjacentHTML('afterbegin', attachmentHtml);
       }
     }
 
