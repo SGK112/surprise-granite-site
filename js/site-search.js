@@ -45,7 +45,7 @@
     try {
       const response = await fetch('/data/site-search.json');
       const data = await response.json();
-      searchIndex = data.items || [];
+      searchIndex = Array.isArray(data) ? data : (data.items || []);
 } catch (e) {
 searchIndex = [];
     }
