@@ -28649,6 +28649,7 @@
 
       // === ELEMENT-TO-ELEMENT ALIGNMENT GUIDES ===
       // Show alignment when current element aligns with other elements
+      // Limit to nearest 5 elements to avoid visual clutter in dense templates
       const alignThreshold = pixelsPerFoot * 0.25; // 3" tolerance
       const elCenterX = elX + elW / 2;
       const elCenterY = elY + elH / 2;
@@ -28658,9 +28659,18 @@
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1;
 
-      elements.forEach(other => {
-        if (other.id === selectedElement.id) return;
-        if (other.type === 'flooring' || other.type === 'tile') return; // Skip floor elements
+      const nearbyElements = elements
+        .filter(o => o.id !== selectedElement.id && o.type !== 'flooring' && o.type !== 'tile')
+        .map(o => {
+          const ox = o.x + (o.width * pixelsPerFoot) / 2;
+          const oy = o.y + (o.height * pixelsPerFoot) / 2;
+          return { el: o, dist: Math.hypot(ox - elCenterX, oy - elCenterY) };
+        })
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 5)
+        .map(o => o.el);
+
+      nearbyElements.forEach(other => {
 
         const otherX = other.x;
         const otherY = other.y;
@@ -39233,6 +39243,7 @@
         // This ensures container has proper dimensions
         requestAnimationFrame(() => {
           init3D();
+          markAllElements3DDirty();
 
           // Update renderer size in case container size changed
           if (renderer) {
@@ -41702,8 +41713,6 @@
 
       // w = width of 3D object (along its local X axis)
       // d = depth of 3D object (along its local Z axis)
-      // For rotation 0/180: 2D width = 3D width, 2D height = 3D depth
-      // For rotation 90/270: 2D width = 3D depth, 2D height = 3D width (swapped in template)
       const w = isRotated90 ? el.height : el.width;
       const d = isRotated90 ? el.width : el.height;
       const h = get3DHeight(el);
@@ -55193,10 +55202,9 @@
 
     function render3D() {
       if (!scene || currentView !== '3d') return;
-
       try {
       // Check if we need full rebuild or incremental update
-      const needsFullRebuild = forceFullRebuild3D || dirtyElements3D.size === 0;
+      const needsFullRebuild = forceFullRebuild3D;
 
       if (needsFullRebuild) {
         // Properly remove all non-light, non-room-structure children using Three.js API
@@ -55470,14 +55478,14 @@
               // Left wall - cabinet faces right into room (+x direction)
               group.rotation.y = Math.PI / 2;  // +90° so front faces +x
               autoRotated = true;
-              // For rotation 90/270: el.width = depth from wall, el.height = length along wall
-              xPos = el.width / 2; // Position from left wall using depth (el.width for rotated)
-              zPos = (el.y / pixelsPerFoot) + el.height / 2; // Use height for Z position (length along wall)
+              // For pre-swapped template elements: el.width = depth from wall, el.height = length along wall
+              xPos = el.width / 2;
+              zPos = (el.y / pixelsPerFoot) + el.height / 2;
             } else if (manualRotation === 90 && isAgainstRightWall) {
               // Right wall - cabinet faces left into room (-x direction)
               group.rotation.y = -Math.PI / 2;  // -90° so front faces -x
               autoRotated = true;
-              // For rotation 90/270: el.width = depth from wall, el.height = length along wall
+              // For pre-swapped template elements: el.width = depth from wall, el.height = length along wall
               xPos = roomWidth - el.width / 2;
               zPos = (el.y / pixelsPerFoot) + el.height / 2;
             } else if (manualRotation === 180 && isAgainstFrontWall) {
@@ -55540,7 +55548,10 @@
         const isBaseCabinet = baseCabinetTypes.some(t => el.type === t || el.type?.startsWith(t + '-'));
 
         if (isBaseCabinet) {
-          const baseCabinetDepth = el.height || BUILDING_STANDARDS.CABINETS.BASE?.depth || 2; // Use element's depth (height in 2D)
+          // For rotation 90/270 (pre-swapped dimensions), depth from wall is el.width; otherwise el.height
+          const baseCabinetDepth = elIsRotated90
+            ? (el.width || BUILDING_STANDARDS.CABINETS.BASE?.depth || 2)
+            : (el.height || BUILDING_STANDARDS.CABINETS.BASE?.depth || 2);
 
           if (!autoRotated) {
             // Back wall (no rotation) - position so cabinet back is at wall
@@ -55559,7 +55570,7 @@
           }
         }
 
-        if (isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel) {
+        if ((isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel) && !autoRotated) {
           // Determine which wall based on 2D position and rotation
           const rotation = (el.rotation || 0) % 360;
           const normalizedRotation = rotation < 0 ? rotation + 360 : rotation;
@@ -55664,17 +55675,14 @@
 
         // Clamp positions to room boundaries (prevent elements protruding through walls)
         // Skip clamping for wall-positioned elements — their position is set by wall snap logic above
+        // Clamp positions to room boundaries — skip for wall-positioned and autoRotated elements
+        // whose positions were already carefully set by the wall-snap code above
         const isWallPositioned = isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel;
-        if (!isWallPositioned) {
+        if (!isWallPositioned && !autoRotated) {
           const halfW = el.width / 2;
           const halfD = el.height / 2;
-          // For rotated elements, width/depth swap in 3D space
-          const rot = (el.rotation || 0) % 360;
-          const isRotated90 = (rot === 90 || rot === 270 || rot === -90 || rot === -270) || autoRotated;
-          const xHalf = isRotated90 ? halfD : halfW;
-          const zHalf = isRotated90 ? halfW : halfD;
-          xPos = Math.max(xHalf, Math.min(xPos, roomWidth - xHalf));
-          zPos = Math.max(zHalf, Math.min(zPos, roomDepth - zHalf));
+          xPos = Math.max(halfW, Math.min(xPos, roomWidth - halfW));
+          zPos = Math.max(halfD, Math.min(zPos, roomDepth - halfD));
         }
         yPos = Math.max(0, yPos);
 
@@ -56849,7 +56857,7 @@
           { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher 24"', rotation: 0 },
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
           // Countertop: starts after fridge (x=3), depth 2' + 1.5" overhang = 2.125' total
-          { type: 'countertop', x: 3, y: -0.04, width: 7.125, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          { type: 'countertop', x: 3, y: -0.04, width: 6.835, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0 },
           { type: 'sink', x: 7.5, y: 0.25, width: 2.5, height: 1.5, label: 'Undermount Sink', rotation: 0 },
           // Wall cabinets: 12" (1') deep, mounted 18" above counter
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
@@ -57728,6 +57736,40 @@
           roomId: currentRoom
         };
         elements.push(el);
+      });
+
+      // ===== Apply cabinet settings to template elements (matching createElement behavior) =====
+      const CABINET_TYPES = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
+        'drawer-base', 'sink-base', 'lazy-susan', 'blind-corner', 'island',
+        'microwave-cabinet', 'above-microwave-cabinet', 'fridge-cabinet',
+        'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'laundry-cabinet',
+        'linen-closet', 'linen-tower'];
+      const SINK_TYPES = ['sink', 'sink-double', 'sink-farmhouse'];
+      const COUNTERTOP_TYPES = ['countertop', 'countertop-l', 'countertop-u'];
+
+      elements.forEach(el => {
+        if (el.roomId !== currentRoom) return;
+        const isCabinet = CABINET_TYPES.includes(el.type);
+        const isSink = SINK_TYPES.includes(el.type);
+        const isCountertop = COUNTERTOP_TYPES.includes(el.type);
+
+        if (isCabinet && !el.construction) {
+          el.construction = cabinetSettings.construction;
+          el.doorStyle = cabinetSettings.doorStyle;
+          el.doorOverlay = cabinetSettings.doorOverlay;
+          el.cabinetFinish = cabinetSettings.cabinetFinish;
+          el.grainType = cabinetSettings.grainType;
+        }
+        if (isSink && !el.mountType) {
+          el.mountType = 'undermount';
+          el.sinkColor = 'stainless';
+        }
+        if (isCountertop) {
+          if (el.edgeProfile === undefined) el.edgeProfile = 'eased';
+          if (el.thickness === undefined) el.thickness = '3cm';
+        }
+        if (el.floorLevel === undefined) el.floorLevel = cabinetSettings.currentFloor;
+        if (el.locked === undefined) el.locked = false;
       });
 
       // ===== POST-PROCESSING: Resolve countertop-through-tall-item collisions =====
