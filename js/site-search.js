@@ -14,19 +14,14 @@
 
   // Category configuration
   const CATEGORIES = {
-    product: { label: 'Product', color: '#f9cb00' },
-    countertops: { label: 'Countertops', color: '#6366f1' },
-    tile: { label: 'Tile', color: '#8b5cf6' },
+    countertop: { label: 'Countertop', color: '#6366f1' },
     flooring: { label: 'Flooring', color: '#d946ef' },
     blog: { label: 'Blog', color: '#f43f5e' },
-    tool: { label: 'Tools', color: '#f97316' },
-    service: { label: 'Services', color: '#eab308' },
-    vendor: { label: 'Vendors', color: '#22c55e' },
-    company: { label: 'Company', color: '#14b8a6' },
-    category: { label: 'Categories', color: '#06b6d4' },
-    page: { label: 'Pages', color: '#64748b' },
-    financing: { label: 'Financing', color: '#10b981' },
-    legal: { label: 'Legal', color: '#94a3b8' }
+    tool: { label: 'Tool', color: '#f97316' },
+    service: { label: 'Service', color: '#eab308' },
+    vendor: { label: 'Vendor', color: '#22c55e' },
+    category: { label: 'Category', color: '#06b6d4' },
+    page: { label: 'Page', color: '#64748b' }
   };
 
   // Initialize on DOM ready
