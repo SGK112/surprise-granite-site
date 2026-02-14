@@ -1607,6 +1607,7 @@ setInterval(displayOpeningStatus, 60000);
                             raw_data: formData
                         })
                     });
+                    if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'contact-form', project_type: formData.inquiry, message: formData.message });
                 } catch (err) {
                     console.log('Supabase error:', err);
                 }
@@ -2159,6 +2160,7 @@ setInterval(displayOpeningStatus, 60000);
                 });
 
                 if (response.ok) {
+                    if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'contact-form-alt', project_type: formData.projectType, message: formData.message });
                     alert.className = 'alert success';
                     alert.textContent = '★ Success! We\'ll contact you within 24 hours to discuss your project.';
                     alert.style.display = 'block';
@@ -3024,4 +3026,5 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
+<script src="/js/lead-notify.js"></script>
 </body></html>

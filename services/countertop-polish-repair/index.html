@@ -1198,6 +1198,7 @@
         });
 
         if (response.ok) {
+          if (window.SG_notifyNewLead) SG_notifyNewLead({ name: leadData.name, email: leadData.email, phone: leadData.phone, form_name: 'countertop-repair-form', project_type: leadData.projectType, message: leadData.message });
           alert('Thank you! We\'ll contact you within 2 business hours to schedule your estimate.');
           this.reset();
           window.location.href = '/contact-thank-you';
@@ -1213,5 +1214,6 @@
       }
     });
   </script>
+<script src="/js/lead-notify.js"></script>
 </body>
 </html>

@@ -1977,30 +1977,41 @@
                 submittedAt: new Date().toISOString()
             };
 
+            const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
             try {
-                // Send to API (you can update this endpoint)
-                const response = await fetch('/api/contact', {
+                // Save to Supabase
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+                    body: JSON.stringify({
+                        full_name: `${formData.firstName} ${formData.lastName}`,
+                        email: formData.email,
+                        phone: formData.phone,
+                        project_type: formData.interest || formData.businessType,
+                        message: `Remodely demo request. Company: ${formData.company || 'N/A'}, Business: ${formData.businessType}. ${formData.message || ''}`,
+                        source: 'website',
+                        form_name: 'remodely-demo-form',
+                        page_url: window.location.href,
+                        raw_data: formData
+                    })
                 });
 
-                if (response.ok) {
-                    // Success
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Sent Successfully!';
-                    submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    form.reset();
+                if (window.SG_notifyNewLead) SG_notifyNewLead({ name: `${formData.firstName} ${formData.lastName}`, email: formData.email, phone: formData.phone, form_name: 'remodely-demo-form', project_type: formData.businessType, message: `Remodely demo. Company: ${formData.company || 'N/A'}` });
 
-                    // Show success message
-                    setTimeout(() => {
-                        alert('Thank you! We\'ll be in touch within 24 hours.');
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.style.background = '';
-                        submitBtn.disabled = false;
-                    }, 1500);
-                } else {
-                    throw new Error('Failed to submit');
-                }
+                // Success
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Sent Successfully!';
+                submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                form.reset();
+
+                setTimeout(() => {
+                    alert('Thank you! We\'ll be in touch within 24 hours.');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.background = '';
+                    submitBtn.disabled = false;
+                }, 1500);
+
             } catch (error) {
                 console.error('Contact form error:', error);
 
@@ -2037,6 +2048,7 @@
             });
         });
     </script>
+<script src="/js/lead-notify.js"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>

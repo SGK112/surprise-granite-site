@@ -1290,6 +1290,7 @@
             raw_data: formData
           })
         });
+        if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'estimate-form', project_type: formData.projectType, message: formData.message });
       } catch (error) {
         console.log('Supabase error:', error);
       }
@@ -1597,5 +1598,6 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
+<script src="/js/lead-notify.js"></script>
 </body>
 </html>

@@ -348,5 +348,34 @@
   <script defer src="/js/stone-selector.js?v=20260120"></script>
   <script defer src="/js/marketplace.js?v=20260120"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
+<script src="/js/lead-notify.js"></script>
+<script>
+// Listings quote form handler (was missing)
+document.getElementById('quote-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const listingTitle = document.querySelector('.quote-modal-listing-name')?.textContent || '';
+
+  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        full_name: data.name, email: data.email, phone: data.phone,
+        message: (data.message || '') + (listingTitle ? ' [Listing: ' + listingTitle + ']' : ''),
+        source: 'website', form_name: 'marketplace-listing-inquiry', page_url: window.location.href
+      })
+    });
+    if (window.SG_notifyNewLead) SG_notifyNewLead({ name: data.name, email: data.email, phone: data.phone, form_name: 'marketplace-listing-inquiry', message: 'Inquiry about: ' + listingTitle });
+  } catch (err) { console.log('Submit error:', err); }
+
+  form.style.display = 'none';
+  document.querySelector('.quote-form-success').style.display = 'block';
+});
+</script>
 </body>
 </html>

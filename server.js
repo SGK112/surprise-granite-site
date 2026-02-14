@@ -743,6 +743,51 @@ app.post('/api/calendar/book', async (req, res) => {
   }
 });
 
+// Lightweight lead notification endpoint (no DB insert, just notify admin)
+// Called by frontend forms after they save to Supabase directly
+app.post('/api/notify-lead', async (req, res) => {
+  try {
+    const { name, email, phone, form_name, source, project_type, message, details } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    if (!adminEmail) {
+      return res.status(500).json({ error: 'Admin email not configured' });
+    }
+
+    const formLabel = (form_name || 'website').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const sourceLabel = source || 'Website';
+
+    await transporter.sendMail({
+      from: `"Surprise Granite" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: `New Lead: ${name || email} (${formLabel})`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#f59e0b;margin-bottom:4px;">New Lead from ${formLabel}</h2>
+          <p style="color:#666;margin-top:0;">Source: ${sourceLabel}</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Name</td><td style="padding:10px;border:1px solid #ddd;">${name || 'Not provided'}</td></tr>
+            <tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Email</td><td style="padding:10px;border:1px solid #ddd;"><a href="mailto:${email}">${email}</a></td></tr>
+            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Phone</td><td style="padding:10px;border:1px solid #ddd;">${phone ? `<a href="tel:${phone}">${phone}</a>` : 'Not provided'}</td></tr>
+            ${project_type ? `<tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Project</td><td style="padding:10px;border:1px solid #ddd;">${project_type}</td></tr>` : ''}
+            ${message || details ? `<tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Message</td><td style="padding:10px;border:1px solid #ddd;">${message || details}</td></tr>` : ''}
+          </table>
+          <p style="color:#999;font-size:12px;">Submitted at ${new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' })} MST</p>
+        </div>
+      `
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Lead notification error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', supabase: !!supabase });

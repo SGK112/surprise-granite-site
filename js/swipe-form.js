@@ -983,6 +983,7 @@
             page_url: window.location.href
           })
         });
+        if (window.SG_notifyNewLead) SG_notifyNewLead({ name: `${formData.firstName} ${formData.lastName}`, email: formData.email, phone: formData.phone, form_name: 'swipe-form', project_type: formData.category, message: formData.message });
       } catch (error) {
         console.log('Supabase error:', error);
       }

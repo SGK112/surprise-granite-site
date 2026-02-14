@@ -67,6 +67,20 @@
       }
 
       console.log('[LeadService] Lead submitted successfully:', result[0]?.id);
+
+      // Send admin notification (fire-and-forget)
+      if (window.SG_notifyNewLead) {
+        window.SG_notifyNewLead({
+          name: lead.full_name,
+          email: lead.email,
+          phone: lead.phone,
+          form_name: lead.form_name,
+          source: lead.page_url,
+          project_type: lead.project_type,
+          message: lead.message
+        });
+      }
+
       return { success: true, data: result[0] };
 
     } catch (error) {

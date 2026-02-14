@@ -3328,6 +3328,7 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (response.ok) {
+      if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formInputs.name, email: formInputs.email, phone: formInputs.phone, form_name: 'hero-quote-form', project_type: formInputs.projectType, message: formInputs.message });
       closeModal();
       alert('Thank you! We\'ll contact you within 24 hours.');
       window.location.href = 'https://surprisegranite.com/contact-thank-you';
@@ -7919,7 +7920,10 @@ form.addEventListener('submit', async (e) => {
           raw_data: data
         })
       }).catch(function(err) { console.log('Supabase error:', err); });
-      
+
+      // Notify admin of new promo lead
+      if (window.SG_notifyNewLead) SG_notifyNewLead({ name: data.full_name, email: data.email, phone: data.phone, form_name: 'promo-form', project_type: data.project_type, message: data.message + ' [Promo: ' + data.promo_type + ']' });
+
       // Auto-close modal after 10 seconds
       setTimeout(function() {
         var modal = form.closest('.sg-modal');
@@ -8717,6 +8721,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
 <script src="/js/config.js"></script>
 <script src="/js/analytics.js?v=20260206"></script>
+<script src="/js/lead-notify.js"></script>
 <script src="/js/lead-service.js?v=20260206"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
 <script src="/js/supabase-init.js"></script>

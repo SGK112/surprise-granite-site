@@ -645,19 +645,31 @@ function subscribeNewsletter(e) {
     btn.style.opacity = '0.7';
     btn.disabled = true;
 
-    // Simulate API call (replace with actual newsletter API integration)
+    // Save to Supabase leads table
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+    fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        email: email,
+        source: 'website',
+        form_name: 'blog-newsletter',
+        page_url: window.location.href,
+        message: 'Newsletter subscription'
+      })
+    }).then(() => {
+      if (window.SG_notifyNewLead) SG_notifyNewLead({ email: email, form_name: 'blog-newsletter', message: 'Newsletter subscription from blog' });
+    }).catch(err => console.log('Supabase error:', err));
+
+    // Show success
     setTimeout(() => {
-      // Hide form and show success message
       form.style.display = 'none';
       successMsg.style.display = 'block';
       successMsg.classList.add('newsletter-success');
-
-      // Store in localStorage to remember subscription
       localStorage.setItem('newsletter_subscribed', 'true');
       localStorage.setItem('newsletter_email', email);
-
-      // Log for analytics (you can integrate with actual analytics)
-      console.log('Newsletter subscription:', email);
     }, 800);
   }
 }
@@ -3748,4 +3760,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="/js/site-search.js?v=3"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
+<script src="/js/lead-notify.js"></script>
 </body></html>

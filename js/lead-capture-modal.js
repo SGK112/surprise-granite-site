@@ -775,6 +775,7 @@
             page_url: window.location.href
           })
         });
+        if (window.SG_notifyNewLead) SG_notifyNewLead({ name: leadData.name, email: leadData.email, phone: leadData.phone, form_name: 'lead-capture-modal', project_type: leadData.projectType, message: leadData.message });
       } catch (e) {
         console.warn('Lead submission failed:', e);
       }

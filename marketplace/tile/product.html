@@ -630,8 +630,29 @@
         timestamp: new Date().toISOString()
       };
 
-      // For now, just show success (would send to API in production)
-      console.log('Quote request:', data);
+      // Save to Supabase
+      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            full_name: data.name,
+            email: data.email,
+            phone: data.phone,
+            project_type: 'tile',
+            message: `Quote for ${data.product} (${data.brand}) - ${data.sqft} sqft @ $${data.price}/sqft. ${data.details || ''}`,
+            source: 'website',
+            form_name: 'tile-quote-form',
+            page_url: window.location.href,
+            raw_data: data
+          })
+        });
+        if (window.SG_notifyNewLead) SG_notifyNewLead({ name: data.name, email: data.email, phone: data.phone, form_name: 'tile-quote-form', project_type: 'tile', message: `Quote: ${data.product} (${data.brand}) - ${data.sqft} sqft` });
+      } catch (err) { console.log('Submit error:', err); }
+
       alert('Thank you! We\'ll contact you within 24 hours with your quote.');
       closeQuoteModal();
       document.getElementById('quote-form').reset();
@@ -646,5 +667,6 @@
     loadProduct();
     initPricing();
   </script>
+<script src="/js/lead-notify.js"></script>
 </body>
 </html>
