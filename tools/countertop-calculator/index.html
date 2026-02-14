@@ -2590,12 +2590,10 @@
                 date: new Date().toISOString()
             };
 
-            // Send estimate via email API
-            const apiUrl = window.location.hostname === 'localhost'
-                ? '/api/send-estimate'
-                : 'https://surprise-granite-email-api.onrender.com/api/send-estimate';
+            const apiBase = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
 
-            fetch(apiUrl, {
+            // Send estimate via email API
+            fetch(`${apiBase}/api/send-estimate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(estimateData)
@@ -2615,6 +2613,19 @@
                 alert('There was an issue sending the email. Please try again or call us at (602) 833-3189.');
                 document.getElementById('quoteEmailForm').classList.remove('active');
             });
+
+            // Also capture as a lead so we don't lose the contact
+            fetch(`${apiBase}/api/leads`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    homeowner_name: 'Calculator Estimate',
+                    homeowner_email: email,
+                    project_type: 'kitchen_countertops',
+                    project_details: `Estimate from calculator: ${estimateData.totalSqft} sqft, Edge: ${estimateData.edgeProfile} (${estimateData.edgeLF} LF), Budget: ${estimateData.priceBudget}, Popular: ${estimateData.pricePopular}, Premium: ${estimateData.pricePremium}`,
+                    source: '/tools/countertop-calculator/'
+                })
+            }).catch(() => {}); // Silent - don't block the email flow
         }
 
         // Close modal on overlay click
@@ -2657,6 +2668,7 @@
     </footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth-state.js?v=2.0.1"></script>
+<script src="/js/config.js"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js?v=3"></script>
 

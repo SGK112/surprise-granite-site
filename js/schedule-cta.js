@@ -8,7 +8,7 @@
 (function() {
   'use strict';
 
-  const API_BASE = window.SG_CONFIG?.API_URL || '';
+  const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
 
   // Default available times
   const DEFAULT_TIMES = [
@@ -438,6 +438,18 @@
       };
 
       try {
+        const leadData = {
+          homeowner_name: data.name,
+          homeowner_email: data.email,
+          homeowner_phone: data.phone,
+          project_type: data.project_type,
+          project_address: data.address,
+          project_details: data.notes,
+          appointment_date: data.date,
+          appointment_time: data.time,
+          source: data.source
+        };
+
         // Try the calendar booking API first
         const response = await fetch(`${API_BASE}/api/calendar/book`, {
           method: 'POST',
@@ -445,25 +457,16 @@
           body: JSON.stringify(data)
         });
 
-        if (!response.ok) {
-          // Fallback to leads API
-          const leadsResponse = await fetch(`${API_BASE}/api/leads`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              homeowner_name: data.name,
-              homeowner_email: data.email,
-              homeowner_phone: data.phone,
-              project_type: data.project_type,
-              project_address: data.address,
-              project_details: data.notes,
-              appointment_date: data.date,
-              appointment_time: data.time,
-              source: data.source
-            })
-          });
+        // Always save as lead (for CRM tracking + notifications)
+        const leadsResponse = await fetch(`${API_BASE}/api/leads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        });
 
-          if (!leadsResponse.ok) throw new Error('Booking failed');
+        // If both failed, throw
+        if (!response.ok && (!leadsResponse || !leadsResponse.ok)) {
+          throw new Error('Booking failed');
         }
 
         // Show success

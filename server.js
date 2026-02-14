@@ -661,6 +661,66 @@ app.post('/api/calendar/book', async (req, res) => {
     // Generate calendar links
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(address || '')}`;
 
+    // Format time for emails
+    const timeFormatted = new Date(`2000-01-01T${time}:00`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Notify business owner
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+      if (adminEmail) {
+        await transporter.sendMail({
+          from: `"Surprise Granite" <${process.env.EMAIL_USER}>`,
+          to: adminEmail,
+          subject: `New Appointment Booked: ${name} - ${dateFormatted} at ${timeFormatted}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <h2 style="color:#f59e0b;">New Appointment Booked</h2>
+              <table style="width:100%;border-collapse:collapse;">
+                <tr><td style="padding:8px;font-weight:bold;">Customer:</td><td style="padding:8px;">${name}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;"><a href="mailto:${email}">${email}</a></td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Phone:</td><td style="padding:8px;">${phone ? `<a href="tel:${phone}">${phone}</a>` : 'N/A'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Date:</td><td style="padding:8px;">${dateFormatted}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Time:</td><td style="padding:8px;">${timeFormatted}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Type:</td><td style="padding:8px;">${event_type || 'appointment'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Project:</td><td style="padding:8px;">${project_type || 'Countertops'}</td></tr>
+                ${address ? `<tr><td style="padding:8px;font-weight:bold;">Address:</td><td style="padding:8px;">${address}</td></tr>` : ''}
+                ${notes ? `<tr><td style="padding:8px;font-weight:bold;">Notes:</td><td style="padding:8px;">${notes}</td></tr>` : ''}
+              </table>
+              <p style="margin-top:16px;"><a href="${googleCalendarUrl}" style="background:#f59e0b;color:#000;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Add to Google Calendar</a></p>
+            </div>
+          `
+        });
+      }
+    } catch (emailErr) {
+      console.error('Admin notification email error:', emailErr);
+    }
+
+    // Send confirmation to customer
+    try {
+      await transporter.sendMail({
+        from: `"Surprise Granite" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `Appointment Confirmed - ${dateFormatted} at ${timeFormatted}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+            <h2 style="color:#f59e0b;">Your Appointment is Confirmed!</h2>
+            <p>Hi ${name},</p>
+            <p>Your appointment with Surprise Granite has been scheduled:</p>
+            <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin:16px 0;">
+              <p style="margin:4px 0;"><strong>Date:</strong> ${dateFormatted}</p>
+              <p style="margin:4px 0;"><strong>Time:</strong> ${timeFormatted}</p>
+              ${address ? `<p style="margin:4px 0;"><strong>Location:</strong> ${address}</p>` : ''}
+            </div>
+            <p><a href="${googleCalendarUrl}" style="background:#f59e0b;color:#000;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Add to Google Calendar</a></p>
+            <p style="margin-top:20px;color:#666;">Need to reschedule? Call us at <a href="tel:6028333189">(602) 833-3189</a></p>
+          </div>
+        `
+      });
+    } catch (emailErr) {
+      console.error('Customer confirmation email error:', emailErr);
+    }
+
     res.json({
       success: true,
       message: 'Appointment booked successfully',
