@@ -2369,6 +2369,9 @@
               'silestone': { country: 'Spain', flag: '🇪🇸' },
               'dekton': { country: 'Spain', flag: '🇪🇸' },
               'cosentino': { country: 'Spain', flag: '🇪🇸' },
+              'dekton-by-cosentino': { country: 'Spain', flag: '🇪🇸' },
+              'silestone-by-cosentino': { country: 'Spain', flag: '🇪🇸' },
+              'sensa-by-cosentino': { country: 'Spain', flag: '🇪🇸' },
               'caesarstone': { country: 'Israel', flag: '🇮🇱' },
               'radianz': { country: 'South Korea', flag: '🇰🇷' },
               'radianz quartz': { country: 'South Korea', flag: '🇰🇷' },
@@ -2408,8 +2411,8 @@
                 const priceRange = PRICING[product.type] || PRICING.default;
                 const price = Math.floor(priceRange.min + Math.random() * (priceRange.max - priceRange.min));
 
-                // Format brand name properly
-                const brandName = brand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                // Use product brand field if set, otherwise format from key
+                const brandName = product.brand || brand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
                 slabs.push({
                   id: `product-${slabId++}`,
