@@ -2381,8 +2381,8 @@
               const brandLower = brand.toLowerCase();
               const origin = BRAND_ORIGINS[brandLower] || null;
 
-              // Take first 15 products per brand
-              for (const product of products.slice(0, 15)) {
+              // Load all products per brand (no cap)
+              for (const product of products) {
                 // Skip duplicates already loaded from slabs.json
                 const pName = product.name?.toLowerCase().trim() || '';
                 if (existingNames.has(pName) || existingNames.has(pName.replace(/ sample$/, ''))) continue;
