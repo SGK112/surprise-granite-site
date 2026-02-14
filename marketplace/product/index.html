@@ -2735,15 +2735,38 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       }
       if (!product) {
         // Try without material suffix
-        product = products.find(p => p.handle === handle.replace(/-quartz$|-granite$|-marble$|-dekton$/, ''));
+        product = products.find(p => p.handle === handle.replace(/-quartz$|-granite$|-marble$|-dekton$|-quartzite$/, ''));
       }
       if (!product) {
-        // Try with -sample suffix (slabs.json uses -sample suffix)
+        // Try without -sample suffix (URLs may have -sample but data was cleaned)
+        const noSample = handle.replace(/-sample$/, '');
+        if (noSample !== handle) {
+          product = products.find(p => p.handle === noSample);
+          if (!product) {
+            // Also try without material suffix after removing -sample
+            product = products.find(p => p.handle === noSample.replace(/-quartz$|-granite$|-marble$|-dekton$|-quartzite$/, ''));
+          }
+        }
+      }
+      if (!product) {
+        // Try with -sample suffix (some slabs.json entries still have it)
         product = products.find(p => p.handle === handle + '-sample');
       }
       if (!product) {
         // Try partial match on handle
         product = products.find(p => p.handle && p.handle.startsWith(handle));
+      }
+      if (!product) {
+        // Try base name match (strip -sample and material, then partial match)
+        const baseName = handle.replace(/-sample$/, '').replace(/-quartz$|-granite$|-marble$|-dekton$|-quartzite$/, '');
+        if (baseName !== handle) {
+          product = products.find(p => p.handle && p.handle.startsWith(baseName));
+        }
+      }
+      if (!product) {
+        // Try title match as last resort
+        const titleGuess = handle.replace(/-sample$/, '').replace(/-quartz$|-granite$|-marble$|-dekton$|-quartzite$/, '').replace(/-/g, ' ');
+        product = products.find(p => p.title && p.title.toLowerCase().includes(titleGuess));
       }
       if (product) return product;
     } catch (e) { console.log(`${category} lookup failed:`, e); }
