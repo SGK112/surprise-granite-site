@@ -2286,6 +2286,25 @@
         // Start with sample slabs
         slabs = [...SAMPLE_SLABS];
 
+        // Pricing tiers based on material type (retail markup from wholesale)
+        const SLAB_PRICING = {
+          'quartz': { min: 45, max: 85 },
+          'granite': { min: 35, max: 65 },
+          'marble': { min: 55, max: 120 },
+          'quartzite': { min: 75, max: 150 },
+          'dekton': { min: 65, max: 110 },
+          'porcelain': { min: 40, max: 75 },
+          'default': { min: 45, max: 80 }
+        };
+
+        function getSlabPrice(material, shopifyPrice) {
+          // If Shopify price looks like a real slab per-sqft price (> $20), use it
+          if (shopifyPrice > 20) return shopifyPrice;
+          // Otherwise generate from material pricing tier
+          const range = SLAB_PRICING[material] || SLAB_PRICING['default'];
+          return Math.floor(range.min + Math.random() * (range.max - range.min));
+        }
+
         // Load Shopify slabs from /data/slabs.json (658 products)
         try {
           const shopifyRes = await fetch('/data/slabs.json');
@@ -2306,7 +2325,7 @@
                 brand: product.brandDisplay || product.vendor,
                 material_type: material || 'quartz',
                 color_family: detectColor(product.title),
-                price_per_sqft: price > 0 ? price : null,
+                price_per_sqft: getSlabPrice(material, price),
                 length_inches: 126,
                 width_inches: 63,
                 thickness_cm: 3,
@@ -2333,7 +2352,7 @@
           if (productsRes.ok) {
             const productsData = await productsRes.json();
 
-            // Pricing tiers based on material type (retail markup from wholesale)
+            // Use shared pricing tiers (alias for marketplace-products loader)
             const PRICING = {
               'Quartz': { min: 45, max: 85 },
               'Granite': { min: 35, max: 65 },
