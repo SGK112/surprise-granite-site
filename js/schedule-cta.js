@@ -451,18 +451,20 @@
           source: data.source
         };
 
-        // Try the calendar booking API first
+        // Try the calendar booking API first (creates calendar event)
         const response = await fetch(`${API_BASE}/api/calendar/book`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
 
-        // Always save as lead (for CRM tracking + notifications)
+        // Save as lead for CRM tracking (omit appointment fields to avoid duplicate calendar event)
+        const { appointment_date, appointment_time, ...leadOnly } = leadData;
+        leadOnly.project_details = (leadOnly.project_details || '') + ` [Appt: ${data.date} ${this.formatTime(data.time)}]`;
         const leadsResponse = await fetch(`${API_BASE}/api/leads`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadData)
+          body: JSON.stringify(leadOnly)
         });
 
         // If both failed, throw
