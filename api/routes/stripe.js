@@ -52,6 +52,74 @@ async function verifyAdminAccess(userId, supabase) {
   }
 }
 
+// ============ QUICK PAY (Public) ============
+
+/**
+ * Quick Pay - Create a Stripe Checkout Session for ad-hoc customer payments
+ * Used by the public /pay/ page for texted/emailed payment links
+ * POST /api/stripe/quick-pay
+ */
+router.post('/quick-pay', async (req, res) => {
+  try {
+    const { amount, email, invoice_ref, memo } = req.body;
+
+    // Validate amount (must be at least $1 = 100 cents)
+    if (!amount || amount < 100) {
+      return res.status(400).json({ error: 'Amount must be at least $1.00 (100 cents)' });
+    }
+
+    if (amount > 99999999) {
+      return res.status(400).json({ error: 'Amount exceeds maximum allowed' });
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const baseUrl = process.env.SITE_URL || 'https://www.surprisegranite.com';
+
+    // Build success/cancel URLs
+    const successParams = new URLSearchParams();
+    successParams.set('amount', amount.toString());
+    if (invoice_ref) successParams.set('ref', invoice_ref);
+
+    const cancelParams = new URLSearchParams();
+    cancelParams.set('amount', amount.toString());
+    if (invoice_ref) cancelParams.set('invoice', invoice_ref);
+    if (memo) cancelParams.set('memo', memo);
+    if (email) cancelParams.set('email', email);
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: memo || 'Payment to Surprise Granite',
+          },
+          unit_amount: amount,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      customer_email: email,
+      success_url: `${baseUrl}/pay/success/?${successParams.toString()}`,
+      cancel_url: `${baseUrl}/pay/?${cancelParams.toString()}`,
+      metadata: {
+        invoice_ref: invoice_ref || '',
+        memo: memo || '',
+        source: 'quick-pay',
+        customer_email: email
+      }
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    logger.error('Quick-pay checkout error:', error);
+    return handleApiError(res, error, 'Quick pay');
+  }
+});
+
 // ============ CHECKOUT SESSION ============
 
 /**

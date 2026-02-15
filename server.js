@@ -1002,6 +1002,17 @@ try {
   console.warn('Portal API not available:', err.message);
 }
 
+// ============================================
+// STRIPE API (payments, checkout, subscriptions)
+// ============================================
+try {
+  const stripeRouter = require('./api/routes/stripe');
+  app.use('/api/stripe', stripeRouter);
+  console.log('Stripe API loaded');
+} catch (err) {
+  console.warn('Stripe API not available:', err.message);
+}
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 

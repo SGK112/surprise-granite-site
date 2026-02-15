@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Make a Payment - Surprise Granite</title>
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon">
+  <link rel="apple-touch-icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div class="max-w-lg mx-auto px-4 py-8 sm:py-12">
+    <!-- Header / Branding -->
+    <div class="text-center mb-8">
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg"
+        alt="Surprise Granite" class="h-10 mx-auto mb-4">
+      <p class="text-gray-500">Secure Payment</p>
+    </div>
+
+    <!-- Payment Card -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <!-- Form -->
+      <form id="payment-form" class="p-6 sm:p-8">
+        <!-- Amount -->
+        <div class="mb-5">
+          <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Payment Amount</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-lg">$</span>
+            <input type="number" id="amount" name="amount" step="0.01" min="1" required
+              class="w-full pl-9 pr-4 py-3 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              placeholder="0.00">
+          </div>
+          <p id="amount-error" class="text-red-500 text-sm mt-1 hidden">Minimum payment is $1.00</p>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-5">
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email for Receipt</label>
+          <input type="email" id="email" name="email" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            placeholder="your@email.com">
+        </div>
+
+        <!-- Invoice / Reference (optional) -->
+        <div class="mb-5">
+          <label for="invoice" class="block text-sm font-medium text-gray-700 mb-2">
+            Invoice / Reference Number <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input type="text" id="invoice" name="invoice"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            placeholder="e.g. INV-001">
+        </div>
+
+        <!-- Memo / Description (optional) -->
+        <div class="mb-6">
+          <label for="memo" class="block text-sm font-medium text-gray-700 mb-2">
+            Description <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input type="text" id="memo" name="memo"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            placeholder="e.g. Kitchen countertops deposit">
+        </div>
+
+        <!-- Error message -->
+        <div id="form-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm"></div>
+
+        <!-- Pay Button -->
+        <button type="submit" id="pay-btn"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg shadow-sm">
+          <span id="btn-text">Pay Now</span>
+          <svg id="btn-spinner" class="hidden animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </button>
+      </form>
+
+      <!-- Accepted methods & security -->
+      <div class="px-6 sm:px-8 pb-6 sm:pb-8">
+        <div class="flex items-center justify-center gap-4 text-gray-400 text-sm">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Secured by Stripe
+          </div>
+          <span class="text-gray-300">|</span>
+          <div class="flex items-center gap-1">
+            <span>Card</span>
+            <span class="text-gray-300">&middot;</span>
+            <span>Bank</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="mt-6 text-center text-sm text-gray-500">
+      <p>Questions? Contact us at</p>
+      <a href="tel:+16028333189" class="text-indigo-600 hover:underline font-medium">(602) 833-3189</a>
+      <span class="mx-1">&middot;</span>
+      <a href="mailto:joshb@surprisegranite.com" class="text-indigo-600 hover:underline font-medium">joshb@surprisegranite.com</a>
+    </div>
+  </div>
+
+  <script>
+    // Parse URL params for pre-fill
+    const params = new URLSearchParams(window.location.search);
+    const amountInput = document.getElementById('amount');
+    const emailInput = document.getElementById('email');
+    const invoiceInput = document.getElementById('invoice');
+    const memoInput = document.getElementById('memo');
+    const btnText = document.getElementById('btn-text');
+    const btnSpinner = document.getElementById('btn-spinner');
+    const payBtn = document.getElementById('pay-btn');
+    const formError = document.getElementById('form-error');
+    const amountError = document.getElementById('amount-error');
+
+    // Pre-fill from URL params
+    if (params.get('amount')) {
+      const cents = parseInt(params.get('amount'), 10);
+      if (cents > 0) {
+        amountInput.value = (cents / 100).toFixed(2);
+      }
+    }
+    if (params.get('email')) emailInput.value = params.get('email');
+    if (params.get('invoice')) invoiceInput.value = params.get('invoice');
+    if (params.get('memo')) memoInput.value = params.get('memo');
+
+    // Update button text when amount changes
+    function updateButtonText() {
+      const val = parseFloat(amountInput.value);
+      if (val && val >= 1) {
+        btnText.textContent = 'Pay $' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        amountError.classList.add('hidden');
+      } else {
+        btnText.textContent = 'Pay Now';
+      }
+    }
+    amountInput.addEventListener('input', updateButtonText);
+    updateButtonText();
+
+    // Form submission
+    document.getElementById('payment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formError.classList.add('hidden');
+
+      const amount = parseFloat(amountInput.value);
+      if (!amount || amount < 1) {
+        amountError.classList.remove('hidden');
+        amountInput.focus();
+        return;
+      }
+
+      const email = emailInput.value.trim();
+      if (!email) {
+        emailInput.focus();
+        return;
+      }
+
+      // Disable button, show spinner
+      payBtn.disabled = true;
+      btnText.textContent = 'Processing...';
+      btnSpinner.classList.remove('hidden');
+
+      try {
+        const response = await fetch('/api/stripe/quick-pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Math.round(amount * 100),
+            email,
+            invoice_ref: invoiceInput.value.trim() || undefined,
+            memo: memoInput.value.trim() || undefined
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error(data.error || 'Failed to create payment session');
+        }
+      } catch (err) {
+        formError.textContent = err.message || 'Something went wrong. Please try again.';
+        formError.classList.remove('hidden');
+        payBtn.disabled = false;
+        btnSpinner.classList.add('hidden');
+        updateButtonText();
+      }
+    });
+  </script>
+</body>
+</html>

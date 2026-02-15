@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful - Surprise Granite</title>
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes checkmark {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-checkmark { animation: checkmark 0.5s ease-out 0.2s both; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div class="max-w-lg mx-auto px-4 py-12 sm:py-20">
+    <!-- Success Card -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden text-center">
+      <!-- Green header -->
+      <div class="bg-gradient-to-br from-green-500 to-emerald-600 px-6 py-10">
+        <div class="animate-checkmark inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4">
+          <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment Successful</h1>
+        <p class="text-green-100 mt-2">Thank you for your payment!</p>
+      </div>
+
+      <!-- Details -->
+      <div class="p-6 sm:p-8">
+        <div id="payment-details" class="space-y-3 mb-8">
+          <div id="amount-row" class="hidden flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-500">Amount Paid</span>
+            <span id="amount-value" class="text-lg font-semibold text-gray-900"></span>
+          </div>
+          <div id="ref-row" class="hidden flex justify-between items-center py-2 border-b border-gray-100">
+            <span class="text-gray-500">Reference</span>
+            <span id="ref-value" class="font-medium text-gray-900"></span>
+          </div>
+        </div>
+
+        <p class="text-gray-600 text-sm mb-6">
+          A confirmation receipt has been sent to your email. If you have any questions about your payment, please don't hesitate to reach out.
+        </p>
+
+        <!-- Contact -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-6">
+          <p class="text-sm font-medium text-gray-700 mb-2">Contact Us</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm">
+            <a href="tel:+16028333189" class="text-indigo-600 hover:underline">(602) 833-3189</a>
+            <span class="hidden sm:inline text-gray-300">&middot;</span>
+            <a href="mailto:joshb@surprisegranite.com" class="text-indigo-600 hover:underline">joshb@surprisegranite.com</a>
+          </div>
+        </div>
+
+        <!-- Return button -->
+        <a href="https://www.surprisegranite.com"
+          class="inline-flex items-center justify-center w-full py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition">
+          <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Return to Website
+        </a>
+      </div>
+    </div>
+
+    <!-- Branding -->
+    <div class="mt-6 text-center">
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg"
+        alt="Surprise Granite" class="h-8 mx-auto opacity-40">
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+
+    const amountCents = parseInt(params.get('amount'), 10);
+    if (amountCents > 0) {
+      const dollars = (amountCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('amount-value').textContent = '$' + dollars;
+      document.getElementById('amount-row').classList.remove('hidden');
+    }
+
+    const ref = params.get('ref');
+    if (ref) {
+      document.getElementById('ref-value').textContent = ref;
+      document.getElementById('ref-row').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
