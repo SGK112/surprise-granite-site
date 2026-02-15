@@ -443,6 +443,7 @@
           homeowner_email: data.email,
           homeowner_phone: data.phone,
           project_type: data.project_type,
+          project_zip: (data.address && data.address.match(/\b\d{5}\b/)) ? data.address.match(/\b\d{5}\b/)[0] : '00000',
           project_address: data.address,
           project_details: data.notes,
           appointment_date: data.date,

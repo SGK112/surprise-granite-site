@@ -64,9 +64,9 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
   } = req.body;
 
   // Input validation
-  if (!homeowner_name || !homeowner_email || !project_zip) {
+  if (!homeowner_name || !homeowner_email) {
     return res.status(400).json({
-      error: 'Name, email, and ZIP code are required'
+      error: 'Name and email are required'
     });
   }
 
