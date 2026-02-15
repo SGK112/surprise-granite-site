@@ -753,6 +753,40 @@ app.post('/api/notify-lead', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    // Safety net: also save to Supabase in case client-side save failed
+    if (supabase) {
+      try {
+        // Check if this lead was already saved in the last 2 minutes (avoid duplicates)
+        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const { data: existing } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('email', email.toLowerCase().trim())
+          .gte('created_at', twoMinAgo)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          await supabase.from('leads').insert([{
+            full_name: name || '',
+            email: email.toLowerCase().trim(),
+            phone: phone || null,
+            project_type: project_type || null,
+            message: message || details || null,
+            source: 'website',
+            form_name: form_name || 'website',
+            page_url: source || null,
+            status: 'new'
+          }]);
+          console.log('[notify-lead] Lead saved to Supabase (safety net)');
+        } else {
+          console.log('[notify-lead] Lead already exists in Supabase, skipping save');
+        }
+      } catch (dbErr) {
+        console.error('[notify-lead] Supabase save failed:', dbErr.message);
+      }
+    }
+
+    // Send admin email notification
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
     if (!adminEmail) {
       return res.status(500).json({ error: 'Admin email not configured' });
