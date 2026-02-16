@@ -16152,39 +16152,15 @@
 
         console.log('[QuickPay] Creating payment link for:', name, email, amount);
 
-        // Create payment link via VoiceNow CRM Surprise Granite endpoint
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-        let paymentUrl = null;
-
-        try {
-          const response = await fetch(`${VOICENOW_API}/api/surprise-granite/quick-pay`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              amount: amount,
-              description: description,
-              customerEmail: email,
-              customerName: name,
-              customerPhone: phone,
-              sendSMS: false // We'll send SMS separately if needed
-            })
-          });
-          clearTimeout(timeoutId);
-          const result = await response.json();
-          console.log('[QuickPay] API response:', result);
-
-          if (response.ok && result.success && result.paymentLink?.url) {
-            paymentUrl = result.paymentLink.url;
-          } else {
-            throw new Error(result.error || 'Failed to create payment link');
-          }
-        } catch (apiErr) {
-          console.error('[QuickPay] API error:', apiErr.message);
-          throw new Error('Failed to create payment link. Please try again.');
+        // Build /pay/ URL with pre-filled params (amount in cents)
+        const payParams = new URLSearchParams();
+        payParams.set('amount', Math.round(amount * 100).toString());
+        payParams.set('email', email);
+        if (description && description !== 'Payment to Surprise Granite') {
+          payParams.set('memo', description);
         }
+
+        const paymentUrl = 'https://www.surprisegranite.com/pay/?' + payParams.toString();
 
         // Store data for sharing
         quickPayData = {
