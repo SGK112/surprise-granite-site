@@ -40209,59 +40209,121 @@
 
       const envCol = envColors[timeOfDay] || envColors.noon;
 
-      // Create high-resolution environment map canvas
+      // Create high-resolution environment map canvas — simulates interior room for reflections
       const envCanvas = document.createElement('canvas');
-      envCanvas.width = 1024;  // Higher resolution for better reflections
-      envCanvas.height = 512;
+      envCanvas.width = 2048;  // Higher resolution for sharper reflections on polished surfaces
+      envCanvas.height = 1024;
       const envCtx = envCanvas.getContext('2d');
+      const ew = 2048, eh = 1024;
 
-      // Create detailed vertical gradient (sky to ground)
-      const mainGradient = envCtx.createLinearGradient(0, 0, 0, 512);
+      // Create detailed vertical gradient (sky/ceiling to floor)
+      const mainGradient = envCtx.createLinearGradient(0, 0, 0, eh);
       mainGradient.addColorStop(0, envCol.skyDark);
-      mainGradient.addColorStop(0.15, envCol.sky);
-      mainGradient.addColorStop(0.4, envCol.horizon);
+      mainGradient.addColorStop(0.12, envCol.sky);
+      mainGradient.addColorStop(0.35, envCol.horizon);
       mainGradient.addColorStop(0.5, envCol.horizon);
-      mainGradient.addColorStop(0.6, envCol.ground);
+      mainGradient.addColorStop(0.65, envCol.ground);
       mainGradient.addColorStop(1, envCol.groundDark);
       envCtx.fillStyle = mainGradient;
-      envCtx.fillRect(0, 0, 1024, 512);
+      envCtx.fillRect(0, 0, ew, eh);
 
-      // Add soft ambient light variations for more natural reflections
+      // === Interior room simulation for accurate reflections ===
+      // Simulate ceiling (bright band in upper portion)
+      const ceilGrad = envCtx.createLinearGradient(0, 0, 0, eh * 0.2);
+      ceilGrad.addColorStop(0, 'rgba(248, 248, 245, 0.25)');
+      ceilGrad.addColorStop(1, 'rgba(248, 248, 245, 0)');
+      envCtx.fillStyle = ceilGrad;
+      envCtx.fillRect(0, 0, ew, eh * 0.2);
+
+      // Simulate walls (vertical panels at intervals around the panorama)
+      for (let wx = 0; wx < ew; wx += ew / 4) {
+        const wallGrad = envCtx.createLinearGradient(0, eh * 0.15, 0, eh * 0.55);
+        wallGrad.addColorStop(0, 'rgba(255, 250, 240, 0.12)');
+        wallGrad.addColorStop(0.5, 'rgba(255, 250, 240, 0.08)');
+        wallGrad.addColorStop(1, 'rgba(255, 250, 240, 0.04)');
+        envCtx.fillStyle = wallGrad;
+        envCtx.fillRect(wx + 20, eh * 0.15, ew / 4 - 40, eh * 0.4);
+      }
+
+      // Simulate floor reflection (warm band in lower portion)
+      const floorGrad = envCtx.createLinearGradient(0, eh * 0.6, 0, eh);
+      floorGrad.addColorStop(0, 'rgba(184, 149, 106, 0)');
+      floorGrad.addColorStop(0.3, 'rgba(184, 149, 106, 0.08)');
+      floorGrad.addColorStop(1, 'rgba(140, 110, 75, 0.12)');
+      envCtx.fillStyle = floorGrad;
+      envCtx.fillRect(0, eh * 0.6, ew, eh * 0.4);
+
       if (timeOfDay !== 'night') {
-        // Subtle sun/bright area simulation
-        const sunX = timeOfDay === 'morning' ? 200 : (timeOfDay === 'evening' ? 800 : 512);
-        const sunY = timeOfDay === 'noon' ? 120 : 160;
+        // Window light sources — bright rectangular patches (simulates windows in walls)
+        const windowPositions = [
+          { x: ew * 0.1, y: eh * 0.2, w: ew * 0.12, h: eh * 0.2 },
+          { x: ew * 0.35, y: eh * 0.18, w: ew * 0.15, h: eh * 0.22 },
+          { x: ew * 0.65, y: eh * 0.2, w: ew * 0.12, h: eh * 0.2 },
+          { x: ew * 0.85, y: eh * 0.19, w: ew * 0.1, h: eh * 0.18 }
+        ];
+        windowPositions.forEach(win => {
+          // Bright window glow
+          const winGrad = envCtx.createRadialGradient(
+            win.x + win.w/2, win.y + win.h/2, 0,
+            win.x + win.w/2, win.y + win.h/2, Math.max(win.w, win.h) * 0.8
+          );
+          winGrad.addColorStop(0, `rgba(255, 255, 250, ${envCol.sunIntensity * 0.4})`);
+          winGrad.addColorStop(0.5, `rgba(255, 252, 240, ${envCol.sunIntensity * 0.2})`);
+          winGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          envCtx.fillStyle = winGrad;
+          envCtx.fillRect(win.x - 20, win.y - 20, win.w + 40, win.h + 40);
+          // Window frame edge (slightly brighter rectangle)
+          envCtx.fillStyle = `rgba(255, 255, 255, ${envCol.sunIntensity * 0.15})`;
+          envCtx.fillRect(win.x, win.y, win.w, win.h);
+        });
 
-        // Sun glow (softer, more realistic)
-        const sunGradient = envCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 150);
+        // Sun/sky glow
+        const sunX = timeOfDay === 'morning' ? ew * 0.15 : (timeOfDay === 'evening' ? ew * 0.85 : ew * 0.5);
+        const sunY = timeOfDay === 'noon' ? eh * 0.12 : eh * 0.18;
+        const sunGradient = envCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, ew * 0.12);
         sunGradient.addColorStop(0, `rgba(255, 255, 240, ${envCol.sunIntensity * 0.5})`);
         sunGradient.addColorStop(0.3, `rgba(255, 250, 220, ${envCol.sunIntensity * 0.3})`);
         sunGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         envCtx.fillStyle = sunGradient;
-        envCtx.fillRect(0, 0, 1024, 512);
+        envCtx.fillRect(0, 0, ew, eh);
 
-        // Soft cloud/light variations for more interesting reflections
-        envCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        envCtx.fillRect(150, 140, 200, 40);
-        envCtx.fillRect(400, 160, 150, 35);
-        envCtx.fillRect(700, 150, 180, 38);
-
-        // Ground reflections (floor/counter bounce light)
-        envCtx.fillStyle = 'rgba(255, 248, 240, 0.06)';
-        envCtx.fillRect(0, 350, 1024, 80);
+        // Soft cloud/atmospheric variations
+        for (let ci = 0; ci < 8; ci++) {
+          const cx = Math.random() * ew;
+          const cy = eh * 0.1 + Math.random() * eh * 0.15;
+          const cw = 80 + Math.random() * 150;
+          const ch = 20 + Math.random() * 30;
+          envCtx.fillStyle = `rgba(255, 255, 255, ${0.03 + Math.random() * 0.05})`;
+          envCtx.fillRect(cx, cy, cw, ch);
+        }
       } else {
-        // Night: subtle window/artificial light reflections
-        envCtx.fillStyle = 'rgba(180, 200, 220, 0.1)';
-        envCtx.fillRect(100, 200, 80, 60);
-        envCtx.fillRect(300, 190, 100, 70);
-        envCtx.fillRect(600, 195, 90, 65);
-        envCtx.fillRect(850, 200, 70, 55);
+        // Night: artificial light sources (recessed lights, under-cabinet LED)
+        const lightPositions = [
+          { x: ew * 0.1, y: eh * 0.08 },
+          { x: ew * 0.3, y: eh * 0.06 },
+          { x: ew * 0.5, y: eh * 0.07 },
+          { x: ew * 0.7, y: eh * 0.06 },
+          { x: ew * 0.9, y: eh * 0.08 }
+        ];
+        lightPositions.forEach(lp => {
+          const lg = envCtx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, 80);
+          lg.addColorStop(0, 'rgba(255, 245, 220, 0.3)');
+          lg.addColorStop(0.5, 'rgba(255, 240, 200, 0.1)');
+          lg.addColorStop(1, 'rgba(255, 240, 200, 0)');
+          envCtx.fillStyle = lg;
+          envCtx.fillRect(lp.x - 80, lp.y - 80, 160, 160);
+        });
+        // Under-cabinet LED strip glow
+        envCtx.fillStyle = 'rgba(255, 248, 230, 0.06)';
+        envCtx.fillRect(ew * 0.1, eh * 0.42, ew * 0.8, eh * 0.03);
       }
 
-      // Add subtle horizontal bands for indoor lighting simulation
-      for (let y = 180; y < 280; y += 40) {
-        envCtx.fillStyle = `rgba(255, 255, 255, ${timeOfDay === 'night' ? 0.02 : 0.04})`;
-        envCtx.fillRect(0, y, 1024, 15);
+      // Subtle noise for realistic reflections (prevents banding)
+      for (let ni = 0; ni < 2000; ni++) {
+        const nx = Math.random() * ew;
+        const ny = Math.random() * eh;
+        envCtx.fillStyle = `rgba(${Math.random() > 0.5 ? 255 : 0}, ${Math.random() > 0.5 ? 255 : 0}, ${Math.random() > 0.5 ? 255 : 0}, 0.008)`;
+        envCtx.fillRect(nx, ny, 2, 2);
       }
 
       const envTexture = new THREE.CanvasTexture(envCanvas);
@@ -41853,11 +41915,59 @@
           material.map = texture;
           material.color.setHex(0xFFFFFF); // Pure white base for accurate texture colors
 
-          // Normal map from texture for realistic surface depth
-          // Use bumpMap instead of normalMap to avoid shader issues
+          // Normal map for realistic surface depth on stone/countertop surfaces
           if (options.enableBumpMap !== false) {
-            material.bumpMap = texture;
-            material.bumpScale = 0.02; // Subtle depth effect
+            // Generate a proper normal map from the diffuse texture for surface detail
+            try {
+              const nmCanvas = document.createElement('canvas');
+              const nmSize = Math.min(texture.image.width || 512, 1024);
+              nmCanvas.width = nmSize;
+              nmCanvas.height = nmSize;
+              const nmCtx = nmCanvas.getContext('2d');
+              nmCtx.drawImage(texture.image, 0, 0, nmSize, nmSize);
+              const imgData = nmCtx.getImageData(0, 0, nmSize, nmSize);
+              const pixels = imgData.data;
+              const outData = nmCtx.createImageData(nmSize, nmSize);
+              const out = outData.data;
+              // Sobel-based normal map generation
+              for (let y = 0; y < nmSize; y++) {
+                for (let x = 0; x < nmSize; x++) {
+                  const idx = (y * nmSize + x) * 4;
+                  const getH = (px, py) => {
+                    px = Math.max(0, Math.min(nmSize - 1, px));
+                    py = Math.max(0, Math.min(nmSize - 1, py));
+                    const i = (py * nmSize + px) * 4;
+                    return (pixels[i] + pixels[i+1] + pixels[i+2]) / (3 * 255);
+                  };
+                  // Sobel filter for X and Y gradients
+                  const dx = (getH(x+1,y-1) + 2*getH(x+1,y) + getH(x+1,y+1))
+                           - (getH(x-1,y-1) + 2*getH(x-1,y) + getH(x-1,y+1));
+                  const dy = (getH(x-1,y+1) + 2*getH(x,y+1) + getH(x+1,y+1))
+                           - (getH(x-1,y-1) + 2*getH(x,y-1) + getH(x+1,y-1));
+                  // Normal vector (dx, dy, 1) normalized and mapped to 0-255
+                  const strength = 2.0;
+                  const nx = -dx * strength;
+                  const ny = -dy * strength;
+                  const nz = 1.0;
+                  const len = Math.sqrt(nx*nx + ny*ny + nz*nz);
+                  out[idx]   = Math.floor(((nx/len) * 0.5 + 0.5) * 255);
+                  out[idx+1] = Math.floor(((ny/len) * 0.5 + 0.5) * 255);
+                  out[idx+2] = Math.floor(((nz/len) * 0.5 + 0.5) * 255);
+                  out[idx+3] = 255;
+                }
+              }
+              nmCtx.putImageData(outData, 0, 0);
+              const normalTex = new THREE.CanvasTexture(nmCanvas);
+              normalTex.wrapS = texture.wrapS;
+              normalTex.wrapT = texture.wrapT;
+              normalTex.repeat.copy(texture.repeat);
+              material.normalMap = normalTex;
+              material.normalScale = new THREE.Vector2(0.4, 0.4);
+            } catch (nmErr) {
+              // Fallback to bumpMap if normal map generation fails
+              material.bumpMap = texture;
+              material.bumpScale = 0.02;
+            }
           }
 
           // In HD mode, also add roughness variation
@@ -42049,10 +42159,49 @@
             material.color.setHex(0xFFFFFF);
             material.needsUpdate = true;
 
-            // Generate bump map from texture for depth perception
-            if (isCountertop && options.enableBumpMap !== false) {
-              material.bumpMap = material.map;
-              material.bumpScale = 0.015; // Subtle depth for stone grain
+            // Generate normal map from cached texture for realistic surface depth
+            if (isCountertop && options.enableBumpMap !== false && material.map?.image) {
+              try {
+                const nmC2 = document.createElement('canvas');
+                const nmS2 = Math.min(material.map.image.width || 512, 1024);
+                nmC2.width = nmS2; nmC2.height = nmS2;
+                const nmX2 = nmC2.getContext('2d');
+                nmX2.drawImage(material.map.image, 0, 0, nmS2, nmS2);
+                const iD2 = nmX2.getImageData(0, 0, nmS2, nmS2);
+                const px2 = iD2.data;
+                const oD2 = nmX2.createImageData(nmS2, nmS2);
+                const op2 = oD2.data;
+                for (let ny2 = 0; ny2 < nmS2; ny2++) {
+                  for (let nx2 = 0; nx2 < nmS2; nx2++) {
+                    const i2 = (ny2 * nmS2 + nx2) * 4;
+                    const gH2 = (px3, py3) => {
+                      px3 = Math.max(0, Math.min(nmS2-1, px3));
+                      py3 = Math.max(0, Math.min(nmS2-1, py3));
+                      const j2 = (py3 * nmS2 + px3) * 4;
+                      return (px2[j2] + px2[j2+1] + px2[j2+2]) / 765;
+                    };
+                    const ddx2 = (gH2(nx2+1,ny2-1)+2*gH2(nx2+1,ny2)+gH2(nx2+1,ny2+1)) - (gH2(nx2-1,ny2-1)+2*gH2(nx2-1,ny2)+gH2(nx2-1,ny2+1));
+                    const ddy2 = (gH2(nx2-1,ny2+1)+2*gH2(nx2,ny2+1)+gH2(nx2+1,ny2+1)) - (gH2(nx2-1,ny2-1)+2*gH2(nx2,ny2-1)+gH2(nx2+1,ny2-1));
+                    const s2 = 2.0;
+                    const vnx2 = -ddx2*s2, vny2 = -ddy2*s2, vnz2 = 1.0;
+                    const vl2 = Math.sqrt(vnx2*vnx2 + vny2*vny2 + vnz2*vnz2);
+                    op2[i2]   = Math.floor(((vnx2/vl2)*0.5+0.5)*255);
+                    op2[i2+1] = Math.floor(((vny2/vl2)*0.5+0.5)*255);
+                    op2[i2+2] = Math.floor(((vnz2/vl2)*0.5+0.5)*255);
+                    op2[i2+3] = 255;
+                  }
+                }
+                nmX2.putImageData(oD2, 0, 0);
+                const nTex2 = new THREE.CanvasTexture(nmC2);
+                nTex2.wrapS = material.map.wrapS;
+                nTex2.wrapT = material.map.wrapT;
+                nTex2.repeat.copy(material.map.repeat);
+                material.normalMap = nTex2;
+                material.normalScale = new THREE.Vector2(0.35, 0.35);
+              } catch(e2) {
+                material.bumpMap = material.map;
+                material.bumpScale = 0.015;
+              }
             }
           } else {
             // Load texture with optimized settings for maximum quality
@@ -42077,10 +42226,49 @@
               material.map = texture;
               material.color.setHex(0xFFFFFF);
 
-              // Generate bump map from texture for depth perception on countertops
+              // Generate normal map from texture for realistic stone surface depth
               if (isCountertop && options.enableBumpMap !== false) {
-                material.bumpMap = texture;
-                material.bumpScale = 0.015; // Subtle depth for stone grain
+                try {
+                  const nmC = document.createElement('canvas');
+                  const nmS = Math.min(texture.image.width || 512, 1024);
+                  nmC.width = nmS; nmC.height = nmS;
+                  const nmX = nmC.getContext('2d');
+                  nmX.drawImage(texture.image, 0, 0, nmS, nmS);
+                  const iD = nmX.getImageData(0, 0, nmS, nmS);
+                  const px = iD.data;
+                  const oD = nmX.createImageData(nmS, nmS);
+                  const op = oD.data;
+                  for (let ny = 0; ny < nmS; ny++) {
+                    for (let nx = 0; nx < nmS; nx++) {
+                      const i = (ny * nmS + nx) * 4;
+                      const gH = (px2, py2) => {
+                        px2 = Math.max(0, Math.min(nmS-1, px2));
+                        py2 = Math.max(0, Math.min(nmS-1, py2));
+                        const j = (py2 * nmS + px2) * 4;
+                        return (px[j] + px[j+1] + px[j+2]) / 765;
+                      };
+                      const ddx = (gH(nx+1,ny-1)+2*gH(nx+1,ny)+gH(nx+1,ny+1)) - (gH(nx-1,ny-1)+2*gH(nx-1,ny)+gH(nx-1,ny+1));
+                      const ddy = (gH(nx-1,ny+1)+2*gH(nx,ny+1)+gH(nx+1,ny+1)) - (gH(nx-1,ny-1)+2*gH(nx,ny-1)+gH(nx+1,ny-1));
+                      const s = 2.0;
+                      const vnx = -ddx*s, vny = -ddy*s, vnz = 1.0;
+                      const vl = Math.sqrt(vnx*vnx + vny*vny + vnz*vnz);
+                      op[i]   = Math.floor(((vnx/vl)*0.5+0.5)*255);
+                      op[i+1] = Math.floor(((vny/vl)*0.5+0.5)*255);
+                      op[i+2] = Math.floor(((vnz/vl)*0.5+0.5)*255);
+                      op[i+3] = 255;
+                    }
+                  }
+                  nmX.putImageData(oD, 0, 0);
+                  const nTex = new THREE.CanvasTexture(nmC);
+                  nTex.wrapS = texture.wrapS;
+                  nTex.wrapT = texture.wrapT;
+                  nTex.repeat.copy(texture.repeat);
+                  material.normalMap = nTex;
+                  material.normalScale = new THREE.Vector2(0.35, 0.35);
+                } catch(e) {
+                  material.bumpMap = texture;
+                  material.bumpScale = 0.015;
+                }
               }
 
               material.needsUpdate = true;
@@ -55108,15 +55296,93 @@
         }
 
       } else {
-        // === INDOOR ROOM - Standard walls ===
+        // === INDOOR ROOM - Full 4-wall enclosed room with ceiling ===
+        const wallThick = 0.4; // Wall thickness in feet (~5 inches)
+        const baseboardH = 0.5; // Baseboard height (6 inches)
+        const baseboardD = 0.06; // Baseboard depth from wall
+        const crownH = 0.35; // Crown molding height
+        const crownD = 0.08; // Crown molding depth
 
-        // Floor
+        // --- Procedural floor texture (hardwood plank pattern) ---
+        const floorCanvas = document.createElement('canvas');
+        floorCanvas.width = 1024;
+        floorCanvas.height = 1024;
+        const floorCtx = floorCanvas.getContext('2d');
+        // Base wood color
+        floorCtx.fillStyle = '#B8956A';
+        floorCtx.fillRect(0, 0, 1024, 1024);
+        // Draw planks
+        const plankH = 64; // Each plank ~64px tall
+        for (let y = 0; y < 1024; y += plankH) {
+          // Plank color variation
+          const shade = Math.random() * 30 - 15;
+          const r = Math.min(255, Math.max(0, 184 + shade));
+          const g = Math.min(255, Math.max(0, 149 + shade));
+          const b = Math.min(255, Math.max(0, 106 + shade));
+          floorCtx.fillStyle = `rgb(${r},${g},${b})`;
+          floorCtx.fillRect(0, y + 1, 1024, plankH - 2);
+          // Plank gap line
+          floorCtx.fillStyle = 'rgba(0,0,0,0.15)';
+          floorCtx.fillRect(0, y, 1024, 1);
+          // Staggered vertical seams
+          const seamX = (y / plankH % 2 === 0) ? 512 : 256;
+          floorCtx.fillRect(seamX, y, 1, plankH);
+          if (seamX === 256) floorCtx.fillRect(768, y, 1, plankH);
+          // Subtle wood grain lines
+          for (let g2 = 0; g2 < 5; g2++) {
+            const gy = y + Math.random() * plankH;
+            floorCtx.strokeStyle = `rgba(0,0,0,${0.03 + Math.random() * 0.04})`;
+            floorCtx.lineWidth = 0.5;
+            floorCtx.beginPath();
+            floorCtx.moveTo(0, gy);
+            for (let gx = 0; gx < 1024; gx += 50) {
+              floorCtx.lineTo(gx, gy + (Math.random() - 0.5) * 3);
+            }
+            floorCtx.stroke();
+          }
+        }
+
+        const floorTexture = new THREE.CanvasTexture(floorCanvas);
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        // Scale: each texture tile = ~4ft, repeat based on room size
+        floorTexture.repeat.set(roomWidth / 4, roomDepth / 4);
+        floorTexture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
+
+        // Floor normal map (from same canvas, subtle bump)
+        const floorNormalCanvas = document.createElement('canvas');
+        floorNormalCanvas.width = 512;
+        floorNormalCanvas.height = 512;
+        const fnCtx = floorNormalCanvas.getContext('2d');
+        fnCtx.fillStyle = '#8080FF'; // Neutral normal
+        fnCtx.fillRect(0, 0, 512, 512);
+        for (let y = 0; y < 512; y += 32) {
+          fnCtx.fillStyle = '#7070FF'; // Slight indent at plank gaps
+          fnCtx.fillRect(0, y, 512, 1);
+          const seamX2 = (y / 32 % 2 === 0) ? 256 : 128;
+          fnCtx.fillRect(seamX2, y, 1, 32);
+          if (seamX2 === 128) fnCtx.fillRect(384, y, 1, 32);
+        }
+        const floorNormalTex = new THREE.CanvasTexture(floorNormalCanvas);
+        floorNormalTex.wrapS = THREE.RepeatWrapping;
+        floorNormalTex.wrapT = THREE.RepeatWrapping;
+        floorNormalTex.repeat.set(roomWidth / 4, roomDepth / 4);
+
         const floorMat = new THREE.MeshStandardMaterial({
-          color: 0xD2B48C,
-          roughness: 0.8
+          map: floorTexture,
+          normalMap: floorNormalTex,
+          normalScale: new THREE.Vector2(0.3, 0.3),
+          roughness: 0.55,
+          metalness: 0.05,
+          side: THREE.FrontSide
         });
+        // Apply env map for subtle floor reflections
+        if (window.roomEnvMap) {
+          floorMat.envMap = window.roomEnvMap;
+          floorMat.envMapIntensity = 0.12;
+        }
         const floor = new THREE.Mesh(
-          new THREE.PlaneGeometry(roomWidth + 4, roomDepth + 4),
+          new THREE.PlaneGeometry(roomWidth, roomDepth),
           floorMat
         );
         floor.rotation.x = -Math.PI / 2;
@@ -55125,66 +55391,324 @@
         floor.userData.isRoomStructure = true;
         structure.push(floor);
 
-        // Wall material
-        const wallMat = new THREE.MeshStandardMaterial({
-          color: 0xFFFAF0,
-          roughness: 0.9,
-          side: THREE.DoubleSide
+        // --- Ceiling ---
+        const ceilingMat = new THREE.MeshStandardMaterial({
+          color: 0xF8F8F5,
+          roughness: 0.95,
+          metalness: 0.0,
+          side: THREE.FrontSide
         });
-
-        // Back wall
-        const backWall = new THREE.Mesh(
-          new THREE.PlaneGeometry(roomWidth, wallHeight),
-          wallMat.clone()
+        const ceiling = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth, roomDepth),
+          ceilingMat
         );
-        backWall.position.set(roomWidth / 2, wallHeight / 2, 0);
-        backWall.receiveShadow = true;
-        backWall.userData.isRoomStructure = true;
-        structure.push(backWall);
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.set(roomWidth / 2, wallHeight, roomDepth / 2);
+        ceiling.receiveShadow = true;
+        ceiling.userData.isRoomStructure = true;
+        structure.push(ceiling);
 
-        // Left wall
-        const leftWall = new THREE.Mesh(
-          new THREE.PlaneGeometry(roomDepth, wallHeight),
-          wallMat.clone()
-        );
-        leftWall.rotation.y = Math.PI / 2;
-        leftWall.position.set(0, wallHeight / 2, roomDepth / 2);
-        leftWall.receiveShadow = true;
-        leftWall.userData.isRoomStructure = true;
-        structure.push(leftWall);
+        // --- Procedural drywall texture for walls ---
+        const wallCanvas = document.createElement('canvas');
+        wallCanvas.width = 512;
+        wallCanvas.height = 512;
+        const wCtx = wallCanvas.getContext('2d');
+        // Base paint color (warm white)
+        wCtx.fillStyle = '#FFFAF0';
+        wCtx.fillRect(0, 0, 512, 512);
+        // Subtle drywall stipple/orange peel texture
+        for (let i = 0; i < 8000; i++) {
+          const sx = Math.random() * 512;
+          const sy = Math.random() * 512;
+          const sr = 0.5 + Math.random() * 1.5;
+          const alpha = 0.02 + Math.random() * 0.03;
+          wCtx.fillStyle = Math.random() > 0.5 ? `rgba(0,0,0,${alpha})` : `rgba(255,255,255,${alpha})`;
+          wCtx.beginPath();
+          wCtx.arc(sx, sy, sr, 0, Math.PI * 2);
+          wCtx.fill();
+        }
+        const wallTexture = new THREE.CanvasTexture(wallCanvas);
+        wallTexture.wrapS = THREE.RepeatWrapping;
+        wallTexture.wrapT = THREE.RepeatWrapping;
 
-        // Right wall
-        const rightWall = new THREE.Mesh(
-          new THREE.PlaneGeometry(roomDepth, wallHeight),
-          wallMat.clone()
-        );
-        rightWall.rotation.y = -Math.PI / 2;
-        rightWall.position.set(roomWidth, wallHeight / 2, roomDepth / 2);
-        rightWall.receiveShadow = true;
-        rightWall.userData.isRoomStructure = true;
-        structure.push(rightWall);
+        // Wall normal map for paint texture depth
+        const wallNormalCanvas = document.createElement('canvas');
+        wallNormalCanvas.width = 256;
+        wallNormalCanvas.height = 256;
+        const wnCtx = wallNormalCanvas.getContext('2d');
+        wnCtx.fillStyle = '#8080FF';
+        wnCtx.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 3000; i++) {
+          const nx = Math.random() * 256;
+          const ny = Math.random() * 256;
+          const nr = 0.5 + Math.random() * 1.2;
+          wnCtx.fillStyle = Math.random() > 0.5 ? '#8585FF' : '#7B7BFF';
+          wnCtx.beginPath();
+          wnCtx.arc(nx, ny, nr, 0, Math.PI * 2);
+          wnCtx.fill();
+        }
+        const wallNormalTex = new THREE.CanvasTexture(wallNormalCanvas);
+        wallNormalTex.wrapS = THREE.RepeatWrapping;
+        wallNormalTex.wrapT = THREE.RepeatWrapping;
 
-        // Front wall (optional)
-        if (sceneSettings.showFrontWall) {
-          const frontWallMat = new THREE.MeshStandardMaterial({
+        // Helper: create wall material with texture
+        function createWallMaterial(wallW, wallH) {
+          const tex = wallTexture.clone();
+          tex.needsUpdate = true;
+          tex.repeat.set(wallW / 4, wallH / 4);
+          const nTex = wallNormalTex.clone();
+          nTex.needsUpdate = true;
+          nTex.repeat.set(wallW / 4, wallH / 4);
+          const mat = new THREE.MeshStandardMaterial({
+            map: tex,
+            normalMap: nTex,
+            normalScale: new THREE.Vector2(0.15, 0.15),
             color: 0xFFFAF0,
-            roughness: 0.9,
+            roughness: 0.88,
+            metalness: 0.0,
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: sceneSettings.wallTransparency || 0.5
+            opacity: 1.0
           });
-          const frontWall = new THREE.Mesh(
-            new THREE.PlaneGeometry(roomWidth, wallHeight),
-            frontWallMat
-          );
-          frontWall.rotation.y = Math.PI;
-          frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth);
-          frontWall.receiveShadow = true;
-          frontWall.userData.isRoomStructure = true;
-          structure.push(frontWall);
+          return mat;
         }
 
-        // Reset scene background to default for indoor
+        // Store wall meshes for camera-aware fading
+        if (!window._roomWalls) window._roomWalls = [];
+        window._roomWalls = [];
+
+        // --- Back wall (Z = 0) ---
+        const backWallMat = createWallMaterial(roomWidth, wallHeight);
+        const backWall = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, wallHeight, wallThick),
+          backWallMat
+        );
+        backWall.position.set(roomWidth / 2, wallHeight / 2, -wallThick / 2);
+        backWall.receiveShadow = true;
+        backWall.castShadow = true;
+        backWall.userData.isRoomStructure = true;
+        backWall.userData.wallFacing = new THREE.Vector3(0, 0, 1); // Normal faces into room
+        structure.push(backWall);
+        window._roomWalls.push(backWall);
+
+        // --- Left wall (X = 0) ---
+        const leftWallMat = createWallMaterial(roomDepth, wallHeight);
+        const leftWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThick, wallHeight, roomDepth),
+          leftWallMat
+        );
+        leftWall.position.set(-wallThick / 2, wallHeight / 2, roomDepth / 2);
+        leftWall.receiveShadow = true;
+        leftWall.castShadow = true;
+        leftWall.userData.isRoomStructure = true;
+        leftWall.userData.wallFacing = new THREE.Vector3(1, 0, 0); // Normal faces right into room
+        structure.push(leftWall);
+        window._roomWalls.push(leftWall);
+
+        // --- Right wall (X = roomWidth) ---
+        const rightWallMat = createWallMaterial(roomDepth, wallHeight);
+        const rightWall = new THREE.Mesh(
+          new THREE.BoxGeometry(wallThick, wallHeight, roomDepth),
+          rightWallMat
+        );
+        rightWall.position.set(roomWidth + wallThick / 2, wallHeight / 2, roomDepth / 2);
+        rightWall.receiveShadow = true;
+        rightWall.castShadow = true;
+        rightWall.userData.isRoomStructure = true;
+        rightWall.userData.wallFacing = new THREE.Vector3(-1, 0, 0); // Normal faces left into room
+        structure.push(rightWall);
+        window._roomWalls.push(rightWall);
+
+        // --- Front wall (Z = roomDepth) - ALWAYS rendered, camera-aware fading ---
+        const frontWallMat = createWallMaterial(roomWidth, wallHeight);
+        const frontWall = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, wallHeight, wallThick),
+          frontWallMat
+        );
+        frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth + wallThick / 2);
+        frontWall.receiveShadow = true;
+        frontWall.castShadow = true;
+        frontWall.userData.isRoomStructure = true;
+        frontWall.userData.wallFacing = new THREE.Vector3(0, 0, -1); // Normal faces back into room
+        structure.push(frontWall);
+        window._roomWalls.push(frontWall);
+
+        // --- Baseboards (along all 4 walls) ---
+        const baseboardMat = new THREE.MeshStandardMaterial({
+          color: 0xF5F5F0,
+          roughness: 0.4,
+          metalness: 0.02
+        });
+
+        // Back baseboard
+        const bbBack = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, baseboardH, baseboardD),
+          baseboardMat.clone()
+        );
+        bbBack.position.set(roomWidth / 2, baseboardH / 2, baseboardD / 2);
+        bbBack.userData.isRoomStructure = true;
+        structure.push(bbBack);
+
+        // Left baseboard
+        const bbLeft = new THREE.Mesh(
+          new THREE.BoxGeometry(baseboardD, baseboardH, roomDepth),
+          baseboardMat.clone()
+        );
+        bbLeft.position.set(baseboardD / 2, baseboardH / 2, roomDepth / 2);
+        bbLeft.userData.isRoomStructure = true;
+        structure.push(bbLeft);
+
+        // Right baseboard
+        const bbRight = new THREE.Mesh(
+          new THREE.BoxGeometry(baseboardD, baseboardH, roomDepth),
+          baseboardMat.clone()
+        );
+        bbRight.position.set(roomWidth - baseboardD / 2, baseboardH / 2, roomDepth / 2);
+        bbRight.userData.isRoomStructure = true;
+        structure.push(bbRight);
+
+        // Front baseboard
+        const bbFront = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, baseboardH, baseboardD),
+          baseboardMat.clone()
+        );
+        bbFront.position.set(roomWidth / 2, baseboardH / 2, roomDepth - baseboardD / 2);
+        bbFront.userData.isRoomStructure = true;
+        bbFront.userData.wallFacing = new THREE.Vector3(0, 0, -1); // Fades with front wall
+        structure.push(bbFront);
+        window._roomWalls.push(bbFront);
+
+        // --- Crown molding (along all 4 walls at ceiling) ---
+        const crownMat = new THREE.MeshStandardMaterial({
+          color: 0xFAFAF5,
+          roughness: 0.35,
+          metalness: 0.02
+        });
+
+        // Back crown
+        const crBack = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, crownH, crownD),
+          crownMat.clone()
+        );
+        crBack.position.set(roomWidth / 2, wallHeight - crownH / 2, crownD / 2);
+        crBack.userData.isRoomStructure = true;
+        structure.push(crBack);
+
+        // Left crown
+        const crLeft = new THREE.Mesh(
+          new THREE.BoxGeometry(crownD, crownH, roomDepth),
+          crownMat.clone()
+        );
+        crLeft.position.set(crownD / 2, wallHeight - crownH / 2, roomDepth / 2);
+        crLeft.userData.isRoomStructure = true;
+        structure.push(crLeft);
+
+        // Right crown
+        const crRight = new THREE.Mesh(
+          new THREE.BoxGeometry(crownD, crownH, roomDepth),
+          crownMat.clone()
+        );
+        crRight.position.set(roomWidth - crownD / 2, wallHeight - crownH / 2, roomDepth / 2);
+        crRight.userData.isRoomStructure = true;
+        structure.push(crRight);
+
+        // Front crown
+        const crFront = new THREE.Mesh(
+          new THREE.BoxGeometry(roomWidth, crownH, crownD),
+          crownMat.clone()
+        );
+        crFront.position.set(roomWidth / 2, wallHeight - crownH / 2, roomDepth - crownD / 2);
+        crFront.userData.isRoomStructure = true;
+        crFront.userData.wallFacing = new THREE.Vector3(0, 0, -1);
+        structure.push(crFront);
+        window._roomWalls.push(crFront);
+
+        // --- 3D Dimension Labels ---
+        // Helper to create a text sprite for dimension labels
+        function createDimensionLabel(text, position, rotation) {
+          const labelCanvas = document.createElement('canvas');
+          labelCanvas.width = 256;
+          labelCanvas.height = 64;
+          const lCtx = labelCanvas.getContext('2d');
+          // Background
+          lCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          lCtx.roundRect(4, 4, 248, 56, 8);
+          lCtx.fill();
+          // Border
+          lCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          lCtx.lineWidth = 1;
+          lCtx.roundRect(4, 4, 248, 56, 8);
+          lCtx.stroke();
+          // Text
+          lCtx.fillStyle = '#FFFFFF';
+          lCtx.font = 'bold 28px Inter, Arial, sans-serif';
+          lCtx.textAlign = 'center';
+          lCtx.textBaseline = 'middle';
+          lCtx.fillText(text, 128, 32);
+
+          const labelTexture = new THREE.CanvasTexture(labelCanvas);
+          const labelMat = new THREE.SpriteMaterial({
+            map: labelTexture,
+            transparent: true,
+            depthTest: false,
+            sizeAttenuation: true
+          });
+          const sprite = new THREE.Sprite(labelMat);
+          sprite.position.copy(position);
+          sprite.scale.set(3, 0.75, 1);
+          sprite.userData.isRoomStructure = true;
+          sprite.userData.isDimensionLabel = true;
+          return sprite;
+        }
+
+        // Width label (along front wall, at floor level)
+        const widthLabel = createDimensionLabel(
+          `${roomWidth}' wide`,
+          new THREE.Vector3(roomWidth / 2, 0.4, roomDepth + 1.5)
+        );
+        structure.push(widthLabel);
+
+        // Depth label (along right wall, at floor level)
+        const depthLabel = createDimensionLabel(
+          `${roomDepth}' deep`,
+          new THREE.Vector3(roomWidth + 1.5, 0.4, roomDepth / 2)
+        );
+        structure.push(depthLabel);
+
+        // Height label (on right wall corner, vertical)
+        const heightLabel = createDimensionLabel(
+          `${wallHeight}' tall`,
+          new THREE.Vector3(roomWidth + 1.5, wallHeight / 2, roomDepth + 1)
+        );
+        structure.push(heightLabel);
+
+        // --- Dimension lines (thin cylinders connecting label endpoints) ---
+        const dimLineMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.35 });
+
+        // Width dimension line
+        const widthLineGeo = new THREE.CylinderGeometry(0.02, 0.02, roomWidth, 4);
+        const widthLine = new THREE.Mesh(widthLineGeo, dimLineMat.clone());
+        widthLine.rotation.z = Math.PI / 2;
+        widthLine.position.set(roomWidth / 2, 0.4, roomDepth + 1.0);
+        widthLine.userData.isRoomStructure = true;
+        structure.push(widthLine);
+
+        // Depth dimension line
+        const depthLineGeo = new THREE.CylinderGeometry(0.02, 0.02, roomDepth, 4);
+        const depthLine = new THREE.Mesh(depthLineGeo, dimLineMat.clone());
+        depthLine.rotation.x = Math.PI / 2;
+        depthLine.position.set(roomWidth + 1.0, 0.4, roomDepth / 2);
+        depthLine.userData.isRoomStructure = true;
+        structure.push(depthLine);
+
+        // Height dimension line
+        const heightLineGeo = new THREE.CylinderGeometry(0.02, 0.02, wallHeight, 4);
+        const heightLine = new THREE.Mesh(heightLineGeo, dimLineMat.clone());
+        heightLine.position.set(roomWidth + 1.0, wallHeight / 2, roomDepth + 0.5);
+        heightLine.userData.isRoomStructure = true;
+        structure.push(heightLine);
+
+        // Reset scene background to indoor
         if (scene) {
           scene.background = new THREE.Color(0x1a1a2e);
         }
@@ -55788,6 +56312,55 @@
         }
         animationId = requestAnimationFrame(animate);
         controls.update();
+
+        // === Camera-aware wall fading ===
+        // Walls facing the camera auto-fade so user can see into the room
+        if (window._roomWalls && window._roomWalls.length > 0 && camera) {
+          const camDir = new THREE.Vector3();
+          camera.getWorldDirection(camDir); // Direction camera is looking
+
+          window._roomWalls.forEach(wall => {
+            if (!wall.userData.wallFacing || !wall.material) return;
+            const wallNormal = wall.userData.wallFacing;
+            // Dot product: positive = camera looking toward wall's inner face
+            // negative = camera looking away from wall (wall behind camera)
+            const dot = camDir.dot(wallNormal);
+
+            // Target opacity: when camera faces wall directly (dot > 0.3), fade it out
+            // When camera looks away from wall (dot < 0), keep it fully opaque
+            let targetOpacity;
+            if (dot > 0.4) {
+              targetOpacity = 0.06; // Nearly invisible when camera faces wall head-on
+            } else if (dot > 0.1) {
+              targetOpacity = 0.15 + (0.4 - dot) * 2.8; // Gradual fade
+            } else {
+              targetOpacity = 1.0; // Fully opaque when wall is behind camera
+            }
+
+            // Also fade ceiling when camera is above looking down
+            if (wall.userData.isDimensionLabel) return; // Skip labels
+
+            // Smooth lerp for gradual transition (no popping)
+            const currentOpacity = wall.material.opacity;
+            wall.material.opacity = currentOpacity + (targetOpacity - currentOpacity) * 0.08;
+            wall.material.transparent = true;
+            wall.material.needsUpdate = true;
+          });
+
+          // Fade ceiling when looking from above (bird's eye)
+          const ceilingMeshes = scene.children.filter(c =>
+            c.userData.isRoomStructure && c.rotation && Math.abs(c.rotation.x - Math.PI / 2) < 0.01
+          );
+          ceilingMeshes.forEach(ceil => {
+            if (!ceil.material) return;
+            // camDir.y < -0.3 means camera is looking downward
+            const downDot = -camDir.y;
+            let ceilTarget = downDot > 0.5 ? 0.08 : (downDot > 0.2 ? 0.3 : 0.95);
+            ceil.material.opacity = ceil.material.opacity + (ceilTarget - ceil.material.opacity) * 0.08;
+            ceil.material.transparent = true;
+            ceil.material.needsUpdate = true;
+          });
+        }
 
         // Use post-processing composer if available, otherwise standard render
         if (composer && postProcessingEnabled && window._postProcessing?.enabled) {
