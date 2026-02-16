@@ -7,23 +7,23 @@
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Three.js for 3D -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Three.js r147 for 3D (last version with global script support) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r147/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 
-  <!-- Post-processing for enhanced visuals -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/UnpackDepthRGBAShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SAOShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/DepthLimitedBlurShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SAOPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+  <!-- Post-processing for enhanced visuals (r147) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/UnpackDepthRGBAShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/SAOShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/DepthLimitedBlurShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/SAOPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/FXAAShader.js"></script>
 
   <!-- Centralized Configuration -->
   <script src="/js/config.js"></script>
@@ -25152,7 +25152,7 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
       container.appendChild(renderer.domElement);
@@ -39435,7 +39435,7 @@
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15; // Balanced exposure for realistic look
       renderer.physicallyCorrectLights = true; // More realistic light falloff
-      renderer.outputColorSpace = THREE.SRGBColorSpace; // Proper color encoding (r128 API)
+      renderer.outputEncoding = THREE.sRGBEncoding; // Proper color encoding (r147 API)
       container.appendChild(renderer.domElement);
 
       // Orbit controls with smooth zoom - allows close-up inspection
@@ -40328,7 +40328,7 @@
 
       const envTexture = new THREE.CanvasTexture(envCanvas);
       envTexture.mapping = THREE.EquirectangularReflectionMapping;
-      envTexture.colorSpace = THREE.SRGBColorSpace;
+      envTexture.encoding = THREE.sRGBEncoding;
 
       // Generate environment map with higher quality
       const envMap = pmremGenerator.fromEquirectangular(envTexture).texture;
@@ -40370,6 +40370,13 @@
         }
       });
     }
+
+    // === STANDARD HEIGHTS (single source of truth for 3D stacking) ===
+    const STD_BASE_CAB_HEIGHT = BUILDING_STANDARDS?.CABINETS?.BASE?.height || 2.875; // 34.5" cabinet body
+    const STD_COUNTER_THICKNESS = BUILDING_STANDARDS?.COUNTERTOPS?.thickness || 0.125; // 1.5" (3cm stone)
+    const STD_COUNTER_SURFACE = STD_BASE_CAB_HEIGHT + STD_COUNTER_THICKNESS; // 36" = 3.0 ft
+    const STD_WALL_CAB_BOTTOM = BUILDING_STANDARDS?.HEIGHTS?.wallCabBottom || 4.5; // 54" from floor
+    const STD_BACKSPLASH_HEIGHT = BUILDING_STANDARDS?.BACKSPLASH?.full || 1.5; // 18"
 
     // Get proper 3D height for element types
     // Can accept element object to use custom heights
@@ -40432,17 +40439,17 @@
       }
 
       const heights = {
-        'base-cabinet': 2.9,      // 35 inches standard
-        'drawer-base': 2.9,       // 35 inches (same as base)
-        'sink-base': 2.9,         // 35 inches (same as base)
-        'wall-cabinet': 2.5,      // 30 inches
-        'tall-cabinet': 7,        // 84 inches
-        'corner-cabinet': 2.9,
-        'lazy-susan': 2.9,        // 35 inches (corner base)
-        'filler': 2.9,            // 35 inches (matches base cabinet height)
-        'scribe': 2.9,            // 35 inches (matches base cabinet height)
+        'base-cabinet': STD_BASE_CAB_HEIGHT, // 34.5" standard (BUILDING_STANDARDS)
+        'drawer-base': STD_BASE_CAB_HEIGHT,  // 34.5" (same as base)
+        'sink-base': STD_BASE_CAB_HEIGHT,    // 34.5" (same as base)
+        'wall-cabinet': 2.5,                 // 30" standard
+        'tall-cabinet': 7,                   // 84"
+        'corner-cabinet': STD_BASE_CAB_HEIGHT,
+        'lazy-susan': STD_BASE_CAB_HEIGHT,   // 34.5" (corner base)
+        'filler': STD_BASE_CAB_HEIGHT,       // 34.5" (matches base cabinet height)
+        'scribe': STD_BASE_CAB_HEIGHT,       // 34.5" (matches base cabinet height)
         'island': 3,              // 36 inches with countertop
-        'countertop': 0.12,       // 1.5 inch thick
+        'countertop': STD_COUNTER_THICKNESS, // 1.5" (3cm stone, from BUILDING_STANDARDS)
         'backsplash': 1.5,        // 18 inches
         'flooring': 0.05,         // Very thin
         'tile': 0.05,
@@ -40580,6 +40587,134 @@
     }
 
     // Get Y position (elevation) for element types
+
+    // Helper: Get the actual top surface height of an element (what sits ON TOP of it)
+    // Walks the stacking chain: cabinet -> countertop -> sink, etc.
+    function getElementTopSurface(targetEl) {
+      if (!targetEl) return 0;
+      const type = targetEl.type || '';
+
+      // Pony walls
+      const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
+      if (ponyWallTypes.includes(type)) {
+        return targetEl.wallHeight || (type === 'knee-wall' ? 2.5 : 3.5);
+      }
+
+      // Base cabinets — use custom cabinetHeight or standard
+      const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet',
+                                'lazy-susan', 'blind-corner', 'filler', 'scribe'];
+      if (baseCabinetTypes.some(t => type === t || type.startsWith(t + '-'))) {
+        return targetEl.cabinetHeight || STD_BASE_CAB_HEIGHT;
+      }
+
+      // Island
+      if (type === 'island') {
+        return targetEl.cabinetHeight || 3; // 36" island height
+      }
+
+      // Tall cabinet
+      if (type === 'tall-cabinet' || type.startsWith('tall-cabinet-')) {
+        return targetEl.cabinetHeight || 7;
+      }
+
+      // Countertop — find what it sits on, add thickness
+      if (type === 'countertop' || type === 'countertop-l' || type === 'countertop-corner' || type === 'countertop-u') {
+        const supportHeight = findSupportSurfaceHeight(targetEl);
+        return supportHeight + (targetEl.thickness || STD_COUNTER_THICKNESS);
+      }
+
+      // Backsplash — sits on countertop surface + extends verticalHeight
+      if (type === 'backsplash') {
+        const ctSurface = findCounterSurfaceBelow(targetEl);
+        const bsH = targetEl.verticalHeight || STD_BACKSPLASH_HEIGHT;
+        return ctSurface + bsH;
+      }
+
+      // Default: use get3DHeight which returns the element's full height
+      return get3DHeight(targetEl);
+    }
+
+    // Helper: Find the height of the surface supporting a countertop (cabinet/pony wall below it)
+    function findSupportSurfaceHeight(countertopEl) {
+      const ctLeft = countertopEl.x / pixelsPerFoot;
+      const ctRight = ctLeft + countertopEl.width;
+      const ctTop = countertopEl.y / pixelsPerFoot;
+      const ctBottom = ctTop + countertopEl.height;
+      const ctArea = countertopEl.width * countertopEl.height;
+
+      const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
+      const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet',
+                            'lazy-susan', 'island', 'blind-corner', 'filler', 'scribe'];
+
+      let bestHeight = STD_BASE_CAB_HEIGHT; // Default fallback
+
+      elements.forEach(other => {
+        if (other.id === countertopEl.id) return;
+        const oType = other.type || '';
+
+        const otherLeft = other.x / pixelsPerFoot;
+        const otherRight = otherLeft + other.width;
+        const otherTop = other.y / pixelsPerFoot;
+        const otherBottom = otherTop + other.height;
+
+        const overlapX = Math.max(0, Math.min(ctRight, otherRight) - Math.max(ctLeft, otherLeft));
+        const overlapY = Math.max(0, Math.min(ctBottom, otherBottom) - Math.max(ctTop, otherTop));
+        const overlapArea = overlapX * overlapY;
+
+        if (ctArea > 0 && overlapArea / ctArea < 0.15) return;
+
+        if (ponyWallTypes.includes(oType)) {
+          const wh = other.wallHeight || (oType === 'knee-wall' ? 2.5 : 3.5);
+          if (wh > bestHeight) bestHeight = wh;
+        } else if (cabinetTypes.some(t => oType === t || oType.startsWith(t + '-'))) {
+          const ch = other.cabinetHeight || STD_BASE_CAB_HEIGHT;
+          if (ch > bestHeight) bestHeight = ch;
+        } else if (oType === 'island') {
+          const ih = other.cabinetHeight || 3;
+          if (ih > bestHeight) bestHeight = ih;
+        }
+      });
+
+      return bestHeight;
+    }
+
+    // Helper: Find the counter surface height for elements that sit on/in a countertop
+    // (sinks, cooktops, backsplashes, etc.)
+    function findCounterSurfaceBelow(el) {
+      const elLeft = el.x / pixelsPerFoot;
+      const elRight = elLeft + el.width;
+      const elTop = el.y / pixelsPerFoot;
+      const elBottom = elTop + el.height;
+
+      let bestSurface = STD_COUNTER_SURFACE; // Default: standard 36" counter
+
+      elements.forEach(other => {
+        if (other.id === el.id) return;
+        const oType = other.type || '';
+        if (oType !== 'countertop' && oType !== 'countertop-l' && oType !== 'countertop-corner' && oType !== 'countertop-u') return;
+
+        const otherLeft = other.x / pixelsPerFoot;
+        const otherRight = otherLeft + other.width;
+        const otherTop = other.y / pixelsPerFoot;
+        const otherBottom = otherTop + other.height;
+
+        // Check for overlap or adjacency
+        const overlapX = Math.max(0, Math.min(elRight, otherRight) - Math.max(elLeft, otherLeft));
+        const overlapY = Math.max(0, Math.min(elBottom, otherBottom) - Math.max(elTop, otherTop));
+        const adjacentY = Math.abs(elBottom - otherTop) < 0.5 || Math.abs(elTop - otherBottom) < 0.5;
+
+        if (overlapX > 0.1 && (overlapY > 0 || adjacentY)) {
+          // Found a countertop — compute its ACTUAL surface by walking the chain
+          const supportH = findSupportSurfaceHeight(other);
+          const thickness = other.thickness || STD_COUNTER_THICKNESS;
+          const surface = supportH + thickness;
+          if (surface > bestSurface) bestSurface = surface;
+        }
+      });
+
+      return bestSurface;
+    }
+
     function get3DYPosition(el, height) {
       // Validate inputs to prevent NaN propagation
       if (!el || typeof el.type === 'undefined') {
@@ -40628,102 +40763,22 @@
         case 'scribe':
           return height / 2; // Base sits on floor
 
-        // Counter height items (on top of base cabinets at ~35")
+        // Counter height items (on top of base cabinets)
         case 'countertop':
         case 'countertop-l':
         case 'countertop-corner':
         case 'countertop-u': {
-          // Smart stacking: detect what's beneath this countertop and sit ON TOP of it
-          const ctopCenterX = el.x / pixelsPerFoot + el.width / 2;
-          const ctopCenterY = el.y / pixelsPerFoot + el.height / 2;
-          const ctopLeft = el.x / pixelsPerFoot;
-          const ctopRight = ctopLeft + el.width;
-          const ctopTop = el.y / pixelsPerFoot;
-          const ctopBottom = ctopTop + el.height;
-
-          // Types of elements countertops can sit on
-          const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
-          const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet',
-                                'lazy-susan', 'island', 'tall-cabinet'];
-
-          // Find any element that this countertop overlaps with
-          let bestMatch = null;
-          let bestHeight = 0;
-
-          elements.forEach(other => {
-            if (other.id === el.id) return;
-
-            // Calculate other element bounds
-            const otherLeft = other.x / pixelsPerFoot;
-            const otherRight = otherLeft + other.width;
-            const otherTop = other.y / pixelsPerFoot;
-            const otherBottom = otherTop + other.height;
-
-            // Check for overlap (countertop should overlap at least 50% with the element below)
-            const overlapX = Math.max(0, Math.min(ctopRight, otherRight) - Math.max(ctopLeft, otherLeft));
-            const overlapY = Math.max(0, Math.min(ctopBottom, otherBottom) - Math.max(ctopTop, otherTop));
-            const overlapArea = overlapX * overlapY;
-            const ctopArea = el.width * el.height;
-
-            // Need at least 20% overlap to consider sitting on it
-            if (overlapArea / ctopArea < 0.2) return;
-
-            if (ponyWallTypes.includes(other.type)) {
-              const wallHeight = other.wallHeight || (other.type === 'knee-wall' ? 2.5 : 3.5);
-              if (wallHeight > bestHeight) {
-                bestHeight = wallHeight;
-                bestMatch = other;
-              }
-            } else if (cabinetTypes.includes(other.type)) {
-              // Get the cabinet's height (top surface)
-              const cabHeight = other.type === 'tall-cabinet' ? (other.cabinetHeight || 7) :
-                               (other.cabinetHeight || 2.9);
-              if (cabHeight > bestHeight) {
-                bestHeight = cabHeight;
-                bestMatch = other;
-              }
-            }
-          });
-
-          if (bestMatch) {
-            // Position countertop on top of the detected element
-            return bestHeight + height / 2;
-          }
-
-          // Default: Base cabinet is 2.9ft (34.8"), counter sits directly on top
-          return 2.9 + height / 2;
+          // Smart stacking: detect what's beneath and sit ON TOP of it
+          const supportHeight = findSupportSurfaceHeight(el);
+          return supportHeight + height / 2;
         }
 
         case 'sink':
         case 'sink-double':
         case 'sink-farmhouse': {
           // Smart stacking: sink sits IN/ON countertop surface
-          const sinkLeft = el.x / pixelsPerFoot;
-          const sinkRight = sinkLeft + el.width;
-          const sinkTop = el.y / pixelsPerFoot;
-          const sinkBottom = sinkTop + el.height;
-
-          // Find countertop that this sink is in
-          let counterSurface = 3.02; // Default: 2.9 cabinet + 0.12 counter
-
-          elements.forEach(other => {
-            if (other.id === el.id) return;
-            if (other.type !== 'countertop') return;
-
-            const otherLeft = other.x / pixelsPerFoot;
-            const otherRight = otherLeft + other.width;
-            const otherTop = other.y / pixelsPerFoot;
-            const otherBottom = otherTop + other.height;
-
-            // Check if sink overlaps with countertop
-            const overlapX = Math.max(0, Math.min(sinkRight, otherRight) - Math.max(sinkLeft, otherLeft));
-            const overlapY = Math.max(0, Math.min(sinkBottom, otherBottom) - Math.max(sinkTop, otherTop));
-
-            if (overlapX > 0.1 && overlapY > 0.1) {
-              // Found a countertop - calculate its surface height
-              counterSurface = 2.9 + 0.12; // Standard cabinet + counter
-            }
-          });
+          // Uses recursive stacking — finds actual countertop surface height
+          const counterSurface = findCounterSurfaceBelow(el);
 
           // Farmhouse sinks show apron, position slightly lower
           if (el.type === 'sink-farmhouse' || el.mountType === 'farmhouse') {
@@ -40734,38 +40789,13 @@
             return counterSurface;
           }
           // Undermount sinks - the sink origin is at countertop level
-          // The basin extends DOWN into the cabinet from here
-          // The "hole" elements extend UP to cover the countertop
           return counterSurface;
         }
 
         case 'cooktop': {
           // Cooktop sits IN countertop, flush with surface
-          const ctLeft = el.x / pixelsPerFoot;
-          const ctRight = ctLeft + el.width;
-          const ctTop = el.y / pixelsPerFoot;
-          const ctBottom = ctTop + el.height;
-
-          let counterSurface = 3.02;
-
-          elements.forEach(other => {
-            if (other.id === el.id) return;
-            if (other.type !== 'countertop') return;
-
-            const otherLeft = other.x / pixelsPerFoot;
-            const otherRight = otherLeft + other.width;
-            const otherTop = other.y / pixelsPerFoot;
-            const otherBottom = otherTop + other.height;
-
-            const overlapX = Math.max(0, Math.min(ctRight, otherRight) - Math.max(ctLeft, otherLeft));
-            const overlapY = Math.max(0, Math.min(ctBottom, otherBottom) - Math.max(ctTop, otherTop));
-
-            if (overlapX > 0.1 && overlapY > 0.1) {
-              counterSurface = 2.9 + 0.12;
-            }
-          });
-
-          // Cooktop surface is flush with countertop
+          // Uses recursive stacking — finds actual countertop surface height
+          const counterSurface = findCounterSurfaceBelow(el);
           return counterSurface;
         }
 
@@ -40792,20 +40822,15 @@
         // Wall mounted (54" from floor is typical bottom edge per NKBA)
         case 'wall-cabinet': {
           // NKBA Standard: Wall cabinet bottom at 54" (4.5 ft) from floor
-          // This provides 18" clearance above 36" counter height
-          // Can be adjusted if backsplash extends higher
+          // Uses recursive stacking to find actual counter/backsplash surface
           const wcLeft = el.x / pixelsPerFoot;
           const wcRight = wcLeft + el.width;
           const wcTop = el.y / pixelsPerFoot;
           const wcBottom = wcTop + el.height;
 
-          // Standard heights from BUILDING_STANDARDS
-          const standardWallCabBottom = BUILDING_STANDARDS.HEIGHTS?.wallCabBottom || 4.5; // 54" from floor
-          const standardCounterHeight = BUILDING_STANDARDS.HEIGHTS?.baseCounter || 3; // 36" counter
-          const standardBacksplashClearance = 1.5; // 18" between counter and wall cabinet
-
           // Find backsplash or countertop beneath this wall cabinet
-          let surfaceBelowTop = standardCounterHeight + 0.02; // Default counter surface (36" + counter thickness)
+          // Use actual computed surfaces instead of hardcoded values
+          let surfaceBelowTop = STD_COUNTER_SURFACE; // Default counter surface
           let hasBacksplash = false;
 
           elements.forEach(other => {
@@ -40816,7 +40841,7 @@
             const otherTop = other.y / pixelsPerFoot;
             const otherBottom = otherTop + other.height;
 
-            // Check for horizontal overlap (wall cabinet should be roughly above the element)
+            // Check for horizontal overlap
             const overlapX = Math.max(0, Math.min(wcRight, otherRight) - Math.max(wcLeft, otherLeft));
             if (overlapX < 0.1) return;
 
@@ -40826,17 +40851,20 @@
             if (overlapY < 0.1 && !adjacentY) return;
 
             if (other.type === 'backsplash') {
-              // Backsplash found - wall cabinet sits on top of backsplash
-              // Backsplash sits on counter surface + extends up
-              const bsHeight = other.verticalHeight || other.wallHeight || BUILDING_STANDARDS.BACKSPLASH?.full || 1.5;
-              const bsTop = standardCounterHeight + 0.02 + bsHeight;
+              // Backsplash found — compute its actual top using recursive stacking
+              const bsHeight = other.verticalHeight || other.wallHeight || STD_BACKSPLASH_HEIGHT;
+              const actualCounterSurface = findCounterSurfaceBelow(other);
+              const bsTop = actualCounterSurface + bsHeight;
               if (bsTop > surfaceBelowTop) {
                 surfaceBelowTop = bsTop;
                 hasBacksplash = true;
               }
-            } else if (other.type === 'countertop' || other.type === 'countertop-l' || other.type === 'countertop-corner') {
-              // Countertop found - note its surface height
-              const counterSurface = standardCounterHeight + 0.02;
+            } else if (other.type === 'countertop' || other.type === 'countertop-l' || other.type === 'countertop-corner' || other.type === 'countertop-u') {
+              // Countertop found — compute actual surface height
+              const actualSurface = findCounterSurfaceBelow({ ...el, type: 'sink', x: other.x, y: other.y, width: other.width, height: other.height, id: '__probe__' });
+              // Actually just use the countertop's own computed surface
+              const supportH = findSupportSurfaceHeight(other);
+              const counterSurface = supportH + (other.thickness || STD_COUNTER_THICKNESS);
               if (counterSurface > surfaceBelowTop && !hasBacksplash) {
                 surfaceBelowTop = counterSurface;
               }
@@ -40847,19 +40875,17 @@
           let wallCabBottom;
 
           if (hasBacksplash) {
-            // Wall cabinet sits just above backsplash (small gap for visual clarity)
+            // Wall cabinet sits just above backsplash
             wallCabBottom = surfaceBelowTop + 0.02;
           } else {
-            // No backsplash found - use standard 18" clearance above counter
-            // Or minimum NKBA standard of 54" from floor
-            const clearanceBasedBottom = surfaceBelowTop + standardBacksplashClearance;
-            wallCabBottom = Math.max(clearanceBasedBottom, standardWallCabBottom);
+            // No backsplash — use 18" clearance above counter or NKBA minimum
+            const clearanceBasedBottom = surfaceBelowTop + STD_BACKSPLASH_HEIGHT;
+            wallCabBottom = Math.max(clearanceBasedBottom, STD_WALL_CAB_BOTTOM);
           }
 
-          // Ensure minimum height per NKBA guidelines (54" min for accessibility)
+          // Ensure minimum height per NKBA guidelines
           wallCabBottom = Math.max(wallCabBottom, BUILDING_STANDARDS.HEIGHTS?.wallCabBottomMin || 4.25);
 
-          // Return Y position (center of cabinet)
           return wallCabBottom + height / 2;
         }
 
@@ -40882,53 +40908,10 @@
 
         case 'backsplash': {
           // Smart stacking: backsplash sits ON TOP of countertop surface
-          const bsLeft = el.x / pixelsPerFoot;
-          const bsRight = bsLeft + el.width;
-          const bsTop = el.y / pixelsPerFoot;
-          const bsBottom = bsTop + el.height;
-
-          // Find countertop beneath this backsplash
-          let counterSurfaceHeight = 0;
-
-          elements.forEach(other => {
-            if (other.id === el.id) return;
-            if (other.type !== 'countertop') return;
-
-            // Calculate other element bounds
-            const otherLeft = other.x / pixelsPerFoot;
-            const otherRight = otherLeft + other.width;
-            const otherTop = other.y / pixelsPerFoot;
-            const otherBottom = otherTop + other.height;
-
-            // Check if backsplash is adjacent to or overlapping with countertop
-            const overlapX = Math.max(0, Math.min(bsRight, otherRight) - Math.max(bsLeft, otherLeft));
-            const adjacentY = Math.abs(bsBottom - otherTop) < 0.5 || Math.abs(bsTop - otherBottom) < 0.5;
-            const overlapY = Math.max(0, Math.min(bsBottom, otherBottom) - Math.max(bsTop, otherTop));
-
-            // Consider if there's any horizontal overlap and they're close in Y
-            if (overlapX > 0.1 && (overlapY > 0 || adjacentY)) {
-              // Calculate countertop's top surface directly (avoid recursive call)
-              // Countertop thickness is typically 0.12 ft (1.44 inches)
-              const counterThickness = 0.12;
-              // Countertop base position is 2.9 ft (on cabinet), or on detected element
-              const counterBaseHeight = 2.9; // Standard cabinet height
-              const counterSurface = counterBaseHeight + counterThickness;
-              if (counterSurface > counterSurfaceHeight) {
-                counterSurfaceHeight = counterSurface;
-              }
-            }
-          });
-
-          // Use verticalHeight for actual backsplash height in 3D
-          const bsVertHeight = el.verticalHeight || 1.5;
-
-          if (counterSurfaceHeight > 0) {
-            // Backsplash sits directly on top of countertop surface
-            return counterSurfaceHeight + bsVertHeight / 2;
-          }
-
-          // Default: Standard counter surface (2.9 + 0.12 thick counter) + backsplash
-          return 3.02 + bsVertHeight / 2;
+          // Uses recursive stacking to find actual counter surface height
+          const counterSurface = findCounterSurfaceBelow(el);
+          const bsVertHeight = el.verticalHeight || STD_BACKSPLASH_HEIGHT;
+          return counterSurface + bsVertHeight / 2;
         }
 
         case 'range-hood': {
@@ -40939,12 +40922,12 @@
           const rhBottom = rhTop + el.height;
 
           // Find stove/range/cooktop beneath this hood
-          let applianceTopHeight = 3; // Default: top of stove surface
+          let applianceTopHeight = STD_COUNTER_SURFACE; // Default: counter surface
 
           elements.forEach(other => {
             if (other.id === el.id) return;
 
-            const stoveTypes = ['stove', 'range', 'cooktop'];
+            const stoveTypes = ['stove', 'range', 'slide-in-range', 'cooktop'];
             if (!stoveTypes.includes(other.type)) return;
 
             const otherLeft = other.x / pixelsPerFoot;
@@ -40952,22 +40935,23 @@
             const otherTop = other.y / pixelsPerFoot;
             const otherBottom = otherTop + other.height;
 
-            // Check for overlap
             const overlapX = Math.max(0, Math.min(rhRight, otherRight) - Math.max(rhLeft, otherLeft));
             const overlapY = Math.max(0, Math.min(rhBottom, otherBottom) - Math.max(rhTop, otherTop));
 
             if (overlapX > 0.1 && overlapY > 0.1) {
-              // Get the top of the appliance
-              const appHeight = other.type === 'cooktop' ? 0.1 : 3; // Cooktop is thin, range is tall
-              const appTop = other.type === 'cooktop' ? 3.02 + 0.05 : appHeight;
-              if (appTop > applianceTopHeight) {
-                applianceTopHeight = appTop;
+              if (other.type === 'cooktop') {
+                // Cooktop surface = actual countertop surface
+                const ctSurface = findCounterSurfaceBelow(other);
+                if (ctSurface + 0.05 > applianceTopHeight) applianceTopHeight = ctSurface + 0.05;
+              } else {
+                // Stove/range is floor-standing, top at its height
+                const rangeTop = get3DHeight(other);
+                if (rangeTop > applianceTopHeight) applianceTopHeight = rangeTop;
               }
             }
           });
 
-          // Range hood bottom is typically 24-30" above cooktop surface
-          // Position hood 2 feet (24") above the cooking surface
+          // Range hood bottom: 24" (2 ft) above cooking surface (NKBA minimum)
           return applianceTopHeight + 2 + height / 2;
         }
 
@@ -41668,7 +41652,7 @@
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.ClampToEdgeWrapping;
       texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.encoding = THREE.sRGBEncoding;
       texture.needsUpdate = true;
 
       // Cache the texture
@@ -41757,7 +41741,7 @@
           textureLoader.load(url, (texture) => {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
-            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.encoding = THREE.sRGBEncoding;
             addTextureToCache(url, texture);
             console.log('Preloaded texture successfully:', url.substring(0, 50) + '...');
           }, undefined, (err) => {
@@ -41905,7 +41889,7 @@
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.repeat.set(repeatX, repeatY);
-          texture.colorSpace = THREE.SRGBColorSpace; // Updated for Three.js r152+
+          texture.encoding = THREE.sRGBEncoding; // Updated for Three.js r152+
           // Maximum anisotropy for sharp textures at viewing angles
           texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
           texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -42209,7 +42193,7 @@
               texture.wrapS = THREE.RepeatWrapping;
               texture.wrapT = THREE.RepeatWrapping;
               texture.repeat.set(repeatX, repeatY);
-              texture.colorSpace = THREE.SRGBColorSpace;
+              texture.encoding = THREE.sRGBEncoding;
               // Maximum anisotropy for sharpest textures at angles
               texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
               // Use trilinear filtering for best quality
@@ -42365,7 +42349,7 @@
           texture.wrapT = THREE.RepeatWrapping;
           texture.repeat.set(1, 1);
           texture.anisotropy = 16;
-          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.encoding = THREE.sRGBEncoding;
           texture.needsUpdate = true;
           return texture;
         }
@@ -42562,7 +42546,7 @@
         const repeatVal = grainType === 'maple' ? 1.2 : (grainType === 'hickory' ? 1.8 : 1.5);
         texture.repeat.set(repeatVal, repeatVal);
         texture.anisotropy = 16;  // Better quality at angles
-        texture.colorSpace = THREE.SRGBColorSpace;  // Correct color encoding for r128
+        texture.encoding = THREE.sRGBEncoding;  // Correct color encoding for r128
         texture.needsUpdate = true;  // Ensure texture is uploaded to GPU
         return texture;
       }
@@ -56521,7 +56505,7 @@
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.minFilter = THREE.LinearFilter;
-      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.encoding = THREE.sRGBEncoding;
 
       const material = new THREE.SpriteMaterial({
         map: texture,
