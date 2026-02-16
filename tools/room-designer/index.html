@@ -40644,7 +40644,7 @@
 
       const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet',
-                            'lazy-susan', 'island', 'blind-corner', 'filler', 'scribe'];
+                            'lazy-susan', 'blind-corner', 'filler', 'scribe'];
 
       let bestHeight = STD_BASE_CAB_HEIGHT; // Default fallback
 
@@ -40860,9 +40860,7 @@
                 hasBacksplash = true;
               }
             } else if (other.type === 'countertop' || other.type === 'countertop-l' || other.type === 'countertop-corner' || other.type === 'countertop-u') {
-              // Countertop found — compute actual surface height
-              const actualSurface = findCounterSurfaceBelow({ ...el, type: 'sink', x: other.x, y: other.y, width: other.width, height: other.height, id: '__probe__' });
-              // Actually just use the countertop's own computed surface
+              // Countertop found — compute surface height from its support
               const supportH = findSupportSurfaceHeight(other);
               const counterSurface = supportH + (other.thickness || STD_COUNTER_THICKNESS);
               if (counterSurface > surfaceBelowTop && !hasBacksplash) {
@@ -40884,7 +40882,7 @@
           }
 
           // Ensure minimum height per NKBA guidelines
-          wallCabBottom = Math.max(wallCabBottom, BUILDING_STANDARDS.HEIGHTS?.wallCabBottomMin || 4.25);
+          wallCabBottom = Math.max(wallCabBottom, BUILDING_STANDARDS?.HEIGHTS?.wallCabBottomMin || 4.25);
 
           return wallCabBottom + height / 2;
         }
