@@ -4533,26 +4533,24 @@
         </div>
         <div class="pdf-importer-body">
           <div class="import-dropzone" id="pdfDropzone">
-            <div style="width:64px; height:64px; margin:0 auto 16px; background:rgba(99,102,241,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center;">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
+            <p style="font-size:15px; font-weight:500; color:var(--text); margin:0 0 4px;">Upload Room Photos</p>
+            <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Click each slot to add a photo • Up to 4 images for multi-angle scan</p>
+            <div id="pdfImageSlots" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;"></div>
+            <div style="display:flex; gap:8px; justify-content:center; align-items:center;">
+              <span id="pdfImageCount" style="font-size:12px; color:var(--text-muted);">Click a slot to add a photo</span>
+              <button id="pdfClearAll" onclick="event.stopPropagation(); window._pdfImages=[]; window._renderPdfSlots();" style="display:none; padding:4px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; cursor:pointer; color:var(--text); font-size:12px;">✕ Clear All</button>
             </div>
-            <p style="font-size:15px; font-weight:500; color:var(--text); margin:0 0 4px;">Drop your blueprint here</p>
-            <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">or click to browse • PDF, PNG, JPG supported</p>
-            <input type="file" id="pdfFileInput" accept=".pdf,image/*" onchange="handlePDFUpload(event)" style="display:none">
-            <button onclick="document.getElementById('pdfFileInput').click()" style="display:inline-flex; align-items:center; gap:8px;">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-              Select File
-            </button>
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+            <input type="file" id="pdfFileInput" accept=".pdf,image/*" style="display:none">
+            <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
               <p style="font-size:11px; color:var(--text-muted); margin:0;">
-                <strong>Tip:</strong> For best results, use clear cabinet schedules or elevation drawings
+                <strong>Tip:</strong> Upload photos from different angles for best results. PDF blueprints and sketches also supported.
               </p>
             </div>
           </div>
+
+          <button id="pdfAnalyzeBtn" onclick="window._analyzeAllImages()" style="display:none; width:100%; padding:12px; margin-bottom:16px; background:linear-gradient(135deg, #6366f1, #8b5cf6); border:none; border-radius:8px; color:white; font-weight:600; font-size:15px; cursor:pointer;">
+            🔍 Scan & Build Layout
+          </button>
 
           <div id="pdfParseResults" class="pdf-parse-results" style="display:none">
             <div id="extractedRooms"></div>
@@ -4588,7 +4586,11 @@
     modal.addEventListener('keyup', e => e.stopPropagation());
     modal.addEventListener('keypress', e => e.stopPropagation());
 
-    // Setup drag and drop
+    // Initialize image slots
+    window._pdfImages = [];
+    window._renderPdfSlots();
+
+    // Setup drag and drop — supports multiple files
     const dropzone = document.getElementById('pdfDropzone');
     dropzone.addEventListener('dragover', e => {
       e.preventDefault();
@@ -4600,12 +4602,97 @@
     dropzone.addEventListener('drop', e => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) {
-        handlePDFFile(e.dataTransfer.files[0]);
-      }
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+      files.slice(0, 4 - window._pdfImages.length).forEach(file => {
+        if (file.type === 'application/pdf') {
+          handlePDFFile(file);
+        } else {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            window._pdfImages.push({ data: ev.target.result, file: file });
+            window._renderPdfSlots();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
     });
 
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // Multi-image state
+  window._pdfImages = [];
+
+  window._renderPdfSlots = function() {
+    const grid = document.getElementById('pdfImageSlots');
+    if (!grid) return;
+    grid.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+      const slot = document.createElement('div');
+      slot.style.cssText = 'aspect-ratio:1; border:2px dashed var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
+      if (window._pdfImages[i]) {
+        slot.style.border = '2px solid var(--primary)';
+        slot.innerHTML = '<img src="' + window._pdfImages[i].data + '" style="width:100%;height:100%;object-fit:cover;">' +
+          '<button onclick="event.stopPropagation();window._removePdfImage(' + i + ')" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:white;cursor:pointer;font-size:14px;line-height:22px;padding:0;z-index:2;">✕</button>' +
+          '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 4px;text-align:center;">Photo ' + (i+1) + '</div>';
+      } else {
+        slot.onmouseover = function(){this.style.borderColor='var(--primary)';this.style.background='rgba(99,102,241,0.08)';};
+        slot.onmouseout = function(){this.style.borderColor='var(--border)';this.style.background='var(--surface)';};
+        slot.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span style="font-size:11px;color:var(--text-muted);margin-top:4px;">Photo ' + (i+1) + '</span>';
+        slot.onclick = function(ev) { ev.stopPropagation(); window._pickPdfImage(); };
+      }
+      grid.appendChild(slot);
+    }
+    const countEl = document.getElementById('pdfImageCount');
+    const clearBtn = document.getElementById('pdfClearAll');
+    const n = window._pdfImages.length;
+    if (countEl) countEl.textContent = n === 0 ? 'Click a slot to add a photo' : n + ' of 4 images' + (n === 1 ? ' — add more angles for better results!' : '');
+    if (clearBtn) clearBtn.style.display = n > 0 ? 'inline-block' : 'none';
+    const analyzeBtn = document.getElementById('pdfAnalyzeBtn');
+    if (analyzeBtn) analyzeBtn.style.display = n > 0 ? 'block' : 'none';
+  };
+
+  window._pickPdfImage = function() {
+    if (window._pdfImages.length >= 4) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.onchange = function(e) {
+      const file = e.target.files[0];
+      if (!file) { input.remove(); return; }
+      if (file.type === 'application/pdf') {
+        // PDF goes through old single-file flow
+        handlePDFFile(file);
+        input.remove();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        window._pdfImages.push({ data: ev.target.result, file: file });
+        window._renderPdfSlots();
+      };
+      reader.readAsDataURL(file);
+      input.remove();
+    };
+    input.click();
+  };
+
+  window._removePdfImage = function(idx) {
+    window._pdfImages.splice(idx, 1);
+    window._renderPdfSlots();
+  };
+
+  window._analyzeAllImages = function() {
+    const images = window._pdfImages || [];
+    if (images.length === 0) return;
+    const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
+    if (images.length >= 2) {
+      analyzeMultiImages(images, userContext);
+    } else {
+      analyzeWithAIVision(images[0].data, 'photo-scan', userContext);
+    }
   };
 
   window.handlePDFUpload = function(event) {
@@ -4674,10 +4761,73 @@
 
       // Get user context if provided
       const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
-      await analyzeWithAIVision(base64Data, file.name, userContext);
+
+      // If we have multiple images queued, send them all together
+      const allImages = window._pdfImages || [];
+      if (allImages.length >= 2) {
+        await analyzeMultiImages(allImages, userContext);
+      } else if (allImages.length === 1) {
+        await analyzeWithAIVision(allImages[0].data, file.name, userContext);
+      } else {
+        await analyzeWithAIVision(base64Data, file.name, userContext);
+      }
     } catch (error) {
       console.error('File processing failed:', error);
       showManualEntryFallback(file.name, error.message);
+    }
+  }
+
+  async function analyzeMultiImages(images, userContext) {
+    const AI_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'https://surprise-granite-email-api.onrender.com' : '';
+
+    document.getElementById('pdfParseResults').style.display = 'block';
+    document.getElementById('extractedRooms').innerHTML = `
+      <div style="text-align:center; padding:32px 20px;">
+        <div class="ai-spinner"></div>
+        <h4 style="margin:0 0 8px; font-size:16px;">Analyzing ${images.length} Photos</h4>
+        <p class="ai-pulse" style="margin:0 0 16px; color:var(--text-muted); font-size:14px;">
+          AI is comparing angles to build the complete room layout...
+        </p>
+        <div class="ai-progress-bar">
+          <div class="ai-progress-fill" style="width:40%"></div>
+        </div>
+        <p style="margin:16px 0 0; font-size:12px; color:var(--text-muted);">This may take 30-60 seconds for multiple images</p>
+      </div>
+    `;
+
+    try {
+      const response = await fetch(`${AI_BASE}/api/ai/room-scan-multi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images: images.map(img => ({ data: img.data, label: '' })),
+          projectType: 'commercial',
+          userContext: userContext
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('AI Multi-Image Analysis:', data);
+
+      if (data.rooms && data.rooms.length > 0) {
+        convertAIResultsToRooms(data, 'multi-image-scan');
+      } else {
+        showManualEntryFallback('multi-image-scan', 'No rooms detected in the images');
+      }
+    } catch (error) {
+      console.error('Multi-image analysis failed:', error);
+      // Fallback: analyze first image only
+      if (images.length > 0) {
+        if (typeof showToast === 'function') showToast('Multi-image failed, trying single image...', 'warning');
+        await analyzeWithAIVision(images[0].data, 'single-fallback', userContext);
+      } else {
+        showManualEntryFallback('multi-image', error.message);
+      }
     }
   }
 
@@ -5181,27 +5331,48 @@
             width: validatedCab.width,
             depth: validatedCab.depth,
             height: validatedCab.height,
-            wall: inferWallPosition(cab, cabIndex, room.cabinets.length)
+            wall: inferWallPosition(cab, cabIndex, room.cabinets.length),
+            orderIndex: cab.orderIndex || cabIndex,
+            gapBefore: cab.gapBefore || 0,
+            doorStyle: cab.doorStyle || null,
+            finish: cab.finish || null,
+            confidence: cab.confidence || 'medium'
           });
         });
 
         // Add appliances as elements too
         if (room.appliances && Array.isArray(room.appliances)) {
           room.appliances.forEach((app, appIndex) => {
+            const appDefaults = {
+              'refrigerator': { w: 36, d: 30, h: 70 },
+              'range': { w: 30, d: 26, h: 36 },
+              'slide-in-range': { w: 30, d: 26, h: 36 },
+              'stove': { w: 30, d: 26, h: 36 },
+              'cooktop': { w: 36, d: 22, h: 4 },
+              'dishwasher': { w: 24, d: 24, h: 34 },
+              'microwave': { w: 30, d: 16, h: 18 },
+              'hood': { w: 30, d: 20, h: 8 },
+              'oven': { w: 30, d: 24, h: 52 },
+              'double-oven': { w: 30, d: 24, h: 52 },
+              'wine-cooler': { w: 24, d: 24, h: 34 }
+            };
+            const def = appDefaults[app.type] || { w: 30, d: 24, h: 34 };
             roomData.cabinets.push({
               number: `A${appIndex + 1}`,
               name: formatApplianceType(app.type),
               type: app.type || 'appliance',
-              width: app.width || 30,
-              depth: 24,
-              height: 34,
+              width: app.width || def.w,
+              depth: app.depth || def.d,
+              height: app.height || def.h,
               wall: app.wall || 'top',
-              isAppliance: true
+              isAppliance: true,
+              orderIndex: app.orderIndex || (100 + appIndex),
+              gapBefore: app.gapBefore || 0
             });
           });
         }
 
-        // Add island if present
+        // Add island if present (from separate island field)
         if (room.island && (room.island.widthIn || room.island.width)) {
           roomData.cabinets.push({
             number: 'ISL',
@@ -6097,206 +6268,330 @@
   }
 
   // Import single parsed room to current canvas with SMART WALL POSITIONING
-  // v2.0 - Uses AI wall positions, generates countertops, proper rotations
+  // v4.0 - Uses AI wall positions, gapBefore spacing, appliance types, peninsula support
   window.importParsedRoom = function(index) {
     const room = window._parsedRooms?.[index];
     if (!room) return;
 
+    console.log('[AI Import] Starting import for:', room.name);
+    console.log('[AI Import] Layout:', room.layoutType, 'Dims:', room.width + 'x' + room.depth);
+    console.log('[AI Import] Cabinets:', room.cabinets.length, 'Appliances:', (room.appliances || []).length);
+
     const ppf = window.pixelsPerFoot || 40;
-    const roomWidthFeet = window.roomWidth || 20;
-    const roomDepthFeet = window.roomDepth || 16;
+
+    // 1. Update room dimensions from AI data
+    let roomWidthFeet = window.roomWidth || 16;
+    let roomDepthFeet = window.roomDepth || 12;
+    if (room.width && room.width >= 8 && room.width <= 35) {
+      roomWidthFeet = room.width;
+      window.roomWidth = room.width;
+      const wInput = document.getElementById('roomWidth') || document.getElementById('roomWidthInput');
+      if (wInput) wInput.value = room.width;
+    }
+    if (room.depth && room.depth >= 8 && room.depth <= 35) {
+      roomDepthFeet = room.depth;
+      window.roomDepth = room.depth;
+      const dInput = document.getElementById('roomDepth') || document.getElementById('roomDepthInput');
+      if (dInput) dInput.value = room.depth;
+    }
+    console.log('[AI Import] Room set to:', roomWidthFeet + 'x' + roomDepthFeet);
+
+    // 2. Clear existing elements
+    if (window.elements) window.elements.length = 0;
 
     // Constants
-    const GAP_FEET = 0.25;
-    const WALL_OFFSET = 0;
-    const COUNTER_OVERHANG = 1.5 / 12;
-    const BASE_DEPTH_FT = 2;
-    const WALL_CAB_DEPTH_FT = 1;
+    const BASE_DEPTH = 2;          // 24" base cabinet depth in feet
+    const WALL_CAB_DEPTH = 1;      // 12" wall cabinet depth
+    const TALL_DEPTH = 2;          // 24" tall cabinet depth
+    const OVERHANG = 1.5 / 12;     // Counter overhang
 
-    // Group cabinets by wall
+    // Appliance type mapping for proper rendering
+    const APPLIANCE_DEFAULTS = {
+      'refrigerator': { w: 36, d: 30, h: 70, color: '#A0A0B0' },
+      'fridge': { w: 36, d: 30, h: 70, color: '#A0A0B0' },
+      'range': { w: 30, d: 26, h: 36, color: '#4A5568' },
+      'slide-in-range': { w: 30, d: 26, h: 36, color: '#4A5568' },
+      'stove': { w: 30, d: 26, h: 36, color: '#4A5568' },
+      'cooktop': { w: 36, d: 22, h: 4, color: '#2D3748' },
+      'dishwasher': { w: 24, d: 24, h: 34, color: '#718096' },
+      'microwave': { w: 30, d: 16, h: 18, color: '#708090' },
+      'hood': { w: 30, d: 20, h: 8, color: '#A0AEC0' },
+      'range-hood': { w: 30, d: 20, h: 8, color: '#A0AEC0' },
+      'oven': { w: 30, d: 24, h: 52, color: '#4A5568' },
+      'wall-oven': { w: 30, d: 24, h: 52, color: '#4A5568' },
+      'double-oven': { w: 30, d: 24, h: 52, color: '#4A5568' },
+      'wine-cooler': { w: 24, d: 24, h: 34, color: '#5D4E37' }
+    };
+
+    // 3. Categorize all items by wall and type
     const wallGroups = {
-      top: { base: [], wall: [] },
-      bottom: { base: [], wall: [] },
-      left: { base: [], wall: [] },
-      right: { base: [], wall: [] },
-      island: []
+      top: { tall: [], base: [], wall: [] },
+      bottom: { tall: [], base: [], wall: [] },
+      left: { tall: [], base: [], wall: [] },
+      right: { tall: [], base: [], wall: [] },
+      island: [],
+      peninsula: []
     };
 
     room.cabinets.forEach((cab, idx) => {
-      const elementType = cab.type || getElementTypeFromName(cab.name);
-      cab._elementType = elementType;
-      cab._index = idx;
-      cab._widthFt = (cab.width || 36) / 12;
-      cab._depthFt = (cab.depth || 24) / 12;
+      let type = cab.type || getElementTypeFromName(cab.name);
+      const typeKey = (type || '').toLowerCase();
+      const appDef = APPLIANCE_DEFAULTS[typeKey];
+      const isAppliance = !!appDef || cab.isAppliance;
+
+      // For tall appliances (fridge), treat as tall cabinet for positioning
+      const isTallAppliance = typeKey === 'refrigerator' || typeKey === 'fridge';
+      const isWallMounted = typeKey === 'microwave' || typeKey === 'hood' || typeKey === 'range-hood';
+
+      const normalized = {
+        ...cab,
+        _type: type,
+        _isAppliance: isAppliance,
+        _appDef: appDef,
+        _widthFt: (cab.width || (appDef?.w || 36)) / 12,
+        _depthFt: (cab.depth || (appDef?.d || 24)) / 12,
+        _heightIn: cab.height || (appDef?.h || 34.5),
+        _color: isAppliance ? (appDef?.color || '#718096') : getColorForElementType(type),
+        _orderIndex: cab.orderIndex || idx,
+        _gapBeforeFt: (cab.gapBefore || 0) / 12,
+        _doorStyle: cab.doorStyle || 'raised',
+        _finish: cab.finish || 'wood-grain'
+      };
 
       let wall = (cab.wall || 'top').toLowerCase();
       if (wall.includes('upper')) wall = wall.replace('-upper', '').replace('upper', 'top');
-      if (!['top', 'bottom', 'left', 'right', 'island'].includes(wall)) wall = 'top';
 
-      if (elementType === 'island' || wall === 'island') {
-        wallGroups.island.push(cab);
-      } else if (elementType === 'wall-cabinet') {
-        if (wallGroups[wall]) wallGroups[wall].wall.push(cab);
-        else wallGroups.top.wall.push(cab);
+      if (type === 'island' || wall === 'island') {
+        wallGroups.island.push(normalized);
+      } else if (wall === 'peninsula') {
+        wallGroups.peninsula.push(normalized);
       } else {
-        if (wallGroups[wall]) wallGroups[wall].base.push(cab);
-        else wallGroups.top.base.push(cab);
+        if (!['top', 'bottom', 'left', 'right'].includes(wall)) wall = 'top';
+
+        if (isTallAppliance || type === 'tall-cabinet' || type === 'tall-oven' || type === 'fridge-cabinet' || type === 'double-oven-cabinet') {
+          wallGroups[wall].tall.push(normalized);
+        } else if (isWallMounted || type === 'wall-cabinet' || type === 'microwave-cabinet' || type === 'above-microwave-cabinet') {
+          wallGroups[wall].wall.push(normalized);
+        } else {
+          wallGroups[wall].base.push(normalized);
+        }
       }
     });
 
-    // Track countertop runs
-    const countertopRuns = {
-      top: { startX: null, endX: null, y: 0 },
-      bottom: { startX: null, endX: null, y: 0 },
-      left: { startY: null, endY: null, x: 0 },
-      right: { startY: null, endY: null, x: 0 },
-      island: null
-    };
+    // Sort each group by orderIndex
+    ['top', 'bottom', 'left', 'right'].forEach(w => {
+      wallGroups[w].tall.sort((a, b) => a._orderIndex - b._orderIndex);
+      wallGroups[w].base.sort((a, b) => a._orderIndex - b._orderIndex);
+      wallGroups[w].wall.sort((a, b) => a._orderIndex - b._orderIndex);
+    });
 
-    // Helper: Add element to canvas
+    // Log wall distribution
+    ['top', 'bottom', 'left', 'right'].forEach(w => {
+      const g = wallGroups[w];
+      if (g.tall.length + g.base.length + g.wall.length > 0) {
+        console.log(`[AI Import] ${w.toUpperCase()} wall: ${g.tall.length} tall, ${g.base.length} base, ${g.wall.length} upper`);
+      }
+    });
+    if (wallGroups.island.length) console.log('[AI Import] Islands:', wallGroups.island.length);
+    if (wallGroups.peninsula.length) console.log('[AI Import] Peninsula:', wallGroups.peninsula.length);
+
+    // Track countertop runs per wall
+    const ctRuns = {};
+
+    // Helper: Create and add element to canvas
     function addElement(type, xFt, yFt, widthFt, depthFt, rotation, wall, cab, isCountertop) {
-      const isWallCab = type === 'wall-cabinet';
-      const defaultHeights = {
-        'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
-        'wall-cabinet': 30, 'tall-cabinet': 84, 'island': 36, 'countertop': 1.5
-      };
-      const actualHeight = cab?.height || defaultHeights[type] || 34.5;
+      const isWallCab = type === 'wall-cabinet' || type === 'microwave-cabinet' || type === 'above-microwave-cabinet' ||
+                        type === 'microwave' || type === 'hood' || type === 'range-hood';
+      const isTall = type === 'tall-cabinet' || type === 'fridge-cabinet' || type === 'tall-oven' ||
+                     type === 'refrigerator' || type === 'fridge';
 
-      const newElement = {
-        id: `imp_${isCountertop ? 'ct' : cab?.number || 'x'}_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
+      let mountHeight = 0;
+      if (isCountertop) mountHeight = 3;
+      else if (isWallCab) mountHeight = 4.5;
+      else if (isTall) mountHeight = 0;
+
+      const actualHeight = cab?._heightIn || (isCountertop ? 1.5 : 34.5);
+
+      const el = {
+        id: `imp_${isCountertop ? 'ct' : (cab?.number || 'x')}_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
         type: type,
         subType: type,
-        label: isCountertop ? `Countertop (${wall})` : `#${cab?.number} ${cab?.name || type}`,
+        label: isCountertop ? `Countertop (${wall})` : `#${cab?.number || ''} ${cab?.name || type}`,
         x: xFt * ppf,
         y: yFt * ppf,
         width: widthFt,
         height: depthFt,
-        color: isCountertop ? '#708090' : getColorForElementType(type),
+        color: isCountertop ? '#708090' : (cab?._color || getColorForElementType(type)),
         rotation: rotation,
         locked: false,
         wall: wall,
-        mountHeight: isWallCab ? 4.5 : (isCountertop ? 3 : 0),
+        mountHeight: mountHeight,
         isWallMounted: isWallCab,
-        actualWidth: isCountertop ? widthFt * 12 : (cab?.width || 36),
-        actualDepth: isCountertop ? depthFt * 12 : (cab?.depth || 24),
+        actualWidth: isCountertop ? widthFt * 12 : (cab?.width || widthFt * 12),
+        actualDepth: isCountertop ? depthFt * 12 : (cab?.depth || depthFt * 12),
         actualHeight: actualHeight,
         actualHeightFt: actualHeight / 12,
-        doorStyle: 'shaker',
+        doorStyle: cab?._doorStyle || 'raised',
         construction: 'frameless',
         doorOverlay: 'full',
-        cabinetFinish: 'wood-grain',
-        importedFrom: 'blueprint',
+        cabinetFinish: cab?._finish || 'wood-grain',
+        importedFrom: 'ai-scan',
         originalNumber: cab?.number || null
       };
 
-      if (window.elements) {
-        window.elements.push(newElement);
-      }
+      if (window.elements) window.elements.push(el);
     }
 
-    // Place TOP wall cabinets
-    let topX = GAP_FEET;
-    wallGroups.top.base.forEach((cab) => {
-      const widthFt = cab._widthFt;
-      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
-      if (topX + widthFt > roomWidthFeet - GAP_FEET) topX = GAP_FEET;
-      addElement(cab._elementType, topX, WALL_OFFSET, widthFt, depthFt, 0, 'top', cab, false);
-      if (countertopRuns.top.startX === null) countertopRuns.top.startX = topX;
-      countertopRuns.top.endX = topX + widthFt;
-      topX += widthFt + GAP_FEET;
+    // Place items along a wall (horizontal walls: top/bottom)
+    function placeHorizontalWall(wallName, items, startX, yFn, depthLimit) {
+      let x = startX;
+      let runStart = null, runEnd = null;
+      items.forEach(cab => {
+        x += cab._gapBeforeFt;
+        const w = cab._widthFt;
+        const d = Math.min(cab._depthFt, depthLimit);
+        const y = yFn(d);
+        if (x + w > roomWidthFeet) x = startX; // Wrap if overflow
+        addElement(cab._type, x, y, w, d, 0, wallName, cab, false);
+        if (runStart === null) runStart = x;
+        runEnd = x + w;
+        x += w;
+      });
+      return { start: runStart, end: runEnd };
+    }
+
+    // Place items along a wall (vertical walls: left/right)
+    function placeVerticalWall(wallName, items, startY, xFn, depthLimit) {
+      let y = startY;
+      let runStart = null, runEnd = null;
+      items.forEach(cab => {
+        y += cab._gapBeforeFt;
+        const w = cab._widthFt;
+        const d = Math.min(cab._depthFt, depthLimit);
+        const x = xFn(d);
+        if (y + w > roomDepthFeet) y = startY; // Wrap if overflow
+        addElement(cab._type, x, y, d, w, 0, wallName, cab, false);
+        if (runStart === null) runStart = y;
+        runEnd = y + w;
+        y += w;
+      });
+      return { start: runStart, end: runEnd };
+    }
+
+    // === Place TOP wall (y=0, elements face down into room) ===
+    let topX = 0;
+    // Tall cabinets first
+    const topTall = placeHorizontalWall('top', wallGroups.top.tall, topX, () => 0, TALL_DEPTH);
+    if (topTall.end) topX = topTall.end;
+
+    const topBaseStart = topX;
+    const topBase = placeHorizontalWall('top', wallGroups.top.base, topX, () => 0, BASE_DEPTH);
+    if (topBase.end) ctRuns.top = { start: topBaseStart, end: topBase.end };
+
+    // Wall cabs above base cabs
+    let topWallX = topBaseStart;
+    wallGroups.top.wall.forEach(cab => {
+      topWallX += cab._gapBeforeFt;
+      addElement(cab._type, topWallX, 0, cab._widthFt, WALL_CAB_DEPTH, 0, 'top', cab, false);
+      topWallX += cab._widthFt;
     });
 
-    let topUpperX = GAP_FEET;
-    wallGroups.top.wall.forEach((cab) => {
-      const widthFt = cab._widthFt;
-      const depthFt = Math.min(cab._depthFt, WALL_CAB_DEPTH_FT);
-      if (topUpperX + widthFt > roomWidthFeet - GAP_FEET) topUpperX = GAP_FEET;
-      addElement(cab._elementType, topUpperX, WALL_OFFSET, widthFt, depthFt, 0, 'top', cab, false);
-      topUpperX += widthFt + GAP_FEET;
+    // === Place LEFT wall (x=0, elements face right into room) ===
+    let leftY = 0;
+    const leftTall = placeVerticalWall('left', wallGroups.left.tall, leftY, () => 0, TALL_DEPTH);
+    if (leftTall.end) leftY = leftTall.end;
+
+    const leftBaseStart = leftY;
+    const leftBase = placeVerticalWall('left', wallGroups.left.base, leftY, () => 0, BASE_DEPTH);
+    if (leftBase.end) ctRuns.left = { start: leftBaseStart, end: leftBase.end };
+
+    let leftWallY = leftBaseStart;
+    wallGroups.left.wall.forEach(cab => {
+      leftWallY += cab._gapBeforeFt;
+      addElement(cab._type, 0, leftWallY, WALL_CAB_DEPTH, cab._widthFt, 0, 'left', cab, false);
+      leftWallY += cab._widthFt;
     });
 
-    // Place BOTTOM wall cabinets
-    let bottomX = GAP_FEET;
-    wallGroups.bottom.base.forEach((cab) => {
-      const widthFt = cab._widthFt;
-      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
-      if (bottomX + widthFt > roomWidthFeet - GAP_FEET) bottomX = GAP_FEET;
-      const yPos = roomDepthFeet - depthFt;
-      addElement(cab._elementType, bottomX, yPos, widthFt, depthFt, 180, 'bottom', cab, false);
-      if (countertopRuns.bottom.startX === null) countertopRuns.bottom.startX = bottomX;
-      countertopRuns.bottom.endX = bottomX + widthFt;
-      countertopRuns.bottom.y = yPos;
-      bottomX += widthFt + GAP_FEET;
+    // === Place RIGHT wall (x=roomWidth-depth, elements face left) ===
+    let rightY = 0;
+    const rightTall = placeVerticalWall('right', wallGroups.right.tall, rightY, (d) => roomWidthFeet - d, TALL_DEPTH);
+    if (rightTall.end) rightY = rightTall.end;
+
+    const rightBaseStart = rightY;
+    const rightBase = placeVerticalWall('right', wallGroups.right.base, rightY, (d) => roomWidthFeet - d, BASE_DEPTH);
+    if (rightBase.end) ctRuns.right = { start: rightBaseStart, end: rightBase.end };
+
+    let rightWallY = rightBaseStart;
+    wallGroups.right.wall.forEach(cab => {
+      rightWallY += cab._gapBeforeFt;
+      addElement(cab._type, roomWidthFeet - WALL_CAB_DEPTH, rightWallY, WALL_CAB_DEPTH, cab._widthFt, 0, 'right', cab, false);
+      rightWallY += cab._widthFt;
     });
 
-    // Place LEFT wall cabinets
-    let leftY = GAP_FEET;
-    wallGroups.left.base.forEach((cab) => {
-      const widthFt = cab._widthFt;
-      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
-      if (leftY + widthFt > roomDepthFeet - GAP_FEET) leftY = GAP_FEET;
-      addElement(cab._elementType, WALL_OFFSET, leftY, depthFt, widthFt, 90, 'left', cab, false);
-      if (countertopRuns.left.startY === null) countertopRuns.left.startY = leftY;
-      countertopRuns.left.endY = leftY + widthFt;
-      leftY += widthFt + GAP_FEET;
-    });
+    // === Place BOTTOM wall ===
+    let bottomX = 0;
+    const bottomTall = placeHorizontalWall('bottom', wallGroups.bottom.tall, bottomX, (d) => roomDepthFeet - d, TALL_DEPTH);
+    if (bottomTall.end) bottomX = bottomTall.end;
 
-    // Place RIGHT wall cabinets
-    let rightY = GAP_FEET;
-    wallGroups.right.base.forEach((cab) => {
-      const widthFt = cab._widthFt;
-      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
-      if (rightY + widthFt > roomDepthFeet - GAP_FEET) rightY = GAP_FEET;
-      const xPos = roomWidthFeet - depthFt;
-      addElement(cab._elementType, xPos, rightY, depthFt, widthFt, 270, 'right', cab, false);
-      if (countertopRuns.right.startY === null) countertopRuns.right.startY = rightY;
-      countertopRuns.right.endY = rightY + widthFt;
-      countertopRuns.right.x = xPos;
-      rightY += widthFt + GAP_FEET;
-    });
+    const bottomBaseStart = bottomX;
+    const bottomBase = placeHorizontalWall('bottom', wallGroups.bottom.base, bottomX, (d) => roomDepthFeet - d, BASE_DEPTH);
+    if (bottomBase.end) ctRuns.bottom = { start: bottomBaseStart, end: bottomBase.end };
 
-    // Place ISLANDS
+    // === Place ISLANDS (centered in room) ===
     wallGroups.island.forEach((cab, idx) => {
-      const widthFt = cab._widthFt || 4;
-      const depthFt = Math.min(cab._depthFt || 3, 4);
-      const xFt = (roomWidthFeet - widthFt) / 2 + idx * 0.5;
-      const yFt = (roomDepthFeet - depthFt) / 2;
-      addElement('island', xFt, yFt, widthFt, depthFt, 0, 'island', cab, false);
-      countertopRuns.island = { x: xFt, y: yFt, width: widthFt, depth: depthFt };
+      const w = cab._widthFt || 4;
+      const d = Math.min(cab._depthFt || 3, 4);
+      const xFt = (roomWidthFeet - w) / 2 + idx * 1;
+      const yFt = roomDepthFeet * 0.55;
+      addElement('island', xFt, yFt, w, d, 0, 'island', cab, false);
+      ctRuns.island = { x: xFt, y: yFt, w: w, d: d };
     });
 
-    // Generate COUNTERTOPS
-    if (countertopRuns.top.startX !== null && wallGroups.top.base.length > 0) {
-      const ctWidth = countertopRuns.top.endX - countertopRuns.top.startX;
-      addElement('countertop', countertopRuns.top.startX - COUNTER_OVERHANG/2, 0, ctWidth + COUNTER_OVERHANG, BASE_DEPTH_FT + COUNTER_OVERHANG, 0, 'top', null, true);
+    // === Place PENINSULA (extends from end of a wall run into room) ===
+    wallGroups.peninsula.forEach((cab, idx) => {
+      const w = cab._widthFt || 4;
+      const d = Math.min(cab._depthFt || 2, 3);
+      // Position peninsula extending from end of top wall counter
+      const penX = ctRuns.top ? ctRuns.top.end - d : roomWidthFeet / 2;
+      const penY = BASE_DEPTH + 0.25;
+      addElement(cab._type || 'base-cabinet', penX, penY, d, w, 0, 'peninsula', cab, false);
+      ctRuns.peninsula = { x: penX, y: penY, w: d, d: w };
+    });
+
+    // === Generate COUNTERTOPS ===
+    if (ctRuns.top) {
+      const ct = ctRuns.top;
+      addElement('countertop', ct.start, 0, ct.end - ct.start, BASE_DEPTH + OVERHANG, 0, 'top', null, true);
+    }
+    if (ctRuns.left) {
+      const ct = ctRuns.left;
+      addElement('countertop', 0, ct.start, BASE_DEPTH + OVERHANG, ct.end - ct.start, 0, 'left', null, true);
+    }
+    if (ctRuns.right) {
+      const ct = ctRuns.right;
+      addElement('countertop', roomWidthFeet - BASE_DEPTH - OVERHANG, ct.start, BASE_DEPTH + OVERHANG, ct.end - ct.start, 0, 'right', null, true);
+    }
+    if (ctRuns.bottom) {
+      const ct = ctRuns.bottom;
+      addElement('countertop', ct.start, roomDepthFeet - BASE_DEPTH - OVERHANG, ct.end - ct.start, BASE_DEPTH + OVERHANG, 0, 'bottom', null, true);
+    }
+    if (ctRuns.island) {
+      const i = ctRuns.island;
+      addElement('countertop', i.x - OVERHANG, i.y - OVERHANG, i.w + OVERHANG * 2, i.d + OVERHANG * 2, 0, 'island', null, true);
+    }
+    if (ctRuns.peninsula) {
+      const p = ctRuns.peninsula;
+      addElement('countertop', p.x - OVERHANG, p.y - OVERHANG, p.w + OVERHANG * 2, p.d + OVERHANG * 2, 0, 'peninsula', null, true);
     }
 
-    if (countertopRuns.bottom.startX !== null && wallGroups.bottom.base.length > 0) {
-      const ctWidth = countertopRuns.bottom.endX - countertopRuns.bottom.startX;
-      addElement('countertop', countertopRuns.bottom.startX - COUNTER_OVERHANG/2, countertopRuns.bottom.y - COUNTER_OVERHANG, ctWidth + COUNTER_OVERHANG, BASE_DEPTH_FT + COUNTER_OVERHANG, 0, 'bottom', null, true);
-    }
-
-    if (countertopRuns.left.startY !== null && wallGroups.left.base.length > 0) {
-      const ctLength = countertopRuns.left.endY - countertopRuns.left.startY;
-      addElement('countertop', 0, countertopRuns.left.startY - COUNTER_OVERHANG/2, BASE_DEPTH_FT + COUNTER_OVERHANG, ctLength + COUNTER_OVERHANG, 0, 'left', null, true);
-    }
-
-    if (countertopRuns.right.startY !== null && wallGroups.right.base.length > 0) {
-      const ctLength = countertopRuns.right.endY - countertopRuns.right.startY;
-      addElement('countertop', countertopRuns.right.x - COUNTER_OVERHANG, countertopRuns.right.startY - COUNTER_OVERHANG/2, BASE_DEPTH_FT + COUNTER_OVERHANG, ctLength + COUNTER_OVERHANG, 0, 'right', null, true);
-    }
-
-    if (countertopRuns.island) {
-      const isl = countertopRuns.island;
-      addElement('countertop', isl.x - COUNTER_OVERHANG, isl.y - COUNTER_OVERHANG, isl.width + COUNTER_OVERHANG * 2, isl.depth + COUNTER_OVERHANG * 2, 0, 'island', null, true);
-    }
-
+    // 4. Redraw
+    if (typeof window.resizeCanvas === 'function') window.resizeCanvas();
     if (typeof window.draw === 'function') window.draw();
     document.getElementById('pdfImporterModal')?.remove();
 
-    const cabinetCount = room.cabinets.length;
-    const countertopCount = Object.values(countertopRuns).filter(r => r && (r.startX !== null || r.startY !== null || r.x !== undefined)).length;
-    if (typeof showToast === 'function') showToast(`Imported ${cabinetCount} cabinets + ${countertopCount} countertops from ${room.name}`, 'success');
+    const elementCount = (window.elements || []).length;
+    console.log('[AI Import] Done:', elementCount, 'total elements on canvas');
+    if (typeof showToast === 'function') showToast(`Imported ${elementCount} elements from ${room.name}`, 'success');
   };
 
   // Helper: Validate and sanitize cabinet dimensions
@@ -6346,7 +6641,7 @@
   // Helper: Infer wall position based on cabinet type and index
   function inferWallPosition(cab, index, totalCabinets) {
     // If wall is already specified and valid, use it
-    const validWalls = ['top', 'bottom', 'left', 'right', 'island', 'top-upper', 'corner'];
+    const validWalls = ['top', 'bottom', 'left', 'right', 'island', 'peninsula', 'top-upper', 'corner'];
     if (cab.wall && validWalls.includes(cab.wall.toLowerCase())) {
       return cab.wall.toLowerCase();
     }

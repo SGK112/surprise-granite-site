@@ -612,117 +612,119 @@ router.post('/room-scan-multi', async (req, res) => {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    logger.info(`[Room-Scan-Multi] Analyzing ${images.length} images`);
+    logger.info(`[Room-Scan-Multi] Analyzing ${images.length} images in SINGLE call`);
 
-    const singleImagePrompt = `Analyze this room photograph and extract the complete layout. This is ONE of ${images.length} photos of the SAME room taken from different angles. Each photo may show different walls or parts of the kitchen.
+    // ============================================================
+    // SINGLE-CALL APPROACH: Send ALL images to GPT-4o at once
+    // GPT sees every angle simultaneously → much better accuracy
+    // ============================================================
+
+    const systemPrompt = `You are an expert kitchen designer who analyzes room photographs to extract precise cabinet layouts for 3D modeling.
+
+You will receive ${images.length} photos of the SAME kitchen taken from different angles. Analyze ALL photos together to build ONE complete, accurate layout. Cross-reference between photos — an appliance or cabinet visible in multiple photos is the SAME item, not duplicates.
+
+RULES:
+- Count individual cabinet DOORS carefully. Each pair of doors = one cabinet. Single doors = 15-18" wide. Drawer banks = 12-36" wide.
+- Count EVERY cabinet, even partially visible ones. Include the spaces between appliances (those are cabinets too).
+- NEVER miss appliances: refrigerator, range/stove, dishwasher, microwave, hood.
+- Identify peninsulas (counter extending FROM a wall into the room, open on 2-3 sides) vs islands (freestanding, not connected to any wall).
+- Use appliance dimensions as measurement anchors to calibrate all other measurements.
+- Return ONLY valid JSON — no markdown, no explanation, just the JSON object.`;
+
+    const userPrompt = `Here are ${images.length} photos of the same kitchen from different angles. Analyze them ALL together to extract the complete room layout.
 
 ${userContext ? `USER CONTEXT: "${userContext}"` : ''}
 PROJECT TYPE: ${projectType}
 
-IMPORTANT: Describe which wall(s) you can see in this photo. The kitchen has 4 walls: top (back), bottom (front), left, right. Assign each cabinet to the wall it sits against.
+WALL MAPPING (bird's-eye view of the floor plan):
+- "top" = back wall (the wall you'd face when entering the room)
+- "bottom" = front wall (behind you when entering)
+- "left" = left wall when facing the back wall
+- "right" = right wall when facing the back wall
+- "island" = freestanding counter in the middle (NOT connected to any wall)
+- "peninsula" = counter extending FROM a wall into the room (connected on one end, open on other sides — often has a sink or breakfast bar)
 
-List cabinets LEFT-TO-RIGHT for top/bottom walls, TOP-TO-BOTTOM for left/right walls. Use appliance widths as measurement anchors (range=30", fridge=36", dishwasher=24").
+MEASUREMENT ANCHORS — use these to calibrate all dimensions:
+- Refrigerator = 36" wide x 30" deep x 70" tall
+- Range/Stove = 30" wide x 26" deep x 36" tall
+- Dishwasher = 24" wide x 24" deep x 34" tall
+- Microwave (over range) = 30" wide x 16" deep x 18" tall
+- Base cabinet depth = 24", height = 34.5" (widths: 12", 15", 18", 21", 24", 30", 33", 36")
+- Wall/upper cabinet depth = 12", height = 30-42"
 
-RETURN JSON:
+WALK THROUGH EACH WALL systematically:
+1. Start at one corner of the back wall ("top") and list every element left-to-right
+2. Then the left wall top-to-bottom
+3. Then the right wall top-to-bottom
+4. Then any island or peninsula
+5. For each wall: list base cabinets, then wall/upper cabinets above them, then appliances IN ORDER
+
+RETURN this exact JSON structure:
 {
   "rooms": [{
     "name": "Kitchen",
-    "widthFt": estimated room width, "depthFt": estimated room depth,
+    "widthFt": room_width_in_feet,
+    "depthFt": room_depth_in_feet,
     "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
-    "cabinets": [{"label": "B1", "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island", "width": inches, "depth": inches, "height": inches, "wall": "top|bottom|left|right|island", "orderIndex": 0, "gapBefore": inches, "doorStyle": "shaker|raised|flat|slab", "finish": "wood-grain|painted", "confidence": "high|medium|low"}],
-    "countertops": [{"width": inches, "depth": inches, "material": "granite|quartz|marble|laminate", "materialName": "name or null", "wall": "top|bottom|left|right|island", "hasSink": true/false, "confidence": "high|medium|low"}],
-    "appliances": [{"type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler", "width": inches, "wall": "top|bottom|left|right", "gapBefore": inches}]
+    "cabinets": [
+      {
+        "label": "B1",
+        "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island",
+        "width": width_inches,
+        "depth": depth_inches,
+        "height": height_inches,
+        "wall": "top|bottom|left|right|island|peninsula",
+        "orderIndex": 0,
+        "gapBefore": gap_inches_from_previous_element_or_wall_edge,
+        "doorStyle": "shaker|raised|flat|slab",
+        "finish": "wood-grain|painted",
+        "confidence": "high|medium|low"
+      }
+    ],
+    "countertops": [
+      {
+        "width": total_run_width_inches,
+        "depth": depth_inches,
+        "material": "granite|quartz|marble|laminate|butcher-block",
+        "materialName": "specific stone name if identifiable or null",
+        "wall": "top|bottom|left|right|island|peninsula",
+        "hasSink": true_or_false,
+        "confidence": "high|medium|low"
+      }
+    ],
+    "appliances": [
+      {
+        "type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler",
+        "width": width_inches,
+        "depth": depth_inches,
+        "height": height_inches,
+        "wall": "top|bottom|left|right",
+        "orderIndex": position_in_wall_sequence,
+        "gapBefore": gap_inches_from_previous_element
+      }
+    ]
   }],
   "confidence": "high|medium|low",
-  "viewAngle": "Which walls are visible: e.g. 'Looking at left wall and part of top wall'",
-  "wallsVisible": ["left", "top"],
-  "measurementAnchors": ["range 30in on top wall", "fridge 36in on right wall"]
+  "wallsCovered": ["top", "left", "right"],
+  "measurementAnchors": ["fridge 36in on left wall", "range 30in on top wall"]
 }`;
 
-    // Step 1: Parallel analysis of all images
-    const analysisPromises = images.map((img, idx) =>
-      fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: 'You are an expert at analyzing room photographs for 3D modeling. Extract precise cabinet and countertop layouts.' },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: `Image ${idx + 1} of ${images.length}. ${img.label ? `This shows: ${img.label}. ` : ''}${singleImagePrompt}` },
-                { type: 'image_url', image_url: { url: img.data || img, detail: 'high' } }
-              ]
-            }
-          ],
-          max_tokens: 8192,
-          temperature: 0.2
-        })
-      }).then(r => r.json())
-    );
+    // Build the content array: text prompt + all images
+    const contentArray = [
+      { type: 'text', text: userPrompt }
+    ];
 
-    const analysisResults = await Promise.all(analysisPromises);
-
-    // Parse individual results
-    const parsedAnalyses = [];
-    for (let i = 0; i < analysisResults.length; i++) {
-      const result = analysisResults[i];
-      if (result.error) {
-        logger.warn(`[Room-Scan-Multi] Image ${i + 1} error:`, result.error.message);
-        continue;
-      }
-      const content = result.choices?.[0]?.message?.content || '';
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          parsedAnalyses.push(JSON.parse(jsonMatch[0]));
-        } catch (e) {
-          logger.warn(`[Room-Scan-Multi] Image ${i + 1} parse error`);
+    images.forEach((img, idx) => {
+      contentArray.push({
+        type: 'image_url',
+        image_url: {
+          url: img.data || img,
+          detail: 'high'
         }
-      }
-    }
+      });
+    });
 
-    if (parsedAnalyses.length === 0) {
-      return res.status(500).json({ error: 'Failed to analyze any of the uploaded images' });
-    }
-
-    if (parsedAnalyses.length === 1) {
-      // Only one succeeded, return it directly
-      return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...parsedAnalyses[0] });
-    }
-
-    // Step 2: Merge pass - combine analyses into one layout
-    const mergePrompt = `You have ${parsedAnalyses.length} separate analyses of the SAME kitchen room from different camera angles/photos. Each photo may show different walls. Merge them into ONE complete, accurate layout.
-
-INDIVIDUAL ANALYSES:
-${parsedAnalyses.map((a, i) => `--- Image ${i + 1} (Walls visible: ${a.wallsVisible?.join(', ') || a.viewAngle || 'unknown'}, Layout: ${a.rooms?.[0]?.layoutType || 'unknown'}) ---\n${JSON.stringify(a, null, 2)}`).join('\n\n')}
-
-MERGE STRATEGY - Think of this as stitching a panorama:
-1. IDENTIFY which walls each photo covers using "wallsVisible" and "viewAngle"
-2. For walls seen in ONLY ONE photo: take those cabinets as-is
-3. For walls seen in MULTIPLE photos: deduplicate cabinets by type + wall + approximate position (within 6"). Keep the higher-confidence version.
-4. Room dimensions: use the LARGEST width and depth (wider angles are more accurate)
-5. Layout type: determine from the combined set of walls (e.g., if cabinets on top + left walls = L-shape)
-6. Re-number orderIndex sequentially per wall (0, 1, 2...) after merging
-7. Combine all unique appliances (a range seen in 2 photos is still ONE range)
-8. A cabinet at the END of one wall and START of the next may be a corner cabinet
-
-RETURN the merged result as JSON with the SAME structure:
-{
-  "rooms": [{ "name": "Kitchen", "widthFt": number, "depthFt": number, "layoutType": "...", "cabinets": [...], "countertops": [...], "appliances": [...] }],
-  "confidence": "high|medium|low",
-  "confidenceDetails": { "dimensions": "...", "cabinetCount": "...", "materials": "...", "layout": "..." },
-  "measurementAnchors": [...],
-  "mergedFrom": ${parsedAnalyses.length},
-  "deduplicatedCount": number_of_duplicates_removed,
-  "wallsCovered": ["top", "left", "right", "bottom"]
-}`;
-
-    const mergeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -731,38 +733,53 @@ RETURN the merged result as JSON with the SAME structure:
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are an expert at merging multiple room analyses into a single accurate layout. Deduplicate carefully.' },
-          { role: 'user', content: mergePrompt }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: contentArray }
         ],
         max_tokens: 8192,
-        temperature: 0.2
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
       })
     });
 
-    const mergeData = await mergeResponse.json();
-    if (mergeData.error) {
-      // If merge fails, return best individual analysis
-      logger.warn('[Room-Scan-Multi] Merge failed, returning best individual');
-      const best = parsedAnalyses.reduce((a, b) =>
-        (a.confidence === 'high' ? a : b.confidence === 'high' ? b : a), parsedAnalyses[0]);
-      return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...best });
+    const data = await response.json();
+
+    if (data.error) {
+      logger.error('[Room-Scan-Multi] GPT error:', data.error.message);
+      return res.status(500).json({ error: 'AI analysis failed: ' + (data.error.message || 'Unknown error') });
     }
 
-    const mergeContent = mergeData.choices?.[0]?.message?.content || '';
-    const mergeJson = mergeContent.match(/\{[\s\S]*\}/);
+    const content = data.choices?.[0]?.message?.content || '';
+    logger.info(`[Room-Scan-Multi] Response length: ${content.length} chars`);
 
-    if (mergeJson) {
-      try {
-        const merged = JSON.parse(mergeJson[0]);
-        logger.info(`[Room-Scan-Multi] Merged ${parsedAnalyses.length} analyses, dedup: ${merged.deduplicatedCount || 0}`);
-        return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...merged });
-      } catch (e) {
-        logger.error('[Room-Scan-Multi] Merge parse error');
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (e) {
+      // Fallback: try to extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch (e2) {
+          logger.error('[Room-Scan-Multi] JSON parse failed');
+          return res.status(500).json({ error: 'Failed to parse AI response as JSON' });
+        }
+      } else {
+        return res.status(500).json({ error: 'AI did not return valid JSON' });
       }
     }
 
-    // Fallback to first analysis
-    return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...parsedAnalyses[0] });
+    // Log summary
+    const room = parsed.rooms?.[0];
+    if (room) {
+      const cabCount = (room.cabinets || []).length;
+      const appCount = (room.appliances || []).length;
+      const ctCount = (room.countertops || []).length;
+      logger.info(`[Room-Scan-Multi] Result: ${room.layoutType} ${room.widthFt}'x${room.depthFt}', ${cabCount} cabinets, ${appCount} appliances, ${ctCount} countertops`);
+    }
+
+    return res.json({ success: true, mode: 'ai', scanMode: 'multi-image-unified', ...parsed });
 
   } catch (error) {
     logger.error('[Room-Scan-Multi] Error:', error);

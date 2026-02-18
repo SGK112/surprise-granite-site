@@ -17635,23 +17635,12 @@
       return false;
     }
 
-    // Wrapper for AI Room Scanner - available to all authenticated users
+    // AI Room Scanner - always available
     function showAIImporter() {
-      // Check if user is authenticated (or allow demo/local mode)
-      const user = window.SgAuth?.getUser();
-      const isDemo = DEMO_MODE;
-      const isLocal = window.location.protocol === 'file:';
-
-      if (user || hasGodAccess() || isDemo || isLocal) {
-        // Show AI Room Scanner
-        if (typeof window.showPDFImporter === 'function') {
-          window.showPDFImporter();
-        } else {
-          showToast('AI Room Scanner loading...', 'info');
-        }
+      if (typeof window.showPDFImporter === 'function') {
+        window.showPDFImporter();
       } else {
-        // Not logged in - prompt to sign in
-        showComingSoonModal('AI Room Scanner', 'Sign in to use the AI Room Scanner. Upload photos of rooms, countertops, or hand sketches and our AI will create a quote-ready 3D project instantly.');
+        showToast('AI Room Scanner loading...', 'info');
       }
     }
 
@@ -17745,41 +17734,36 @@
               <span id="tipText">Upload 1-4 photos of the room from different angles. AI will stitch them together to build the complete layout. Each photo can show a different wall.</span>
             </div>
 
-            <!-- File Upload Area -->
-            <div id="blueprintDropZone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: all 0.2s;">
-              <div id="uploadPlaceholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin-bottom: 12px;">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                <p style="margin: 0 0 8px; color: var(--text);">Drop image(s) here or click to browse</p>
-                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Supports: PNG, JPG, HEIC, PDF (up to 4 images for multi-angle scan)</p>
-              </div>
-              <div id="uploadPreview" style="display: none;">
-                <img id="previewImage" style="max-width: 100%; max-height: 280px; border-radius: 8px;">
-                <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: center;">
-                  <button id="addMorePhotos" onclick="event.stopPropagation(); document.getElementById('blueprintFileInput').click();" style="padding: 6px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500; font-size: 13px;">
-                    + Add More Angles (up to 4)
-                  </button>
-                  <button id="clearUpload" style="padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text);">
-                    ✕ Clear
-                  </button>
+            <!-- File Upload Area — always shows 4-slot grid -->
+            <div id="blueprintDropZone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; transition: all 0.2s;">
+              <p style="margin: 0 0 12px; font-size: 13px; color: var(--text); text-align: center; font-weight: 500;">Upload 1-4 room photos (different angles for best results)</p>
+              <div id="imageSlotGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px;">
+                <div class="img-slot" onclick="event.stopPropagation(); openFilePicker();" style="aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.2s;" onmouseover="this.style.borderColor='#6366f1';this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Photo 1</span>
+                </div>
+                <div class="img-slot" onclick="event.stopPropagation(); openFilePicker();" style="aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.2s;" onmouseover="this.style.borderColor='#6366f1';this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Photo 2</span>
+                </div>
+                <div class="img-slot" onclick="event.stopPropagation(); openFilePicker();" style="aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.2s;" onmouseover="this.style.borderColor='#6366f1';this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Photo 3</span>
+                </div>
+                <div class="img-slot" onclick="event.stopPropagation(); openFilePicker();" style="aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.2s;" onmouseover="this.style.borderColor='#6366f1';this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Photo 4</span>
                 </div>
               </div>
-              <div id="multiUploadPreview" style="display: none;">
-                <div id="multiImageGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;"></div>
-                <p id="multiImageCount" style="margin: 8px 0 0; font-size: 12px; color: var(--text-muted);"></p>
-                <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
-                  <button id="addMoreMulti" onclick="event.stopPropagation(); document.getElementById('blueprintFileInput').click();" style="padding: 6px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500; font-size: 12px;">
-                    + Add More
-                  </button>
-                  <button id="clearMultiUpload" style="padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 12px;">
-                    ✕ Clear All
-                  </button>
-                </div>
+              <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                <p id="multiImageCount" style="margin: 0; font-size: 12px; color: var(--text-muted);">Click any slot or drag & drop images</p>
+                <button id="clearMultiUpload" onclick="event.stopPropagation(); clearAllUploads();" style="display: none; padding: 4px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 12px;">✕ Clear All</button>
               </div>
-              <input type="file" id="blueprintFileInput" accept="image/*,.pdf" multiple style="display: none;">
+              <!-- Hidden elements kept for backward compat -->
+              <div id="uploadPlaceholder" style="display: none;"></div>
+              <div id="uploadPreview" style="display: none;"><img id="previewImage"></div>
+              <div id="multiUploadPreview" style="display: none;"><div id="multiImageGrid"></div></div>
+              <input type="file" id="blueprintFileInput" multiple style="display: none;">
             </div>
 
             <!-- Context & Dimensions Row -->
@@ -17933,78 +17917,51 @@
 
       // Set up file upload handlers
       const dropZone = document.getElementById('blueprintDropZone');
-      const fileInput = document.getElementById('blueprintFileInput');
       const analyzeBtn = document.getElementById('analyzeBtn');
       let uploadedImageData = null;
       let uploadedMultiImages = []; // For multi-image mode
 
-      dropZone.onclick = (e) => {
-        // Only open file picker if clicking the empty placeholder area (no image yet)
-        // The "Add More" and "Clear" buttons handle their own clicks
-        if (!uploadedImageData && uploadedMultiImages.length === 0) {
-          fileInput.click();
+      // Pick ONE file at a time — no reliance on browser multi-select
+      window.openFilePicker = function() {
+        if (uploadedMultiImages.length >= 4) {
+          showToast('Maximum 4 images. Clear to start over.', 'warning');
+          return;
         }
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,.pdf';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
+            handleMultiFile(file);
+          }
+          input.remove();
+        };
+        input.click();
       };
 
-      dropZone.ondragover = (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-      };
-      dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+      const fileInput = document.getElementById('blueprintFileInput');
+
+      dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#6366f1'; };
+      dropZone.ondragleave = () => { dropZone.style.borderColor = ''; };
       dropZone.ondrop = (e) => {
         e.preventDefault();
-        dropZone.classList.remove('dragover');
+        dropZone.style.borderColor = '';
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
-        // Always use multi-image flow — add all dropped files to the grid
         files.slice(0, 4 - uploadedMultiImages.length).forEach(f => handleMultiFile(f));
       };
 
-      fileInput.onchange = (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 1) {
-          // Multiple files selected at once — start fresh multi-image
-          uploadedMultiImages = [];
-          uploadedImageData = null;
-          files.slice(0, 4).forEach(f => handleMultiFile(f));
-        } else if (files.length === 1) {
-          // Always add to multi-image collection (even first image)
-          // This ensures the multi-image grid always shows
-          handleMultiFile(files[0]);
-        }
-        // Reset input so same file can be re-selected
-        fileInput.value = '';
-      };
-
-      document.getElementById('clearUpload').onclick = (e) => {
-        e.stopPropagation();
-        clearAllUploads();
-      };
-
-      document.getElementById('clearMultiUpload').onclick = (e) => {
-        e.stopPropagation();
-        clearAllUploads();
-      };
-
-      function clearAllUploads() {
+      window.clearAllUploads = function() {
         uploadedImageData = null;
         uploadedMultiImages = [];
-        document.getElementById('uploadPlaceholder').style.display = 'block';
-        document.getElementById('uploadPreview').style.display = 'none';
-        document.getElementById('multiUploadPreview').style.display = 'none';
-        document.getElementById('multiImageGrid').innerHTML = '';
+        renderSlotGrid();
+        document.getElementById('multiImageCount').textContent = 'Click any slot or drag & drop images';
+        document.getElementById('clearMultiUpload').style.display = 'none';
         analyzeBtn.disabled = true;
         analyzeBtn.style.opacity = '0.5';
-      }
-
-      function handleBlueprintFile(file) {
-        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-          showToast('Please upload an image or PDF file', 'error');
-          return;
-        }
-        // Always route through multi-image flow so users see the grid
-        // and are prompted to add more angles for better results
-        handleMultiFile(file);
-      }
+      };
 
       function handleMultiFile(file) {
         if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
@@ -18012,36 +17969,51 @@
           showToast('Maximum 4 images allowed', 'error');
           return;
         }
-
         const reader = new FileReader();
         reader.onload = (e) => {
           uploadedMultiImages.push({ data: e.target.result, label: '' });
-          uploadedImageData = null; // Clear single-image mode
-
-          // Update multi-image grid UI
-          const grid = document.getElementById('multiImageGrid');
-          grid.innerHTML = '';
-          uploadedMultiImages.forEach((img, idx) => {
-            const thumb = document.createElement('div');
-            thumb.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1;';
-            thumb.innerHTML = `
-              <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;">
-              <button onclick="event.stopPropagation(); removeMultiImage(${idx})" style="position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: white; cursor: pointer; font-size: 12px; line-height: 20px; padding: 0;">✕</button>
-              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 2px 4px; text-align: center;">#${idx + 1}</div>
-            `;
-            grid.appendChild(thumb);
-          });
-
-          document.getElementById('multiImageCount').textContent = uploadedMultiImages.length === 1
-            ? '1 image — add more angles for much better accuracy!'
-            : `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
-          document.getElementById('uploadPlaceholder').style.display = 'none';
-          document.getElementById('uploadPreview').style.display = 'none';
-          document.getElementById('multiUploadPreview').style.display = 'block';
+          uploadedImageData = null;
+          renderSlotGrid();
+          const countEl = document.getElementById('multiImageCount');
+          if (countEl) {
+            countEl.textContent = uploadedMultiImages.length === 1
+              ? '1 image — click another slot to add more angles!'
+              : uploadedMultiImages.length + ' of 4 images (multi-angle scan)';
+          }
+          const clearBtn = document.getElementById('clearMultiUpload');
+          if (clearBtn) clearBtn.style.display = 'inline-block';
           analyzeBtn.disabled = false;
           analyzeBtn.style.opacity = '1';
         };
         reader.readAsDataURL(file);
+      }
+
+      function renderSlotGrid() {
+        const grid = document.getElementById('imageSlotGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const slot = document.createElement('div');
+          slot.style.cssText = 'aspect-ratio: 1; border: 2px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--surface); transition: all 0.2s; position: relative; overflow: hidden;';
+          if (uploadedMultiImages[i]) {
+            slot.style.border = '2px solid #6366f1';
+            slot.style.padding = '0';
+            slot.innerHTML = `
+              <img src="${uploadedMultiImages[i].data}" style="width: 100%; height: 100%; object-fit: cover;">
+              <button onclick="event.stopPropagation(); removeMultiImage(${i})" style="position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.7); border: none; color: white; cursor: pointer; font-size: 14px; line-height: 22px; padding: 0; z-index: 2;">✕</button>
+              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 2px 4px; text-align: center;">Photo ${i + 1}</div>
+            `;
+          } else {
+            slot.onmouseover = function() { this.style.borderColor = '#6366f1'; this.style.background = 'rgba(99,102,241,0.08)'; };
+            slot.onmouseout = function() { this.style.borderColor = 'var(--border)'; this.style.background = 'var(--surface)'; };
+            slot.innerHTML = `
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Photo ${i + 1}</span>
+            `;
+            slot.onclick = function(ev) { ev.stopPropagation(); openFilePicker(); };
+          }
+          grid.appendChild(slot);
+        }
       }
 
       window.removeMultiImage = function(idx) {
@@ -18049,22 +18021,13 @@
         if (uploadedMultiImages.length === 0) {
           clearAllUploads();
         } else {
-          // Re-render grid
-          const grid = document.getElementById('multiImageGrid');
-          grid.innerHTML = '';
-          uploadedMultiImages.forEach((img, i) => {
-            const thumb = document.createElement('div');
-            thumb.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1;';
-            thumb.innerHTML = `
-              <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;">
-              <button onclick="event.stopPropagation(); removeMultiImage(${i})" style="position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: white; cursor: pointer; font-size: 12px; line-height: 20px; padding: 0;">✕</button>
-              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 2px 4px; text-align: center;">#${i + 1}</div>
-            `;
-            grid.appendChild(thumb);
-          });
-          document.getElementById('multiImageCount').textContent = uploadedMultiImages.length === 1
-            ? '1 image — add more angles for much better accuracy!'
-            : `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
+          renderSlotGrid();
+          const countEl = document.getElementById('multiImageCount');
+          if (countEl) {
+            countEl.textContent = uploadedMultiImages.length === 1
+              ? '1 image — click another slot to add more angles!'
+              : uploadedMultiImages.length + ' of 4 images (multi-angle scan)';
+          }
         }
       };
 
@@ -65837,6 +65800,58 @@
               </div>
             ` : ''}
 
+            ${(function() {
+              // Generate enhanced pieces from SlabLayout if available
+              const slabPieces = window.SlabLayout ? window.SlabLayout.generateAllSlabPieces(elements) : [];
+              const laminations = slabPieces.filter(p => p.type === 'lamination');
+              const backsplashes = slabPieces.filter(p => p.type === 'backsplash');
+              const waterfalls = slabPieces.filter(p => p.type === 'waterfall');
+              let html = '';
+
+              if (laminations.length > 0) {
+                const totalLamLF = laminations.reduce((sum, p) => sum + p.width, 0) / 12;
+                html += '<div class="fab-section"><h4>Lamination Strips (' + laminations.length + ')</h4>';
+                html += '<table class="fab-table"><thead><tr><th>Strip</th><th>Dimensions</th><th>Edge Profile</th><th>Linear Ft</th></tr></thead><tbody>';
+                laminations.forEach(p => {
+                  html += '<tr><td>' + p.label + '</td><td>' + p.width.toFixed(1) + '" &times; ' + p.height.toFixed(1) + '"</td><td>' + (p.edgeProfile || '-') + '</td><td>' + (p.width / 12).toFixed(2) + '</td></tr>';
+                });
+                html += '</tbody></table>';
+                html += '<div class="fab-note">Total lamination: ' + totalLamLF.toFixed(1) + ' LF</div></div>';
+              }
+
+              if (backsplashes.length > 0) {
+                html += '<div class="fab-section"><h4>Backsplash Pieces (' + backsplashes.length + ')</h4>';
+                html += '<table class="fab-table"><thead><tr><th>Piece</th><th>Dimensions</th><th>Sq Ft</th></tr></thead><tbody>';
+                backsplashes.forEach(p => {
+                  html += '<tr><td>' + p.label + '</td><td>' + p.width.toFixed(1) + '" &times; ' + p.height.toFixed(1) + '"</td><td>' + ((p.width * p.height) / 144).toFixed(2) + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+              }
+
+              if (waterfalls.length > 0) {
+                html += '<div class="fab-section"><h4>Waterfall Panels (' + waterfalls.length + ')</h4>';
+                html += '<table class="fab-table"><thead><tr><th>Panel</th><th>Dimensions</th><th>Sq Ft</th></tr></thead><tbody>';
+                waterfalls.forEach(p => {
+                  html += '<tr><td>' + p.label + '</td><td>' + p.width.toFixed(1) + '" &times; ' + p.height.toFixed(1) + '"</td><td>' + ((p.width * p.height) / 144).toFixed(2) + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+              }
+
+              // Material summary
+              const allSlabPieces = slabPieces;
+              const totalPieceSqFt = allSlabPieces.reduce((s, p) => s + (p.width * p.height) / 144, 0);
+              const materialType = (window.SlabLayout ? window.SlabLayout.getMaterial() : null) || 'Not specified';
+              const slabCount = (window.SlabLayout ? window.SlabLayout.getSlabs().length : 0) || slabLayout.totalSlabs;
+              html += '<div class="fab-section"><h4>Material Summary</h4>';
+              html += '<div class="fab-summary" style="margin-top:8px;">';
+              html += '<div class="fab-stat"><span class="fab-value">' + materialType + '</span><span class="fab-label">Material</span></div>';
+              html += '<div class="fab-stat"><span class="fab-value">' + slabCount + '</span><span class="fab-label">Slabs</span></div>';
+              html += '<div class="fab-stat"><span class="fab-value">' + totalPieceSqFt.toFixed(1) + '</span><span class="fab-label">Total Sq Ft</span></div>';
+              html += '</div></div>';
+
+              return html;
+            })()}
+
             <div class="fab-section">
               <h4>Slab Layout (${slabLayout.totalSlabs} slab${slabLayout.totalSlabs > 1 ? 's' : ''})</h4>
               <div class="slab-layouts">
@@ -65857,6 +65872,12 @@
             </div>
           </div>
           <div class="fabrication-plan-footer">
+            <button onclick="if(window.SlabLayout){this.closest('.fabrication-plan-modal').remove();window.SlabLayout.open();window.SlabLayout.importFromDesign();}" class="fab-export-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+              </svg>
+              Open Slab Layout
+            </button>
             <button onclick="exportFabricationPlan()" class="fab-export-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -65918,9 +65939,18 @@
     }
 
     // ===== INTERACTIVE SLAB LAYOUT MODAL =====
-    // CounterGo-style slab layout interface for drag-and-drop piece arrangement
+    // Redirects to the unified SlabLayout module (slab-layout.js)
     function showSlabLayoutModal() {
-      // Try to get countertops from design, but don't require them
+      if (window.SlabLayout) {
+        window.SlabLayout.open();
+        window.SlabLayout.importFromDesign();
+      } else {
+        showToast('Slab Layout module not loaded', 'error');
+      }
+    }
+
+    // Legacy inline slab layout code — deprecated, kept as no-op for backward compat
+    function _legacySlabLayoutModal_DEPRECATED() {
       const plan = generateFabricationPlan();
       const hasDesignPieces = plan && plan.cutList && plan.cutList.length > 0;
 
@@ -65928,7 +65958,6 @@
       let currentSlabSize = slabSizes.standard;
       let pieceCounter = 0;
 
-      // Initialize pieces from design or start empty
       let pieces = hasDesignPieces ? plan.cutList.map((p, i) => ({
         ...p,
         id: `piece-${pieceCounter++}`,
@@ -80409,7 +80438,7 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     });
   </script>
 
-<script defer src="/js/designer-pro-features.js?v=20260129d"></script>
+<script defer src="/js/designer-pro-features.js?v=20260218b"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>
