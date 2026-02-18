@@ -45502,6 +45502,12 @@
         if (type.startsWith('scribe-')) return 'scribe';
         if (type.startsWith('grab-bar-')) return 'grab-bar-24';
         if (type.startsWith('floating-shelf-')) return 'floating-shelf';
+        // Map oven variants to base oven rendering
+        if (type === 'speed-oven' || type === 'steam-oven' || type === 'coffee-system') return 'oven';
+        // Blind corner renders as base cabinet
+        if (type === 'blind-corner') return 'base-cabinet';
+        // Outdoor sink renders as regular sink
+        if (type === 'outdoor-sink') return 'sink';
         return type;
       };
       const renderType = normalizeType(el.type);
@@ -52380,7 +52386,12 @@
           // Standard interior/exterior door with full frame
           // Construction-standard dimensions
           const doorColor = el.color ? parseInt(el.color.replace('#', ''), 16) : 0xDEB887;
-          const doorMat2 = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.6 });
+          // Apply wood grain texture for realistic door appearance
+          const doorWoodTex = createWoodGrainTexture(doorColor, 0.12, 'oak');
+          doorWoodTex.wrapS = THREE.RepeatWrapping;
+          doorWoodTex.wrapT = THREE.RepeatWrapping;
+          doorWoodTex.repeat.set(1, 2); // Vertical grain on door
+          const doorMat2 = new THREE.MeshStandardMaterial({ map: doorWoodTex, color: doorColor, roughness: 0.55, metalness: 0.02 });
           const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F0, roughness: 0.45 });
           const dFrameW = 0.17;  // ~2" casing face width
           const dFrameD = 0.33;  // ~4" frame depth (wall depth)
@@ -52495,21 +52506,27 @@
           const sashWidth = 0.10; // ~1.2" sash profile
           const muntinWidth = 0.04; // ~0.5" muntin (grille) bars
 
-          // Materials
+          // Materials - wood grain texture for realistic window frames
+          const frameWoodTex = createWoodGrainTexture(frameColor, 0.10, 'oak');
+          frameWoodTex.wrapS = THREE.RepeatWrapping;
+          frameWoodTex.wrapT = THREE.RepeatWrapping;
+          frameWoodTex.repeat.set(2, 2);
           const frameMat = new THREE.MeshStandardMaterial({
+            map: frameWoodTex,
             color: frameColor,
             roughness: 0.35,
-            metalness: 0.15
+            metalness: 0.02
           });
           const sashMat = new THREE.MeshStandardMaterial({
+            map: frameWoodTex,
             color: frameColor,
             roughness: 0.4,
-            metalness: 0.1
+            metalness: 0.02
           });
           const muntinMat = new THREE.MeshStandardMaterial({
             color: frameColor,
             roughness: 0.45,
-            metalness: 0.05
+            metalness: 0.02
           });
           const hardwareMat = new THREE.MeshStandardMaterial({
             color: 0xC0C0C0,
@@ -52638,9 +52655,11 @@
           const glassMat = new THREE.MeshStandardMaterial({
             color: glassColor,
             transparent: true,
-            opacity: 0.12,
+            opacity: 0.15,
             roughness: 0.02,
-            metalness: 0.35
+            metalness: 0.0,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.4
           });
 
           // Function to create muntin/grille pattern
@@ -54612,9 +54631,13 @@
         }
 
         case 'double-door': {
-          // Double door with full frame
+          // Double door with full frame and wood grain
           const doorColor = el.color ? parseInt(el.color.replace('#', ''), 16) : 0xDEB887;
-          const doorMat = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.6 });
+          const dblWoodTex = createWoodGrainTexture(doorColor, 0.12, 'oak');
+          dblWoodTex.wrapS = THREE.RepeatWrapping;
+          dblWoodTex.wrapT = THREE.RepeatWrapping;
+          dblWoodTex.repeat.set(1, 2);
+          const doorMat = new THREE.MeshStandardMaterial({ map: dblWoodTex, color: doorColor, roughness: 0.55, metalness: 0.02 });
           const dblFrameMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.5 });
           const frameWidth = 0.08;
           const frameDepth = 0.18;
@@ -54733,11 +54756,17 @@
 
           // Materials based on door type
           const frameColor = isSliding ? 0x8A8A8A : (isFrench ? 0xF5F0E6 : 0xFFFFFF);
-          const frameMat = new THREE.MeshStandardMaterial({
-            color: frameColor,
-            roughness: isSliding ? 0.3 : 0.45,
-            metalness: isSliding ? 0.6 : 0.1
-          });
+          let frameMat;
+          if (isFrench) {
+            // French doors: wood frame with grain texture
+            const frenchWoodTex = createWoodGrainTexture(frameColor, 0.08, 'maple');
+            frenchWoodTex.wrapS = THREE.RepeatWrapping;
+            frenchWoodTex.wrapT = THREE.RepeatWrapping;
+            frenchWoodTex.repeat.set(2, 2);
+            frameMat = new THREE.MeshStandardMaterial({ map: frenchWoodTex, color: frameColor, roughness: 0.45, metalness: 0.02 });
+          } else {
+            frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: isSliding ? 0.3 : 0.45, metalness: isSliding ? 0.6 : 0.05 });
+          }
           const hardwareMat = new THREE.MeshStandardMaterial({
             color: 0xC0C0C0,
             roughness: 0.15,
@@ -54797,14 +54826,16 @@
             group.add(moon);
           }
 
-          // Glass material
+          // Glass material - no metalness for realistic glass
           const glassColor = sceneSettings.timeOfDay === 'night' ? 0x2a3a5a : 0xADD8E6;
           const glassMat = new THREE.MeshStandardMaterial({
             color: glassColor,
             transparent: true,
             opacity: 0.15,
             roughness: 0.02,
-            metalness: 0.3
+            metalness: 0.0,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.4
           });
 
           if (isSliding) {
@@ -55292,11 +55323,16 @@
           // Bay window — clean 3-panel architectural window with square frame
           // No angled fins — proper rectangular frame with mullions, glass, bay shelf
           const bayFrameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
-          const bayFrameMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.35, metalness: 0.1 });
+          const bayFrameWoodTex = createWoodGrainTexture(bayFrameColor, 0.10, 'oak');
+          bayFrameWoodTex.wrapS = THREE.RepeatWrapping;
+          bayFrameWoodTex.wrapT = THREE.RepeatWrapping;
+          bayFrameWoodTex.repeat.set(2, 2);
+          const bayFrameMat = new THREE.MeshStandardMaterial({ map: bayFrameWoodTex, color: bayFrameColor, roughness: 0.35, metalness: 0.02 });
           const bayGlassColor = sceneSettings.timeOfDay === 'night' ? 0x2a3a5a : 0xADD8E6;
           const bayGlassMat = new THREE.MeshStandardMaterial({
             color: bayGlassColor, transparent: true, opacity: 0.15,
-            roughness: 0.02, metalness: 0.35, side: THREE.DoubleSide
+            roughness: 0.02, metalness: 0.0, side: THREE.DoubleSide,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.4
           });
           const outdoorPaletteBay = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
 
@@ -59172,6 +59208,84 @@
           const thScreen = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, h * 0.3, 0.01), thScreenMat);
           thScreen.position.set(0, h * 0.1, 0.035);
           group.add(thScreen);
+          break;
+        }
+
+        case 'warming-drawer':
+        case 'trash-drawer': {
+          // Drawer-style appliance with stainless steel front and handle
+          const drawerBodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.3 });
+          const drawerFaceMat = new THREE.MeshStandardMaterial({
+            color: 0xD0D0D0, roughness: 0.2, metalness: 0.85,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.8
+          });
+          // Body
+          const drwBody = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), drawerBodyMat);
+          group.add(drwBody);
+          // Stainless front face
+          const drwFace = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, h - 0.02, 0.02), drawerFaceMat);
+          drwFace.position.set(0, 0, d / 2 + 0.01);
+          group.add(drwFace);
+          // Handle bar
+          const drwHandleMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.1, metalness: 0.9 });
+          const drwHandle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, 0.04, 0.06), drwHandleMat);
+          drwHandle.position.set(0, h * 0.35, d / 2 + 0.04);
+          group.add(drwHandle);
+          break;
+        }
+
+        case 'trash-compactor':
+        case 'ice-maker': {
+          // Under-counter built-in appliance with stainless front panel
+          const ucBodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.2 });
+          const ucFaceMat = new THREE.MeshStandardMaterial({
+            color: 0xD0D0D0, roughness: 0.2, metalness: 0.85,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.8
+          });
+          // Body
+          const ucBody = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ucBodyMat);
+          group.add(ucBody);
+          // Front panel
+          const ucFace = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, h - 0.06, 0.02), ucFaceMat);
+          ucFace.position.set(0, 0, d / 2 + 0.01);
+          group.add(ucFace);
+          // Handle
+          const ucHandleMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.1, metalness: 0.9 });
+          const ucHandle = new THREE.Mesh(new THREE.BoxGeometry(0.04, h * 0.5, 0.04), ucHandleMat);
+          ucHandle.position.set(w * 0.35, 0, d / 2 + 0.04);
+          group.add(ucHandle);
+          // Toe kick
+          const ucToeKick = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.04, 0.33, d * 0.7),
+            new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
+          );
+          ucToeKick.position.set(0, -h / 2 + 0.165, 0.05);
+          group.add(ucToeKick);
+          break;
+        }
+
+        case 'access-door': {
+          // Outdoor kitchen access door - stainless steel panel with frame
+          const adFrameMat = new THREE.MeshStandardMaterial({
+            color: 0xC8C8C8, roughness: 0.2, metalness: 0.85,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.8
+          });
+          const adPanelMat = new THREE.MeshStandardMaterial({
+            color: 0xD4D4D4, roughness: 0.25, metalness: 0.8,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.6
+          });
+          // Frame
+          const adFrame = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), adFrameMat);
+          group.add(adFrame);
+          // Recessed panel
+          const adPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, h - 0.15, 0.02), adPanelMat);
+          adPanel.position.set(0, 0, d / 2 + 0.01);
+          group.add(adPanel);
+          // Handle
+          const adHandleMat = new THREE.MeshStandardMaterial({ color: 0xA0A0A0, roughness: 0.15, metalness: 0.9 });
+          const adHandle = new THREE.Mesh(new THREE.BoxGeometry(0.04, h * 0.35, 0.04), adHandleMat);
+          adHandle.position.set(w * 0.35, 0, d / 2 + 0.04);
+          group.add(adHandle);
           break;
         }
 
