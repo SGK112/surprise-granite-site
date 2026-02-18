@@ -17743,16 +17743,26 @@
               </div>
               <div id="uploadPreview" style="display: none;">
                 <img id="previewImage" style="max-width: 100%; max-height: 280px; border-radius: 8px;">
-                <button id="clearUpload" style="margin-top: 12px; padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text);">
-                  ✕ Clear & Upload Different
-                </button>
+                <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: center;">
+                  <button id="addMorePhotos" onclick="event.stopPropagation(); document.getElementById('blueprintFileInput').click();" style="padding: 6px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500; font-size: 13px;">
+                    + Add More Angles (up to 4)
+                  </button>
+                  <button id="clearUpload" style="padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text);">
+                    ✕ Clear
+                  </button>
+                </div>
               </div>
               <div id="multiUploadPreview" style="display: none;">
                 <div id="multiImageGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;"></div>
                 <p id="multiImageCount" style="margin: 8px 0 0; font-size: 12px; color: var(--text-muted);"></p>
-                <button id="clearMultiUpload" style="margin-top: 8px; padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 12px;">
-                  ✕ Clear All Images
-                </button>
+                <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
+                  <button id="addMoreMulti" onclick="event.stopPropagation(); document.getElementById('blueprintFileInput').click();" style="padding: 6px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500; font-size: 12px;">
+                    + Add More
+                  </button>
+                  <button id="clearMultiUpload" style="padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 12px;">
+                    ✕ Clear All
+                  </button>
+                </div>
               </div>
               <input type="file" id="blueprintFileInput" accept="image/*,.pdf" multiple style="display: none;">
             </div>
@@ -17930,11 +17940,26 @@
       fileInput.onchange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 1) {
+          // Multiple files selected at once — start fresh multi-image
           uploadedMultiImages = [];
+          uploadedImageData = null;
           files.slice(0, 4).forEach(f => handleMultiFile(f));
         } else if (files.length === 1) {
-          handleBlueprintFile(files[0]);
+          if (uploadedImageData || uploadedMultiImages.length > 0) {
+            // Already have an image — add to multi-image collection
+            if (uploadedImageData && uploadedMultiImages.length === 0) {
+              // Convert existing single image to multi-image array first
+              uploadedMultiImages.push({ data: uploadedImageData, label: '' });
+              uploadedImageData = null;
+            }
+            handleMultiFile(files[0]);
+          } else {
+            // First image — show single preview
+            handleBlueprintFile(files[0]);
+          }
         }
+        // Reset input so same file can be re-selected
+        fileInput.value = '';
       };
 
       document.getElementById('clearUpload').onclick = (e) => {
