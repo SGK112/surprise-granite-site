@@ -4603,16 +4603,20 @@
       e.preventDefault();
       dropzone.classList.remove('dragover');
       const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
-      files.slice(0, 4 - window._pdfImages.length).forEach(file => {
+      const imageFiles = files.slice(0, 4 - window._pdfImages.length);
+      imageFiles.forEach(file => {
         if (file.type === 'application/pdf') {
           handlePDFFile(file);
         } else {
-          const reader = new FileReader();
-          reader.onload = ev => {
-            window._pdfImages.push({ data: ev.target.result, file: file });
+          Promise.all([
+            window._resizeImage(file, 1200, 0.85),
+            window._resizeImage(file, 300, 0.6)
+          ]).then(function(results) {
+            window._pdfImages.push({ data: results[0], thumb: results[1], file: file });
             window._renderPdfSlots();
-          };
-          reader.readAsDataURL(file);
+          }).catch(function(err) {
+            console.error('Drop image error:', err);
+          });
         }
       });
     });
@@ -4623,16 +4627,52 @@
   // Multi-image state
   window._pdfImages = [];
 
+  // Resize image via canvas to reduce memory — returns base64 JPEG
+  window._resizeImage = function(file, maxDim, quality) {
+    maxDim = maxDim || 1200;
+    quality = quality || 0.8;
+    return new Promise(function(resolve, reject) {
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function() {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        URL.revokeObjectURL(objectUrl);
+        resolve(dataUrl);
+      };
+      img.onerror = function() {
+        URL.revokeObjectURL(objectUrl);
+        // Fallback: read raw file as data URL
+        var reader = new FileReader();
+        reader.onload = function(ev) { resolve(ev.target.result); };
+        reader.onerror = function() { reject(new Error('Failed to read image')); };
+        reader.readAsDataURL(file);
+      };
+      img.src = objectUrl;
+    });
+  };
+
   window._renderPdfSlots = function() {
-    const grid = document.getElementById('pdfImageSlots');
+    var grid = document.getElementById('pdfImageSlots');
     if (!grid) return;
     grid.innerHTML = '';
-    for (let i = 0; i < 4; i++) {
-      const slot = document.createElement('div');
+    for (var i = 0; i < 4; i++) {
+      var slot = document.createElement('div');
       slot.style.cssText = 'aspect-ratio:1; border:2px dashed var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
       if (window._pdfImages[i]) {
         slot.style.border = '2px solid var(--primary)';
-        slot.innerHTML = '<img src="' + window._pdfImages[i].data + '" style="width:100%;height:100%;object-fit:cover;">' +
+        // Use thumbnail URL for display (lightweight)
+        var thumbSrc = window._pdfImages[i].thumb || window._pdfImages[i].data;
+        slot.innerHTML = '<img src="' + thumbSrc + '" style="width:100%;height:100%;object-fit:cover;">' +
           '<button onclick="event.stopPropagation();window._removePdfImage(' + i + ')" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:white;cursor:pointer;font-size:14px;line-height:22px;padding:0;z-index:2;">✕</button>' +
           '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 4px;text-align:center;">Photo ' + (i+1) + '</div>';
       } else {
@@ -4643,38 +4683,48 @@
       }
       grid.appendChild(slot);
     }
-    const countEl = document.getElementById('pdfImageCount');
-    const clearBtn = document.getElementById('pdfClearAll');
-    const n = window._pdfImages.length;
+    var countEl = document.getElementById('pdfImageCount');
+    var clearBtn = document.getElementById('pdfClearAll');
+    var n = window._pdfImages.length;
     if (countEl) countEl.textContent = n === 0 ? 'Click a slot to add a photo' : n + ' of 4 images' + (n === 1 ? ' — add more angles for better results!' : '');
     if (clearBtn) clearBtn.style.display = n > 0 ? 'inline-block' : 'none';
-    const analyzeBtn = document.getElementById('pdfAnalyzeBtn');
+    var analyzeBtn = document.getElementById('pdfAnalyzeBtn');
     if (analyzeBtn) analyzeBtn.style.display = n > 0 ? 'block' : 'none';
   };
 
   window._pickPdfImage = function() {
     if (window._pdfImages.length >= 4) return;
-    const input = document.createElement('input');
+    var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,image/*';
     input.style.display = 'none';
     document.body.appendChild(input);
     input.onchange = function(e) {
-      const file = e.target.files[0];
+      var file = e.target.files[0];
       if (!file) { input.remove(); return; }
       if (file.type === 'application/pdf') {
-        // PDF goes through old single-file flow
         handlePDFFile(file);
         input.remove();
         return;
       }
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        window._pdfImages.push({ data: ev.target.result, file: file });
-        window._renderPdfSlots();
-      };
-      reader.readAsDataURL(file);
       input.remove();
+      // Show loading indicator in next empty slot
+      var slotIdx = window._pdfImages.length;
+      var slotEl = document.getElementById('pdfImageSlots')?.children[slotIdx];
+      if (slotEl) slotEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Loading...</div>';
+
+      // Resize image to reduce memory: 1200px for API, 300px for thumbnail
+      Promise.all([
+        window._resizeImage(file, 1200, 0.85),
+        window._resizeImage(file, 300, 0.6)
+      ]).then(function(results) {
+        window._pdfImages.push({ data: results[0], thumb: results[1], file: file });
+        window._renderPdfSlots();
+      }).catch(function(err) {
+        console.error('Image load error:', err);
+        if (typeof showToast === 'function') showToast('Failed to load image — try a JPEG or PNG', 'error');
+        window._renderPdfSlots();
+      });
     };
     input.click();
   };
