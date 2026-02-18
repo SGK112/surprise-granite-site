@@ -18037,6 +18037,11 @@
       };
 
       // Main analysis function
+      // API base for AI endpoints - use deployed server when running locally from file://
+      const AI_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost')
+        ? 'https://surprise-granite-email-api.onrender.com'
+        : '';
+
       window.analyzeRoomImage = async function() {
         if (!uploadedImageData && uploadedMultiImages.length === 0) {
           showToast('Please upload an image first', 'error');
@@ -18102,7 +18107,7 @@
 
           if (uploadedMultiImages.length >= 2) {
             // Multi-image mode - parallel analysis + merge
-            const response = await fetch('/api/ai/room-scan-multi', {
+            const response = await fetch(`${AI_API_BASE}/api/ai/room-scan-multi`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -18115,7 +18120,7 @@
             data = await response.json();
           } else if (currentScanMode === 'reference') {
             // Reference + Ideas mode - uses separate endpoint
-            const response = await fetch('/api/ai/design-from-reference', {
+            const response = await fetch(`${AI_API_BASE}/api/ai/design-from-reference`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -18134,7 +18139,7 @@
             data = { ...layoutData, success: true, mode: 'reference', changes: data.changes || [] };
           } else {
             // Standard scan modes
-            const response = await fetch('/api/ai/room-scan', {
+            const response = await fetch(`${AI_API_BASE}/api/ai/room-scan`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -18150,7 +18155,7 @@
             clearInterval(progressInterval);
 
             if (response.status === 404) {
-              const fallbackResponse = await fetch('/api/ai/blueprint', {
+              const fallbackResponse = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -37041,7 +37046,7 @@
     let spacePressed = false;
 
     function onKeyDown(e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
 
       // Space to pan
       if (e.code === 'Space' && !spacePressed) {

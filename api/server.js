@@ -2152,13 +2152,19 @@ const developmentOrigins = [
   'http://localhost:5500',
   'http://127.0.0.1:3333',
   'http://127.0.0.1:5500',
-  'http://127.0.0.1:8080'
+  'http://127.0.0.1:8080',
+  'null' // file:// protocol sends origin 'null'
 ];
 
 const corsOrigins = developmentOrigins;
 
 app.use(cors({
-  origin: corsOrigins,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (server-to-server, mobile apps, file:// protocol)
+    if (!origin) return callback(null, true);
+    if (corsOrigins.includes(origin) || origin === 'null') return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-user-plan', 'x-account-type'],
   credentials: true
