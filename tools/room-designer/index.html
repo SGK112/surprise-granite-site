@@ -14057,6 +14057,17 @@
                 <option value="inset">Inset</option>
               </select>
             </div>
+            <div class="input-group">
+              <label class="input-label">Hardware Finish</label>
+              <select class="input-field" id="handleFinish" onchange="updateCabinetSettings()">
+                <option value="brushed-nickel">Brushed Nickel</option>
+                <option value="matte-black">Matte Black</option>
+                <option value="polished-chrome">Polished Chrome</option>
+                <option value="brass">Brass</option>
+                <option value="oil-rubbed-bronze">Oil-Rubbed Bronze</option>
+                <option value="satin-gold">Satin Gold</option>
+              </select>
+            </div>
             <div class="input-group" style="grid-column: span 2;">
               <button class="action-btn" onclick="applySettingsToAllCabinets()" style="width: 100%; padding: 8px 12px; font-size: 12px;">
                 Apply Style to All Cabinets
@@ -14198,6 +14209,10 @@
             <div class="property-row">
               <span class="property-label">Type</span>
               <span class="property-value" id="propType">-</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Label</span>
+              <input type="text" class="property-input" id="propLabel" placeholder="Custom label" onchange="updateElementLabel()" title="Custom name for this element">
             </div>
             <div class="property-row">
               <span class="property-label">Width</span>
@@ -26263,6 +26278,7 @@
       doorOverlay: 'full',       // 'full', 'partial', 'inset'
       cabinetFinish: 'wood-grain', // 'wood-grain', 'painted', 'matte', 'gloss'
       grainType: 'oak',          // 'oak', 'walnut', 'cherry', 'maple', 'hickory', 'flat'
+      handleFinish: 'brushed-nickel', // 'brushed-nickel', 'matte-black', 'polished-chrome', 'brass', 'oil-rubbed-bronze', 'satin-gold'
       currentFloor: 1,
       floors: [{ id: 1, name: 'Floor 1', height: 0 }]
     };
@@ -30503,8 +30519,8 @@
         case 'base-cabinet':
         case 'wall-cabinet':
           // CLEAN, CRISP CABINET RENDERING
-          // Determine cabinet style from material or default to shaker
-          const cabinetStyle = el.materialName?.toLowerCase().includes('flat') ? 'flat' : 'shaker';
+          // Determine cabinet style from element property, cabinet settings, or material
+          const cabinetStyle = el.doorStyle || cabinetSettings.doorStyle || (el.materialName?.toLowerCase().includes('flat') ? 'flat' : 'shaker');
           const isWallCab = type === 'wall-cabinet';
 
           // Toe kick dimensions for base cabinets (4" tall, 3" recessed)
@@ -30549,27 +30565,87 @@
             ctx.lineWidth = 1;
             ctx.strokeRect(dx + 0.5, dy + 0.5, dw - 1, dh - 1);
 
-            if (cabinetStyle === 'shaker') {
-              // Shaker style - clean recessed panel
-              const panelInset = Math.min(10, Math.max(6, dw * 0.1));
-              const px = dx + panelInset;
-              const py = dy + panelInset;
-              const pw = dw - panelInset * 2;
-              const ph = dh - panelInset * 2;
+            // Door style-specific panel details
+            const panelInset = Math.min(10, Math.max(6, dw * 0.1));
+            const px = dx + panelInset;
+            const py = dy + panelInset;
+            const pw = dw - panelInset * 2;
+            const ph = dh - panelInset * 2;
 
-              // Panel recess - clean lines
+            if (cabinetStyle === 'shaker' || cabinetStyle === 'shaker-beaded') {
+              // Shaker style - clean recessed panel
               ctx.strokeStyle = 'rgba(0,0,0,0.18)';
               ctx.lineWidth = 1;
               ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
-
-              // Inner panel slightly recessed
               ctx.fillStyle = 'rgba(0,0,0,0.05)';
               ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
-
-              // Subtle highlight on panel frame
               ctx.strokeStyle = 'rgba(255,255,255,0.08)';
               ctx.strokeRect(px - 0.5, py - 0.5, pw + 1, ph + 1);
+              if (cabinetStyle === 'shaker-beaded') {
+                // Beaded detail - inner dotted border
+                ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 3]);
+                ctx.strokeRect(px + 3, py + 3, pw - 6, ph - 6);
+                ctx.setLineDash([]);
+              }
+            } else if (cabinetStyle === 'thin-shaker' || cabinetStyle === 'shaker-slim') {
+              // Thin shaker - narrower frame, larger panel
+              const thinInset = Math.min(6, Math.max(4, dw * 0.06));
+              const tpx = dx + thinInset;
+              const tpy = dy + thinInset;
+              const tpw = dw - thinInset * 2;
+              const tph = dh - thinInset * 2;
+              ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(tpx + 0.5, tpy + 0.5, tpw - 1, tph - 1);
+              ctx.fillStyle = 'rgba(0,0,0,0.04)';
+              ctx.fillRect(tpx + 1, tpy + 1, tpw - 2, tph - 2);
+            } else if (cabinetStyle === 'raised') {
+              // Raised panel - outer frame + raised center
+              ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+              // Raised center panel - lighter with beveled look
+              const rInset = Math.max(4, pw * 0.06);
+              ctx.fillStyle = 'rgba(255,255,255,0.1)';
+              ctx.fillRect(px + rInset, py + rInset, pw - rInset * 2, ph - rInset * 2);
+              // Bevel highlights (top-left light, bottom-right dark)
+              ctx.fillStyle = 'rgba(255,255,255,0.15)';
+              ctx.fillRect(px + rInset, py + rInset, pw - rInset * 2, 2);
+              ctx.fillRect(px + rInset, py + rInset, 2, ph - rInset * 2);
+              ctx.fillStyle = 'rgba(0,0,0,0.12)';
+              ctx.fillRect(px + rInset, py + ph - rInset - 2, pw - rInset * 2, 2);
+              ctx.fillRect(px + pw - rInset - 2, py + rInset, 2, ph - rInset * 2);
+            } else if (cabinetStyle === 'recessed' || cabinetStyle === 'recessed-panel') {
+              // Recessed panel - deeper recess, darker center
+              ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+              ctx.fillStyle = 'rgba(0,0,0,0.1)';
+              ctx.fillRect(px + 2, py + 2, pw - 4, ph - 4);
+              ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+              ctx.strokeRect(px - 0.5, py - 0.5, pw + 1, ph + 1);
+            } else if (cabinetStyle === 'mission' || cabinetStyle === 'craftsman') {
+              // Mission/Craftsman - frame with vertical center mullion
+              ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+              ctx.fillStyle = 'rgba(0,0,0,0.05)';
+              ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
+              // Center vertical mullion
+              const mullionX = dx + dw / 2;
+              ctx.fillStyle = 'rgba(0,0,0,0.15)';
+              ctx.fillRect(mullionX - 1.5, py + 2, 3, ph - 4);
+              ctx.fillStyle = 'rgba(255,255,255,0.1)';
+              ctx.fillRect(mullionX - 1.5, py + 2, 1, ph - 4);
+            } else if (cabinetStyle === 'flat') {
+              // Flat panel - single thin groove
+              ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+              ctx.lineWidth = 0.5;
+              ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
             }
+            // 'slab' = no detail, just plain door face
 
             // Door edge highlights - subtle and clean
             ctx.fillStyle = 'rgba(255,255,255,0.1)';
@@ -42908,6 +42984,11 @@
         'access-door': STD_BASE_CAB_HEIGHT,   // 34.5" — cabinet access panel
         'trash-drawer': STD_BASE_CAB_HEIGHT,  // 34.5" — trash pull-out
         'bar-stool': 2,               // 24" — bar stool seat height (visual)
+        'fire-pit': 1.5,              // 18" — standard fire pit height
+        'pergola': 8,                 // 96" — full height overhead structure
+        'outdoor-counter': STD_BASE_CAB_HEIGHT, // 34.5" — outdoor kitchen counter
+        'outdoor-cabinet': STD_BASE_CAB_HEIGHT, // 34.5" — outdoor cabinet
+        'patio': 0.08,               // ~1" — patio/deck surface slab
 
         // Work surfaces (countertop-like materials)
         'surface-stainless': 0.1,       // 1.2" stainless steel work surface
@@ -43105,7 +43186,16 @@
         case 'island':
         case 'filler':
         case 'scribe':
+        case 'fire-pit':
+        case 'outdoor-counter':
+        case 'outdoor-cabinet':
           return height / 2; // Base sits on floor
+
+        case 'pergola':
+          return height / 2; // Pergola posts start at floor
+
+        case 'patio':
+          return height / 2 + 0.01; // Slightly above floor to prevent Z-fighting
 
         // Counter height items (on top of base cabinets)
         case 'countertop':
@@ -45448,7 +45538,7 @@
 
           // Modern Bar Handle with standoffs
           const handleLength = Math.min(doorW * 0.6, 0.3);
-          const handleFinish = 'brushed-nickel';
+          const handleFinish = el.handleFinish || cabinetSettings.handleFinish || 'brushed-nickel';
           const handle = createModernBarHandle(handleLength, handleFinish);
 
           // Position handle - vertical for tall handles, horizontal positioning
@@ -59082,6 +59172,15 @@
           rlBulb.rotation.x = Math.PI / 2;
           rlBulb.position.set(0, 0, h * 0.1);
           group.add(rlBulb);
+          // Actual light emission - downward spotlight
+          const rlSpot = new THREE.SpotLight(0xFFFAE0, 1.0, 6, Math.PI / 5, 0.4, 2);
+          rlSpot.castShadow = false;
+          rlSpot.position.set(0, 0, 0);
+          const rlTarget = new THREE.Object3D();
+          rlTarget.position.set(0, -4, 0);
+          group.add(rlSpot);
+          group.add(rlTarget);
+          rlSpot.target = rlTarget;
           break;
         }
 
@@ -59101,6 +59200,11 @@
           const plBulb = new THREE.Mesh(new THREE.SphereGeometry(w * 0.1, 8, 6), plBulbMat);
           plBulb.position.set(0, -h * 0.05, 0);
           group.add(plBulb);
+          // Actual light emission - warm point light
+          const plLight = new THREE.PointLight(0xFFE4B5, 0.8, 5, 2);
+          plLight.castShadow = false;
+          plLight.position.set(0, -h * 0.1, 0);
+          group.add(plLight);
           break;
         }
 
@@ -59114,6 +59218,15 @@
           const uclGlow = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, h * 0.4, 0.02), uclGlowMat);
           uclGlow.position.set(0, 0, 0.05);
           group.add(uclGlow);
+          // Actual light emission - downward task light
+          const uclSpot = new THREE.SpotLight(0xFFFFEE, 0.6, 2.5, Math.PI / 3, 0.5, 1);
+          uclSpot.castShadow = false;
+          uclSpot.position.set(0, 0, 0);
+          const uclTarget = new THREE.Object3D();
+          uclTarget.position.set(0, -1.5, 0.3);
+          group.add(uclSpot);
+          group.add(uclTarget);
+          uclSpot.target = uclTarget;
           break;
         }
 
@@ -59128,6 +59241,11 @@
           const lfGlobe = new THREE.Mesh(new THREE.SphereGeometry(w * 0.35, 16, 12), lfGlobeMat);
           lfGlobe.position.set(0, 0, h * 0.15);
           group.add(lfGlobe);
+          // Actual light emission - omnidirectional
+          const lfLight = new THREE.PointLight(0xFFFAE0, 0.7, 6, 2);
+          lfLight.castShadow = false;
+          lfLight.position.set(0, 0, h * 0.1);
+          group.add(lfLight);
           break;
         }
 
@@ -59150,6 +59268,11 @@
             chBulb.position.set(Math.cos(chAngle) * w * 0.35, 0.05, Math.sin(chAngle) * w * 0.35);
             group.add(chBulb);
           }
+          // Actual light emission - warm central point light
+          const chLight = new THREE.PointLight(0xFFE4B5, 1.2, 8, 2);
+          chLight.castShadow = false;
+          chLight.position.set(0, -0.1, 0);
+          group.add(chLight);
           break;
         }
 
@@ -59163,6 +59286,11 @@
           const scShade = new THREE.Mesh(new THREE.ConeGeometry(w * 0.3, h * 0.6, 12, 1, true), scShadeMat);
           scShade.position.set(0, 0, d * 0.3);
           group.add(scShade);
+          // Actual light emission - wall wash point light
+          const scLight = new THREE.PointLight(0xFFE4B5, 0.5, 3, 2);
+          scLight.castShadow = false;
+          scLight.position.set(0, 0, d * 0.3);
+          group.add(scLight);
           break;
         }
 
@@ -59286,6 +59414,131 @@
           const adHandle = new THREE.Mesh(new THREE.BoxGeometry(0.04, h * 0.35, 0.04), adHandleMat);
           adHandle.position.set(w * 0.35, 0, d / 2 + 0.04);
           group.add(adHandle);
+          break;
+        }
+
+        case 'fire-pit': {
+          // Circular fire pit with stone surround and flame
+          const fpStoneMat = new THREE.MeshStandardMaterial({ color: 0x696969, roughness: 0.85, metalness: 0.05 });
+          // Outer stone ring
+          const fpOuter = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.5, w * 0.5, h, 24), fpStoneMat);
+          group.add(fpOuter);
+          // Inner void
+          const fpInnerMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+          const fpInner = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.38, w * 0.38, h + 0.02, 20), fpInnerMat);
+          group.add(fpInner);
+          // Lava rock bed
+          const fpLavaMat = new THREE.MeshStandardMaterial({ color: 0x2d1810, roughness: 0.95 });
+          const fpLava = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.36, w * 0.36, 0.06, 16), fpLavaMat);
+          fpLava.position.set(0, h * 0.3, 0);
+          group.add(fpLava);
+          // Flame glow (emissive sphere cluster)
+          const fpFlameMat = new THREE.MeshStandardMaterial({ color: 0xFF6600, emissive: 0xFF4400, emissiveIntensity: 0.8, transparent: true, opacity: 0.7 });
+          const fpFlame1 = new THREE.Mesh(new THREE.ConeGeometry(w * 0.12, w * 0.35, 8), fpFlameMat);
+          fpFlame1.position.set(0, h * 0.5 + w * 0.1, 0);
+          group.add(fpFlame1);
+          const fpFlame2Mat = new THREE.MeshStandardMaterial({ color: 0xFFAA00, emissive: 0xFF8800, emissiveIntensity: 0.6, transparent: true, opacity: 0.5 });
+          const fpFlame2 = new THREE.Mesh(new THREE.ConeGeometry(w * 0.08, w * 0.25, 6), fpFlame2Mat);
+          fpFlame2.position.set(w * 0.08, h * 0.5 + w * 0.06, w * 0.05);
+          group.add(fpFlame2);
+          // Stone cap ring
+          const fpCapMat = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.7 });
+          const fpCap = new THREE.Mesh(new THREE.TorusGeometry(w * 0.44, 0.06, 8, 24), fpCapMat);
+          fpCap.rotation.x = Math.PI / 2;
+          fpCap.position.set(0, h * 0.48, 0);
+          group.add(fpCap);
+          // Fire light emission
+          const fpLight = new THREE.PointLight(0xFF6633, 0.8, 5, 2);
+          fpLight.castShadow = false;
+          fpLight.position.set(0, h * 0.6, 0);
+          group.add(fpLight);
+          break;
+        }
+
+        case 'pergola': {
+          // Pergola - 4 posts with overhead beams and cross rafters
+          const pgPostMat = new THREE.MeshStandardMaterial({ color: 0x8B6914, roughness: 0.7, metalness: 0.02 });
+          const pgBeamMat = new THREE.MeshStandardMaterial({ color: 0x9B7924, roughness: 0.65, metalness: 0.02 });
+          const postSize = 0.15;
+          const postH = h;
+          // 4 corner posts
+          const pgCorners = [[-w/2 + postSize, -d/2 + postSize], [w/2 - postSize, -d/2 + postSize],
+                             [-w/2 + postSize, d/2 - postSize], [w/2 - postSize, d/2 - postSize]];
+          pgCorners.forEach(([px, pz]) => {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(postSize, postH, postSize), pgPostMat);
+            post.position.set(px, 0, pz);
+            group.add(post);
+          });
+          // 2 main beams (side to side)
+          const beamY = postH * 0.45;
+          const pgBeam1 = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, 0.08), pgBeamMat);
+          pgBeam1.position.set(0, beamY, -d/2 + postSize);
+          group.add(pgBeam1);
+          const pgBeam2 = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, 0.08), pgBeamMat);
+          pgBeam2.position.set(0, beamY, d/2 - postSize);
+          group.add(pgBeam2);
+          // Cross rafters
+          const rafterCount = Math.max(3, Math.floor(w / 0.5));
+          for (let i = 0; i < rafterCount; i++) {
+            const rx = -w/2 + (w / (rafterCount + 1)) * (i + 1);
+            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, d + 0.2), pgBeamMat);
+            rafter.position.set(rx, beamY + 0.1, 0);
+            group.add(rafter);
+          }
+          break;
+        }
+
+        case 'outdoor-counter':
+        case 'outdoor-cabinet': {
+          // Outdoor kitchen counter - stone/concrete with stainless accents
+          const ocBaseMat = new THREE.MeshStandardMaterial({ color: 0x7A7A6E, roughness: 0.75, metalness: 0.05 });
+          const ocBase = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.85, d), ocBaseMat);
+          ocBase.position.set(0, -h * 0.075, 0);
+          group.add(ocBase);
+          // Countertop slab
+          const ocTopMat = new THREE.MeshStandardMaterial({ color: 0x4A4A42, roughness: 0.4, metalness: 0.1 });
+          const ocTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, h * 0.06, d + 0.04), ocTopMat);
+          ocTop.position.set(0, h * 0.44, 0);
+          group.add(ocTop);
+          // Door panels on front
+          const ocDoorMat = new THREE.MeshStandardMaterial({
+            color: 0xC0C0C0, roughness: 0.2, metalness: 0.8,
+            envMap: window.roomEnvMap || null, envMapIntensity: 0.6
+          });
+          const doorCount = Math.max(1, Math.floor(w / 0.8));
+          const doorW = (w - 0.06) / doorCount;
+          for (let i = 0; i < doorCount; i++) {
+            const odx = -w/2 + 0.03 + i * doorW + doorW * 0.05;
+            const odDoor = new THREE.Mesh(new THREE.BoxGeometry(doorW * 0.9, h * 0.65, 0.02), ocDoorMat);
+            odDoor.position.set(odx + doorW * 0.45, -h * 0.08, d / 2 + 0.01);
+            group.add(odDoor);
+          }
+          // Toe kick
+          const ocKickMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8 });
+          const ocKick = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, h * 0.08, d - 0.1), ocKickMat);
+          ocKick.position.set(0, -h * 0.46, 0);
+          group.add(ocKick);
+          break;
+        }
+
+        case 'patio': {
+          // Patio/deck surface - flat slab with subtle tile pattern
+          const ptBaseMat = new THREE.MeshStandardMaterial({ color: 0xB0A090, roughness: 0.8 });
+          const ptBase = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ptBaseMat);
+          group.add(ptBase);
+          // Score lines to simulate pavers/tiles
+          const ptLineMat = new THREE.MeshStandardMaterial({ color: 0x908070, roughness: 0.9 });
+          const tileSize = 0.5;
+          for (let tx = -w/2 + tileSize; tx < w/2; tx += tileSize) {
+            const line = new THREE.Mesh(new THREE.BoxGeometry(0.01, h + 0.01, d), ptLineMat);
+            line.position.set(tx, 0, 0);
+            group.add(line);
+          }
+          for (let tz = -d/2 + tileSize; tz < d/2; tz += tileSize) {
+            const line = new THREE.Mesh(new THREE.BoxGeometry(w, h + 0.01, 0.01), ptLineMat);
+            line.position.set(0, 0, tz);
+            group.add(line);
+          }
           break;
         }
 
@@ -63025,6 +63278,7 @@
       cabinetSettings.doorStyle = document.getElementById('doorStyle').value;
       cabinetSettings.doorOverlay = document.getElementById('doorOverlay').value;
       cabinetSettings.cabinetFinish = document.getElementById('cabinetFinish')?.value || 'wood-grain';
+      cabinetSettings.handleFinish = document.getElementById('handleFinish')?.value || 'brushed-nickel';
 
       // Cabinet types that use these settings
       const cabinetTypes = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
@@ -63038,6 +63292,7 @@
         selectedElement.doorStyle = cabinetSettings.doorStyle;
         selectedElement.doorOverlay = cabinetSettings.doorOverlay;
         selectedElement.cabinetFinish = cabinetSettings.cabinetFinish;
+        selectedElement.handleFinish = cabinetSettings.handleFinish;
 
         // Redraw - must reinitialize 3D to rebuild geometry
         if (currentView === '2d') {
@@ -63070,6 +63325,7 @@
           el.doorStyle = cabinetSettings.doorStyle;
           el.doorOverlay = cabinetSettings.doorOverlay;
           el.cabinetFinish = cabinetSettings.cabinetFinish;
+          el.handleFinish = cabinetSettings.handleFinish;
           updatedCount++;
         }
       });
@@ -63265,7 +63521,8 @@
         empty.style.display = 'none';
         content.style.display = 'block';
 
-        document.getElementById('propType').textContent = selectedElement.label;
+        document.getElementById('propType').textContent = selectedElement.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        document.getElementById('propLabel').value = selectedElement.label || '';
         // Show decimal value in input, formatted display beside it
         document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
         // Depth (2D height / 3D depth)
@@ -64159,6 +64416,16 @@
       } else {
         empty.style.display = 'block';
         content.style.display = 'none';
+      }
+    }
+
+    function updateElementLabel() {
+      if (!selectedElement) return;
+      const newLabel = document.getElementById('propLabel').value.trim();
+      if (newLabel) {
+        selectedElement.label = newLabel;
+        saveUndoState();
+        draw();
       }
     }
 
