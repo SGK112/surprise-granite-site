@@ -18103,6 +18103,19 @@
             }
           }, 1500);
 
+          // Helper to safely parse response and check for errors
+          async function parseAIResponse(response, endpointName) {
+            if (response.status === 403) {
+              throw new Error('Server CORS error (403) — the backend may still be deploying. Try again in 1-2 minutes.');
+            }
+            if (!response.ok && response.status !== 404) {
+              let errMsg = `Server error (${response.status})`;
+              try { const e = await response.json(); errMsg = e.error || e.message || errMsg; } catch {}
+              throw new Error(typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg);
+            }
+            return response;
+          }
+
           let data;
 
           if (uploadedMultiImages.length >= 2) {
@@ -18117,6 +18130,7 @@
               })
             });
             clearInterval(progressInterval);
+            await parseAIResponse(response, 'room-scan-multi');
             data = await response.json();
           } else if (currentScanMode === 'reference') {
             // Reference + Ideas mode - uses separate endpoint
@@ -18130,9 +18144,10 @@
               })
             });
             clearInterval(progressInterval);
+            await parseAIResponse(response, 'design-from-reference');
             data = await response.json();
 
-            if (data.error) throw new Error(data.error);
+            if (data.error) throw new Error(typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
 
             // Use the modified layout (or original if no changes)
             const layoutData = data.modified || data.original;
@@ -18164,14 +18179,16 @@
                   userContext: userContext
                 })
               });
+              await parseAIResponse(fallbackResponse, 'blueprint');
               data = await fallbackResponse.json();
             } else {
+              await parseAIResponse(response, 'room-scan');
               data = await response.json();
             }
           }
 
           if (data.error) {
-            throw new Error(data.error);
+            throw new Error(typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
           }
 
           progressFill.style.width = '100%';
