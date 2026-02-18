@@ -26021,13 +26021,13 @@
       const approvalToken = urlParams.get('approval');
       let autoSaveLoaded = false;
 
-      // Only auto-load if explicitly coming from a share/approval link
-      // Otherwise always start fresh - users can load designs from "My Designs"
       if (shareToken || approvalToken) {
         // Let the share/approval handlers load the appropriate design
         autoSaveLoaded = false;
+      } else {
+        // Restore last session from auto-save (templates, edits, etc.)
+        autoSaveLoaded = loadAutoSavedDesign();
       }
-      // Designer always opens with fresh canvas - no auto-restore
 
       // Initialize multi-room system (only creates new room if no rooms exist from autosave)
       initializeRooms();
@@ -40734,8 +40734,12 @@
         cleanup3D();
         canvasWrapper.style.display = 'block';
         threeContainer.classList.remove('active');
-        // Redraw 2D canvas after switching from 3D
-        requestAnimationFrame(() => draw());
+        // Recalculate canvas size and redraw after switching from 3D
+        // Canvas wrapper may have different dimensions after 3D container was active
+        requestAnimationFrame(() => {
+          updateCanvasSize();
+          draw();
+        });
       }
     }
 
@@ -61272,7 +61276,7 @@
 
       'pool-house-bar': {
         name: 'Pool House Bar',
-        roomType: 'kitchen',
+        roomType: 'outdoor',
         width: 14,
         depth: 6,
         elements: [
