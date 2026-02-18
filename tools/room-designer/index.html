@@ -18293,7 +18293,8 @@
       }
 
       // Calculate positions along each wall
-      const wallPositions = { top: 0, bottom: 0, left: 0, right: 0 };
+      // wallCursor tracks how far along each wall we've placed elements (in feet from the wall's start)
+      const wallCursor = { top: 0, bottom: 0, left: 0, right: 0 };
       const wallPadding = 0.5; // Half foot padding from wall corners
 
       // Helper to get element type from AI cabinet type
@@ -18320,12 +18321,88 @@
         return '#8B4513'; // Base cabinet brown
       }
 
-      // Sort cabinets by orderIndex within each wall for accurate placement
+      // Place a single element on its assigned wall, returns { x, y, canvasW, canvasH }
+      // Canvas coordinates: x,y = top-left corner of bounding box; canvasW/canvasH = dimensions on canvas
+      // For top/bottom walls: elements run left-to-right, face-width = widthFt, face-depth = depthFt
+      // For left/right walls: elements run top-to-bottom, the face-width runs vertically
+      function placeOnWall(wall, widthFt, depthFt, gapFt) {
+        let x, y, canvasW, canvasH;
+
+        switch (wall) {
+          case 'top': {
+            // Elements sit against top wall, facing down. Run left to right.
+            if (wallCursor.top === 0) wallCursor.top = wallPadding;
+            wallCursor.top += gapFt;
+            x = wallCursor.top;
+            y = 0; // Flush against top room edge
+            canvasW = widthFt;
+            canvasH = depthFt;
+            wallCursor.top += widthFt;
+            break;
+          }
+          case 'bottom': {
+            // Elements sit against bottom wall, facing up. Run left to right.
+            if (wallCursor.bottom === 0) wallCursor.bottom = wallPadding;
+            wallCursor.bottom += gapFt;
+            x = wallCursor.bottom;
+            y = roomDepth - depthFt; // Flush against bottom room edge
+            canvasW = widthFt;
+            canvasH = depthFt;
+            wallCursor.bottom += widthFt;
+            break;
+          }
+          case 'left': {
+            // Elements sit against left wall, facing right. Run top to bottom.
+            // Face-width goes vertically, depth goes horizontally
+            if (wallCursor.left === 0) wallCursor.left = wallPadding;
+            wallCursor.left += gapFt;
+            x = 0; // Flush against left room edge
+            y = wallCursor.left;
+            canvasW = depthFt;   // depth is the horizontal extent
+            canvasH = widthFt;   // face-width runs vertically
+            wallCursor.left += widthFt;
+            break;
+          }
+          case 'right': {
+            // Elements sit against right wall, facing left. Run top to bottom.
+            if (wallCursor.right === 0) wallCursor.right = wallPadding;
+            wallCursor.right += gapFt;
+            x = roomWidth - depthFt; // Flush against right room edge
+            y = wallCursor.right;
+            canvasW = depthFt;   // depth is the horizontal extent
+            canvasH = widthFt;   // face-width runs vertically
+            wallCursor.right += widthFt;
+            break;
+          }
+          case 'island': {
+            x = roomWidth / 2 - widthFt / 2;
+            y = roomDepth / 2 - depthFt / 2;
+            canvasW = widthFt;
+            canvasH = depthFt;
+            break;
+          }
+          default: {
+            // Fallback to top wall
+            if (wallCursor.top === 0) wallCursor.top = wallPadding;
+            wallCursor.top += gapFt;
+            x = wallCursor.top;
+            y = 0;
+            canvasW = widthFt;
+            canvasH = depthFt;
+            wallCursor.top += widthFt;
+          }
+        }
+        return { x, y, canvasW, canvasH };
+      }
+
+      // Sort cabinets: group by wall, then sort by orderIndex within each wall
       const sortedCabinets = [...cabinets].sort((a, b) => {
-        if ((a.wall || 'top') !== (b.wall || 'top')) return 0;
-        const aIdx = a.orderIndex ?? 999;
-        const bIdx = b.orderIndex ?? 999;
-        return aIdx - bIdx;
+        const wallA = a.wall || 'top';
+        const wallB = b.wall || 'top';
+        // Group by wall order: top, right, bottom, left (clockwise)
+        const wallOrder = { top: 0, right: 1, bottom: 2, left: 3, island: 4 };
+        if (wallA !== wallB) return (wallOrder[wallA] || 0) - (wallOrder[wallB] || 0);
+        return (a.orderIndex ?? 999) - (b.orderIndex ?? 999);
       });
 
       // Place cabinets along walls
@@ -18333,79 +18410,22 @@
         const wall = cab.wall || 'top';
         const widthFt = (cab.width || 36) / 12; // Convert inches to feet
         const depthFt = (cab.depth || 24) / 12;
-        const heightFt = (cab.height || 34.5) / 12;
         const elementType = getElementType(cab.type);
 
         // Use AI-provided gap or default small gap
         const gapFt = cab.gapBefore != null ? (cab.gapBefore / 12) : 0.1;
 
-        let x, y, rotation = 0;
+        const pos = placeOnWall(wall, widthFt, depthFt, gapFt);
 
-        // Position based on wall
-        switch (wall) {
-          case 'top': // Back wall
-            if (cab.orderIndex === 0 || wallPositions.top === 0) {
-              wallPositions.top += gapFt > 0.5 ? gapFt : wallPadding;
-            } else {
-              wallPositions.top += gapFt;
-            }
-            x = wallPositions.top;
-            y = wallPadding;
-            wallPositions.top += widthFt;
-            break;
-          case 'bottom': // Front wall
-            if (cab.orderIndex === 0 || wallPositions.bottom === 0) {
-              wallPositions.bottom += gapFt > 0.5 ? gapFt : wallPadding;
-            } else {
-              wallPositions.bottom += gapFt;
-            }
-            x = wallPositions.bottom;
-            y = roomDepth - depthFt - wallPadding;
-            rotation = 180;
-            wallPositions.bottom += widthFt;
-            break;
-          case 'left': // Left wall
-            if (cab.orderIndex === 0 || wallPositions.left === 0) {
-              wallPositions.left += gapFt > 0.5 ? gapFt : wallPadding;
-            } else {
-              wallPositions.left += gapFt;
-            }
-            x = wallPadding;
-            y = wallPositions.left;
-            rotation = 270;
-            wallPositions.left += widthFt;
-            break;
-          case 'right': // Right wall
-            if (cab.orderIndex === 0 || wallPositions.right === 0) {
-              wallPositions.right += gapFt > 0.5 ? gapFt : wallPadding;
-            } else {
-              wallPositions.right += gapFt;
-            }
-            x = roomWidth - depthFt - wallPadding;
-            y = wallPositions.right;
-            rotation = 90;
-            wallPositions.right += widthFt;
-            break;
-          case 'island': // Center island
-            x = roomWidth / 2 - widthFt / 2;
-            y = roomDepth / 2 - depthFt / 2;
-            break;
-          default:
-            wallPositions.top += gapFt || 0.1;
-            x = wallPositions.top;
-            y = wallPadding;
-            wallPositions.top += widthFt;
-        }
-
-        // Create element
+        // Create element — NO rotation needed, we swap w/h in placeOnWall for left/right
         const element = {
           id: Date.now() + Math.random(),
           type: elementType,
-          x: x * pixelsPerFoot,
-          y: y * pixelsPerFoot,
-          width: widthFt,
-          height: depthFt,
-          rotation: rotation,
+          x: pos.x * pixelsPerFoot,
+          y: pos.y * pixelsPerFoot,
+          width: pos.canvasW,
+          height: pos.canvasH,
+          rotation: 0, // No rotation — dimensions already oriented for canvas
           color: getCabinetColor(cab.type),
           label: cab.label || elementType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           locked: false,
@@ -18441,68 +18461,34 @@
         result.cabinetsAdded++;
       }
 
-      // Place appliances
+      // Place appliances — they share the wall cursors so they interleave properly
       for (const app of appliances) {
         const wall = app.wall || 'top';
         const widthFt = (app.width || 30) / 12;
         const depthFt = 2; // Standard appliance depth
 
-        // Determine appliance type and dimensions
+        // Determine appliance type
         let elementType = 'refrigerator';
-        let height = 5.75; // Default fridge height in feet
         let color = '#C0C0C0'; // Stainless steel
 
         if (app.type === 'range' || app.type === 'stove') {
           elementType = 'range';
-          height = 3; // Range footprint depth
         } else if (app.type === 'dishwasher') {
           elementType = 'dishwasher';
-          height = 2;
         } else if (app.type === 'microwave') {
           elementType = 'microwave';
-          height = 1;
         }
 
-        let x, y, rotation = 0;
-
-        switch (wall) {
-          case 'top':
-            x = wallPadding + wallPositions.top;
-            y = wallPadding;
-            wallPositions.top += widthFt + 0.1;
-            break;
-          case 'bottom':
-            x = wallPadding + wallPositions.bottom;
-            y = roomDepth - depthFt - wallPadding;
-            rotation = 180;
-            wallPositions.bottom += widthFt + 0.1;
-            break;
-          case 'left':
-            x = wallPadding;
-            y = wallPadding + wallPositions.left;
-            rotation = 270;
-            wallPositions.left += widthFt + 0.1;
-            break;
-          case 'right':
-            x = roomWidth - depthFt - wallPadding;
-            y = wallPadding + wallPositions.right;
-            rotation = 90;
-            wallPositions.right += widthFt + 0.1;
-            break;
-          default:
-            x = wallPadding + wallPositions.top;
-            y = wallPadding;
-            wallPositions.top += widthFt + 0.1;
-        }
+        const pos = placeOnWall(wall, widthFt, depthFt, 0.1);
 
         const element = {
           id: Date.now() + Math.random(),
           type: elementType,
-          x: x * pixelsPerFoot,
-          y: y * pixelsPerFoot,
-          width: widthFt,
-          height: depthFt,
-          rotation: rotation,
+          x: pos.x * pixelsPerFoot,
+          y: pos.y * pixelsPerFoot,
+          width: pos.canvasW,
+          height: pos.canvasH,
+          rotation: 0,
           color: color,
           label: app.type ? app.type.charAt(0).toUpperCase() + app.type.slice(1) : 'Appliance',
           locked: false,
@@ -18567,48 +18553,25 @@
         Object.entries(baseCabinetsByWall).forEach(([wall, cabs]) => {
           if (cabs.length === 0) return;
 
-          // Sort cabinets by position
-          if (wall === 'top' || wall === 'bottom') {
-            cabs.sort((a, b) => a.x - b.x);
-          } else {
+          // Sort cabinets by position (x for horizontal walls, y for vertical walls)
+          if (wall === 'left' || wall === 'right') {
             cabs.sort((a, b) => a.y - b.y);
+          } else {
+            cabs.sort((a, b) => a.x - b.x);
           }
 
-          // Calculate bounding box
-          const first = cabs[0];
-          const last = cabs[cabs.length - 1];
+          // Calculate bounding box from placed elements (x/y in pixels, width/height in feet)
+          const minX = Math.min(...cabs.map(c => c.x));
+          const minY = Math.min(...cabs.map(c => c.y));
+          const maxX = Math.max(...cabs.map(c => c.x + c.width * pixelsPerFoot));
+          const maxY = Math.max(...cabs.map(c => c.y + c.height * pixelsPerFoot));
 
-          let counterX, counterY, counterWidth, counterHeight, counterRotation = 0;
+          const counterX = (minX / pixelsPerFoot) - overhang;
+          const counterY = (minY / pixelsPerFoot) - overhang;
+          const counterWidth = ((maxX - minX) / pixelsPerFoot) + overhang * 2;
+          const counterHeight = ((maxY - minY) / pixelsPerFoot) + overhang * 2;
 
-          if (wall === 'top') {
-            counterX = (first.x / pixelsPerFoot) - overhang;
-            counterY = (first.y / pixelsPerFoot) - overhang;
-            counterWidth = ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot) + overhang * 2;
-            counterHeight = first.height + overhang * 2;
-          } else if (wall === 'bottom') {
-            counterX = (first.x / pixelsPerFoot) - overhang;
-            counterY = (first.y / pixelsPerFoot) - overhang;
-            counterWidth = ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot) + overhang * 2;
-            counterHeight = first.height + overhang * 2;
-            counterRotation = 180;
-          } else if (wall === 'left' || wall === 'right') {
-            counterX = (first.x / pixelsPerFoot) - overhang;
-            counterY = (first.y / pixelsPerFoot) - overhang;
-            counterWidth = ((last.y + last.width * pixelsPerFoot - first.y) / pixelsPerFoot) + overhang * 2;
-            counterHeight = first.height + overhang * 2;
-            counterRotation = wall === 'left' ? 270 : 90;
-          } else if (wall === 'island') {
-            const minX = Math.min(...cabs.map(c => c.x));
-            const maxX = Math.max(...cabs.map(c => c.x + c.width * pixelsPerFoot));
-            const minY = Math.min(...cabs.map(c => c.y));
-            const maxY = Math.max(...cabs.map(c => c.y + c.height * pixelsPerFoot));
-            counterX = (minX / pixelsPerFoot) - overhang;
-            counterY = (minY / pixelsPerFoot) - overhang;
-            counterWidth = ((maxX - minX) / pixelsPerFoot) + overhang * 2;
-            counterHeight = ((maxY - minY) / pixelsPerFoot) + overhang * 2;
-          }
-
-          if (counterWidth && counterHeight) {
+          if (counterWidth > 0 && counterHeight > 0) {
             const counterElement = {
               id: Date.now() + Math.random() + Math.random(),
               type: 'countertop',
@@ -18616,7 +18579,7 @@
               y: counterY * pixelsPerFoot,
               width: counterWidth,
               height: counterHeight,
-              rotation: counterRotation,
+              rotation: 0,
               color: '#4a5568',
               label: `${wall.charAt(0).toUpperCase() + wall.slice(1)} Counter`,
               locked: false,
