@@ -6435,6 +6435,60 @@
       wallGroups[w].wall.sort((a, b) => a._orderIndex - b._orderIndex);
     });
 
+    // SMART REDISTRIBUTION: If GPT dumped everything on one wall but layout is multi-wall, fix it
+    const layout = (room.layoutType || '').toLowerCase();
+    const totalBase = wallGroups.top.base.length + wallGroups.bottom.base.length + wallGroups.left.base.length + wallGroups.right.base.length;
+    const topHeavy = totalBase > 0 && (wallGroups.top.base.length / totalBase) > 0.7;
+    const totalWall = wallGroups.top.wall.length + wallGroups.bottom.wall.length + wallGroups.left.wall.length + wallGroups.right.wall.length;
+    const topHeavyWall = totalWall > 0 && (wallGroups.top.wall.length / totalWall) > 0.7;
+
+    if (topHeavy && (layout.includes('l-shape') || layout.includes('l shape') || layout.includes('u-shape') || layout.includes('u shape') || layout.includes('peninsula'))) {
+      console.log('[AI Import] Redistributing: GPT put ' + wallGroups.top.base.length + '/' + totalBase + ' base cabs on top wall for ' + layout + ' layout');
+
+      const allBase = wallGroups.top.base.concat(wallGroups.left.base, wallGroups.right.base, wallGroups.bottom.base);
+      const allWallCabs = wallGroups.top.wall.concat(wallGroups.left.wall, wallGroups.right.wall, wallGroups.bottom.wall);
+
+      // Calculate how much fits on top wall based on room width
+      let topRunWidth = 0;
+      const topBaseSplit = [];
+      const leftBaseSplit = [];
+      for (let i = 0; i < allBase.length; i++) {
+        if (topRunWidth + allBase[i]._widthFt <= roomWidthFeet - 1) {
+          topBaseSplit.push(allBase[i]);
+          topRunWidth += allBase[i]._widthFt;
+        } else {
+          leftBaseSplit.push(allBase[i]);
+        }
+      }
+
+      // If nothing went to left wall, force a split
+      if (leftBaseSplit.length === 0 && allBase.length > 4) {
+        const splitAt = Math.ceil(allBase.length * 0.6);
+        topBaseSplit.length = 0;
+        leftBaseSplit.length = 0;
+        allBase.forEach((c, i) => (i < splitAt ? topBaseSplit : leftBaseSplit).push(c));
+      }
+
+      wallGroups.top.base = topBaseSplit;
+      wallGroups.left.base = leftBaseSplit;
+
+      // Split wall cabs similarly
+      if (topHeavyWall && allWallCabs.length > 2) {
+        const wallSplitAt = Math.ceil(allWallCabs.length * 0.6);
+        wallGroups.top.wall = allWallCabs.slice(0, wallSplitAt);
+        wallGroups.left.wall = allWallCabs.slice(wallSplitAt);
+      }
+
+      // Move fridge to left wall if it's on top
+      const fridgeIdx = wallGroups.top.tall.findIndex(c => {
+        const t = (c._type || '').toLowerCase();
+        return t === 'refrigerator' || t === 'fridge';
+      });
+      if (fridgeIdx >= 0) {
+        wallGroups.left.tall.unshift(wallGroups.top.tall.splice(fridgeIdx, 1)[0]);
+      }
+    }
+
     // Log wall distribution
     ['top', 'bottom', 'left', 'right'].forEach(w => {
       const g = wallGroups[w];
