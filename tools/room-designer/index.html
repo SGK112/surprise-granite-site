@@ -18312,23 +18312,46 @@
       function getElementType(cabType) {
         const typeMap = {
           'base-cabinet': 'base-cabinet',
+          'base': 'base-cabinet',
           'wall-cabinet': 'wall-cabinet',
+          'wall': 'wall-cabinet',
+          'upper': 'wall-cabinet',
           'tall-cabinet': 'tall-cabinet',
+          'pantry': 'tall-cabinet',
+          'tall': 'tall-cabinet',
           'sink-base': 'sink-base',
           'sink-base-apron': 'sink-base-apron',
+          'farmhouse-sink': 'sink-base-apron',
+          'apron-sink': 'sink-base-apron',
           'drawer-base': 'drawer-base',
+          'drawer': 'drawer-base',
           'corner-cabinet': 'corner-cabinet',
+          'corner': 'corner-cabinet',
           'lazy-susan': 'lazy-susan',
           'blind-corner': 'blind-corner',
-          'island': 'island'
+          'island': 'island',
+          'fridge-cabinet': 'fridge-cabinet',
+          'refrigerator-cabinet': 'fridge-cabinet',
+          'microwave-cabinet': 'microwave-cabinet',
+          'above-microwave-cabinet': 'above-microwave-cabinet'
         };
-        return typeMap[cabType] || 'base-cabinet';
+        return typeMap[cabType] || typeMap[cabType?.toLowerCase()] || 'base-cabinet';
       }
 
-      // Helper to get cabinet color based on type
-      function getCabinetColor(cabType) {
-        if (cabType.includes('wall')) return '#B8860B';
-        if (cabType.includes('tall')) return '#654321';
+      // Helper to get cabinet color based on type and AI-detected finish
+      function getCabinetColor(cabType, cab) {
+        // Use AI-detected color if available
+        if (cab?.color) return cab.color;
+        // Use current cabinet settings color if applicable
+        const finishColors = {
+          'painted': '#FAFAFA',
+          'white': '#FAFAFA',
+          'thermofoil': '#E8E8E8'
+        };
+        if (cab?.finish && finishColors[cab.finish]) return finishColors[cab.finish];
+        // Default by type
+        if (cabType.includes('wall') || cabType.includes('upper')) return '#B8860B';
+        if (cabType.includes('tall') || cabType.includes('pantry')) return '#654321';
         return '#8B4513'; // Base cabinet brown
       }
 
@@ -18437,7 +18460,7 @@
           width: pos.canvasW,
           height: pos.canvasH,
           rotation: 0, // No rotation — dimensions already oriented for canvas
-          color: getCabinetColor(cab.type),
+          color: getCabinetColor(cab.type, cab),
           label: cab.label || elementType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           locked: false,
           roomId: currentRoom,
@@ -18473,24 +18496,44 @@
       }
 
       // Place appliances — they share the wall cursors so they interleave properly
+      // Appliance type mapping with default dimensions (inches)
+      const applianceDefaults = {
+        'refrigerator': { type: 'refrigerator', width: 36, depth: 30, color: '#C0C0C0' },
+        'fridge': { type: 'refrigerator', width: 36, depth: 30, color: '#C0C0C0' },
+        'range': { type: 'range', width: 30, depth: 24, color: '#C0C0C0' },
+        'stove': { type: 'range', width: 30, depth: 24, color: '#C0C0C0' },
+        'slide-in-range': { type: 'slide-in-range', width: 30, depth: 24, color: '#C0C0C0' },
+        'cooktop': { type: 'cooktop', width: 30, depth: 21, color: '#C0C0C0' },
+        'dishwasher': { type: 'dishwasher', width: 24, depth: 24, color: '#C0C0C0' },
+        'microwave': { type: 'microwave', width: 30, depth: 16, color: '#333333' },
+        'hood': { type: 'range-hood', width: 30, depth: 20, color: '#C0C0C0' },
+        'range-hood': { type: 'range-hood', width: 30, depth: 20, color: '#C0C0C0' },
+        'oven': { type: 'oven', width: 30, depth: 25, color: '#C0C0C0' },
+        'wall-oven': { type: 'oven', width: 30, depth: 25, color: '#C0C0C0' },
+        'double-oven': { type: 'wall-oven-double', width: 30, depth: 25, color: '#C0C0C0' },
+        'wine-cooler': { type: 'wine-cooler', width: 24, depth: 24, color: '#333333' },
+        'beverage-center': { type: 'beverage-center', width: 24, depth: 24, color: '#333333' },
+        'ice-maker': { type: 'ice-maker', width: 15, depth: 24, color: '#C0C0C0' },
+        'trash-compactor': { type: 'trash-compactor', width: 15, depth: 24, color: '#C0C0C0' },
+        'warming-drawer': { type: 'warming-drawer', width: 30, depth: 24, color: '#C0C0C0' }
+      };
+
+      let detectedRangeWall = null; // Track range position for auto range-hood
+
       for (const app of appliances) {
         const wall = app.wall || 'top';
-        const widthFt = (app.width || 30) / 12;
-        const depthFt = 2; // Standard appliance depth
+        const appType = (app.type || 'refrigerator').toLowerCase().replace(/\s+/g, '-');
+        const defaults = applianceDefaults[appType] || applianceDefaults['refrigerator'];
+        const widthFt = (app.width || defaults.width) / 12;
+        const depthFt = defaults.depth / 12;
+        const elementType = defaults.type;
 
-        // Determine appliance type
-        let elementType = 'refrigerator';
-        let color = '#C0C0C0'; // Stainless steel
+        // Use AI-provided gap or default
+        const gapFt = app.gapBefore != null ? (app.gapBefore / 12) : 0.1;
 
-        if (app.type === 'range' || app.type === 'stove') {
-          elementType = 'range';
-        } else if (app.type === 'dishwasher') {
-          elementType = 'dishwasher';
-        } else if (app.type === 'microwave') {
-          elementType = 'microwave';
-        }
+        const pos = placeOnWall(wall, widthFt, depthFt, gapFt);
 
-        const pos = placeOnWall(wall, widthFt, depthFt, 0.1);
+        const label = app.label || (app.type ? app.type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Appliance');
 
         const element = {
           id: Date.now() + Math.random(),
@@ -18500,16 +18543,48 @@
           width: pos.canvasW,
           height: pos.canvasH,
           rotation: 0,
-          color: color,
-          label: app.type ? app.type.charAt(0).toUpperCase() + app.type.slice(1) : 'Appliance',
+          color: defaults.color,
+          label: label,
           locked: false,
           roomId: currentRoom,
           floorLevel: cabinetSettings?.currentFloor || 1,
           aiImported: true,
-          aiWall: wall
+          aiWall: wall,
+          aiConfidence: app.confidence || 'medium'
         };
 
+        // Track range position for auto range-hood placement
+        if (elementType === 'range' || elementType === 'slide-in-range' || elementType === 'cooktop') {
+          detectedRangeWall = { wall, x: pos.x, y: pos.y, widthFt, depthFt };
+        }
+
         elements.push(element);
+        result.appliancesAdded++;
+      }
+
+      // Auto-place range hood if range was detected but no hood was explicitly placed
+      const hasHood = appliances.some(a => a.type === 'hood' || a.type === 'range-hood');
+      if (detectedRangeWall && !hasHood) {
+        const hoodWidthFt = detectedRangeWall.widthFt;
+        const hoodDepthFt = 20 / 12; // 20" depth standard
+        const hoodElement = {
+          id: Date.now() + Math.random(),
+          type: 'range-hood',
+          x: detectedRangeWall.x * pixelsPerFoot,
+          y: detectedRangeWall.y * pixelsPerFoot,
+          width: detectedRangeWall.wall === 'left' || detectedRangeWall.wall === 'right' ? hoodDepthFt : hoodWidthFt,
+          height: detectedRangeWall.wall === 'left' || detectedRangeWall.wall === 'right' ? hoodWidthFt : hoodDepthFt,
+          rotation: 0,
+          color: '#C0C0C0',
+          label: 'Range Hood',
+          locked: false,
+          roomId: currentRoom,
+          floorLevel: cabinetSettings?.currentFloor || 1,
+          aiImported: true,
+          aiWall: detectedRangeWall.wall,
+          autoGenerated: true
+        };
+        elements.push(hoodElement);
         result.appliancesAdded++;
       }
 
@@ -18552,7 +18627,7 @@
         const baseCabinetsByWall = { top: [], bottom: [], left: [], right: [], island: [] };
 
         elements.forEach(el => {
-          if (el.aiImported && ['base-cabinet', 'sink-base', 'drawer-base', 'corner-cabinet'].includes(el.type)) {
+          if (el.aiImported && ['base-cabinet', 'sink-base', 'sink-base-apron', 'drawer-base', 'corner-cabinet', 'blind-corner', 'lazy-susan', 'island'].includes(el.type)) {
             const wall = el.aiWall || 'top';
             baseCabinetsByWall[wall].push(el);
           }
@@ -18613,8 +18688,39 @@
         });
       }
 
+      // Auto-generate backsplash on walls with countertops
+      if (result.countertopsAdded > 0) {
+        const aiCounters = elements.filter(el => el.aiImported && el.type === 'countertop' && el.aiWall && el.aiWall !== 'island');
+        for (const counter of aiCounters) {
+          const wall = counter.aiWall;
+          const isVert = wall === 'left' || wall === 'right';
+          // Backsplash sits along the wall edge of the countertop
+          const bsThick = 0.08; // thickness in feet
+          const bsElement = {
+            id: Date.now() + Math.random() + Math.random(),
+            type: 'backsplash',
+            x: isVert ? (wall === 'left' ? 0 : (roomWidth - bsThick) * pixelsPerFoot) : counter.x,
+            y: isVert ? counter.y : (wall === 'top' ? 0 : (roomDepth - bsThick) * pixelsPerFoot),
+            width: isVert ? bsThick : counter.width,
+            height: isVert ? counter.height : bsThick,
+            rotation: 0,
+            color: '#B0B0B0',
+            label: `${wall.charAt(0).toUpperCase() + wall.slice(1)} Backsplash`,
+            locked: false,
+            roomId: currentRoom,
+            floorLevel: cabinetSettings?.currentFloor || 1,
+            verticalHeight: 1.5, // 18" standard backsplash
+            tileType: 'subway',
+            aiImported: true,
+            aiWall: wall,
+            autoGenerated: true
+          };
+          elements.push(bsElement);
+        }
+      }
+
       // Overlap detection and nudging pass for AI-placed elements
-      const aiElements = elements.filter(el => el.aiImported && el.type !== 'countertop');
+      const aiElements = elements.filter(el => el.aiImported && el.type !== 'countertop' && el.type !== 'backsplash');
       for (let i = 0; i < aiElements.length; i++) {
         for (let j = i + 1; j < aiElements.length; j++) {
           const a = aiElements[i];
@@ -45293,6 +45399,13 @@
         if (type === 'sink-base-apron' || type.startsWith('sink-base-apron-')) return 'sink-base-apron';
         if (type.startsWith('sink-base-')) return 'sink-base';
         if (type.startsWith('corner-cabinet-')) return 'corner-cabinet';
+        if (type.startsWith('vanity-double-') || type.startsWith('vanity-hishers-')) return 'vanity-double-60';
+        if (type.startsWith('vanity-')) return 'vanity-24';
+        if (type.startsWith('shower-base-')) return 'shower-base-36';
+        if (type.startsWith('filler-')) return 'filler';
+        if (type.startsWith('scribe-')) return 'scribe';
+        if (type.startsWith('grab-bar-')) return 'grab-bar-24';
+        if (type.startsWith('floating-shelf-')) return 'floating-shelf';
         return type;
       };
       const renderType = normalizeType(el.type);
@@ -59700,20 +59813,31 @@
         // NOTE: corner-cabinet and lazy-susan are excluded - they have specific L-shaped orientations
         const cabinetApplianceTypes = [
           'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
-          'fridge-cabinet',
+          'sink-base-apron', 'blind-corner', 'lazy-susan', 'corner-cabinet',
+          'fridge-cabinet', 'microwave-cabinet', 'above-microwave-cabinet',
+          'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet',
           'refrigerator', 'range', 'stove', 'slide-in-range', 'dishwasher',
           'oven', 'wall-oven-double', 'microwave', 'range-hood', 'cooktop',
+          'wine-cooler', 'beverage-center', 'ice-maker', 'warming-drawer', 'trash-compactor',
           'sink', 'sink-double', 'sink-farmhouse',
           'countertop',
           // Bathroom elements that face into room
           'toilet', 'toilet-round', 'toilet-wall', 'bidet',
           'bathtub', 'bathtub-freestanding', 'bathtub-corner', 'bathtub-walk-in',
           'vanity-24', 'vanity-30', 'vanity-36', 'vanity-48', 'vanity-60', 'vanity-72',
+          'vanity-double-60', 'vanity-double-72', 'vanity-double-84',
+          'vanity-hishers-96', 'vanity-hishers-108', 'makeup-vanity', 'pedestal-sink',
           // Laundry elements that face into room
           'washer', 'dryer', 'washer-dryer-stack', 'laundry-cabinet',
-          'utility-sink', 'laundry-sink'
+          'utility-sink', 'laundry-sink',
+          // Outdoor kitchen
+          'grill-builtin', 'grill-42', 'side-burner', 'power-burner',
+          'outdoor-fridge', 'kegerator', 'outdoor-ice-maker', 'outdoor-sink',
+          'pizza-oven', 'smoker', 'access-door', 'trash-drawer'
         ];
-        const isCabinetAppliance = cabinetApplianceTypes.includes(el.type);
+        // Also match sized variants (base-cabinet-24, wall-cabinet-36, etc.)
+        const isCabinetAppliance = cabinetApplianceTypes.includes(el.type) ||
+          cabinetApplianceTypes.some(t => el.type?.startsWith(t + '-'));
 
         // Check if element is against a side or front wall (not back wall)
         const el2DX = el.x / pixelsPerFoot;
@@ -59790,15 +59914,17 @@
               autoRotated = true;
               zPos = roomDepth - el.height / 2;
             } else if (manualRotation === 0) {
-              // rotation=0 with pre-swapped dimensions: use shape to detect side-wall elements
-              // If height >> width, element runs along room depth → side wall
+              // rotation=0 with pre-swapped dimensions: use shape OR aiWall to detect side-wall elements
+              // AI scanner sets aiWall for elements it places; shape detection is fallback for template/manual
               const isVerticalShape = el.height > el.width * 1.5;
-              if (isVerticalShape && isAgainstRightWall) {
+              const aiWallRight = el.aiWall === 'right';
+              const aiWallLeft = el.aiWall === 'left';
+              if ((isVerticalShape || aiWallRight) && isAgainstRightWall) {
                 group.rotation.y = -Math.PI / 2;
                 autoRotated = true;
                 xPos = roomWidth - el.width / 2;
                 zPos = (el.y / pixelsPerFoot) + el.height / 2;
-              } else if (isVerticalShape && isAgainstLeftWall) {
+              } else if ((isVerticalShape || aiWallLeft) && isAgainstLeftWall) {
                 group.rotation.y = Math.PI / 2;
                 autoRotated = true;
                 xPos = el.width / 2;

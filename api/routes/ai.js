@@ -491,7 +491,7 @@ RETURN THIS EXACT JSON STRUCTURE:
       }
     ],
     "appliances": [
-      {"type": "refrigerator|range|dishwasher|microwave|hood", "width": inches, "wall": "position"}
+      {"type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler|beverage-center|ice-maker|warming-drawer|trash-compactor", "width": inches, "wall": "position", "gapBefore": gap in INCHES from previous element, "confidence": "high|medium|low"}
     ]
   }],
   "confidence": "high|medium|low",
