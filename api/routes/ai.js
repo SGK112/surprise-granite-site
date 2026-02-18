@@ -631,7 +631,7 @@ RETURN JSON:
     "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
     "cabinets": [{"label": "B1", "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island", "width": inches, "depth": inches, "height": inches, "wall": "top|bottom|left|right|island", "orderIndex": 0, "gapBefore": inches, "doorStyle": "shaker|raised|flat|slab", "finish": "wood-grain|painted", "confidence": "high|medium|low"}],
     "countertops": [{"width": inches, "depth": inches, "material": "granite|quartz|marble|laminate", "materialName": "name or null", "wall": "top|bottom|left|right|island", "hasSink": true/false, "confidence": "high|medium|low"}],
-    "appliances": [{"type": "refrigerator|range|dishwasher|microwave|hood", "width": inches, "wall": "top|bottom|left|right"}]
+    "appliances": [{"type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler", "width": inches, "wall": "top|bottom|left|right", "gapBefore": inches}]
   }],
   "confidence": "high|medium|low",
   "viewAngle": "Which walls are visible: e.g. 'Looking at left wall and part of top wall'",
