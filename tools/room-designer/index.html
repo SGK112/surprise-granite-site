@@ -8593,12 +8593,11 @@
 
     @media (max-width: 600px) {
       .header {
-        height: 48px;
+        height: auto;
         min-height: 48px;
-        max-height: 48px;
-        padding: 0 8px;
-        flex-wrap: nowrap;
-        overflow: hidden;
+        padding: 4px 8px;
+        flex-wrap: wrap;
+        overflow: visible;
       }
       .header-left { flex-shrink: 0; max-width: 100px; }
       .header-center {
@@ -8612,7 +8611,8 @@
         font-size: 11px;
       }
       .header-zoom-controls { display: none; }
-      .header-right { flex-shrink: 0; gap: 4px; }
+      .header-right { flex-shrink: 1; gap: 4px; flex-wrap: wrap; min-width: 0; }
+      .header-right .btn span { display: none; }
       .project-name-input { display: none; }
       .user-name-display { display: none; }
       .user-menu-btn { padding: 4px 8px; }
@@ -12655,7 +12655,7 @@
           Share
         </button>
 
-        <button class="btn btn-secondary" onclick="showAIImporter()" title="AI Room Scanner - Upload photos to auto-build layouts">
+        <button class="btn" onclick="showAIImporter()" title="AI Room Scanner - Upload photos to auto-build layouts" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; font-weight: 600;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="2" width="20" height="20" rx="2"/>
             <circle cx="12" cy="12" r="3"/>
@@ -12934,6 +12934,14 @@
                   <path d="M16 20h4M18 18v4" stroke-width="1.5" opacity="0.7"/>
                 </svg>
                 <span>Slab</span>
+              </button>
+              <button class="tool-btn" id="toolAIScan" onclick="showAIImporter()" title="AI Room Scanner - Upload kitchen photos to auto-build layouts" aria-label="AI room scanner, upload photos to create layouts" aria-pressed="false" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="20" rx="2"/>
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M2 8h4l2-3h8l2 3h4"/>
+                </svg>
+                <span>AI Scan</span>
               </button>
             </div>
           </div>
@@ -17614,11 +17622,12 @@
 
     // Wrapper for AI Room Scanner - available to all authenticated users
     function showAIImporter() {
-      // Check if user is authenticated (or allow demo mode)
+      // Check if user is authenticated (or allow demo/local mode)
       const user = window.SgAuth?.getUser();
       const isDemo = DEMO_MODE;
+      const isLocal = window.location.protocol === 'file:';
 
-      if (user || hasGodAccess() || isDemo) {
+      if (user || hasGodAccess() || isDemo || isLocal) {
         // Show AI Room Scanner
         if (typeof window.showPDFImporter === 'function') {
           window.showPDFImporter();
