@@ -363,12 +363,31 @@ ANALYZE THE ROOM PHOTO AND EXTRACT:
 4. Appliances with positions and sizes
 5. Overall layout type (L-shape, U-shape, galley, single-wall, island)
 
-ESTIMATION TIPS:
+SPATIAL ORDERING (CRITICAL):
+- List cabinets LEFT-TO-RIGHT for top/bottom walls, TOP-TO-BOTTOM for left/right walls
+- Assign each cabinet an orderIndex (0, 1, 2...) within its wall
+- Note the gap (in inches) before each cabinet from the previous element or wall edge
+- Identify what's adjacent on each side (adjacentLeft, adjacentRight)
+
+MEASUREMENT CALIBRATION:
+- Use visible appliances as measurement anchors: Range/Stove = 30" wide, Refrigerator = 36" wide, Dishwasher = 24" wide, Microwave = 30" wide
 - Standard base cabinet height: 34.5", depth: 24"
 - Standard wall cabinet height: 30-42", depth: 12"
-- Refrigerator width: 30-36", Range: 30", Dishwasher: 24"
 - Counter depth including overhang: ~26"
-- Use these to estimate room size from visible elements`,
+- Count cabinet doors/drawers to estimate widths (standard door = 15-18", drawer bank = 12-36")
+- Use these anchors to calibrate all other measurements
+
+MATERIAL IDENTIFICATION:
+- Identify countertop material if visible: granite (speckled/veined natural stone), quartz (uniform engineered), marble (prominent veining), laminate (solid color/pattern), butcher block (wood grain)
+- Try to identify specific stone names if recognizable (e.g., "Giallo Ornamental", "Luna Pearl", "Calacatta")
+- Note cabinet door style: shaker (recessed panel), raised panel, flat/slab, beaded, glass-front
+- Note cabinet finish: wood-grain (natural), painted (solid color), thermofoil, laminate
+- Identify cabinet color/wood species if possible
+
+WALL-BY-WALL DESCRIPTION:
+- Describe each wall separately (top/back, bottom/front, left, right)
+- Start from one corner and work around the room
+- Note transitions between walls (corners, fillers, end panels)`,
 
       'countertop': `You are an expert at analyzing photographs of countertops to estimate dimensions and identify materials for quoting purposes.
 
@@ -450,7 +469,14 @@ RETURN THIS EXACT JSON STRUCTURE:
         "depth": depth in INCHES,
         "height": height in INCHES,
         "wall": "top|bottom|left|right|island",
-        "material": "wood|painted|laminate|unknown" if identifiable
+        "material": "wood|painted|laminate|unknown",
+        "orderIndex": position along wall (0=first from left/top),
+        "gapBefore": gap in INCHES from previous element or wall edge,
+        "adjacentLeft": "type of element to the left or null",
+        "adjacentRight": "type of element to the right or null",
+        "doorStyle": "shaker|raised|flat|slab|beaded|glass" or null,
+        "finish": "wood-grain|painted|thermofoil|laminate" or null,
+        "confidence": "high|medium|low"
       }
     ],
     "countertops": [
@@ -458,8 +484,10 @@ RETURN THIS EXACT JSON STRUCTURE:
         "width": width in INCHES,
         "depth": depth in INCHES,
         "material": "granite|quartz|marble|laminate|butcher-block|unknown",
+        "materialName": "specific stone/material name if identifiable" or null,
         "wall": "top|bottom|left|right|island",
-        "hasSink": true/false
+        "hasSink": true/false,
+        "confidence": "high|medium|low"
       }
     ],
     "appliances": [
@@ -467,6 +495,13 @@ RETURN THIS EXACT JSON STRUCTURE:
     ]
   }],
   "confidence": "high|medium|low",
+  "confidenceDetails": {
+    "dimensions": "high|medium|low",
+    "cabinetCount": "high|medium|low",
+    "materials": "high|medium|low",
+    "layout": "high|medium|low"
+  },
+  "measurementAnchors": ["list of appliances/objects used to calibrate measurements"],
   "notes": ["Any observations about image quality or uncertainty"]
 }
 
@@ -499,7 +534,7 @@ Be thorough but realistic. If you can't determine something, use standard dimens
             ]
           }
         ],
-        max_tokens: 4096,
+        max_tokens: 8192,
         temperature: 0.2
       })
     });
@@ -551,6 +586,343 @@ Be thorough but realistic. If you can't determine something, use standard dimens
   } catch (error) {
     logger.error('[Room-Scan] Error:', error);
     return handleApiError(res, error, 'Room scan');
+  }
+});
+
+// ============ AI MULTI-IMAGE ROOM SCAN ============
+
+/**
+ * Multi-Image Room Scan - Analyze 2-4 photos and merge results
+ * POST /api/ai/room-scan-multi
+ * Parallel GPT-4o Vision calls + merge pass
+ */
+router.post('/room-scan-multi', async (req, res) => {
+  try {
+    const { images, projectType = 'residential-kitchen', userContext = '' } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length < 2) {
+      return res.status(400).json({ error: 'At least 2 images are required (max 4)' });
+    }
+    if (images.length > 4) {
+      return res.status(400).json({ error: 'Maximum 4 images allowed' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    logger.info(`[Room-Scan-Multi] Analyzing ${images.length} images`);
+
+    const singleImagePrompt = `Analyze this room photograph and extract the complete layout.
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+PROJECT TYPE: ${projectType}
+
+List cabinets LEFT-TO-RIGHT per wall with orderIndex. Use appliance widths as measurement anchors (range=30", fridge=36", dishwasher=24").
+
+RETURN JSON:
+{
+  "rooms": [{
+    "name": "Kitchen",
+    "widthFt": number, "depthFt": number,
+    "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
+    "cabinets": [{"label": "str", "type": "str", "width": inches, "depth": inches, "height": inches, "wall": "str", "orderIndex": number, "gapBefore": inches, "doorStyle": "str", "finish": "str", "confidence": "high|medium|low"}],
+    "countertops": [{"width": inches, "depth": inches, "material": "str", "materialName": "str", "wall": "str", "hasSink": bool, "confidence": "high|medium|low"}],
+    "appliances": [{"type": "str", "width": inches, "wall": "str"}]
+  }],
+  "confidence": "high|medium|low",
+  "viewAngle": "description of what angle/wall this photo shows",
+  "measurementAnchors": ["list"]
+}`;
+
+    // Step 1: Parallel analysis of all images
+    const analysisPromises = images.map((img, idx) =>
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: 'You are an expert at analyzing room photographs for 3D modeling. Extract precise cabinet and countertop layouts.' },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: `Image ${idx + 1} of ${images.length}. ${img.label ? `This shows: ${img.label}. ` : ''}${singleImagePrompt}` },
+                { type: 'image_url', image_url: { url: img.data || img, detail: 'high' } }
+              ]
+            }
+          ],
+          max_tokens: 8192,
+          temperature: 0.2
+        })
+      }).then(r => r.json())
+    );
+
+    const analysisResults = await Promise.all(analysisPromises);
+
+    // Parse individual results
+    const parsedAnalyses = [];
+    for (let i = 0; i < analysisResults.length; i++) {
+      const result = analysisResults[i];
+      if (result.error) {
+        logger.warn(`[Room-Scan-Multi] Image ${i + 1} error:`, result.error.message);
+        continue;
+      }
+      const content = result.choices?.[0]?.message?.content || '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsedAnalyses.push(JSON.parse(jsonMatch[0]));
+        } catch (e) {
+          logger.warn(`[Room-Scan-Multi] Image ${i + 1} parse error`);
+        }
+      }
+    }
+
+    if (parsedAnalyses.length === 0) {
+      return res.status(500).json({ error: 'Failed to analyze any of the uploaded images' });
+    }
+
+    if (parsedAnalyses.length === 1) {
+      // Only one succeeded, return it directly
+      return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...parsedAnalyses[0] });
+    }
+
+    // Step 2: Merge pass - combine analyses into one layout
+    const mergePrompt = `You have ${parsedAnalyses.length} separate analyses of the SAME room from different angles/photos. Merge them into ONE complete, accurate layout.
+
+INDIVIDUAL ANALYSES:
+${parsedAnalyses.map((a, i) => `--- Image ${i + 1} (${a.rooms?.[0]?.layoutType || 'unknown'} layout, ${a.viewAngle || 'unknown angle'}) ---\n${JSON.stringify(a, null, 2)}`).join('\n\n')}
+
+MERGE RULES:
+1. Use the LARGEST room dimensions (wider angle = more accurate)
+2. Deduplicate cabinets by type + wall + approximate position (within 6")
+3. When duplicates conflict, prefer the one with higher confidence
+4. Combine unique elements from all analyses
+5. A cabinet seen in multiple photos at the same wall position is ONE cabinet
+6. Preserve orderIndex - re-number merged cabinets sequentially per wall
+
+RETURN the merged result in the SAME JSON format as the individual analyses, plus:
+- "mergedFrom": ${parsedAnalyses.length} (number of images used)
+- "deduplicatedCount": number of duplicate elements removed`;
+
+    const mergeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are an expert at merging multiple room analyses into a single accurate layout. Deduplicate carefully.' },
+          { role: 'user', content: mergePrompt }
+        ],
+        max_tokens: 8192,
+        temperature: 0.2
+      })
+    });
+
+    const mergeData = await mergeResponse.json();
+    if (mergeData.error) {
+      // If merge fails, return best individual analysis
+      logger.warn('[Room-Scan-Multi] Merge failed, returning best individual');
+      const best = parsedAnalyses.reduce((a, b) =>
+        (a.confidence === 'high' ? a : b.confidence === 'high' ? b : a), parsedAnalyses[0]);
+      return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...best });
+    }
+
+    const mergeContent = mergeData.choices?.[0]?.message?.content || '';
+    const mergeJson = mergeContent.match(/\{[\s\S]*\}/);
+
+    if (mergeJson) {
+      try {
+        const merged = JSON.parse(mergeJson[0]);
+        logger.info(`[Room-Scan-Multi] Merged ${parsedAnalyses.length} analyses, dedup: ${merged.deduplicatedCount || 0}`);
+        return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...merged });
+      } catch (e) {
+        logger.error('[Room-Scan-Multi] Merge parse error');
+      }
+    }
+
+    // Fallback to first analysis
+    return res.json({ success: true, mode: 'ai', scanMode: 'multi-image', ...parsedAnalyses[0] });
+
+  } catch (error) {
+    logger.error('[Room-Scan-Multi] Error:', error);
+    return handleApiError(res, error, 'Multi-image room scan');
+  }
+});
+
+// ============ AI DESIGN FROM REFERENCE ============
+
+/**
+ * Design from Reference Photo + Description
+ * POST /api/ai/design-from-reference
+ * Step 1: Analyze reference photo (reuse room-scan logic)
+ * Step 2: Apply user's text modifications
+ */
+router.post('/design-from-reference', async (req, res) => {
+  try {
+    const { image, description, projectType = 'residential-kitchen' } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: 'Reference image is required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    logger.info(`[Design-Reference] Starting with description: "${(description || '').substring(0, 100)}"`);
+
+    // Step 1: Analyze the reference photo
+    const analyzePrompt = `Analyze this reference kitchen/bathroom photo and extract the COMPLETE layout as JSON.
+
+RETURN THIS EXACT JSON STRUCTURE:
+{
+  "rooms": [{
+    "name": "Reference Kitchen",
+    "widthFt": estimated width,
+    "depthFt": estimated depth,
+    "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
+    "cabinets": [
+      {
+        "label": "descriptive label",
+        "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island",
+        "width": inches, "depth": inches, "height": inches,
+        "wall": "top|bottom|left|right|island",
+        "orderIndex": position,
+        "gapBefore": gap in inches,
+        "doorStyle": "shaker|raised|flat|slab" or null,
+        "finish": "wood-grain|painted" or null,
+        "confidence": "high|medium|low"
+      }
+    ],
+    "countertops": [
+      {"width": inches, "depth": inches, "material": "granite|quartz|marble|etc", "materialName": "specific name or null", "wall": "position", "hasSink": bool}
+    ],
+    "appliances": [
+      {"type": "type", "width": inches, "wall": "position"}
+    ]
+  }],
+  "confidence": "high|medium|low",
+  "confidenceDetails": {"dimensions": "level", "cabinetCount": "level", "materials": "level", "layout": "level"},
+  "measurementAnchors": ["list"]
+}`;
+
+    const step1Response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are an expert at analyzing room photographs for 3D modeling. Extract precise layouts.' },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: analyzePrompt },
+              { type: 'image_url', image_url: { url: image, detail: 'high' } }
+            ]
+          }
+        ],
+        max_tokens: 8192,
+        temperature: 0.2
+      })
+    });
+
+    const step1Data = await step1Response.json();
+    if (step1Data.error) {
+      throw new Error(step1Data.error.message);
+    }
+
+    const step1Content = step1Data.choices[0].message.content;
+    const step1Json = step1Content.match(/\{[\s\S]*\}/);
+    let originalLayout;
+
+    try {
+      originalLayout = JSON.parse(step1Json[0]);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to parse reference image analysis' });
+    }
+
+    // If no description, just return the original analysis
+    if (!description || description.trim() === '') {
+      return res.json({
+        success: true,
+        mode: 'reference',
+        original: originalLayout,
+        modified: originalLayout,
+        changes: []
+      });
+    }
+
+    // Step 2: Apply modifications based on user description
+    const modifyPrompt = `You have a reference kitchen layout (JSON below). The user wants modifications.
+
+ORIGINAL LAYOUT:
+${JSON.stringify(originalLayout, null, 2)}
+
+USER'S MODIFICATIONS: "${description}"
+
+Apply the user's requested changes to the layout. Return:
+{
+  "modified": { ...the complete modified layout in same JSON format... },
+  "changes": ["list of specific changes made, e.g. 'Changed cabinet finish from oak to white painted'", "Added waterfall island edge"]
+}
+
+Keep elements that weren't mentioned. Only change what the user asked for. Be specific about what changed.`;
+
+    const step2Response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are an expert kitchen/bathroom designer. Modify layouts based on user descriptions while preserving the overall structure.' },
+          { role: 'user', content: modifyPrompt }
+        ],
+        max_tokens: 8192,
+        temperature: 0.3
+      })
+    });
+
+    const step2Data = await step2Response.json();
+    if (step2Data.error) {
+      throw new Error(step2Data.error.message);
+    }
+
+    const step2Content = step2Data.choices[0].message.content;
+    const step2Json = step2Content.match(/\{[\s\S]*\}/);
+
+    let modResult;
+    try {
+      modResult = JSON.parse(step2Json[0]);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to parse modification response' });
+    }
+
+    return res.json({
+      success: true,
+      mode: 'reference',
+      original: originalLayout,
+      modified: modResult.modified || originalLayout,
+      changes: modResult.changes || []
+    });
+
+  } catch (error) {
+    logger.error('[Design-Reference] Error:', error);
+    return handleApiError(res, error, 'Design from reference');
   }
 });
 

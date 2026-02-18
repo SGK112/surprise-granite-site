@@ -12906,6 +12906,16 @@
                 </svg>
                 <span>Layout</span>
               </button>
+              <button class="tool-btn" id="toolPeninsula" onclick="setTool('peninsula')" title="Peninsula Builder (P) - Auto-create peninsula with wall, cabinets, countertop & stools" data-shortcut="P" aria-label="Peninsula builder tool, keyboard shortcut P" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="14" width="18" height="6" rx="1"/>
+                  <rect x="3" y="12" width="18" height="2" fill="currentColor" opacity="0.4"/>
+                  <rect x="3" y="8" width="4" height="4" rx="0.5" opacity="0.5"/>
+                  <circle cx="9" cy="22" r="1.5" fill="currentColor" opacity="0.3"/>
+                  <circle cx="15" cy="22" r="1.5" fill="currentColor" opacity="0.3"/>
+                </svg>
+                <span>Peninsula</span>
+              </button>
               <button class="tool-btn" id="toolSlabLayout" onclick="window.SlabLayout && window.SlabLayout.toggle()" title="Slab Layout (S) - Optimize stone slab cutting" data-shortcut="S" aria-label="Slab layout and optimization tool, keyboard shortcut S" aria-pressed="false" style="background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="3" width="20" height="14" rx="1"/>
@@ -13010,6 +13020,71 @@
             </div>
             <div class="layout-option-hint">
               Click & drag to draw runs • Turn creates corners
+            </div>
+          </div>
+        </div>
+
+        <!-- Peninsula Builder Options (shown when peninsula tool is active) -->
+        <div class="layout-options-panel" id="peninsulaOptionsPanel" style="display: none;">
+          <div class="layout-options-header">
+            <span>Peninsula Builder</span>
+          </div>
+          <div class="layout-options-content">
+            <div class="layout-option-row">
+              <label>Length:</label>
+              <select id="peninsulaLength">
+                <option value="4">4' (48")</option>
+                <option value="5">5' (60")</option>
+                <option value="6" selected>6' (72")</option>
+                <option value="8">8' (96")</option>
+                <option value="10">10' (120")</option>
+                <option value="12">12' (144")</option>
+              </select>
+            </div>
+            <div class="layout-option-row">
+              <label>Wall Type:</label>
+              <select id="peninsulaWallType">
+                <option value="pony-wall" selected>Pony Wall (42")</option>
+                <option value="knee-wall">Knee Wall (30")</option>
+                <option value="none">No Wall</option>
+              </select>
+            </div>
+            <div class="layout-option-row">
+              <label>Bar Overhang:</label>
+              <select id="peninsulaOverhang">
+                <option value="0.833" selected>10"</option>
+                <option value="1">12"</option>
+                <option value="1.25">15"</option>
+                <option value="0">None</option>
+              </select>
+            </div>
+            <div class="layout-option-row">
+              <label>Orientation:</label>
+              <select id="peninsulaOrientation">
+                <option value="horizontal" selected>Horizontal</option>
+                <option value="vertical">Vertical</option>
+              </select>
+            </div>
+            <div class="layout-option-row">
+              <label>
+                <input type="checkbox" id="peninsulaAddStools" checked>
+                Add bar stools
+              </label>
+            </div>
+            <div class="layout-option-row">
+              <label>
+                <input type="checkbox" id="peninsulaWaterfall">
+                Waterfall end
+              </label>
+            </div>
+            <div id="peninsulaSummary" style="padding: 6px 8px; background: rgba(99, 102, 241, 0.08); border-radius: 6px; font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              3 cabinets, 1 pony wall, 1 countertop, 2 stools
+            </div>
+            <button onclick="buildPeninsula()" style="width: 100%; margin-top: 8px; padding: 8px; background: var(--primary); border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 500; font-size: 12px;">
+              Place in Room Center
+            </button>
+            <div class="layout-option-hint">
+              Or click canvas to place at cursor position
             </div>
           </div>
         </div>
@@ -17594,7 +17669,7 @@
             <!-- Scan Mode Selection -->
             <div style="margin-bottom: 20px;">
               <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text);">What are you scanning?</label>
-              <div id="scanModeGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+              <div id="scanModeGrid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
                 <button class="scan-mode-btn active" data-mode="room-photo" style="padding: 16px 8px; border: 2px solid var(--primary); border-radius: 10px; background: rgba(99, 102, 241, 0.1); cursor: pointer; text-align: center;">
                   <div style="font-size: 28px; margin-bottom: 6px;">📸</div>
                   <div style="font-size: 12px; font-weight: 600; color: var(--text);">Room Photo</div>
@@ -17615,6 +17690,11 @@
                   <div style="font-size: 12px; font-weight: 600; color: var(--text);">CAD Drawing</div>
                   <div style="font-size: 10px; color: var(--text-muted);">2020, CabVision</div>
                 </button>
+                <button class="scan-mode-btn" data-mode="reference" style="padding: 16px 8px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; text-align: center;">
+                  <div style="font-size: 28px; margin-bottom: 6px;">💡</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text);">Reference</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Photo + ideas</div>
+                </button>
               </div>
             </div>
 
@@ -17632,8 +17712,8 @@
                   <polyline points="17 8 12 3 7 8"/>
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                <p style="margin: 0 0 8px; color: var(--text);">Drop image here or click to browse</p>
-                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Supports: PNG, JPG, HEIC, PDF</p>
+                <p style="margin: 0 0 8px; color: var(--text);">Drop image(s) here or click to browse</p>
+                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Supports: PNG, JPG, HEIC, PDF (up to 4 images for multi-angle scan)</p>
               </div>
               <div id="uploadPreview" style="display: none;">
                 <img id="previewImage" style="max-width: 100%; max-height: 280px; border-radius: 8px;">
@@ -17641,7 +17721,14 @@
                   ✕ Clear & Upload Different
                 </button>
               </div>
-              <input type="file" id="blueprintFileInput" accept="image/*,.pdf" style="display: none;">
+              <div id="multiUploadPreview" style="display: none;">
+                <div id="multiImageGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;"></div>
+                <p id="multiImageCount" style="margin: 8px 0 0; font-size: 12px; color: var(--text-muted);"></p>
+                <button id="clearMultiUpload" style="margin-top: 8px; padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 12px;">
+                  ✕ Clear All Images
+                </button>
+              </div>
+              <input type="file" id="blueprintFileInput" accept="image/*,.pdf" multiple style="display: none;">
             </div>
 
             <!-- Context & Dimensions Row -->
@@ -17767,7 +17854,8 @@
         'room-photo': { icon: '📸', text: 'Take a photo showing the full room. AI will detect cabinets, countertops, appliances and estimate dimensions.' },
         'countertop': { icon: '🪨', text: 'Photo your existing countertop from above. Include a reference object (like a phone) for scale if possible.' },
         'sketch': { icon: '✏️', text: 'Upload a hand-drawn sketch or napkin diagram. Label dimensions if you have them. AI will interpret your layout.' },
-        'cad': { icon: '📐', text: 'Upload elevation views, plan views, or cabinet schedules from 2020 Design, Cabinet Vision, KCD, or similar CAD software.' }
+        'cad': { icon: '📐', text: 'Upload elevation views, plan views, or cabinet schedules from 2020 Design, Cabinet Vision, KCD, or similar CAD software.' },
+        'reference': { icon: '💡', text: 'Upload a reference photo and describe your changes: "like this but with white cabinets and a waterfall island". AI will adapt the design.' }
       };
 
       document.querySelectorAll('.scan-mode-btn').forEach(btn => {
@@ -17793,6 +17881,7 @@
       const fileInput = document.getElementById('blueprintFileInput');
       const analyzeBtn = document.getElementById('analyzeBtn');
       let uploadedImageData = null;
+      let uploadedMultiImages = []; // For multi-image mode
 
       dropZone.onclick = () => fileInput.click();
 
@@ -17804,23 +17893,44 @@
       dropZone.ondrop = (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) handleBlueprintFile(file);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+        if (files.length > 1) {
+          files.slice(0, 4).forEach(f => handleMultiFile(f));
+        } else if (files.length === 1) {
+          handleBlueprintFile(files[0]);
+        }
       };
 
       fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) handleBlueprintFile(file);
+        const files = Array.from(e.target.files);
+        if (files.length > 1) {
+          uploadedMultiImages = [];
+          files.slice(0, 4).forEach(f => handleMultiFile(f));
+        } else if (files.length === 1) {
+          handleBlueprintFile(files[0]);
+        }
       };
 
       document.getElementById('clearUpload').onclick = (e) => {
         e.stopPropagation();
+        clearAllUploads();
+      };
+
+      document.getElementById('clearMultiUpload').onclick = (e) => {
+        e.stopPropagation();
+        clearAllUploads();
+      };
+
+      function clearAllUploads() {
         uploadedImageData = null;
+        uploadedMultiImages = [];
         document.getElementById('uploadPlaceholder').style.display = 'block';
         document.getElementById('uploadPreview').style.display = 'none';
+        document.getElementById('multiUploadPreview').style.display = 'none';
+        document.getElementById('multiImageGrid').innerHTML = '';
         analyzeBtn.disabled = true;
         analyzeBtn.style.opacity = '0.5';
-      };
+      }
 
       function handleBlueprintFile(file) {
         if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
@@ -17831,18 +17941,78 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           uploadedImageData = e.target.result;
+          uploadedMultiImages = [];
           document.getElementById('previewImage').src = uploadedImageData;
           document.getElementById('uploadPlaceholder').style.display = 'none';
           document.getElementById('uploadPreview').style.display = 'block';
+          document.getElementById('multiUploadPreview').style.display = 'none';
           analyzeBtn.disabled = false;
           analyzeBtn.style.opacity = '1';
         };
         reader.readAsDataURL(file);
       }
 
+      function handleMultiFile(file) {
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
+        if (uploadedMultiImages.length >= 4) {
+          showToast('Maximum 4 images allowed', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          uploadedMultiImages.push({ data: e.target.result, label: '' });
+          uploadedImageData = null; // Clear single-image mode
+
+          // Update multi-image grid UI
+          const grid = document.getElementById('multiImageGrid');
+          grid.innerHTML = '';
+          uploadedMultiImages.forEach((img, idx) => {
+            const thumb = document.createElement('div');
+            thumb.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1;';
+            thumb.innerHTML = `
+              <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;">
+              <button onclick="event.stopPropagation(); removeMultiImage(${idx})" style="position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: white; cursor: pointer; font-size: 12px; line-height: 20px; padding: 0;">✕</button>
+              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 2px 4px; text-align: center;">#${idx + 1}</div>
+            `;
+            grid.appendChild(thumb);
+          });
+
+          document.getElementById('multiImageCount').textContent = `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
+          document.getElementById('uploadPlaceholder').style.display = 'none';
+          document.getElementById('uploadPreview').style.display = 'none';
+          document.getElementById('multiUploadPreview').style.display = 'block';
+          analyzeBtn.disabled = false;
+          analyzeBtn.style.opacity = '1';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      window.removeMultiImage = function(idx) {
+        uploadedMultiImages.splice(idx, 1);
+        if (uploadedMultiImages.length === 0) {
+          clearAllUploads();
+        } else {
+          // Re-render grid
+          const grid = document.getElementById('multiImageGrid');
+          grid.innerHTML = '';
+          uploadedMultiImages.forEach((img, i) => {
+            const thumb = document.createElement('div');
+            thumb.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1;';
+            thumb.innerHTML = `
+              <img src="${img.data}" style="width: 100%; height: 100%; object-fit: cover;">
+              <button onclick="event.stopPropagation(); removeMultiImage(${i})" style="position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: white; cursor: pointer; font-size: 12px; line-height: 20px; padding: 0;">✕</button>
+              <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 10px; padding: 2px 4px; text-align: center;">#${i + 1}</div>
+            `;
+            grid.appendChild(thumb);
+          });
+          document.getElementById('multiImageCount').textContent = `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
+        }
+      };
+
       // Main analysis function
       window.analyzeRoomImage = async function() {
-        if (!uploadedImageData) {
+        if (!uploadedImageData && uploadedMultiImages.length === 0) {
           showToast('Please upload an image first', 'error');
           return;
         }
@@ -17902,37 +18072,71 @@
             }
           }, 1500);
 
-          const response = await fetch('/api/ai/room-scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: uploadedImageData,
-              scanMode: currentScanMode,
-              projectType: document.getElementById('blueprintProjectType').value,
-              userContext: userContext,
-              extractMode: extractMode,
-              knownDimensions: (knownWidth || knownDepth) ? { width: parseFloat(knownWidth) || null, depth: parseFloat(knownDepth) || null } : null
-            })
-          });
-
-          clearInterval(progressInterval);
-
-          // If room-scan endpoint doesn't exist, fall back to blueprint endpoint
           let data;
-          if (response.status === 404) {
-            // Fallback to existing blueprint endpoint
-            const fallbackResponse = await fetch('/api/ai/blueprint', {
+
+          if (uploadedMultiImages.length >= 2) {
+            // Multi-image mode - parallel analysis + merge
+            const response = await fetch('/api/ai/room-scan-multi', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                image: uploadedImageData,
+                images: uploadedMultiImages.map(img => ({ data: img.data, label: img.label || '' })),
                 projectType: document.getElementById('blueprintProjectType').value,
                 userContext: userContext
               })
             });
-            data = await fallbackResponse.json();
-          } else {
+            clearInterval(progressInterval);
             data = await response.json();
+          } else if (currentScanMode === 'reference') {
+            // Reference + Ideas mode - uses separate endpoint
+            const response = await fetch('/api/ai/design-from-reference', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image: uploadedImageData,
+                description: document.getElementById('blueprintContext').value || '',
+                projectType: document.getElementById('blueprintProjectType').value
+              })
+            });
+            clearInterval(progressInterval);
+            data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            // Use the modified layout (or original if no changes)
+            const layoutData = data.modified || data.original;
+            data = { ...layoutData, success: true, mode: 'reference', changes: data.changes || [] };
+          } else {
+            // Standard scan modes
+            const response = await fetch('/api/ai/room-scan', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image: uploadedImageData,
+                scanMode: currentScanMode,
+                projectType: document.getElementById('blueprintProjectType').value,
+                userContext: userContext,
+                extractMode: extractMode,
+                knownDimensions: (knownWidth || knownDepth) ? { width: parseFloat(knownWidth) || null, depth: parseFloat(knownDepth) || null } : null
+              })
+            });
+
+            clearInterval(progressInterval);
+
+            if (response.status === 404) {
+              const fallbackResponse = await fetch('/api/ai/blueprint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  image: uploadedImageData,
+                  projectType: document.getElementById('blueprintProjectType').value,
+                  userContext: userContext
+                })
+              });
+              data = await fallbackResponse.json();
+            } else {
+              data = await response.json();
+            }
           }
 
           if (data.error) {
@@ -17949,6 +18153,11 @@
             updateRoomSize: document.getElementById('updateRoomSize').checked,
             autoCountertop: document.getElementById('autoCountertop')?.checked ?? true
           });
+
+          // Add reference mode changes to result
+          if (data.changes && data.changes.length > 0) {
+            importResult.referenceChanges = data.changes;
+          }
 
           statusDiv.style.display = 'none';
 
@@ -17971,7 +18180,13 @@
     // Process AI blueprint analysis result and create elements
     async function processAIBlueprintResult(data, options = {}) {
       const { clearExisting = false, updateRoomSize = true, autoCountertop = true } = options;
-      const result = { cabinetsAdded: 0, appliancesAdded: 0, countertopsAdded: 0, roomUpdated: false, warnings: [], confidence: data.confidence || 'medium' };
+      const result = {
+        cabinetsAdded: 0, appliancesAdded: 0, countertopsAdded: 0, roomUpdated: false,
+        warnings: [], confidence: data.confidence || 'medium',
+        confidenceDetails: data.confidenceDetails || null,
+        measurementAnchors: data.measurementAnchors || [],
+        lowConfidenceElements: []
+      };
 
       // Find room data from response
       const rooms = data.rooms || [];
@@ -18032,49 +18247,81 @@
         return '#8B4513'; // Base cabinet brown
       }
 
+      // Sort cabinets by orderIndex within each wall for accurate placement
+      const sortedCabinets = [...cabinets].sort((a, b) => {
+        if ((a.wall || 'top') !== (b.wall || 'top')) return 0;
+        const aIdx = a.orderIndex ?? 999;
+        const bIdx = b.orderIndex ?? 999;
+        return aIdx - bIdx;
+      });
+
       // Place cabinets along walls
-      for (const cab of cabinets) {
+      for (const cab of sortedCabinets) {
         const wall = cab.wall || 'top';
         const widthFt = (cab.width || 36) / 12; // Convert inches to feet
         const depthFt = (cab.depth || 24) / 12;
         const heightFt = (cab.height || 34.5) / 12;
         const elementType = getElementType(cab.type);
 
+        // Use AI-provided gap or default small gap
+        const gapFt = cab.gapBefore != null ? (cab.gapBefore / 12) : 0.1;
+
         let x, y, rotation = 0;
 
         // Position based on wall
         switch (wall) {
           case 'top': // Back wall
-            x = wallPadding + wallPositions.top;
+            if (cab.orderIndex === 0 || wallPositions.top === 0) {
+              wallPositions.top += gapFt > 0.5 ? gapFt : wallPadding;
+            } else {
+              wallPositions.top += gapFt;
+            }
+            x = wallPositions.top;
             y = wallPadding;
-            wallPositions.top += widthFt + 0.1; // Small gap
+            wallPositions.top += widthFt;
             break;
           case 'bottom': // Front wall
-            x = wallPadding + wallPositions.bottom;
+            if (cab.orderIndex === 0 || wallPositions.bottom === 0) {
+              wallPositions.bottom += gapFt > 0.5 ? gapFt : wallPadding;
+            } else {
+              wallPositions.bottom += gapFt;
+            }
+            x = wallPositions.bottom;
             y = roomDepth - depthFt - wallPadding;
             rotation = 180;
-            wallPositions.bottom += widthFt + 0.1;
+            wallPositions.bottom += widthFt;
             break;
           case 'left': // Left wall
+            if (cab.orderIndex === 0 || wallPositions.left === 0) {
+              wallPositions.left += gapFt > 0.5 ? gapFt : wallPadding;
+            } else {
+              wallPositions.left += gapFt;
+            }
             x = wallPadding;
-            y = wallPadding + wallPositions.left;
+            y = wallPositions.left;
             rotation = 270;
-            wallPositions.left += widthFt + 0.1;
+            wallPositions.left += widthFt;
             break;
           case 'right': // Right wall
+            if (cab.orderIndex === 0 || wallPositions.right === 0) {
+              wallPositions.right += gapFt > 0.5 ? gapFt : wallPadding;
+            } else {
+              wallPositions.right += gapFt;
+            }
             x = roomWidth - depthFt - wallPadding;
-            y = wallPadding + wallPositions.right;
+            y = wallPositions.right;
             rotation = 90;
-            wallPositions.right += widthFt + 0.1;
+            wallPositions.right += widthFt;
             break;
           case 'island': // Center island
             x = roomWidth / 2 - widthFt / 2;
             y = roomDepth / 2 - depthFt / 2;
             break;
           default:
-            x = wallPadding + wallPositions.top;
+            wallPositions.top += gapFt || 0.1;
+            x = wallPositions.top;
             y = wallPadding;
-            wallPositions.top += widthFt + 0.1;
+            wallPositions.top += widthFt;
         }
 
         // Create element
@@ -18102,10 +18349,22 @@
           aiWall: wall,
           aiWidthInches: cab.width,
           aiDepthInches: cab.depth,
-          aiHeightInches: cab.height
+          aiHeightInches: cab.height,
+          aiOrderIndex: cab.orderIndex ?? null,
+          aiGapBefore: cab.gapBefore ?? null,
+          aiConfidence: cab.confidence || 'medium',
+          aiDoorStyle: cab.doorStyle || null,
+          aiFinish: cab.finish || null
         };
 
+        // Apply AI-detected styles if available
+        if (cab.doorStyle) element.doorStyle = cab.doorStyle;
+        if (cab.finish) element.cabinetFinish = cab.finish;
+
         elements.push(element);
+        if (cab.confidence === 'low' || cab.confidence === 'medium') {
+          result.lowConfidenceElements.push({ id: element.id, label: cab.label, confidence: cab.confidence, type: 'cabinet' });
+        }
         result.cabinetsAdded++;
       }
 
@@ -18307,6 +18566,34 @@
         });
       }
 
+      // Overlap detection and nudging pass for AI-placed elements
+      const aiElements = elements.filter(el => el.aiImported && el.type !== 'countertop');
+      for (let i = 0; i < aiElements.length; i++) {
+        for (let j = i + 1; j < aiElements.length; j++) {
+          const a = aiElements[i];
+          const b = aiElements[j];
+          // Only check elements on the same wall
+          if (a.aiWall !== b.aiWall) continue;
+
+          const aRight = a.x + a.width * pixelsPerFoot;
+          const aBottom = a.y + a.height * pixelsPerFoot;
+          const bRight = b.x + b.width * pixelsPerFoot;
+          const bBottom = b.y + b.height * pixelsPerFoot;
+
+          // Check overlap
+          if (a.x < bRight && aRight > b.x && a.y < bBottom && aBottom > b.y) {
+            // Nudge the later element away
+            const overlapX = Math.min(aRight - b.x, bRight - a.x);
+            const overlapY = Math.min(aBottom - b.y, bBottom - a.y);
+            if (overlapX < overlapY) {
+              b.x += overlapX + 2;
+            } else {
+              b.y += overlapY + 2;
+            }
+          }
+        }
+      }
+
       // Update the canvas
       elementListDirty = true;
       draw();
@@ -18367,6 +18654,29 @@
                 </div>` : ''}
               </div>
               ${result.roomUpdated ? '<p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Room dimensions updated from image.</p>' : ''}
+              ${result.confidenceDetails ? `
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
+                ${['dimensions', 'cabinetCount', 'materials', 'layout'].map(key => {
+                  const val = result.confidenceDetails[key] || 'medium';
+                  const colors = { high: '#22c55e', medium: '#f59e0b', low: '#ef4444' };
+                  const labels = { dimensions: 'Dimensions', cabinetCount: 'Cab Count', materials: 'Materials', layout: 'Layout' };
+                  return `<div style="text-align: center; padding: 8px 4px; background: var(--surface); border-radius: 6px; border: 1px solid ${colors[val]}33;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: ${colors[val]}; margin: 0 auto 4px;"></div>
+                    <div style="font-size: 10px; font-weight: 600; color: var(--text);">${labels[key]}</div>
+                    <div style="font-size: 9px; color: ${colors[val]}; text-transform: uppercase;">${val}</div>
+                  </div>`;
+                }).join('')}
+              </div>` : ''}
+              ${result.measurementAnchors && result.measurementAnchors.length > 0 ? `
+              <div style="padding: 8px 12px; background: rgba(34, 197, 94, 0.08); border-radius: 6px; margin-bottom: 12px; font-size: 11px; color: var(--text-muted);">
+                <strong>Calibrated from:</strong> ${result.measurementAnchors.join(', ')}
+              </div>` : ''}
+              ${result.lowConfidenceElements && result.lowConfidenceElements.length > 0 ? `
+              <div style="margin-bottom: 12px;">
+                <button onclick="reviewUncertainElements()" style="padding: 6px 14px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 6px; cursor: pointer; color: #b45309; font-size: 11px; font-weight: 500;">
+                  Review ${result.lowConfidenceElements.length} Uncertain Element${result.lowConfidenceElements.length > 1 ? 's' : ''}
+                </button>
+              </div>` : ''}
               <div style="padding: 12px 16px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; margin-bottom: 16px;">
                 <p style="margin: 0; font-size: 12px; color: var(--text-muted);">
                   💡 <strong>Tip:</strong> Review and adjust positions in 2D view, then switch to 3D to see your layout. Select elements to edit dimensions or add materials.
@@ -18385,6 +18695,12 @@
                 <li>Using a different angle or perspective</li>
               </ul>
             `}
+            ${result.referenceChanges && result.referenceChanges.length > 0 ? `
+              <div style="margin-top: 16px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; text-align: left;">
+                <p style="margin: 0 0 8px; font-size: 12px; color: var(--primary);"><strong>Changes from Reference:</strong></p>
+                ${result.referenceChanges.map(c => `<p style="margin: 4px 0 0; font-size: 12px; color: var(--text-muted);">• ${c}</p>`).join('')}
+              </div>
+            ` : ''}
             ${result.warnings && result.warnings.length > 0 ? `
               <div style="margin-top: 16px; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; text-align: left;">
                 <p style="margin: 0; font-size: 12px; color: #B45309;"><strong>Notes:</strong></p>
@@ -18400,6 +18716,43 @@
       `;
       document.body.appendChild(modal);
       modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      // Store low-confidence elements for review
+      if (result.lowConfidenceElements && result.lowConfidenceElements.length > 0) {
+        window._aiLowConfidenceElements = result.lowConfidenceElements;
+      }
+    }
+
+    // Review uncertain AI-imported elements - highlights them and allows editing
+    function reviewUncertainElements() {
+      const uncertain = window._aiLowConfidenceElements || [];
+      if (uncertain.length === 0) {
+        showSnapFeedback('No uncertain elements to review');
+        return;
+      }
+
+      // Close the import modal
+      const modal = document.getElementById('importResultModal');
+      if (modal) modal.remove();
+
+      // Highlight uncertain elements with colored borders
+      const confidenceColors = { high: '#22c55e', medium: '#f59e0b', low: '#ef4444' };
+      uncertain.forEach(item => {
+        const el = elements.find(e => e.id === item.id);
+        if (el) {
+          el.aiHighlight = true;
+          el.aiHighlightColor = confidenceColors[item.confidence] || '#f59e0b';
+        }
+      });
+
+      draw();
+      showSnapFeedback(`${uncertain.length} uncertain element${uncertain.length > 1 ? 's' : ''} highlighted - click to edit`);
+
+      // Auto-clear highlights after 30 seconds
+      setTimeout(() => {
+        elements.forEach(el => { delete el.aiHighlight; delete el.aiHighlightColor; });
+        draw();
+      }, 30000);
     }
 
     // ============================================
@@ -35301,6 +35654,29 @@
         ctx.restore();
       }
 
+      // AI confidence highlight border
+      if (el.aiHighlight && el.aiHighlightColor) {
+        ctx.save();
+        ctx.strokeStyle = el.aiHighlightColor;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 4]);
+        ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+        ctx.setLineDash([]);
+        // Small confidence badge
+        const badgeSize = Math.min(16, pixelsPerFoot / 3);
+        ctx.fillStyle = el.aiHighlightColor;
+        ctx.beginPath();
+        ctx.arc(x + w + 2, y - 2, badgeSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${badgeSize * 0.6}px Inter`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', x + w + 2, y - 2);
+        ctx.textBaseline = 'alphabetic';
+        ctx.restore();
+      }
+
       // Lock icon (drawn in rotated context)
       if (isSelected && el.locked) {
         ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
@@ -36529,6 +36905,16 @@
         return;
       }
 
+      // Handle peninsula tool click-to-place
+      if (currentTool === 'peninsula' && !isDragging) {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const { x, y } = screenToWorld(screenX, screenY);
+        buildPeninsula({ x: x, y: y });
+        return;
+      }
+
       // Handle layout brush release
       if (currentTool === 'layout' && layoutMode.isDrawing) {
         finishLayoutDraw();
@@ -36645,6 +37031,7 @@
         case 'c': setTool('countertop'); break;
         case 'h': setTool('pan'); break;
         case 'l': setTool('layout'); break; // L for layout tool
+        case 'p': setTool('peninsula'); break; // P for peninsula builder
         case 'f': fitToScreen(); break; // F to fit
         case 'delete':
         case 'backspace':
@@ -38946,12 +39333,19 @@
           wallPanel.style.display = tool === 'wall' ? 'block' : 'none';
         }
 
+        // Show/hide peninsula options panel
+        const peninsulaPanel = document.getElementById('peninsulaOptionsPanel');
+        if (peninsulaPanel) {
+          peninsulaPanel.style.display = tool === 'peninsula' ? 'block' : 'none';
+          if (tool === 'peninsula') updatePeninsulaSummary();
+        }
+
         // Reset layout mode when switching tools
         if (tool !== 'layout') {
           resetLayoutMode();
         }
 
-        canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
+        canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout' || tool === 'peninsula') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
         draw();
       } catch (err) {
         console.error('setTool error:', err);
@@ -39056,6 +39450,221 @@
       }
 
       showSnapFeedback(`Layout: ${select.options[select.selectedIndex].text}`);
+    }
+
+    // ===== PENINSULA BUILDER =====
+    function updatePeninsulaSummary() {
+      const summary = document.getElementById('peninsulaSummary');
+      if (!summary) return;
+      const length = parseFloat(document.getElementById('peninsulaLength')?.value || 6);
+      const wallType = document.getElementById('peninsulaWallType')?.value || 'pony-wall';
+      const overhang = parseFloat(document.getElementById('peninsulaOverhang')?.value || 0.833);
+      const addStools = document.getElementById('peninsulaAddStools')?.checked ?? true;
+
+      const cabinetWidth = 2; // 24" each
+      const numCabinets = Math.floor(length / cabinetWidth);
+      const wallCount = wallType !== 'none' ? 1 : 0;
+      const stoolSpacing = 2; // 24" apart
+      const numStools = addStools && overhang > 0 ? Math.max(1, Math.floor((length - 1) / stoolSpacing)) : 0;
+
+      const parts = [];
+      if (numCabinets > 0) parts.push(`${numCabinets} cabinet${numCabinets > 1 ? 's' : ''}`);
+      if (wallCount > 0) parts.push(`1 ${wallType === 'knee-wall' ? 'knee' : 'pony'} wall`);
+      parts.push('1 countertop');
+      if (numStools > 0) parts.push(`${numStools} stool${numStools > 1 ? 's' : ''}`);
+      summary.textContent = parts.join(', ');
+    }
+
+    // Attach change listeners for peninsula summary updates
+    document.addEventListener('DOMContentLoaded', () => {
+      ['peninsulaLength', 'peninsulaWallType', 'peninsulaOverhang', 'peninsulaOrientation', 'peninsulaAddStools', 'peninsulaWaterfall'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updatePeninsulaSummary);
+      });
+    });
+
+    function buildPeninsula(options = {}) {
+      const length = options.length || parseFloat(document.getElementById('peninsulaLength')?.value || 6);
+      const wallType = options.wallType || document.getElementById('peninsulaWallType')?.value || 'pony-wall';
+      const barOverhang = options.barOverhang ?? parseFloat(document.getElementById('peninsulaOverhang')?.value || 0.833);
+      const orientation = options.orientation || document.getElementById('peninsulaOrientation')?.value || 'horizontal';
+      const addStools = options.addStools ?? (document.getElementById('peninsulaAddStools')?.checked ?? true);
+      const waterfall = options.waterfall ?? (document.getElementById('peninsulaWaterfall')?.checked ?? false);
+      const centerX = options.x ?? (roomWidth / 2) * pixelsPerFoot;
+      const centerY = options.y ?? (roomDepth / 2) * pixelsPerFoot;
+
+      saveUndoState();
+
+      const groupId = 'peninsula-' + Date.now();
+      const isVertical = orientation === 'vertical';
+      const cabinetDepth = 2; // 24" standard base cabinet depth
+      const cabinetWidth = 2; // 24" each cabinet
+      const wallThickness = 0.5; // 6" wall
+      const numCabinets = Math.floor(length / cabinetWidth);
+      const actualLength = numCabinets * cabinetWidth;
+
+      // Calculate peninsula total depth (cabinet + wall + overhang area)
+      const totalDepth = cabinetDepth + (wallType !== 'none' ? wallThickness : 0) + barOverhang;
+
+      // Starting position (top-left of the peninsula group)
+      const startX = centerX - (isVertical ? totalDepth : actualLength) * pixelsPerFoot / 2;
+      const startY = centerY - (isVertical ? actualLength : totalDepth) * pixelsPerFoot / 2;
+
+      const createdElements = [];
+
+      // 1. Create base cabinets
+      for (let i = 0; i < numCabinets; i++) {
+        const cab = {
+          id: Date.now() + Math.random() + i,
+          type: 'base-cabinet',
+          x: isVertical ? startX : startX + i * cabinetWidth * pixelsPerFoot,
+          y: isVertical ? startY + i * cabinetWidth * pixelsPerFoot : startY,
+          width: isVertical ? cabinetDepth : cabinetWidth,
+          height: isVertical ? cabinetWidth : cabinetDepth,
+          color: '#8B4513',
+          label: `Peninsula Base ${i * 24 + 24}"`,
+          rotation: isVertical ? 90 : 0,
+          locked: false,
+          roomId: currentRoom,
+          groupId: groupId,
+          floorLevel: cabinetSettings.currentFloor,
+          construction: cabinetSettings.construction,
+          doorStyle: cabinetSettings.doorStyle,
+          doorOverlay: cabinetSettings.doorOverlay,
+          cabinetFinish: cabinetSettings.cabinetFinish,
+          grainType: cabinetSettings.grainType
+        };
+        elements.push(cab);
+        createdElements.push(cab);
+      }
+
+      // 2. Create pony/knee wall (behind cabinets, on the bar side)
+      if (wallType !== 'none') {
+        const wallHeights = { 'pony-wall': 3.5, 'knee-wall': 2.5 };
+        const wallLabels = { 'pony-wall': 'Pony Wall', 'knee-wall': 'Knee Wall' };
+        const wallX = isVertical ? startX + cabinetDepth * pixelsPerFoot : startX;
+        const wallY = isVertical ? startY : startY + cabinetDepth * pixelsPerFoot;
+
+        const wall = {
+          id: Date.now() + Math.random() + 100,
+          type: wallType,
+          x: wallX,
+          y: wallY,
+          width: isVertical ? wallThickness : actualLength,
+          height: isVertical ? actualLength : wallThickness,
+          color: '#888',
+          label: wallLabels[wallType] || 'Pony Wall',
+          wallHeight: wallHeights[wallType] || 3.5,
+          rotation: 0,
+          roomId: currentRoom,
+          groupId: groupId
+        };
+        elements.push(wall);
+        createdElements.push(wall);
+
+        // Generate wall cap
+        generateWallCaps([wall]);
+        // Assign groupId to the newly created cap
+        const lastEl = elements[elements.length - 1];
+        if (lastEl && (lastEl.type === 'wall-cap' || lastEl.type === 'bar-top')) {
+          lastEl.groupId = groupId;
+          createdElements.push(lastEl);
+        }
+      }
+
+      // 3. Create countertop with bar overhang
+      const overhangSide = 0.125; // 1.5" side overhangs
+      const overhangFront = 0.167; // 2" front overhang (cabinet side)
+      const counterWidth = isVertical
+        ? cabinetDepth + (wallType !== 'none' ? wallThickness : 0) + barOverhang + overhangFront + overhangSide
+        : actualLength + overhangSide * 2;
+      const counterHeight = isVertical
+        ? actualLength + overhangSide * 2
+        : cabinetDepth + (wallType !== 'none' ? wallThickness : 0) + barOverhang + overhangFront + overhangSide;
+
+      const counterX = startX - (isVertical ? overhangFront : overhangSide) * pixelsPerFoot;
+      const counterY = startY - (isVertical ? overhangSide : overhangFront) * pixelsPerFoot;
+
+      const countertop = {
+        id: Date.now() + Math.random() + 200,
+        type: 'countertop',
+        x: counterX,
+        y: counterY,
+        width: counterWidth,
+        height: counterHeight,
+        color: '#708090',
+        label: 'Peninsula Top',
+        rotation: 0,
+        locked: false,
+        roomId: currentRoom,
+        groupId: groupId,
+        floorLevel: cabinetSettings.currentFloor,
+        edgeProfile: 'eased',
+        thickness: '3cm',
+        overhangFront: overhangFront,
+        overhangBack: barOverhang,
+        overhangLeft: overhangSide,
+        overhangRight: overhangSide,
+        waterfallSides: waterfall ? (isVertical ? ['bottom'] : ['right']) : []
+      };
+      elements.push(countertop);
+      createdElements.push(countertop);
+
+      // 4. Create bar stools (on the overhang side)
+      if (addStools && barOverhang > 0) {
+        const stoolSize = 1.25; // 15" diameter
+        const stoolSpacing = 2; // 24" apart
+        const numStools = Math.max(1, Math.floor((actualLength - 1) / stoolSpacing));
+        const stoolStartOffset = (actualLength - (numStools - 1) * stoolSpacing) / 2;
+
+        for (let i = 0; i < numStools; i++) {
+          const offset = stoolStartOffset + i * stoolSpacing;
+          let stoolX, stoolY;
+
+          if (isVertical) {
+            stoolX = startX + (cabinetDepth + (wallType !== 'none' ? wallThickness : 0) + barOverhang + 0.5) * pixelsPerFoot;
+            stoolY = startY + (offset - stoolSize / 2) * pixelsPerFoot;
+          } else {
+            stoolX = startX + (offset - stoolSize / 2) * pixelsPerFoot;
+            stoolY = startY + (cabinetDepth + (wallType !== 'none' ? wallThickness : 0) + barOverhang + 0.5) * pixelsPerFoot;
+          }
+
+          const stool = {
+            id: Date.now() + Math.random() + 300 + i,
+            type: 'bar-stool',
+            x: stoolX,
+            y: stoolY,
+            width: stoolSize,
+            height: stoolSize,
+            color: '#A0522D',
+            label: 'Bar Stool',
+            rotation: 0,
+            locked: false,
+            roomId: currentRoom,
+            groupId: groupId
+          };
+          elements.push(stool);
+          createdElements.push(stool);
+        }
+      }
+
+      // Update canvas
+      elementListDirty = true;
+      draw();
+      update3DScene();
+      calculateQuote();
+
+      const parts = [];
+      const cabCount = createdElements.filter(e => e.type === 'base-cabinet').length;
+      const wallCount = createdElements.filter(e => e.type === 'pony-wall' || e.type === 'knee-wall').length;
+      const stoolCount = createdElements.filter(e => e.type === 'bar-stool').length;
+      if (cabCount) parts.push(`${cabCount} cabinets`);
+      if (wallCount) parts.push(`1 wall`);
+      parts.push('1 countertop');
+      if (stoolCount) parts.push(`${stoolCount} stools`);
+      showSnapFeedback(`Peninsula created: ${parts.join(', ')}`);
+
+      return createdElements;
     }
 
     function updateLayoutDepth() {
