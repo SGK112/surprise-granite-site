@@ -44182,11 +44182,14 @@
       // We need to swap them back for correct 3D geometry
       const rotation = (el.rotation || 0) % 360;
       const isRotated90 = (rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270);
+      // AI scanner pre-swaps width/height for side-wall elements but keeps rotation=0
+      // These elements need the same dimension swap as rotation=90/270
+      const isAiSideWall = !isRotated90 && (el.aiWall === 'left' || el.aiWall === 'right');
 
       // w = width of 3D object (along its local X axis)
       // d = depth of 3D object (along its local Z axis)
-      const w = isRotated90 ? el.height : el.width;
-      const d = isRotated90 ? el.width : el.height;
+      const w = (isRotated90 || isAiSideWall) ? el.height : el.width;
+      const d = (isRotated90 || isAiSideWall) ? el.width : el.height;
       const h = get3DHeight(el);
 
       // Parse color
@@ -60179,9 +60182,12 @@
           } else if (isWallPanel) {
             wallOffset = 0.03; // Thin panel sits flush against wall
           } else if (isRangeHood) {
-            wallOffset = el.height / 2; // Range hood protrudes from wall by its depth
+            // For side-wall elements with swapped dimensions, depth is in el.width
+            const hoodDepth = (closestWall === 'left' || closestWall === 'right') ? Math.min(el.width, el.height) : el.height;
+            wallOffset = hoodDepth / 2;
           } else if (isWallMountedShelf) {
-            wallOffset = el.height / 2; // Shelf protrudes from wall by its depth
+            const shelfDepth = (closestWall === 'left' || closestWall === 'right') ? Math.min(el.width, el.height) : el.height;
+            wallOffset = shelfDepth / 2;
           } else {
             wallOffset = 0.1; // Default offset for windows/doors
           }
