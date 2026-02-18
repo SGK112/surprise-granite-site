@@ -17919,7 +17919,13 @@
       let uploadedImageData = null;
       let uploadedMultiImages = []; // For multi-image mode
 
-      dropZone.onclick = () => fileInput.click();
+      dropZone.onclick = (e) => {
+        // Only open file picker if clicking the empty placeholder area (no image yet)
+        // The "Add More" and "Clear" buttons handle their own clicks
+        if (!uploadedImageData && uploadedMultiImages.length === 0) {
+          fileInput.click();
+        }
+      };
 
       dropZone.ondragover = (e) => {
         e.preventDefault();
@@ -17930,8 +17936,13 @@
         e.preventDefault();
         dropZone.classList.remove('dragover');
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
-        if (files.length > 1) {
-          files.slice(0, 4).forEach(f => handleMultiFile(f));
+        if (files.length > 1 || uploadedImageData || uploadedMultiImages.length > 0) {
+          // Multi-file drop or adding to existing — go to multi-image mode
+          if (uploadedImageData && uploadedMultiImages.length === 0) {
+            uploadedMultiImages.push({ data: uploadedImageData, label: '' });
+            uploadedImageData = null;
+          }
+          files.slice(0, 4 - uploadedMultiImages.length).forEach(f => handleMultiFile(f));
         } else if (files.length === 1) {
           handleBlueprintFile(files[0]);
         }
