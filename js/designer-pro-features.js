@@ -4852,7 +4852,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           images: images.map(img => ({ data: img.data, label: '' })),
-          projectType: 'commercial',
+          projectType: 'residential-kitchen',
           userContext: userContext
         })
       });
@@ -5062,9 +5062,9 @@
             },
             body: JSON.stringify({
               image: base64,
-              projectType: 'commercial-cabinets',
-              accountType: accountType, // Pass in body to avoid CORS issues
-              userContext: userContext  // Pass user-provided context to help AI
+              projectType: 'residential-kitchen',
+              accountType: accountType,
+              userContext: userContext
             })
           });
 
@@ -5322,9 +5322,9 @@
         },
         body: JSON.stringify({
           image: imageBase64,
-          projectType: 'commercial',
-          accountType: accountType, // Pass in body instead of header to avoid CORS
-          userContext: userContext  // Pass user-provided context to help AI understand the drawing
+          projectType: 'residential-kitchen',
+          accountType: accountType,
+          userContext: userContext
         })
       });
 
