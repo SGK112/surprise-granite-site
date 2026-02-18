@@ -614,25 +614,29 @@ router.post('/room-scan-multi', async (req, res) => {
 
     logger.info(`[Room-Scan-Multi] Analyzing ${images.length} images`);
 
-    const singleImagePrompt = `Analyze this room photograph and extract the complete layout.
+    const singleImagePrompt = `Analyze this room photograph and extract the complete layout. This is ONE of ${images.length} photos of the SAME room taken from different angles. Each photo may show different walls or parts of the kitchen.
+
 ${userContext ? `USER CONTEXT: "${userContext}"` : ''}
 PROJECT TYPE: ${projectType}
 
-List cabinets LEFT-TO-RIGHT per wall with orderIndex. Use appliance widths as measurement anchors (range=30", fridge=36", dishwasher=24").
+IMPORTANT: Describe which wall(s) you can see in this photo. The kitchen has 4 walls: top (back), bottom (front), left, right. Assign each cabinet to the wall it sits against.
+
+List cabinets LEFT-TO-RIGHT for top/bottom walls, TOP-TO-BOTTOM for left/right walls. Use appliance widths as measurement anchors (range=30", fridge=36", dishwasher=24").
 
 RETURN JSON:
 {
   "rooms": [{
     "name": "Kitchen",
-    "widthFt": number, "depthFt": number,
+    "widthFt": estimated room width, "depthFt": estimated room depth,
     "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
-    "cabinets": [{"label": "str", "type": "str", "width": inches, "depth": inches, "height": inches, "wall": "str", "orderIndex": number, "gapBefore": inches, "doorStyle": "str", "finish": "str", "confidence": "high|medium|low"}],
-    "countertops": [{"width": inches, "depth": inches, "material": "str", "materialName": "str", "wall": "str", "hasSink": bool, "confidence": "high|medium|low"}],
-    "appliances": [{"type": "str", "width": inches, "wall": "str"}]
+    "cabinets": [{"label": "B1", "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island", "width": inches, "depth": inches, "height": inches, "wall": "top|bottom|left|right|island", "orderIndex": 0, "gapBefore": inches, "doorStyle": "shaker|raised|flat|slab", "finish": "wood-grain|painted", "confidence": "high|medium|low"}],
+    "countertops": [{"width": inches, "depth": inches, "material": "granite|quartz|marble|laminate", "materialName": "name or null", "wall": "top|bottom|left|right|island", "hasSink": true/false, "confidence": "high|medium|low"}],
+    "appliances": [{"type": "refrigerator|range|dishwasher|microwave|hood", "width": inches, "wall": "top|bottom|left|right"}]
   }],
   "confidence": "high|medium|low",
-  "viewAngle": "description of what angle/wall this photo shows",
-  "measurementAnchors": ["list"]
+  "viewAngle": "Which walls are visible: e.g. 'Looking at left wall and part of top wall'",
+  "wallsVisible": ["left", "top"],
+  "measurementAnchors": ["range 30in on top wall", "fridge 36in on right wall"]
 }`;
 
     // Step 1: Parallel analysis of all images
@@ -692,22 +696,31 @@ RETURN JSON:
     }
 
     // Step 2: Merge pass - combine analyses into one layout
-    const mergePrompt = `You have ${parsedAnalyses.length} separate analyses of the SAME room from different angles/photos. Merge them into ONE complete, accurate layout.
+    const mergePrompt = `You have ${parsedAnalyses.length} separate analyses of the SAME kitchen room from different camera angles/photos. Each photo may show different walls. Merge them into ONE complete, accurate layout.
 
 INDIVIDUAL ANALYSES:
-${parsedAnalyses.map((a, i) => `--- Image ${i + 1} (${a.rooms?.[0]?.layoutType || 'unknown'} layout, ${a.viewAngle || 'unknown angle'}) ---\n${JSON.stringify(a, null, 2)}`).join('\n\n')}
+${parsedAnalyses.map((a, i) => `--- Image ${i + 1} (Walls visible: ${a.wallsVisible?.join(', ') || a.viewAngle || 'unknown'}, Layout: ${a.rooms?.[0]?.layoutType || 'unknown'}) ---\n${JSON.stringify(a, null, 2)}`).join('\n\n')}
 
-MERGE RULES:
-1. Use the LARGEST room dimensions (wider angle = more accurate)
-2. Deduplicate cabinets by type + wall + approximate position (within 6")
-3. When duplicates conflict, prefer the one with higher confidence
-4. Combine unique elements from all analyses
-5. A cabinet seen in multiple photos at the same wall position is ONE cabinet
-6. Preserve orderIndex - re-number merged cabinets sequentially per wall
+MERGE STRATEGY - Think of this as stitching a panorama:
+1. IDENTIFY which walls each photo covers using "wallsVisible" and "viewAngle"
+2. For walls seen in ONLY ONE photo: take those cabinets as-is
+3. For walls seen in MULTIPLE photos: deduplicate cabinets by type + wall + approximate position (within 6"). Keep the higher-confidence version.
+4. Room dimensions: use the LARGEST width and depth (wider angles are more accurate)
+5. Layout type: determine from the combined set of walls (e.g., if cabinets on top + left walls = L-shape)
+6. Re-number orderIndex sequentially per wall (0, 1, 2...) after merging
+7. Combine all unique appliances (a range seen in 2 photos is still ONE range)
+8. A cabinet at the END of one wall and START of the next may be a corner cabinet
 
-RETURN the merged result in the SAME JSON format as the individual analyses, plus:
-- "mergedFrom": ${parsedAnalyses.length} (number of images used)
-- "deduplicatedCount": number of duplicate elements removed`;
+RETURN the merged result as JSON with the SAME structure:
+{
+  "rooms": [{ "name": "Kitchen", "widthFt": number, "depthFt": number, "layoutType": "...", "cabinets": [...], "countertops": [...], "appliances": [...] }],
+  "confidence": "high|medium|low",
+  "confidenceDetails": { "dimensions": "...", "cabinetCount": "...", "materials": "...", "layout": "..." },
+  "measurementAnchors": [...],
+  "mergedFrom": ${parsedAnalyses.length},
+  "deduplicatedCount": number_of_duplicates_removed,
+  "wallsCovered": ["top", "left", "right", "bottom"]
+}`;
 
     const mergeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
