@@ -17955,16 +17955,8 @@
         e.preventDefault();
         dropZone.classList.remove('dragover');
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
-        if (files.length > 1 || uploadedImageData || uploadedMultiImages.length > 0) {
-          // Multi-file drop or adding to existing — go to multi-image mode
-          if (uploadedImageData && uploadedMultiImages.length === 0) {
-            uploadedMultiImages.push({ data: uploadedImageData, label: '' });
-            uploadedImageData = null;
-          }
-          files.slice(0, 4 - uploadedMultiImages.length).forEach(f => handleMultiFile(f));
-        } else if (files.length === 1) {
-          handleBlueprintFile(files[0]);
-        }
+        // Always use multi-image flow — add all dropped files to the grid
+        files.slice(0, 4 - uploadedMultiImages.length).forEach(f => handleMultiFile(f));
       };
 
       fileInput.onchange = (e) => {
@@ -17975,18 +17967,9 @@
           uploadedImageData = null;
           files.slice(0, 4).forEach(f => handleMultiFile(f));
         } else if (files.length === 1) {
-          if (uploadedImageData || uploadedMultiImages.length > 0) {
-            // Already have an image — add to multi-image collection
-            if (uploadedImageData && uploadedMultiImages.length === 0) {
-              // Convert existing single image to multi-image array first
-              uploadedMultiImages.push({ data: uploadedImageData, label: '' });
-              uploadedImageData = null;
-            }
-            handleMultiFile(files[0]);
-          } else {
-            // First image — show single preview
-            handleBlueprintFile(files[0]);
-          }
+          // Always add to multi-image collection (even first image)
+          // This ensures the multi-image grid always shows
+          handleMultiFile(files[0]);
         }
         // Reset input so same file can be re-selected
         fileInput.value = '';
@@ -18018,19 +18001,9 @@
           showToast('Please upload an image or PDF file', 'error');
           return;
         }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          uploadedImageData = e.target.result;
-          uploadedMultiImages = [];
-          document.getElementById('previewImage').src = uploadedImageData;
-          document.getElementById('uploadPlaceholder').style.display = 'none';
-          document.getElementById('uploadPreview').style.display = 'block';
-          document.getElementById('multiUploadPreview').style.display = 'none';
-          analyzeBtn.disabled = false;
-          analyzeBtn.style.opacity = '1';
-        };
-        reader.readAsDataURL(file);
+        // Always route through multi-image flow so users see the grid
+        // and are prompted to add more angles for better results
+        handleMultiFile(file);
       }
 
       function handleMultiFile(file) {
@@ -18059,7 +18032,9 @@
             grid.appendChild(thumb);
           });
 
-          document.getElementById('multiImageCount').textContent = `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
+          document.getElementById('multiImageCount').textContent = uploadedMultiImages.length === 1
+            ? '1 image — add more angles for much better accuracy!'
+            : `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
           document.getElementById('uploadPlaceholder').style.display = 'none';
           document.getElementById('uploadPreview').style.display = 'none';
           document.getElementById('multiUploadPreview').style.display = 'block';
@@ -18087,7 +18062,9 @@
             `;
             grid.appendChild(thumb);
           });
-          document.getElementById('multiImageCount').textContent = `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
+          document.getElementById('multiImageCount').textContent = uploadedMultiImages.length === 1
+            ? '1 image — add more angles for much better accuracy!'
+            : `${uploadedMultiImages.length} of 4 images (multi-angle scan)`;
         }
       };
 
@@ -18173,6 +18150,11 @@
 
           let data;
 
+          // Resolve the image to send — multi-image array takes priority
+          const imageToSend = uploadedMultiImages.length > 0
+            ? uploadedMultiImages[0].data
+            : uploadedImageData;
+
           if (uploadedMultiImages.length >= 2) {
             // Multi-image mode - parallel analysis + merge
             const response = await fetch(`${AI_API_BASE}/api/ai/room-scan-multi`, {
@@ -18193,7 +18175,7 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                image: uploadedImageData,
+                image: imageToSend,
                 description: document.getElementById('blueprintContext').value || '',
                 projectType: document.getElementById('blueprintProjectType').value
               })
@@ -18208,12 +18190,12 @@
             const layoutData = data.modified || data.original;
             data = { ...layoutData, success: true, mode: 'reference', changes: data.changes || [] };
           } else {
-            // Standard scan modes
+            // Standard scan modes (1 image or legacy uploadedImageData)
             const response = await fetch(`${AI_API_BASE}/api/ai/room-scan`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                image: uploadedImageData,
+                image: imageToSend,
                 scanMode: currentScanMode,
                 projectType: document.getElementById('blueprintProjectType').value,
                 userContext: userContext,
@@ -42860,7 +42842,7 @@
         'range': 3,               // Full range height
         'cooktop': 0.2,           // Cooktop inset into counter (~2.5" thick)
         'refrigerator': 5.8,      // 70 inches
-        'dishwasher': 2.9,        // 35 inches (flush with base cabinets under counter)
+        'dishwasher': STD_BASE_CAB_HEIGHT, // 34.5" (flush with base cabinets under counter)
         'microwave': 1.25,        // 15 inches (typical OTR microwave)
         'range-hood': 1.5,        // 18 inches tall
         'oven': 2.4,              // 29 inches
@@ -42872,23 +42854,23 @@
         'tall-oven': 7, // 84 inches (alias for single oven cabinet)
         'double-oven-cabinet': 8, // 96 inches (tall cabinet with double oven)
         'fridge-cabinet': 7,      // 84 inches (surrounds refrigerator)
-        'blind-corner': 2.9,      // 35 inches (same as base cabinet)
-        'wine-cooler': 2.9,      // 34 inches (under-counter)
-        'beverage-center': 2.9,  // 34 inches (under-counter)
-        'ice-maker': 2.9,        // 34 inches (under-counter)
-        'trash-compactor': 2.9,  // 34 inches (under-counter)
+        'blind-corner': STD_BASE_CAB_HEIGHT, // 34.5" (same as base cabinet)
+        'wine-cooler': STD_BASE_CAB_HEIGHT,      // 34.5" (under-counter)
+        'beverage-center': STD_BASE_CAB_HEIGHT,  // 34.5" (under-counter)
+        'ice-maker': STD_BASE_CAB_HEIGHT,        // 34.5" (under-counter)
+        'trash-compactor': STD_BASE_CAB_HEIGHT,  // 34.5" (under-counter)
         'warming-drawer': 1.25,  // 15 inches (drawer height)
-        'door': 6.8,              // 82 inches
-        'double-door': 6.8,       // 82 inches
-        'sliding-door': 6.8,      // 82 inches
-        'french-door': 6.8,       // 82 inches
-        'glass-door': 6.8,        // 82 inches
+        'door': 6.667,             // 80 inches (6'-8" standard interior)
+        'double-door': 6.667,      // 80 inches
+        'sliding-door': 6.667,     // 80 inches
+        'french-door': 6.667,      // 80 inches
+        'glass-door': 6.667,       // 80 inches
         'entry-archway': 7,       // 84 inches (arched opening)
         'garage-door': 7,         // 84 inches
-        'window': 4.5,            // 54 inches - standard double-hung (IRC)
-        'window-large': 5,        // 60 inches (picture)
-        'window-bay': 4,          // 48 inches (bay)
-        'bay-window': 4,          // 48 inches
+        'window': 3,               // 36 inches - standard double-hung
+        'window-large': 4,        // 48 inches (large picture)
+        'window-bay': 3,          // 36 inches (bay)
+        'bay-window': 3,          // 36 inches
         'picture-window': 5,      // 60 inches
         // Niches - these are the opening heights
         'wall-niche': 3,          // 36 inches
@@ -43211,34 +43193,30 @@
         case 'sink-double':
         case 'sink-farmhouse': {
           // Smart stacking: sink sits IN/ON countertop surface
-          // Uses recursive stacking — finds actual countertop surface height
           const counterSurface = findCounterSurfaceBelow(el);
 
-          // Farmhouse sinks show apron, position slightly lower
+          // Farmhouse sinks — apron front shows, bowl hangs below counter
           if (el.type === 'sink-farmhouse' || el.mountType === 'farmhouse') {
-            return counterSurface - 0.1;
+            return counterSurface - height / 2 - 0.05;
           }
-          // Top mount sinks - rim sits ON the countertop surface
+          // Top mount sinks — rim sits ON the countertop surface, bowl hangs below
           if (el.mountType === 'topmount') {
-            return counterSurface;
+            return counterSurface - height / 2 + 0.03; // Rim 0.03ft (~3/8") above surface
           }
-          // Undermount sinks - the sink origin is at countertop level
-          return counterSurface;
+          // Undermount sinks (default) — fully below countertop surface
+          return counterSurface - height / 2;
         }
 
         case 'cooktop': {
-          // Cooktop sits IN countertop, flush with surface
-          // Uses recursive stacking — finds actual countertop surface height
+          // Cooktop sits IN countertop — top flush with surface, body recessed below
           const counterSurface = findCounterSurfaceBelow(el);
-          return counterSurface;
+          return counterSurface - height / 2 + 0.02; // Top ~1/4" above surface for trim ring
         }
 
         case 'stove':
         case 'range':
         case 'slide-in-range':
         case 'dishwasher':
-        case 'oven':
-        case 'wall-oven-double':
         case 'grill-builtin':
         case 'grill-42':
         case 'side-burner':
@@ -43251,7 +43229,21 @@
         case 'ice-maker':
         case 'trash-compactor':
         case 'warming-drawer':
-          return height / 2; // These are floor-standing, built-in at counter height
+          return height / 2; // Floor-standing, built-in at counter height
+
+        case 'oven': {
+          // Single wall oven — installed elevated in a tall cabinet
+          // Bottom at ~2ft (24") from floor for comfortable reach
+          const ovenBottom = el.mountHeight || 2;
+          return ovenBottom + height / 2;
+        }
+
+        case 'wall-oven-double': {
+          // Double wall oven — installed in tall cabinet
+          // Bottom at ~1ft (12") from floor for the lower oven
+          const dblOvenBottom = el.mountHeight || 1;
+          return dblOvenBottom + height / 2;
+        }
 
         case 'bar-stool':
           return height / 2; // Sits on floor
@@ -43499,9 +43491,11 @@
         case 'surface-solid':
         case 'surface-laminate':
         case 'surface-butcherblock':
-        case 'surface-concrete':
-          // These sit at standard counter height (on top of base cabinets)
-          return 2.9 + height / 2;
+        case 'surface-concrete': {
+          // Sit on top of base cabinets like countertops
+          const surfaceSupport = findSupportSurfaceHeight(el);
+          return surfaceSupport + height / 2;
+        }
 
         case 'fireplace-hearth':
         case 'threshold':
