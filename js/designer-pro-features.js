@@ -7005,14 +7005,22 @@
 
     // Place items along a wall (horizontal walls: top/bottom)
     function placeHorizontalWall(wallName, items, startX, yFn, depthLimit) {
+      if (items.length === 0) return { start: null, end: null };
+      // Calculate total width of all items
+      let totalWidth = items.reduce((sum, cab) => sum + cab._widthFt, 0);
       let x = startX;
+      // If items overflow the wall, scale them down proportionally
+      const availableWidth = roomWidthFeet - startX;
+      if (totalWidth > availableWidth && totalWidth > 0) {
+        const scale = availableWidth / totalWidth;
+        items.forEach(cab => { cab._widthFt = cab._widthFt * scale; });
+        totalWidth = availableWidth;
+      }
       let runStart = null, runEnd = null;
       items.forEach(cab => {
-        x += cab._gapBeforeFt;
         const w = cab._widthFt;
         const d = Math.min(cab._depthFt, depthLimit);
         const y = yFn(d);
-        if (x + w > roomWidthFeet) x = startX; // Wrap if overflow
         addElement(cab._type, x, y, w, d, 0, wallName, cab, false);
         if (runStart === null) runStart = x;
         runEnd = x + w;
@@ -7023,14 +7031,20 @@
 
     // Place items along a wall (vertical walls: left/right)
     function placeVerticalWall(wallName, items, startY, xFn, depthLimit) {
+      if (items.length === 0) return { start: null, end: null };
+      let totalWidth = items.reduce((sum, cab) => sum + cab._widthFt, 0);
       let y = startY;
+      const availableDepth = roomDepthFeet - startY;
+      if (totalWidth > availableDepth && totalWidth > 0) {
+        const scale = availableDepth / totalWidth;
+        items.forEach(cab => { cab._widthFt = cab._widthFt * scale; });
+        totalWidth = availableDepth;
+      }
       let runStart = null, runEnd = null;
       items.forEach(cab => {
-        y += cab._gapBeforeFt;
         const w = cab._widthFt;
         const d = Math.min(cab._depthFt, depthLimit);
         const x = xFn(d);
-        if (y + w > roomDepthFeet) y = startY; // Wrap if overflow
         addElement(cab._type, x, y, d, w, 0, wallName, cab, false);
         if (runStart === null) runStart = y;
         runEnd = y + w;
@@ -7166,7 +7180,6 @@
 
   // Helper: Validate and sanitize cabinet dimensions
   function validateCabinetDimensions(cab, index) {
-    // Default dimensions by cabinet type
     const defaults = {
       'base-cabinet': { width: 36, depth: 24, height: 34.5 },
       'wall-cabinet': { width: 36, depth: 12, height: 30 },
@@ -7181,29 +7194,27 @@
     const type = cab.type || 'base-cabinet';
     const typeDefaults = defaults[type] || defaults['base-cabinet'];
 
-    // Parse dimensions - they might be strings or numbers
     let width = parseFloat(cab.width) || typeDefaults.width;
     let depth = parseFloat(cab.depth) || typeDefaults.depth;
     let height = parseFloat(cab.height) || typeDefaults.height;
 
-    // Sanity checks - catch obviously wrong values
-    // Width: typical range 6" to 120" (fillers to large islands)
-    if (width < 0.5 || width > 120) {
-      console.warn(`Cabinet ${index}: invalid width ${width}, using default`);
-      width = typeDefaults.width;
+    // GPT sometimes returns feet instead of inches — detect and convert
+    // A cabinet width < 8 is almost certainly in feet (8" is minimum real width)
+    if (width > 0 && width < 8) {
+      console.warn(`Cabinet ${index}: width ${width} looks like feet, converting to inches`);
+      width = Math.round(width * 12);
+    }
+    if (depth > 0 && depth < 6) {
+      depth = Math.round(depth * 12);
+    }
+    if (height > 0 && height < 6) {
+      height = Math.round(height * 12);
     }
 
-    // Depth: typical range 0.5" (panels) to 36" (deep islands)
-    if (depth < 0.25 || depth > 48) {
-      console.warn(`Cabinet ${index}: invalid depth ${depth}, using default`);
-      depth = typeDefaults.depth;
-    }
-
-    // Height: typical range 6" (drawer faces) to 96" (tall pantries)
-    if (height < 4 || height > 108) {
-      console.warn(`Cabinet ${index}: invalid height ${height}, using default`);
-      height = typeDefaults.height;
-    }
+    // Clamp to reasonable ranges
+    if (width < 6 || width > 120) width = typeDefaults.width;
+    if (depth < 6 || depth > 48) depth = typeDefaults.depth;
+    if (height < 6 || height > 108) height = typeDefaults.height;
 
     return { width, depth, height };
   }

@@ -619,94 +619,41 @@ router.post('/room-scan-multi', async (req, res) => {
     // GPT sees every angle simultaneously → much better accuracy
     // ============================================================
 
-    const systemPrompt = `You are an expert kitchen designer who analyzes room photographs to extract precise cabinet layouts for 3D modeling.
+    const systemPrompt = `You are a kitchen designer analyzing photos to create a floor plan. Return ONLY valid JSON.
 
-You will receive ${images.length} photos of the SAME kitchen taken from different angles. Analyze ALL photos together to build ONE complete, accurate layout. Cross-reference between photos — an appliance or cabinet visible in multiple photos is the SAME item, not duplicates.
+IMPORTANT: All dimensions must be in INCHES, not feet. A standard base cabinet is 36 inches wide, NOT 3.
+Standard sizes: base cabinet=36"W x 24"D x 34"H, wall cabinet=36"W x 12"D x 30"H, fridge=36"W x 30"D x 70"H, range=30"W x 26"D x 36"H, dishwasher=24"W x 24"D x 34"H.
+Use standard sizes unless you can clearly see the cabinet is a different size.`;
 
-RULES:
-- Count individual cabinet DOORS carefully. Each pair of doors = one cabinet. Single doors = 15-18" wide. Drawer banks = 12-36" wide.
-- Count EVERY cabinet, even partially visible ones. Include the spaces between appliances (those are cabinets too).
-- NEVER miss appliances: refrigerator, range/stove, dishwasher, microwave, hood.
-- Identify peninsulas (counter extending FROM a wall into the room, open on 2-3 sides) vs islands (freestanding, not connected to any wall).
-- Use appliance dimensions as measurement anchors to calibrate all other measurements.
-- Return ONLY valid JSON — no markdown, no explanation, just the JSON object.`;
+    const userPrompt = `Analyze ${images.length} photo(s) of this kitchen. ${userContext ? `Context: "${userContext}"` : ''}
 
-    const userPrompt = `Here are ${images.length} photos of the same kitchen from different angles. Analyze them ALL together to extract the complete room layout.
+WALLS (bird's-eye view): "top"=back wall, "bottom"=front, "left"=left side, "right"=right side.
 
-${userContext ? `USER CONTEXT: "${userContext}"` : ''}
-PROJECT TYPE: ${projectType}
+For EACH wall that has cabinets, list what's on it LEFT to RIGHT (or TOP to BOTTOM for side walls):
+- Each base cabinet (type "base-cabinet", standard 36"W unless clearly smaller/larger)
+- The sink base (type "sink-base", usually 36"W, on wall with the window)
+- Each wall/upper cabinet (type "wall-cabinet", standard 36"W)
+- Each appliance with its wall
 
-WALL MAPPING (bird's-eye view of the floor plan):
-- "top" = back wall (the wall you'd face when entering the room)
-- "bottom" = front wall (behind you when entering)
-- "left" = left wall when facing the back wall
-- "right" = right wall when facing the back wall
-- "island" = freestanding counter in the middle (NOT connected to any wall)
-- "peninsula" = counter extending FROM a wall into the room (connected on one end, open on other sides — often has a sink or breakfast bar)
+Use STANDARD widths: 36" for most base/wall cabinets, 30" for range, 36" for fridge, 24" for dishwasher.
+Only use non-standard widths (12", 15", 18", 24") when you can clearly see a narrow cabinet.
 
-MEASUREMENT ANCHORS — use these to calibrate all dimensions:
-- Refrigerator = 36" wide x 30" deep x 70" tall
-- Range/Stove = 30" wide x 26" deep x 36" tall
-- Dishwasher = 24" wide x 24" deep x 34" tall
-- Microwave (over range) = 30" wide x 16" deep x 18" tall
-- Base cabinet depth = 24", height = 34.5" (widths: 12", 15", 18", 21", 24", 30", 33", 36")
-- Wall/upper cabinet depth = 12", height = 30-42"
+ALL dimensions in INCHES. Room dimensions in FEET.
 
-WALK THROUGH EACH WALL systematically:
-1. Start at one corner of the back wall ("top") and list every element left-to-right
-2. Then the left wall top-to-bottom
-3. Then the right wall top-to-bottom
-4. Then any island or peninsula
-5. For each wall: list base cabinets, then wall/upper cabinets above them, then appliances IN ORDER
-
-RETURN this exact JSON structure:
 {
   "rooms": [{
     "name": "Kitchen",
-    "widthFt": room_width_in_feet,
-    "depthFt": room_depth_in_feet,
-    "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
+    "widthFt": room_width_feet,
+    "depthFt": room_depth_feet,
+    "layoutType": "L-shape|U-shape|galley|single-wall",
     "cabinets": [
-      {
-        "label": "B1",
-        "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island",
-        "width": width_inches,
-        "depth": depth_inches,
-        "height": height_inches,
-        "wall": "top|bottom|left|right|island|peninsula",
-        "orderIndex": 0,
-        "gapBefore": gap_inches_from_previous_element_or_wall_edge,
-        "doorStyle": "shaker|raised|flat|slab",
-        "finish": "wood-grain|painted",
-        "confidence": "high|medium|low"
-      }
-    ],
-    "countertops": [
-      {
-        "width": total_run_width_inches,
-        "depth": depth_inches,
-        "material": "granite|quartz|marble|laminate|butcher-block",
-        "materialName": "specific stone name if identifiable or null",
-        "wall": "top|bottom|left|right|island|peninsula",
-        "hasSink": true_or_false,
-        "confidence": "high|medium|low"
-      }
+      {"label": "B1", "type": "base-cabinet", "width": 36, "depth": 24, "height": 34, "wall": "top", "orderIndex": 0}
     ],
     "appliances": [
-      {
-        "type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler",
-        "width": width_inches,
-        "depth": depth_inches,
-        "height": height_inches,
-        "wall": "top|bottom|left|right",
-        "orderIndex": position_in_wall_sequence,
-        "gapBefore": gap_inches_from_previous_element
-      }
+      {"type": "refrigerator|range|dishwasher|microwave|hood", "width": 36, "depth": 30, "height": 70, "wall": "left", "orderIndex": 0}
     ]
   }],
-  "confidence": "high|medium|low",
-  "wallsCovered": ["top", "left", "right"],
-  "measurementAnchors": ["fridge 36in on left wall", "range 30in on top wall"]
+  "confidence": "high|medium|low"
 }`;
 
     // Build the content array: text prompt + all images
