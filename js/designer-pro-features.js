@@ -4931,43 +4931,16 @@
 
     const imagePayload = images.map(img => ({ data: img.data, label: img.note || '' }));
 
+    // Helper: safely parse JSON response (handles empty/truncated bodies from server timeouts)
+    async function safeJson(resp) {
+      const text = await resp.text();
+      if (!text || text.trim().length === 0) throw new Error('Empty response from server (possible timeout)');
+      return JSON.parse(text);
+    }
+
     try {
-      // Try two-pass endpoint first
-      let usedTwoPass = false;
-      try {
-        const response = await fetch(`${AI_BASE}/api/ai/room-scan-two-pass`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            images: imagePayload,
-            projectType: 'residential-kitchen',
-            userContext: userContext
-          })
-        });
-
-        if (response.status === 404) {
-          console.log('[TwoPass] Endpoint not found, falling back to single-pass');
-        } else if (!response.ok) {
-          console.warn('[TwoPass] Error:', response.status, '— falling back');
-        } else {
-          showProgress(2, 'Counting cabinets...', 'Precisely counting every cabinet on each wall', 70);
-          const data = await response.json();
-          console.log('AI Two-Pass Analysis:', data);
-          usedTwoPass = true;
-          if (data.rooms && data.rooms.length > 0) {
-            showScanResultsPreview(data, images, userContext);
-          } else {
-            showManualEntryFallback('multi-image-scan', 'No rooms detected in the images');
-          }
-        }
-      } catch (tpErr) {
-        console.warn('[TwoPass] Failed:', tpErr.message, '— falling back');
-      }
-
-      if (usedTwoPass) return;
-
-      // Fallback: single-pass multi-image
-      showProgress(1, 'Analyzing photos...', 'AI is comparing angles to build the complete layout', 40);
+      // Try single-pass multi-image first (proven endpoint, single GPT call)
+      showProgress(1, 'Analyzing photos...', 'AI is comparing all angles to build the complete layout', 40);
 
       const spResponse = await fetch(`${AI_BASE}/api/ai/room-scan-multi`, {
         method: 'POST',
@@ -4980,14 +4953,13 @@
       });
 
       if (!spResponse.ok) {
-        // Try to get error details from response
         let errMsg = `Server error (${spResponse.status})`;
-        try { const errData = await spResponse.json(); errMsg = errData.error || errMsg; } catch(e) {}
+        try { const errData = await safeJson(spResponse); errMsg = errData.error || errMsg; } catch(e) {}
         throw new Error(errMsg);
       }
 
-      const spData = await spResponse.json();
-      console.log('AI Single-Pass Analysis:', spData);
+      const spData = await safeJson(spResponse);
+      console.log('AI Multi-Image Analysis:', spData);
       if (spData.rooms && spData.rooms.length > 0) {
         showScanResultsPreview(spData, images, userContext);
       } else {
@@ -4996,13 +4968,14 @@
 
     } catch (error) {
       console.error('Multi-image analysis failed:', error);
-      // Final fallback: analyze first image only
+      // Fallback: analyze first image only
       if (images.length > 0) {
         try {
           if (typeof showToast === 'function') showToast('Multi-image failed, trying single image...', 'warning');
+          showProgress(1, 'Trying single image...', 'Analyzing the first photo only', 50);
           await analyzeWithAIVision(images[0].data, 'single-fallback', userContext);
-        } catch (e3) {
-          console.error('Single image fallback also failed:', e3);
+        } catch (e2) {
+          console.error('Single image fallback also failed:', e2);
           showManualEntryFallback('multi-image', error.message);
         }
       } else {
