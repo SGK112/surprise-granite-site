@@ -4535,6 +4535,12 @@
           <div class="import-dropzone" id="pdfDropzone">
             <p style="font-size:15px; font-weight:500; color:var(--text); margin:0 0 4px;">Upload Room Photos</p>
             <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Click each slot to add a photo • Up to 4 images for multi-angle scan</p>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Known measurements (optional)</label>
+              <input type="text" id="pdfUserMeasurements"
+                     placeholder="e.g. Back wall is 14ft, island is 6ft wide"
+                     style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:13px; box-sizing:border-box;" />
+            </div>
             <div id="pdfImageSlots" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;"></div>
             <div style="display:flex; gap:8px; justify-content:center; align-items:center;">
               <span id="pdfImageCount" style="font-size:12px; color:var(--text-muted);">Click a slot to add a photo</span>
@@ -4669,8 +4675,8 @@
       var slot = document.createElement('div');
       slot.style.cssText = 'aspect-ratio:1; border:2px dashed var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
       if (window._pdfImages[i]) {
+        if (typeof window._pdfImages[i].note === 'undefined') window._pdfImages[i].note = '';
         slot.style.border = '2px solid var(--primary)';
-        // Use thumbnail URL for display (lightweight)
         var thumbSrc = window._pdfImages[i].thumb || window._pdfImages[i].data;
         slot.innerHTML = '<img src="' + thumbSrc + '" style="width:100%;height:100%;object-fit:cover;">' +
           '<button onclick="event.stopPropagation();window._removePdfImage(' + i + ')" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:white;cursor:pointer;font-size:14px;line-height:22px;padding:0;z-index:2;">✕</button>' +
@@ -4683,6 +4689,35 @@
       }
       grid.appendChild(slot);
     }
+    // Per-image note inputs in a separate row below the grid
+    var notesRow = document.getElementById('pdfSlotNotes');
+    if (!notesRow) {
+      notesRow = document.createElement('div');
+      notesRow.id = 'pdfSlotNotes';
+      notesRow.style.cssText = 'display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:8px;';
+      grid.parentNode.insertBefore(notesRow, grid.nextSibling);
+    }
+    notesRow.innerHTML = '';
+    var hasNotes = false;
+    for (var j = 0; j < 4; j++) {
+      var cell = document.createElement('div');
+      if (window._pdfImages[j]) {
+        hasNotes = true;
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = 'e.g. Back wall, 14ft';
+        inp.dataset.slotIdx = String(j);
+        inp.value = window._pdfImages[j].note || '';
+        inp.style.cssText = 'width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text); font-size:10px; box-sizing:border-box;';
+        inp.oninput = (function(idx) {
+          return function(e) { if (window._pdfImages[idx]) window._pdfImages[idx].note = e.target.value; };
+        })(j);
+        inp.onclick = function(e) { e.stopPropagation(); };
+        cell.appendChild(inp);
+      }
+      notesRow.appendChild(cell);
+    }
+    notesRow.style.display = hasNotes ? 'grid' : 'none';
     var countEl = document.getElementById('pdfImageCount');
     var clearBtn = document.getElementById('pdfClearAll');
     var n = window._pdfImages.length;
@@ -4697,7 +4732,8 @@
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,image/*';
-    input.style.display = 'none';
+    // Use offscreen positioning instead of display:none for better browser compat
+    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     document.body.appendChild(input);
     input.onchange = function(e) {
       var file = e.target.files[0];
@@ -4737,7 +4773,19 @@
   window._analyzeAllImages = function() {
     const images = window._pdfImages || [];
     if (images.length === 0) return;
-    const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
+
+    // Build enriched userContext from global measurements + per-image notes
+    const parts = [];
+    const globalMeasurements = document.getElementById('pdfUserMeasurements')?.value?.trim();
+    if (globalMeasurements) parts.push('KNOWN MEASUREMENTS: ' + globalMeasurements);
+    const legacyContext = document.getElementById('userBlueprintContext')?.value?.trim();
+    if (legacyContext) parts.push(legacyContext);
+    const imageNotes = images
+      .map(function(img, idx) { return img.note ? ('Image ' + (idx + 1) + ': ' + img.note) : ''; })
+      .filter(Boolean);
+    if (imageNotes.length > 0) parts.push('PER-IMAGE NOTES: ' + imageNotes.join(' | '));
+    const userContext = parts.join('\n');
+
     if (images.length >= 2) {
       analyzeMultiImages(images, userContext);
     } else {
@@ -4831,54 +4879,446 @@
     const AI_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'https://surprise-granite-email-api.onrender.com' : '';
 
+    const resultsEl = document.getElementById('extractedRooms');
     document.getElementById('pdfParseResults').style.display = 'block';
-    document.getElementById('extractedRooms').innerHTML = `
-      <div style="text-align:center; padding:32px 20px;">
-        <div class="ai-spinner"></div>
-        <h4 style="margin:0 0 8px; font-size:16px;">Analyzing ${images.length} Photos</h4>
-        <p class="ai-pulse" style="margin:0 0 16px; color:var(--text-muted); font-size:14px;">
-          AI is comparing angles to build the complete room layout...
-        </p>
-        <div class="ai-progress-bar">
-          <div class="ai-progress-fill" style="width:40%"></div>
+
+    // Helper to update progress UI
+    function showProgress(step, title, subtitle, pct) {
+      resultsEl.innerHTML = `
+        <div style="text-align:center; padding:32px 20px;">
+          <div class="ai-spinner"></div>
+          <h4 style="margin:0 0 8px; font-size:16px;">Step ${step}/2: ${title}</h4>
+          <p class="ai-pulse" style="margin:0 0 16px; color:var(--text-muted); font-size:14px;">${subtitle}</p>
+          <div class="ai-progress-bar">
+            <div class="ai-progress-fill" style="width:${pct}%"></div>
+          </div>
+          <p style="margin:16px 0 0; font-size:12px; color:var(--text-muted);">This may take 30-60 seconds</p>
         </div>
-        <p style="margin:16px 0 0; font-size:12px; color:var(--text-muted);">This may take 30-60 seconds for multiple images</p>
-      </div>
-    `;
+      `;
+    }
+
+    showProgress(1, 'Analyzing room structure...', 'Identifying layout type, walls, and dimensions', 25);
+
+    const imagePayload = images.map(img => ({ data: img.data, label: img.note || '' }));
 
     try {
-      const response = await fetch(`${AI_BASE}/api/ai/room-scan-multi`, {
+      // Try two-pass endpoint first
+      let usedTwoPass = false;
+      try {
+        const response = await fetch(`${AI_BASE}/api/ai/room-scan-two-pass`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            images: imagePayload,
+            projectType: 'residential-kitchen',
+            userContext: userContext
+          })
+        });
+
+        if (response.status === 404) {
+          console.log('[TwoPass] Endpoint not found, falling back to single-pass');
+        } else if (!response.ok) {
+          console.warn('[TwoPass] Error:', response.status, '— falling back');
+        } else {
+          showProgress(2, 'Counting cabinets...', 'Precisely counting every cabinet on each wall', 70);
+          const data = await response.json();
+          console.log('AI Two-Pass Analysis:', data);
+          usedTwoPass = true;
+          if (data.rooms && data.rooms.length > 0) {
+            showScanResultsPreview(data, images, userContext);
+          } else {
+            showManualEntryFallback('multi-image-scan', 'No rooms detected in the images');
+          }
+        }
+      } catch (tpErr) {
+        console.warn('[TwoPass] Failed:', tpErr.message, '— falling back');
+      }
+
+      if (usedTwoPass) return;
+
+      // Fallback: single-pass multi-image
+      showProgress(1, 'Analyzing photos...', 'AI is comparing angles to build the complete layout', 40);
+
+      const spResponse = await fetch(`${AI_BASE}/api/ai/room-scan-multi`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          images: images.map(img => ({ data: img.data, label: '' })),
+          images: imagePayload,
           projectType: 'residential-kitchen',
           userContext: userContext
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      if (!spResponse.ok) {
+        // Try to get error details from response
+        let errMsg = `Server error (${spResponse.status})`;
+        try { const errData = await spResponse.json(); errMsg = errData.error || errMsg; } catch(e) {}
+        throw new Error(errMsg);
       }
 
-      const data = await response.json();
-      console.log('AI Multi-Image Analysis:', data);
-
-      if (data.rooms && data.rooms.length > 0) {
-        convertAIResultsToRooms(data, 'multi-image-scan');
+      const spData = await spResponse.json();
+      console.log('AI Single-Pass Analysis:', spData);
+      if (spData.rooms && spData.rooms.length > 0) {
+        showScanResultsPreview(spData, images, userContext);
       } else {
-        showManualEntryFallback('multi-image-scan', 'No rooms detected in the images');
+        showManualEntryFallback('multi-image-scan', 'No rooms detected');
       }
+
     } catch (error) {
       console.error('Multi-image analysis failed:', error);
-      // Fallback: analyze first image only
+      // Final fallback: analyze first image only
       if (images.length > 0) {
-        if (typeof showToast === 'function') showToast('Multi-image failed, trying single image...', 'warning');
-        await analyzeWithAIVision(images[0].data, 'single-fallback', userContext);
+        try {
+          if (typeof showToast === 'function') showToast('Multi-image failed, trying single image...', 'warning');
+          await analyzeWithAIVision(images[0].data, 'single-fallback', userContext);
+        } catch (e3) {
+          console.error('Single image fallback also failed:', e3);
+          showManualEntryFallback('multi-image', error.message);
+        }
       } else {
         showManualEntryFallback('multi-image', error.message);
       }
     }
+  }
+
+  // ============ POST-SCAN CORRECTION UI ============
+
+  function showScanResultsPreview(data, images, userContext) {
+    // Store raw data for re-scan / editing
+    window._aiAnalysisData = data;
+    window._lastScanImages = images;
+    window._lastScanContext = userContext;
+
+    // Convert to parsedRooms format
+    convertAIResultsToRooms(data, 'ai-scan');
+    const rooms = window._parsedRooms || [];
+    if (rooms.length === 0) {
+      showManualEntryFallback('ai-scan', 'No rooms parsed');
+      return;
+    }
+
+    const room = rooms[0];
+    const structure = data._pass1Structure || {};
+    const confidence = data.confidence || 'medium';
+    const confidenceColor = confidence === 'high' ? '#22c55e' : confidence === 'medium' ? '#f9cb00' : '#ef4444';
+    const totalElements = room.cabinets.length;
+
+    // Count by wall and type
+    const wallCounts = {};
+    room.cabinets.forEach(function(c) {
+      var w = c.wall || 'top';
+      if (!wallCounts[w]) wallCounts[w] = { base: 0, wall: 0, appliance: 0, other: 0 };
+      if (c.isAppliance) wallCounts[w].appliance++;
+      else if (c.type === 'base-cabinet' || c.type === 'sink-base' || c.type === 'drawer-base') wallCounts[w].base++;
+      else if (c.type === 'wall-cabinet') wallCounts[w].wall++;
+      else wallCounts[w].other++;
+    });
+
+    // Build wall summary rows
+    var wallSummaryHtml = Object.keys(wallCounts).map(function(w) {
+      var wc = wallCounts[w];
+      var parts = [];
+      if (wc.base > 0) parts.push(wc.base + ' base');
+      if (wc.wall > 0) parts.push(wc.wall + ' upper');
+      if (wc.appliance > 0) parts.push(wc.appliance + ' appliance' + (wc.appliance > 1 ? 's' : ''));
+      if (wc.other > 0) parts.push(wc.other + ' other');
+      return '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:13px;">' +
+        '<span style="text-transform:uppercase; font-weight:600; color:var(--text-muted); font-size:11px;">' + w + ' wall</span>' +
+        '<span>' + parts.join(', ') + '</span></div>';
+    }).join('');
+
+    // Appliance list
+    var applianceNames = room.cabinets
+      .filter(function(c) { return c.isAppliance; })
+      .map(function(c) { return c.name; });
+    var applianceHtml = applianceNames.length > 0 ? applianceNames.join(', ') : 'None detected';
+
+    var layoutOptions = ['L-shape', 'U-shape', 'galley', 'single-wall', 'island', 'peninsula'].map(function(lt) {
+      return '<option value="' + lt + '"' + (lt === (room.layoutType || '') ? ' selected' : '') + '>' + lt + '</option>';
+    }).join('');
+
+    // Build the preview UI
+    var resultsEl = document.getElementById('extractedRooms');
+    resultsEl.innerHTML = `
+      <div style="padding:4px 0;">
+        <div style="text-align:center; margin-bottom:16px;">
+          <h3 style="margin:0 0 4px; font-size:18px;">AI Scan Results — Review & Correct</h3>
+          <p style="margin:0; color:var(--text-muted); font-size:13px;">Verify the detected layout before importing</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Layout Type</label>
+            <select id="scanCorrectLayout" style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:13px;">
+              ${layoutOptions}
+            </select>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Width (ft)</label>
+              <input type="number" id="scanCorrectWidth" value="${room.width || 16}" min="6" max="40" style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:13px; box-sizing:border-box;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px;">Depth (ft)</label>
+              <input type="number" id="scanCorrectDepth" value="${room.depth || 12}" min="6" max="40" style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:13px; box-sizing:border-box;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <span style="font-size:12px; color:var(--text-muted);">Confidence:</span>
+          <span style="background:${confidenceColor}22; color:${confidenceColor}; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:600; text-transform:uppercase;">${confidence}</span>
+          <span style="font-size:12px; color:var(--text-muted); margin-left:auto;">${totalElements} elements total</span>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+          <canvas id="scanPreviewCanvas" width="400" height="300" style="width:100%; border-radius:6px; background:#1a1a2e;"></canvas>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:600; margin-bottom:8px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Wall Breakdown</div>
+          ${wallSummaryHtml}
+          <div style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px; font-size:13px;">
+            <span style="color:var(--text-muted);">Appliances:</span> ${applianceHtml}
+          </div>
+        </div>
+
+        <div id="scanCorrectElements" style="max-height:200px; overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Elements (click to edit wall)</div>
+          ${room.cabinets.map(function(c, idx) {
+            var wallOpts = ['top','bottom','left','right','island','peninsula'].map(function(w) {
+              return '<option value="' + w + '"' + (w === (c.wall || 'top') ? ' selected' : '') + '>' + w + '</option>';
+            }).join('');
+            return '<div style="display:flex; align-items:center; gap:6px; padding:3px 0; font-size:12px; border-bottom:1px solid var(--border);">' +
+              '<span style="min-width:28px; font-weight:600; color:var(--primary);">' + c.number + '</span>' +
+              '<span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + c.name + '</span>' +
+              '<span style="color:var(--text-muted); font-size:11px;">' + c.width + '"x' + c.depth + '"</span>' +
+              '<select data-el-idx="' + idx + '" onchange="window._scanCorrectWall(this)" style="padding:2px 4px; border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text); font-size:11px;">' + wallOpts + '</select>' +
+            '</div>';
+          }).join('')}
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button onclick="window._rescanRoom()" style="flex:0 0 auto; padding:10px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; cursor:pointer; font-weight:500;">Re-scan</button>
+          <button onclick="window._importCorrectedRoom()" style="flex:1; padding:10px 16px; background:linear-gradient(135deg, #6366f1, #8b5cf6); border:none; border-radius:8px; color:white; font-size:15px; cursor:pointer; font-weight:600;">Import to Designer</button>
+        </div>
+      </div>
+    `;
+
+    // Draw the mini-map preview
+    drawScanPreviewMap(room);
+
+    // Listen for dimension/layout changes to redraw
+    var widthInput = document.getElementById('scanCorrectWidth');
+    var depthInput = document.getElementById('scanCorrectDepth');
+    var layoutSelect = document.getElementById('scanCorrectLayout');
+    if (widthInput) widthInput.oninput = function() { room.width = parseInt(this.value) || 16; drawScanPreviewMap(room); };
+    if (depthInput) depthInput.oninput = function() { room.depth = parseInt(this.value) || 12; drawScanPreviewMap(room); };
+    if (layoutSelect) layoutSelect.onchange = function() { room.layoutType = this.value; };
+  }
+
+  // Correct wall assignment for an element
+  window._scanCorrectWall = function(sel) {
+    var idx = parseInt(sel.dataset.elIdx);
+    var rooms = window._parsedRooms || [];
+    if (rooms[0] && rooms[0].cabinets[idx]) {
+      rooms[0].cabinets[idx].wall = sel.value;
+      drawScanPreviewMap(rooms[0]);
+    }
+  };
+
+  // Re-scan with same images
+  window._rescanRoom = function() {
+    var images = window._lastScanImages || window._pdfImages || [];
+    var userContext = window._lastScanContext || '';
+    if (images.length >= 2) {
+      analyzeMultiImages(images, userContext);
+    } else if (images.length === 1) {
+      analyzeWithAIVision(images[0].data, 'rescan', userContext);
+    }
+  };
+
+  // Import the (potentially corrected) room data
+  window._importCorrectedRoom = function() {
+    var rooms = window._parsedRooms;
+    if (!rooms || rooms.length === 0) return;
+    // Apply corrected dimensions from inputs
+    var w = parseInt(document.getElementById('scanCorrectWidth')?.value) || rooms[0].width;
+    var d = parseInt(document.getElementById('scanCorrectDepth')?.value) || rooms[0].depth;
+    var layout = document.getElementById('scanCorrectLayout')?.value || rooms[0].layoutType;
+    rooms[0].width = w;
+    rooms[0].depth = d;
+    rooms[0].layoutType = layout;
+    window.importParsedRoom(0);
+  };
+
+  // Draw mini-map on the preview canvas
+  function drawScanPreviewMap(room) {
+    var canvas = document.getElementById('scanPreviewCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var cw = canvas.width;
+    var ch = canvas.height;
+    ctx.clearRect(0, 0, cw, ch);
+
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, cw, ch);
+
+    var roomW = room.width || 16;
+    var roomD = room.depth || 12;
+
+    // Scale to fit canvas with padding
+    var pad = 30;
+    var scaleX = (cw - pad * 2) / roomW;
+    var scaleY = (ch - pad * 2) / roomD;
+    var scale = Math.min(scaleX, scaleY);
+    var offX = (cw - roomW * scale) / 2;
+    var offY = (ch - roomD * scale) / 2;
+
+    // Draw room boundary
+    ctx.strokeStyle = '#4a5568';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(offX, offY, roomW * scale, roomD * scale);
+
+    // Draw room dimensions
+    ctx.fillStyle = '#718096';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(roomW + "'", offX + roomW * scale / 2, offY - 8);
+    ctx.save();
+    ctx.translate(offX - 12, offY + roomD * scale / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(roomD + "'", 0, 0);
+    ctx.restore();
+
+    // Wall labels
+    ctx.fillStyle = '#4a556888';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TOP (back)', offX + roomW * scale / 2, offY + 14);
+    ctx.fillText('BOTTOM (front)', offX + roomW * scale / 2, offY + roomD * scale - 6);
+    ctx.save();
+    ctx.translate(offX + 14, offY + roomD * scale / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('LEFT', 0, 0);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(offX + roomW * scale - 6, offY + roomD * scale / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillText('RIGHT', 0, 0);
+    ctx.restore();
+
+    // Color map by type
+    var typeColors = {
+      'base-cabinet': '#6366f1',
+      'sink-base': '#3b82f6',
+      'drawer-base': '#8b5cf6',
+      'wall-cabinet': '#22c55e',
+      'tall-cabinet': '#f59e0b',
+      'corner-cabinet': '#ec4899',
+      'island': '#06b6d4',
+      'peninsula': '#14b8a6',
+      'refrigerator': '#a0a0b0',
+      'fridge': '#a0a0b0',
+      'range': '#ef4444',
+      'slide-in-range': '#ef4444',
+      'stove': '#ef4444',
+      'dishwasher': '#64748b',
+      'microwave': '#78716c',
+      'hood': '#94a3b8',
+      'oven': '#dc2626',
+      'double-oven': '#dc2626',
+      'wine-cooler': '#92400e',
+      'cooktop': '#b91c1c'
+    };
+
+    var BASE_D = 2;
+    var WALL_D = 1;
+
+    // Track cursor positions per wall for sequential placement
+    var cursors = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    room.cabinets.forEach(function(c) {
+      var wall = c.wall || 'top';
+      var wFt = (c.width || 36) / 12;
+      var dFt = (c.depth || 24) / 12;
+      var gap = (c.gapBefore || 0) / 12;
+      var color = typeColors[c.type] || (c.isAppliance ? '#ef4444' : '#6366f1');
+      var x, y, w, h;
+
+      if (wall === 'top') {
+        cursors.top += gap;
+        x = offX + cursors.top * scale;
+        y = offY;
+        w = wFt * scale;
+        h = dFt * scale;
+        cursors.top += wFt;
+      } else if (wall === 'bottom') {
+        cursors.bottom += gap;
+        x = offX + cursors.bottom * scale;
+        y = offY + roomD * scale - dFt * scale;
+        w = wFt * scale;
+        h = dFt * scale;
+        cursors.bottom += wFt;
+      } else if (wall === 'left') {
+        cursors.left += gap;
+        x = offX;
+        y = offY + cursors.left * scale;
+        w = dFt * scale;
+        h = wFt * scale;
+        cursors.left += wFt;
+      } else if (wall === 'right') {
+        cursors.right += gap;
+        x = offX + roomW * scale - dFt * scale;
+        y = offY + cursors.right * scale;
+        w = dFt * scale;
+        h = wFt * scale;
+        cursors.right += wFt;
+      } else if (wall === 'island' || wall === 'peninsula') {
+        // Center island/peninsula
+        x = offX + (roomW / 2 - wFt / 2) * scale;
+        y = offY + (roomD / 2 - dFt / 2) * scale;
+        w = wFt * scale;
+        h = dFt * scale;
+      } else {
+        return; // skip unknown walls
+      }
+
+      // Draw element rectangle
+      ctx.fillStyle = color + 'aa';
+      ctx.fillRect(x, y, Math.max(w, 2), Math.max(h, 2));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, Math.max(w, 2), Math.max(h, 2));
+
+      // Label if large enough
+      if (w > 18 && h > 12) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.number || '', x + w / 2, y + h / 2 + 3);
+      }
+    });
+
+    // Draw legend
+    var legendItems = [
+      { color: '#6366f1', label: 'Base' },
+      { color: '#22c55e', label: 'Upper' },
+      { color: '#f59e0b', label: 'Tall' },
+      { color: '#ef4444', label: 'Appl.' },
+      { color: '#06b6d4', label: 'Island' }
+    ];
+    var lx = 6;
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'left';
+    legendItems.forEach(function(item) {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(lx, ch - 14, 8, 8);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(item.label, lx + 11, ch - 6);
+      lx += ctx.measureText(item.label).width + 20;
+    });
   }
 
   // Load PDF.js library
@@ -6688,9 +7128,13 @@
       addElement('countertop', p.x - OVERHANG, p.y - OVERHANG, p.w + OVERHANG * 2, p.d + OVERHANG * 2, 0, 'peninsula', null, true);
     }
 
-    // 4. Redraw
-    if (typeof window.resizeCanvas === 'function') window.resizeCanvas();
-    if (typeof window.draw === 'function') window.draw();
+    // 4. Redraw — updateRoom() syncs local roomWidth/roomDepth from inputs, resizes canvas, calls draw()
+    if (typeof window.updateRoom === 'function') {
+      window.updateRoom();
+    } else {
+      if (typeof window.fitToScreen === 'function') window.fitToScreen();
+      if (typeof window.draw === 'function') window.draw();
+    }
     document.getElementById('pdfImporterModal')?.remove();
 
     const elementCount = (window.elements || []).length;

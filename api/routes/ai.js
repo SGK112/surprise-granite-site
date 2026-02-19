@@ -787,6 +787,243 @@ RETURN this exact JSON structure:
   }
 });
 
+// ============ TWO-PASS ROOM SCAN ============
+
+/**
+ * POST /api/ai/room-scan-two-pass
+ * Pass 1: Structure detection (layout type, wall count, approximate dimensions)
+ * Pass 2: Detailed counting (cabinets, appliances, countertops) with Pass 1 context
+ */
+router.post('/room-scan-two-pass', async (req, res) => {
+  try {
+    const { images, projectType = 'residential-kitchen', userContext = '' } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length < 1) {
+      return res.status(400).json({ error: 'At least 1 image is required (max 4)' });
+    }
+    if (images.length > 4) {
+      return res.status(400).json({ error: 'Maximum 4 images allowed' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    logger.info(`[Room-Scan-TwoPass] Analyzing ${images.length} images`);
+
+    // Build image content array (shared by both passes)
+    const imageContent = images.map((img) => ({
+      type: 'image_url',
+      image_url: { url: img.data || img, detail: 'high' }
+    }));
+
+    // ========== PASS 1: Structure Detection ==========
+    const pass1System = `You are an expert kitchen designer. Analyze the room photos to identify the overall structure ONLY. Do NOT count individual cabinets yet.
+Return ONLY valid JSON — no markdown, no explanation.`;
+
+    const pass1User = `Here are ${images.length} photo(s) of a kitchen. Identify the room structure.
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+
+Determine:
+1. Layout type (L-shape, U-shape, galley, single-wall, island, peninsula)
+2. How many walls have cabinets
+3. Approximate room dimensions in feet (use appliances as measurement anchors: fridge=36"W, range=30"W, dishwasher=24"W)
+4. Brief description of what's on each wall (left-to-right or top-to-bottom)
+5. List all visible appliances and which wall they're on
+
+Return this JSON:
+{
+  "layoutType": "L-shape|U-shape|galley|single-wall|island|peninsula",
+  "wallCount": number,
+  "roomWidthFt": number,
+  "roomDepthFt": number,
+  "wallDescriptions": [
+    { "wall": "top|bottom|left|right|island|peninsula", "description": "brief description of elements on this wall" }
+  ],
+  "appliancePositions": [
+    { "type": "refrigerator|range|dishwasher|microwave|hood|oven|wine-cooler", "wall": "top|bottom|left|right" }
+  ],
+  "measurementAnchors": ["fridge 36in on left wall", "range 30in on top wall"]
+}`;
+
+    const pass1Response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: pass1System },
+          { role: 'user', content: [{ type: 'text', text: pass1User }, ...imageContent] }
+        ],
+        max_tokens: 2048,
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    const pass1Data = await pass1Response.json();
+    if (pass1Data.error) {
+      logger.error('[Room-Scan-TwoPass] Pass 1 GPT error:', pass1Data.error.message);
+      return res.status(500).json({ error: 'Pass 1 failed: ' + (pass1Data.error.message || 'Unknown error') });
+    }
+
+    let structure;
+    try {
+      structure = JSON.parse(pass1Data.choices?.[0]?.message?.content || '{}');
+    } catch (e) {
+      const match = (pass1Data.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
+      structure = match ? JSON.parse(match[0]) : {};
+    }
+    logger.info(`[Room-Scan-TwoPass] Pass 1 result: ${structure.layoutType}, ${structure.wallCount} walls, ${structure.roomWidthFt}'x${structure.roomDepthFt}'`);
+
+    // ========== PASS 2: Detailed Counting ==========
+    const wallDescs = (structure.wallDescriptions || [])
+      .map(w => `${w.wall}: ${w.description}`).join('\n  ');
+    const appPositions = (structure.appliancePositions || [])
+      .map(a => `${a.type} on ${a.wall} wall`).join(', ');
+
+    const pass2System = `You are an expert kitchen designer who counts cabinets with extreme precision. You already know the room structure from a prior analysis. Use that context to count every single cabinet on each wall.
+Return ONLY valid JSON — no markdown, no explanation.`;
+
+    const pass2User = `KNOWN ROOM STRUCTURE (from prior analysis):
+- Layout: ${structure.layoutType || 'unknown'}
+- ${structure.wallCount || '?'} walls with cabinets
+- Room dimensions: ${structure.roomWidthFt || '?'}ft x ${structure.roomDepthFt || '?'}ft
+- Walls:
+  ${wallDescs || 'Not determined'}
+- Appliances: ${appPositions || 'Not determined'}
+- Measurement anchors: ${(structure.measurementAnchors || []).join(', ') || 'None'}
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+
+Now look at the photos again and count EVERY cabinet on each wall precisely.
+
+RULES:
+- Count individual cabinet DOORS carefully. Each pair of doors = one cabinet. Single doors = 15-18" wide. Drawer banks = 12-36" wide.
+- Count EVERY cabinet, even partially visible ones. Include spaces between appliances (those are cabinets too).
+- Use the known appliance positions above — do NOT re-derive the layout.
+- Use appliance dimensions as measurement anchors to calibrate all other measurements.
+
+WALK THROUGH EACH WALL systematically:
+1. ${(structure.wallDescriptions || []).map(w => w.wall + ' wall').join(', then ') || 'Each wall in order'}
+2. For each wall: list base cabinets, then wall/upper cabinets, then appliances IN ORDER left-to-right
+
+Return this JSON:
+{
+  "rooms": [{
+    "name": "Kitchen",
+    "widthFt": ${structure.roomWidthFt || 'room_width'},
+    "depthFt": ${structure.roomDepthFt || 'room_depth'},
+    "layoutType": "${structure.layoutType || 'unknown'}",
+    "cabinets": [
+      {
+        "label": "B1",
+        "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|drawer-base|corner-cabinet|island",
+        "width": width_inches,
+        "depth": depth_inches,
+        "height": height_inches,
+        "wall": "top|bottom|left|right|island|peninsula",
+        "orderIndex": 0,
+        "gapBefore": gap_inches_from_previous_element_or_wall_edge,
+        "doorStyle": "shaker|raised|flat|slab",
+        "finish": "wood-grain|painted",
+        "confidence": "high|medium|low"
+      }
+    ],
+    "countertops": [
+      {
+        "width": total_run_width_inches,
+        "depth": depth_inches,
+        "material": "granite|quartz|marble|laminate|butcher-block",
+        "materialName": "specific stone name or null",
+        "wall": "top|bottom|left|right|island|peninsula",
+        "hasSink": true_or_false,
+        "confidence": "high|medium|low"
+      }
+    ],
+    "appliances": [
+      {
+        "type": "refrigerator|range|slide-in-range|cooktop|dishwasher|microwave|hood|oven|double-oven|wine-cooler",
+        "width": width_inches,
+        "depth": depth_inches,
+        "height": height_inches,
+        "wall": "top|bottom|left|right",
+        "orderIndex": position_in_wall_sequence,
+        "gapBefore": gap_inches_from_previous_element
+      }
+    ]
+  }],
+  "confidence": "high|medium|low",
+  "wallsCovered": [${(structure.wallDescriptions || []).map(w => `"${w.wall}"`).join(', ')}],
+  "measurementAnchors": [${(structure.measurementAnchors || []).map(a => `"${a}"`).join(', ')}]
+}`;
+
+    const pass2Response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: pass2System },
+          { role: 'user', content: [{ type: 'text', text: pass2User }, ...imageContent] }
+        ],
+        max_tokens: 8192,
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    const pass2Data = await pass2Response.json();
+    if (pass2Data.error) {
+      logger.error('[Room-Scan-TwoPass] Pass 2 GPT error:', pass2Data.error.message);
+      return res.status(500).json({ error: 'Pass 2 failed: ' + (pass2Data.error.message || 'Unknown error') });
+    }
+
+    const pass2Content = pass2Data.choices?.[0]?.message?.content || '';
+    logger.info(`[Room-Scan-TwoPass] Pass 2 response length: ${pass2Content.length} chars`);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(pass2Content);
+    } catch (e) {
+      const jsonMatch = pass2Content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch (e2) {
+          logger.error('[Room-Scan-TwoPass] JSON parse failed');
+          return res.status(500).json({ error: 'Failed to parse AI response as JSON' });
+        }
+      } else {
+        return res.status(500).json({ error: 'AI did not return valid JSON' });
+      }
+    }
+
+    // Attach pass1 structure data for frontend correction UI
+    parsed._pass1Structure = structure;
+
+    const room = parsed.rooms?.[0];
+    if (room) {
+      const cabCount = (room.cabinets || []).length;
+      const appCount = (room.appliances || []).length;
+      const ctCount = (room.countertops || []).length;
+      logger.info(`[Room-Scan-TwoPass] Result: ${room.layoutType} ${room.widthFt}'x${room.depthFt}', ${cabCount} cabinets, ${appCount} appliances, ${ctCount} countertops`);
+    }
+
+    return res.json({ success: true, mode: 'ai', scanMode: 'two-pass', ...parsed });
+
+  } catch (error) {
+    logger.error('[Room-Scan-TwoPass] Error:', error);
+    return handleApiError(res, error, 'Two-pass room scan');
+  }
+});
+
 // ============ AI DESIGN FROM REFERENCE ============
 
 /**
