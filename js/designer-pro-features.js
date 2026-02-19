@@ -4546,7 +4546,7 @@
               <span id="pdfImageCount" style="font-size:12px; color:var(--text-muted);">Click a slot to add a photo</span>
               <button id="pdfClearAll" onclick="event.stopPropagation(); window._pdfImages=[]; window._renderPdfSlots();" style="display:none; padding:4px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; cursor:pointer; color:var(--text); font-size:12px;">✕ Clear All</button>
             </div>
-            <input type="file" id="pdfFileInput" accept=".pdf,image/*" style="display:none">
+            <input type="file" id="pdfFileInput" style="display:none">
             <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
               <p style="font-size:11px; color:var(--text-muted); margin:0;">
                 <strong>Tip:</strong> Upload photos from different angles for best results. PDF blueprints and sketches also supported.
@@ -4730,8 +4730,7 @@
     if (window._pdfImages.length >= 4) return;
     var input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,image/*';
-    input.style.display = 'none';
+    // No accept filter — allows all files including HEIC from macOS Photos media browser
     document.body.appendChild(input);
     input.onchange = function(e) {
       var file = e.target.files[0];
@@ -4741,13 +4740,18 @@
         input.remove();
         return;
       }
+      // Validate it's an image (check type or extension for HEIC which may have empty type)
+      var isImage = file.type.startsWith('image/') ||
+        /\.(jpe?g|png|gif|webp|bmp|heic|heif|tiff?)$/i.test(file.name);
+      if (!isImage) {
+        if (typeof showToast === 'function') showToast('Please select an image file', 'warning');
+        input.remove();
+        return;
+      }
       input.remove();
-      // Show loading indicator in next empty slot
       var slotIdx = window._pdfImages.length;
       var slotEl = document.getElementById('pdfImageSlots')?.children[slotIdx];
       if (slotEl) slotEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Loading...</div>';
-
-      // Resize image to reduce memory: 1200px for API, 300px for thumbnail
       Promise.all([
         window._resizeImage(file, 1200, 0.85),
         window._resizeImage(file, 300, 0.6)
