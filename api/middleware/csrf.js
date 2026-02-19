@@ -25,6 +25,7 @@ const SKIP_PATHS = [
   '/api/contact',         // Public contact form
   '/api/aria-lead',       // Voice assistant leads
   '/api/remnant-inquiry', // Public inquiries
+  '/api/calendar',        // Public booking/availability
   '/health',              // Health checks
   '/api/health'
 ];

@@ -16,6 +16,7 @@
     email: 'info@surprisegranite.com',
     address: 'Serving the Greater Phoenix Area - We come to you!',
     theme: 'dark',
+    apiUrl: 'https://surprise-granite-email-api.onrender.com',
     apiEndpoint: 'https://api.remodely.ai',
     supabaseUrl: (window.SG_CONFIG || {}).SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
 
@@ -99,6 +100,7 @@
       widgets.booking.instance = new window.RemodelyBooking(config);
       window.remodelyBooking = widgets.booking.instance;
       widgets.booking.instance.init(containerId);
+
       widgets.booking.loaded = true;
       return widgets.booking.instance;
     }

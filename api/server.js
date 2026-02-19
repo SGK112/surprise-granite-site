@@ -3476,6 +3476,184 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
+// ============ CALENDAR BOOKING (PUBLIC) ============
+const ARIZONA_TZ = '-07:00';
+const BIZ_HOURS = { start: 8, end: 18, days: [1, 2, 3, 4, 5, 6] };
+
+app.get('/api/calendar/availability/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    const dur = parseInt(req.query.duration_minutes) || 60;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date format' });
+
+    const target = new Date(date + 'T12:00:00');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (target < today) return res.json({ date, slots: [], availableSlots: 0 });
+    if (!BIZ_HOURS.days.includes(target.getDay())) return res.json({ date, slots: [], availableSlots: 0, isBusinessDay: false });
+
+    const slots = [];
+    for (let h = BIZ_HOURS.start; h < BIZ_HOURS.end; h++) {
+      const start = new Date(`${date}T${String(h).padStart(2, '0')}:00:00${ARIZONA_TZ}`);
+      const end = new Date(start.getTime() + dur * 60000);
+      slots.push({ start: start.toISOString(), end: end.toISOString(), time: `${String(h).padStart(2, '0')}:00`, label: h < 12 ? `${h}:00 AM` : h === 12 ? '12:00 PM' : `${h - 12}:00 PM` });
+    }
+
+    if (supabase) {
+      const dayStart = new Date(`${date}T00:00:00${ARIZONA_TZ}`).toISOString();
+      const dayEnd = new Date(`${date}T23:59:59${ARIZONA_TZ}`).toISOString();
+      const { data: events } = await supabase.from('calendar_events').select('start_time, end_time').gte('start_time', dayStart).lte('start_time', dayEnd).neq('status', 'cancelled');
+      if (events) {
+        const bookedTimes = new Set(events.map(e => new Date(e.start_time).toISOString()));
+        slots.forEach(s => { s.available = !bookedTimes.has(s.start); });
+      }
+    } else {
+      slots.forEach(s => { s.available = true; });
+    }
+
+    res.json({ date, slots: slots.filter(s => s.available !== false), availableSlots: slots.filter(s => s.available !== false).length });
+  } catch (error) {
+    logger.error('Calendar availability error:', error);
+    res.status(500).json({ error: 'Failed to get availability' });
+  }
+});
+
+app.post('/api/calendar/book', async (req, res) => {
+  try {
+    const { name, email, phone, date, time, event_type, project_type, address, notes, duration_minutes } = req.body;
+
+    if (!name || !email || !date || !time) {
+      return res.status(400).json({ error: 'Name, email, date, and time are required' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date format' });
+    if (!/^\d{2}:\d{2}$/.test(time)) return res.status(400).json({ error: 'Invalid time format' });
+
+    const startTime = new Date(`${date}T${time}:00${ARIZONA_TZ}`);
+    const duration = parseInt(duration_minutes) || 60;
+    const endTime = new Date(startTime.getTime() + duration * 60000);
+
+    if (startTime < new Date()) return res.status(400).json({ error: 'Cannot book in the past' });
+
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+    // Check for conflicts
+    const { data: conflicts } = await supabase
+      .from('calendar_events').select('id')
+      .gte('start_time', startTime.toISOString())
+      .lt('start_time', endTime.toISOString())
+      .neq('status', 'cancelled').limit(1);
+
+    if (conflicts && conflicts.length > 0) {
+      return res.status(409).json({ error: 'This time slot is no longer available' });
+    }
+
+    // Get admin user for created_by
+    const { data: adminUser } = await supabase
+      .from('sg_users').select('id')
+      .or('account_type.eq.admin,account_type.eq.super_admin')
+      .limit(1).single();
+
+    if (!adminUser) return res.status(500).json({ error: 'No admin user configured' });
+
+    // Create calendar event
+    const eventTitle = `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${name}`;
+    const { data: event, error: eventError } = await supabase
+      .from('calendar_events')
+      .insert([{
+        created_by: adminUser.id,
+        title: eventTitle,
+        description: `Project: ${project_type || 'Countertops'}\nPhone: ${phone || 'N/A'}\nEmail: ${email}\nAddress: ${address || 'N/A'}\n\nNotes: ${notes || 'None'}`,
+        event_type: event_type || 'appointment',
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        location: address || null,
+        location_address: address || null,
+        status: 'scheduled',
+        color: '#f59e0b',
+        metadata: { source: 'online_booking', project_type }
+      }]).select().single();
+
+    if (eventError) {
+      logger.error('Calendar event creation error:', eventError);
+      return res.status(500).json({ error: 'Failed to create appointment' });
+    }
+
+    // Add participant
+    await supabase.from('calendar_event_participants').insert([{
+      event_id: event.id, email: email.toLowerCase(), name, phone: phone || null,
+      participant_type: 'attendee', response_status: 'accepted'
+    }]);
+
+    // Also save as a lead
+    try {
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: existing } = await supabase.from('leads').select('id').eq('email', email.toLowerCase().trim()).gte('created_at', twoMinAgo).limit(1);
+      if (!existing || existing.length === 0) {
+        await supabase.from('leads').insert([{
+          full_name: name,
+          email: email.toLowerCase().trim(),
+          phone: phone || null,
+          project_type: project_type || null,
+          message: `Appointment: ${date} at ${time}\n${notes || ''}`,
+          source: 'online-booking',
+          form_name: 'calendar-book',
+          status: 'new',
+          raw_data: { event_id: event.id, event_type, address, duration_minutes: duration }
+        }]);
+        logger.info('Lead saved from calendar booking');
+      }
+    } catch (leadErr) {
+      logger.error('Lead save from calendar booking failed:', leadErr.message);
+    }
+
+    const timeFormatted = new Date(`2000-01-01T${time}:00`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Notify admin
+    try {
+      await sendNotification(ADMIN_EMAIL, `New Appointment: ${name} - ${dateFormatted} at ${timeFormatted}`, `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#f59e0b;">New Appointment Booked</h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:8px;font-weight:bold;">Customer:</td><td style="padding:8px;">${name}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${email}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Phone:</td><td style="padding:8px;">${phone || 'N/A'}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Date:</td><td style="padding:8px;">${dateFormatted}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Time:</td><td style="padding:8px;">${timeFormatted}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Type:</td><td style="padding:8px;">${event_type || 'appointment'}</td></tr>
+            ${address ? `<tr><td style="padding:8px;font-weight:bold;">Address:</td><td style="padding:8px;">${address}</td></tr>` : ''}
+          </table>
+        </div>
+      `);
+    } catch (emailErr) { logger.error('Admin notification error:', emailErr.message); }
+
+    // Customer confirmation
+    try {
+      await sendNotification(email, `Appointment Confirmed - ${dateFormatted} at ${timeFormatted}`, `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#f59e0b;">Your Appointment is Confirmed!</h2>
+          <p>Hi ${name},</p>
+          <p>Your appointment with Surprise Granite has been scheduled:</p>
+          <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin:16px 0;">
+            <p style="margin:4px 0;"><strong>Date:</strong> ${dateFormatted}</p>
+            <p style="margin:4px 0;"><strong>Time:</strong> ${timeFormatted}</p>
+            ${address ? `<p style="margin:4px 0;"><strong>Location:</strong> ${address}</p>` : ''}
+          </div>
+          <p style="margin-top:20px;color:#666;">Need to reschedule? Call us at <a href="tel:6028333189">(602) 833-3189</a></p>
+        </div>
+      `);
+    } catch (emailErr) { logger.error('Customer confirmation error:', emailErr.message); }
+
+    res.json({
+      success: true,
+      message: 'Appointment booked successfully',
+      event: { id: event.id, title: event.title, start_time: event.start_time, end_time: event.end_time, date, time }
+    });
+  } catch (error) {
+    logger.error('Calendar booking error:', error);
+    res.status(500).json({ error: 'Failed to book appointment' });
+  }
+});
+
 // Helper to verify admin access (used by remaining inline routes)
 async function verifyAdminAccess(userId) {
   if (!userId || !supabase) return false;
