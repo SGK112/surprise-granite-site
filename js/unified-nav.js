@@ -118,8 +118,8 @@
       isStoneYards: true,
       items: [
         { label: 'Find Stone Yards', href: '/stone-yards/' },
-        { label: 'Arizona Tile', href: '/stone-yards/arizona-tile/' },
-        { label: 'MSI Surfaces', href: '/stone-yards/msi/' }
+        { label: 'Arizona Tile', href: '/stone-yards/#arizona-tile' },
+        { label: 'MSI Surfaces', href: '/stone-yards/#msi' }
       ]
     },
     {
