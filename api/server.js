@@ -3517,7 +3517,7 @@ app.get('/api/calendar/availability/:date', async (req, res) => {
   }
 });
 
-app.post('/api/calendar/book', async (req, res) => {
+app.post('/api/calendar/book', leadRateLimiter, async (req, res) => {
   try {
     const { name, email, phone, date, time, event_type, project_type, address, notes, duration_minutes } = req.body;
 
@@ -3747,6 +3747,125 @@ app.use('/api/analyze-blueprint', (req, res, next) => { req.url = '/blueprint'; 
 // Jobs/Contractors legacy paths
 app.use('/api/contractors', (req, res, next) => { req.url = '/contractors' + (req.url === '/' ? '/list' : ''); jobsRouter(req, res, next); });
 app.use('/api/contractor/respond', (req, res, next) => { req.url = '/contractor/respond'; jobsRouter(req, res, next); });
+
+// ============ LEAD NOTIFICATION (admin email + safety net save) ============
+app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
+  try {
+    const { name, email, phone, form_name, source, project_type, message, details } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Safety net: also save to Supabase in case client-side save failed
+    if (supabase) {
+      try {
+        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const { data: existing } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('email', email.toLowerCase().trim())
+          .gte('created_at', twoMinAgo)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          await supabase.from('leads').insert([{
+            full_name: name || '',
+            email: email.toLowerCase().trim(),
+            phone: phone || null,
+            project_type: project_type || null,
+            message: message || details || null,
+            source: 'website',
+            form_name: form_name || 'website',
+            page_url: source || null,
+            status: 'new'
+          }]);
+          logger.info('[notify-lead] Lead saved to Supabase (safety net)');
+        }
+      } catch (dbErr) {
+        logger.error('[notify-lead] Supabase save failed:', dbErr.message);
+      }
+    }
+
+    // Send admin email notification
+    const adminEmail = ADMIN_EMAIL;
+    if (!adminEmail) {
+      return res.status(500).json({ error: 'Admin email not configured' });
+    }
+
+    const formLabel = (form_name || 'website').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const sourceLabel = source || 'Website';
+
+    await sendNotification(adminEmail,
+      `New Lead: ${escapeHtml(name || email)} (${escapeHtml(formLabel)})`,
+      `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#f59e0b;margin-bottom:4px;">New Lead from ${escapeHtml(formLabel)}</h2>
+        <p style="color:#666;margin-top:0;">Source: ${escapeHtml(sourceLabel)}</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+          <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Name</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(name || 'Not provided')}</td></tr>
+          <tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Email</td><td style="padding:10px;border:1px solid #ddd;"><a href="mailto:${encodeURIComponent(email)}">${escapeHtml(email)}</a></td></tr>
+          <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Phone</td><td style="padding:10px;border:1px solid #ddd;">${phone ? `<a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>` : 'Not provided'}</td></tr>
+          ${project_type ? `<tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Project</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(project_type)}</td></tr>` : ''}
+          ${message || details ? `<tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Message</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(message || details)}</td></tr>` : ''}
+        </table>
+        <p style="color:#999;font-size:12px;">Submitted at ${new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' })} MST</p>
+      </div>`
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Lead notification error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// ============ REMNANT INQUIRY ============
+app.post('/api/remnant-inquiry', leadRateLimiter, async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data.email || !data.name) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    // Save to Supabase as lead
+    if (supabase) {
+      try {
+        await supabase.from('leads').insert([{
+          full_name: data.name,
+          email: data.email.toLowerCase().trim(),
+          phone: data.phone || null,
+          project_type: 'remnant',
+          message: `Remnant inquiry for: ${data.stoneName || 'Unknown'}. ${data.message || ''}`.trim(),
+          source: 'website',
+          form_name: 'remnant-inquiry',
+          status: 'new'
+        }]);
+      } catch (dbErr) {
+        logger.error('[remnant-inquiry] Supabase save failed:', dbErr.message);
+      }
+    }
+
+    await sendNotification(ADMIN_EMAIL,
+      `Remnant Inquiry: ${escapeHtml(data.stoneName || 'Unknown')}`,
+      `<h2>New Remnant Inquiry</h2>
+       <p><strong>Stone:</strong> ${escapeHtml(data.stoneName || 'Not specified')}</p>
+       <hr>
+       <h3>Customer Info</h3>
+       <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+       <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+       <p><strong>Phone:</strong> ${escapeHtml(data.phone || 'Not provided')}</p>
+       <p><strong>Message:</strong> ${escapeHtml(data.message || 'No message')}</p>
+       <hr>
+       <p><em>Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' })} MST</em></p>`
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Remnant inquiry error:', error);
+    res.status(500).json({ error: 'Failed to submit inquiry' });
+  }
+});
 
 // ============ ARIA VOICE LEAD CAPTURE ============
 app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {

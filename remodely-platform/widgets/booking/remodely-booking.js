@@ -1065,7 +1065,7 @@
       try {
         // API base URL - use configured or detect from current location
         const apiBase = this.config.apiUrl ||
-          (window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://www.surprisegranite.com');
+          (window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://surprise-granite-email-api.onrender.com');
 
         // Build full address string
         const fullAddress = serviceAddr.street ?

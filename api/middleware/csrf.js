@@ -23,6 +23,7 @@ const SKIP_PATHS = [
   '/api/stripe-webhook',
   '/api/leads',           // Public lead submission
   '/api/contact',         // Public contact form
+  '/api/notify-lead',     // Admin notification (fire-and-forget from forms)
   '/api/aria-lead',       // Voice assistant leads
   '/api/remnant-inquiry', // Public inquiries
   '/api/calendar',        // Public booking/availability
