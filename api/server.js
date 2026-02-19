@@ -87,18 +87,32 @@ function recordUsage(key, feature) {
 
 // Rate limit middleware for AI endpoints
 function aiRateLimiter(feature) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const key = getRateLimitKey(req);
-    // Check headers AND body for plan/account type - support super_admin
-    let plan = req.headers['x-user-plan'] || req.headers['x-account-type'] || req.body?.accountType || 'free';
-    // Map account types to rate limit tiers
-    if (plan === 'super_admin' || plan === 'admin') {
-      plan = 'super_admin';
-    } else if (plan === 'pro' || plan === 'premium') {
-      plan = 'pro';
-    } else if (plan === 'enterprise' || plan === 'business') {
-      plan = 'enterprise';
+
+    // Determine plan server-side from authenticated user's DB record — NEVER trust client headers
+    let plan = 'free';
+    const userId = req.user?.id;
+    if (userId && supabase) {
+      try {
+        const { data: userInfo } = await supabase
+          .from('sg_users')
+          .select('account_type')
+          .eq('id', userId)
+          .single();
+        const acctType = (userInfo?.account_type || '').toLowerCase();
+        if (acctType === 'super_admin' || acctType === 'admin') {
+          plan = 'super_admin';
+        } else if (acctType === 'pro' || acctType === 'premium') {
+          plan = 'pro';
+        } else if (acctType === 'enterprise' || acctType === 'business') {
+          plan = 'enterprise';
+        }
+      } catch (e) {
+        // DB lookup failed — fall back to free tier (safe default)
+      }
     }
+
     const check = checkRateLimit(key, feature, plan);
 
     if (!check.allowed) {
@@ -11788,23 +11802,21 @@ app.get('/api/customer-portal/:token', portalTokenLimiter, async (req, res) => {
   }
 });
 
-// Diagnostic endpoint to check Stripe connection
-app.get('/api/stripe-status', async (req, res) => {
+// Stripe status — admin only, no key material exposed
+app.get('/api/stripe-status', authenticateJWT, async (req, res) => {
+  if (!await verifyAdminAccess(req.user?.id)) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
   try {
     const account = await stripe.accounts.retrieve();
-    const keyPrefix = process.env.STRIPE_SECRET_KEY?.substring(0, 20) || 'NOT SET';
     res.json({
       connected: true,
-      account_id: account.id,
-      business_name: account.business_profile?.name || account.settings?.dashboard?.display_name,
-      key_prefix: keyPrefix + '...',
       livemode: account.charges_enabled
     });
   } catch (error) {
     res.json({
       connected: false,
-      error: error.message,
-      key_prefix: process.env.STRIPE_SECRET_KEY?.substring(0, 20) || 'NOT SET'
+      error: 'Stripe connection failed'
     });
   }
 });
@@ -11812,10 +11824,10 @@ app.get('/api/stripe-status', async (req, res) => {
 // Start server with WebSocket support
 server.listen(PORT, () => {
   logger.info(`Surprise Granite API running on port ${PORT}`);
-  logger.info(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY} (key starts with: ${process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'NOT SET'})`);
+  logger.info(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
   logger.info(`Supabase configured: ${!!supabase}`);
   logger.info(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
   logger.info(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
-  logger.info(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
+  logger.info(`SMTP configured: ${!!SMTP_USER}`);
   logger.info(`Aria Realtime WebSocket: /api/aria-realtime`);
 });
