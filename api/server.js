@@ -5801,6 +5801,50 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
 
     logger.info('New lead received:', leadData);
 
+    // Save to Supabase (server-side backup — client also saves directly)
+    if (supabase) {
+      try {
+        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const { data: existing } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('email', homeowner_email.toLowerCase().trim())
+          .gte('created_at', twoMinAgo)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          const { error: insertError } = await supabase.from('leads').insert([{
+            full_name: homeowner_name,
+            email: homeowner_email.toLowerCase().trim(),
+            phone: homeowner_phone || null,
+            project_type: project_type || null,
+            message: project_details || message || null,
+            source: source || 'website',
+            form_name: (appointment_date || appointment_time) ? 'appointment' : 'lead',
+            status: 'new',
+            raw_data: {
+              project_budget: project_budget,
+              project_timeline: project_timeline,
+              project_zip: project_zip,
+              project_address: project_address,
+              appointment_date: appointment_date,
+              appointment_time: appointment_time,
+              lead_price: lead_price
+            }
+          }]);
+          if (insertError) {
+            logger.error('Supabase lead insert error:', insertError.message);
+          } else {
+            logger.info('Lead saved to Supabase (server-side)');
+          }
+        } else {
+          logger.info('Lead already exists in Supabase (client-side saved it), skipping duplicate');
+        }
+      } catch (dbErr) {
+        logger.error('Supabase lead save failed:', dbErr.message);
+      }
+    }
+
     // Determine if this is an appointment request
     const isAppointment = appointment_date || appointment_time || source === 'Booking Calendar';
     const emailTitle = isAppointment ? 'New Appointment Request!' : 'New Lead Received!';
@@ -6390,6 +6434,55 @@ app.post('/api/leads/with-images', leadRateLimiter, async (req, res) => {
       zip: leadData.project_zip,
       images: image_urls.length
     });
+
+    // Save to Supabase (server-side backup — client also saves directly)
+    let savedLeadId = null;
+    if (supabase) {
+      try {
+        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const { data: existing } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('email', homeowner_email.toLowerCase().trim())
+          .gte('created_at', twoMinAgo)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          const { data: inserted, error: insertError } = await supabase.from('leads').insert([{
+            full_name: homeowner_name,
+            email: homeowner_email.toLowerCase().trim(),
+            phone: homeowner_phone || null,
+            project_type: project_type || null,
+            message: project_details || null,
+            source: source || 'website',
+            form_name: 'lead-with-images',
+            status: 'new',
+            raw_data: {
+              project_budget: project_budget,
+              project_timeline: project_timeline,
+              project_zip: project_zip,
+              project_city: project_city,
+              project_state: project_state,
+              image_urls: image_urls,
+              contact_method: contact_method,
+              lead_price: lead_price,
+              quality_score: leadData.quality_score
+            }
+          }]).select('id').single();
+          if (insertError) {
+            logger.error('Supabase lead-with-images insert error:', insertError.message);
+          } else {
+            savedLeadId = inserted?.id;
+            logger.info('Lead with images saved to Supabase (server-side)', { id: savedLeadId });
+          }
+        } else {
+          savedLeadId = existing[0].id;
+          logger.info('Lead already exists in Supabase, skipping duplicate');
+        }
+      } catch (dbErr) {
+        logger.error('Supabase lead save failed:', dbErr.message);
+      }
+    }
 
     // Send notification to admin with images
     const imageGalleryHTML = image_urls.length > 0 ? `
