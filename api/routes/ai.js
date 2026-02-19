@@ -719,10 +719,14 @@ RETURN this exact JSON structure:
         type: 'image_url',
         image_url: {
           url: img.data || img,
-          detail: 'high'
+          detail: 'auto'
         }
       });
     });
+
+    // 25-second timeout so we respond before Render's 30s limit
+    const gptController = new AbortController();
+    const gptTimeout = setTimeout(() => gptController.abort(), 25000);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -736,11 +740,13 @@ RETURN this exact JSON structure:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: contentArray }
         ],
-        max_tokens: 8192,
+        max_tokens: 4096,
         temperature: 0.2,
         response_format: { type: 'json_object' }
-      })
+      }),
+      signal: gptController.signal
     });
+    clearTimeout(gptTimeout);
 
     const data = await response.json();
 
@@ -783,6 +789,9 @@ RETURN this exact JSON structure:
 
   } catch (error) {
     logger.error('[Room-Scan-Multi] Error:', error);
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: 'AI analysis timed out — try with fewer images or simpler photos' });
+    }
     return handleApiError(res, error, 'Multi-image room scan');
   }
 });

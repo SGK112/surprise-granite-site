@@ -4702,8 +4702,8 @@
           var slotEl = document.getElementById('pdfImageSlots')?.children[slotIdx];
           if (slotEl) slotEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Loading...</div>';
           Promise.all([
-            window._resizeImage(file, 1200, 0.85),
-            window._resizeImage(file, 300, 0.6)
+            window._resizeImage(file, 800, 0.8),
+            window._resizeImage(file, 200, 0.5)
           ]).then(function(results) {
             window._pdfImages.push({ data: results[0], thumb: results[1], file: file });
             window._renderPdfSlots();
@@ -4939,8 +4939,11 @@
     }
 
     try {
-      // Try single-pass multi-image first (proven endpoint, single GPT call)
       showProgress(1, 'Analyzing photos...', 'AI is comparing all angles to build the complete layout', 40);
+
+      // 60-second timeout to avoid hanging on slow GPT responses
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const spResponse = await fetch(`${AI_BASE}/api/ai/room-scan-multi`, {
         method: 'POST',
@@ -4949,8 +4952,10 @@
           images: imagePayload,
           projectType: 'residential-kitchen',
           userContext: userContext
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (!spResponse.ok) {
         let errMsg = `Server error (${spResponse.status})`;
@@ -4963,23 +4968,28 @@
       if (spData.rooms && spData.rooms.length > 0) {
         showScanResultsPreview(spData, images, userContext);
       } else {
-        showManualEntryFallback('multi-image-scan', 'No rooms detected');
+        if (typeof showToast === 'function') showToast('AI could not detect room elements — try clearer photos', 'warning');
+        showManualEntryFallback('multi-image-scan', 'No rooms detected in photos');
       }
 
     } catch (error) {
       console.error('Multi-image analysis failed:', error);
+      const isTimeout = error.name === 'AbortError';
+      const userMsg = isTimeout ? 'Request timed out — try fewer or smaller photos' : error.message;
+
       // Fallback: analyze first image only
-      if (images.length > 0) {
+      if (images.length > 0 && !isTimeout) {
         try {
           if (typeof showToast === 'function') showToast('Multi-image failed, trying single image...', 'warning');
           showProgress(1, 'Trying single image...', 'Analyzing the first photo only', 50);
           await analyzeWithAIVision(images[0].data, 'single-fallback', userContext);
         } catch (e2) {
           console.error('Single image fallback also failed:', e2);
-          showManualEntryFallback('multi-image', error.message);
+          showManualEntryFallback('multi-image', e2.message);
         }
       } else {
-        showManualEntryFallback('multi-image', error.message);
+        if (typeof showToast === 'function') showToast(userMsg, 'error');
+        showManualEntryFallback('multi-image', userMsg);
       }
     }
   }
@@ -5146,8 +5156,8 @@
     var rooms = window._parsedRooms;
     if (!rooms || rooms.length === 0) return;
     // Apply corrected dimensions from inputs
-    var w = parseInt(document.getElementById('scanCorrectWidth')?.value) || rooms[0].width;
-    var d = parseInt(document.getElementById('scanCorrectDepth')?.value) || rooms[0].depth;
+    var w = parseFloat(document.getElementById('scanCorrectWidth')?.value) || rooms[0].width;
+    var d = parseFloat(document.getElementById('scanCorrectDepth')?.value) || rooms[0].depth;
     var layout = document.getElementById('scanCorrectLayout')?.value || rooms[0].layoutType;
     rooms[0].width = w;
     rooms[0].depth = d;
@@ -6764,7 +6774,11 @@
   // v4.0 - Uses AI wall positions, gapBefore spacing, appliance types, peninsula support
   window.importParsedRoom = function(index) {
     const room = window._parsedRooms?.[index];
-    if (!room) return;
+    if (!room) {
+      console.error('[AI Import] No parsed room at index', index);
+      if (typeof showToast === 'function') showToast('No room data to import', 'error');
+      return;
+    }
 
     console.log('[AI Import] Starting import for:', room.name);
     console.log('[AI Import] Layout:', room.layoutType, 'Dims:', room.width + 'x' + room.depth);
@@ -6775,13 +6789,13 @@
     // 1. Update room dimensions from AI data
     let roomWidthFeet = window.roomWidth || 16;
     let roomDepthFeet = window.roomDepth || 12;
-    if (room.width && room.width >= 8 && room.width <= 35) {
+    if (room.width && room.width >= 6 && room.width <= 50) {
       roomWidthFeet = room.width;
       window.roomWidth = room.width;
       const wInput = document.getElementById('roomWidth') || document.getElementById('roomWidthInput');
       if (wInput) wInput.value = room.width;
     }
-    if (room.depth && room.depth >= 8 && room.depth <= 35) {
+    if (room.depth && room.depth >= 6 && room.depth <= 50) {
       roomDepthFeet = room.depth;
       window.roomDepth = room.depth;
       const dInput = document.getElementById('roomDepth') || document.getElementById('roomDepthInput');
@@ -7132,11 +7146,16 @@
     }
 
     // 4. Redraw — updateRoom() syncs local roomWidth/roomDepth from inputs, resizes canvas, calls draw()
-    if (typeof window.updateRoom === 'function') {
-      window.updateRoom();
-    } else {
-      if (typeof window.fitToScreen === 'function') window.fitToScreen();
-      if (typeof window.draw === 'function') window.draw();
+    try {
+      if (typeof window.updateRoom === 'function') {
+        window.updateRoom();
+      } else {
+        if (typeof window.fitToScreen === 'function') window.fitToScreen();
+        if (typeof window.draw === 'function') window.draw();
+      }
+    } catch (drawErr) {
+      console.error('[AI Import] Canvas redraw error:', drawErr);
+      if (typeof showToast === 'function') showToast('Elements imported but canvas failed to redraw — try zooming', 'warning');
     }
     document.getElementById('pdfImporterModal')?.remove();
 
