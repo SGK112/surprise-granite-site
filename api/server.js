@@ -2170,22 +2170,25 @@ const developmentOrigins = [
   'null' // file:// protocol sends origin 'null'
 ];
 
-const corsOrigins = developmentOrigins;
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOrigins = isProduction ? productionOrigins : developmentOrigins;
 
-app.use(cors({
+const corsConfig = {
   origin: function(origin, callback) {
-    // Allow requests with no origin (server-to-server, mobile apps, file:// protocol)
+    // Allow requests with no origin (server-to-server, mobile apps)
     if (!origin) return callback(null, true);
-    if (corsOrigins.includes(origin) || origin === 'null') return callback(null, true);
+    if (corsOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-user-plan', 'x-account-type'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id'],
   credentials: true
-}));
+};
 
-// Handle preflight requests explicitly
-app.options('*', cors());
+app.use(cors(corsConfig));
+
+// Handle preflight requests with same CORS config
+app.options('*', cors(corsConfig));
 
 // ============ WEBHOOK HANDLER (MUST BE BEFORE express.json()) ============
 // Stripe webhooks require raw body for signature verification
@@ -3458,8 +3461,8 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 });
 
 // JSON body parser - AFTER webhook route
-// Increase limit for base64-encoded images (blueprints can be large)
-app.use(express.json({ limit: '50mb' }));
+// 10mb general limit; AI routes with base64 images have route-level override
+app.use(express.json({ limit: '10mb' }));
 
 // CSRF Protection - checks Origin/Referer for state-changing requests
 app.use(csrfOriginCheck());
@@ -3689,7 +3692,7 @@ app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
 });
 
 // ============ TEST EMAIL ENDPOINT ============
-app.post('/api/test-email', async (req, res) => {
+app.post('/api/test-email', authenticateJWT, async (req, res) => {
   try {
     const { email, type = 'order_confirmation' } = req.body;
 
@@ -3770,7 +3773,7 @@ app.post('/api/test-email', async (req, res) => {
 // ============ CUSTOMER MANAGEMENT ============
 
 // Create or get a Stripe customer
-app.post('/api/customers', async (req, res) => {
+app.post('/api/customers', authenticateJWT, async (req, res) => {
   try {
     const { email, name, phone, metadata } = req.body;
 
@@ -5512,7 +5515,7 @@ const VENDOR_PLANS = {
 };
 
 // Create vendor subscription checkout session
-app.post('/api/create-vendor-subscription', async (req, res) => {
+app.post('/api/create-vendor-subscription', authenticateJWT, async (req, res) => {
   try {
     const { vendor_id, plan_name, billing_cycle, success_url, cancel_url } = req.body;
 
@@ -5618,7 +5621,7 @@ app.post('/api/create-vendor-subscription', async (req, res) => {
 });
 
 // Get vendor billing portal link
-app.post('/api/vendor-billing-portal', async (req, res) => {
+app.post('/api/vendor-billing-portal', authenticateJWT, async (req, res) => {
   try {
     const { customer_id, return_url } = req.body;
 
@@ -5688,7 +5691,7 @@ app.get('/api/vendor-subscription/:vendor_id', async (req, res) => {
 });
 
 // Cancel vendor subscription
-app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
+app.post('/api/vendor-subscription/:vendor_id/cancel', authenticateJWT, async (req, res) => {
   try {
     const { vendor_id } = req.params;
     const { cancel_immediately = false } = req.body;
@@ -5934,7 +5937,7 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
 });
 
 // Send welcome email to a lead (manual trigger from admin)
-app.post('/api/lead-welcome', async (req, res) => {
+app.post('/api/lead-welcome', authenticateJWT, async (req, res) => {
   try {
     const {
       email,
@@ -6077,7 +6080,7 @@ app.post('/api/send-lead-message', authenticateJWT, async (req, res) => {
 });
 
 // Send network invite email
-app.post('/api/send-network-invite', async (req, res) => {
+app.post('/api/send-network-invite', authenticateJWT, async (req, res) => {
   try {
     const { to, inviterName, inviteeName, role, inviteUrl, companyName } = req.body;
 
@@ -6150,7 +6153,7 @@ app.post('/api/send-network-invite', async (req, res) => {
 });
 
 // Send contractor portal invite email
-app.post('/api/collaborators/send-invite', async (req, res) => {
+app.post('/api/collaborators/send-invite', authenticateJWT, async (req, res) => {
   try {
     const { email, invite_link, contractor_name } = req.body;
 
@@ -6207,7 +6210,7 @@ app.post('/api/collaborators/send-invite', async (req, res) => {
 });
 
 // Send collaborator message via email
-app.post('/api/send-collaborator-message', async (req, res) => {
+app.post('/api/send-collaborator-message', authenticateJWT, async (req, res) => {
   try {
     const { to, senderName, recipientName, message } = req.body;
 
@@ -6263,7 +6266,7 @@ app.post('/api/send-collaborator-message', async (req, res) => {
 });
 
 // Purchase a lead (a la carte)
-app.post('/api/purchase-lead', async (req, res) => {
+app.post('/api/purchase-lead', authenticateJWT, async (req, res) => {
   try {
     const { vendor_id, lead_id, lead_price, success_url, cancel_url } = req.body;
 
@@ -6316,7 +6319,7 @@ app.post('/api/purchase-lead', async (req, res) => {
 // ============ LEAD ASSIGNMENT & IMAGE MANAGEMENT ============
 
 // Submit lead with images (enhanced version)
-app.post('/api/leads/with-images', async (req, res) => {
+app.post('/api/leads/with-images', leadRateLimiter, async (req, res) => {
   try {
     const {
       homeowner_name,
@@ -6483,7 +6486,7 @@ app.post('/api/leads/with-images', async (req, res) => {
 });
 
 // Assign lead to vendor (admin only)
-app.post('/api/leads/assign', async (req, res) => {
+app.post('/api/leads/assign', authenticateJWT, async (req, res) => {
   try {
     const {
       lead_id,
@@ -6556,7 +6559,7 @@ app.post('/api/leads/assign', async (req, res) => {
 });
 
 // Auto-assign lead based on ZIP code and rules
-app.post('/api/leads/auto-assign', async (req, res) => {
+app.post('/api/leads/auto-assign', authenticateJWT, async (req, res) => {
   try {
     const { lead_id, project_zip, project_type } = req.body;
 
@@ -6647,7 +6650,7 @@ app.get('/api/leads/assignment-rules', async (req, res) => {
 });
 
 // Create/update auto-assignment rule
-app.post('/api/leads/assignment-rules', async (req, res) => {
+app.post('/api/leads/assignment-rules', authenticateJWT, async (req, res) => {
   try {
     const {
       id,
@@ -6689,7 +6692,7 @@ app.post('/api/leads/assignment-rules', async (req, res) => {
 // ============ PRICE SHEET PARSING ============
 
 // Parse PDF price sheet using AI
-app.post('/api/price-sheets/parse', async (req, res) => {
+app.post('/api/price-sheets/parse', authenticateJWT, async (req, res) => {
   try {
     const { file_url, file_base64, vendor_name } = req.body;
 
@@ -6805,7 +6808,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
 });
 
 // Parse CSV price sheet
-app.post('/api/price-sheets/parse-csv', async (req, res) => {
+app.post('/api/price-sheets/parse-csv', authenticateJWT, async (req, res) => {
   try {
     const { csv_data, column_mapping, vendor_name } = req.body;
 
@@ -8334,7 +8337,7 @@ app.get('/api/marketplace/slabs/:id', async (req, res) => {
 });
 
 // Submit slab/product inquiry - Updated to use distributor_products
-app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
+app.post('/api/marketplace/slabs/:id/inquiry', leadRateLimiter, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9024,7 +9027,7 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 // POST /api/products - Create product
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9188,7 +9191,7 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 // POST /api/products/bulk - Bulk create/update products
-app.post('/api/products/bulk', async (req, res) => {
+app.post('/api/products/bulk', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9291,7 +9294,7 @@ app.get('/api/products/:id/inventory', async (req, res) => {
 });
 
 // POST /api/products/:id/inventory - Add inventory transaction
-app.post('/api/products/:id/inventory', async (req, res) => {
+app.post('/api/products/:id/inventory', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9389,7 +9392,7 @@ app.get('/api/products/:id/skus', async (req, res) => {
 });
 
 // POST /api/products/:id/skus - Add SKU mapping
-app.post('/api/products/:id/skus', async (req, res) => {
+app.post('/api/products/:id/skus', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9501,7 +9504,7 @@ app.get('/api/integrations', async (req, res) => {
 });
 
 // POST /api/integrations - Create integration
-app.post('/api/integrations', async (req, res) => {
+app.post('/api/integrations', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9624,7 +9627,7 @@ app.delete('/api/integrations/:id', async (req, res) => {
 });
 
 // POST /api/integrations/:id/sync - Trigger manual sync
-app.post('/api/integrations/:id/sync', async (req, res) => {
+app.post('/api/integrations/:id/sync', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9738,7 +9741,7 @@ app.get('/api/integrations/:id/logs', async (req, res) => {
 });
 
 // POST /api/integrations/:id/test - Test connection
-app.post('/api/integrations/:id/test', async (req, res) => {
+app.post('/api/integrations/:id/test', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {

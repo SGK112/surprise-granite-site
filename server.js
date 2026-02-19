@@ -28,9 +28,35 @@ app.set('supabase', supabase);
 // Arizona timezone offset (MST, no DST)
 const ARIZONA_TIMEZONE_OFFSET = '-07:00';
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// CORS - restrict to known origins
+const allowedOrigins = [
+  'https://www.surprisegranite.com',
+  'https://surprisegranite.com',
+  'https://surprise-granite-site.onrender.com'
+];
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // server-to-server, curl
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// HTML escape helper to prevent injection in emails
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+app.use(express.json({ limit: '1mb' }));
 
 // Disable caching for HTML files
 app.use((req, res, next) => {
@@ -239,20 +265,20 @@ app.post('/api/send-estimate', async (req, res) => {
         await transporter.sendMail({
             from: `"Website Estimate" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
-            subject: `New Estimate Request from ${email}`,
+            subject: `New Estimate Request from ${escapeHtml(email)}`,
             html: `
                 <h2>New Estimate Generated</h2>
-                <p><strong>Customer Email:</strong> ${email}</p>
+                <p><strong>Customer Email:</strong> ${escapeHtml(email)}</p>
                 <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
                 <hr>
-                <p><strong>Countertop:</strong> ${counterSqft}</p>
-                <p><strong>Backsplash:</strong> ${splashSqft || 'None'}</p>
-                <p><strong>Total (with waste):</strong> ${totalSqft}</p>
-                <p><strong>Edge:</strong> ${edgeProfile} - ${edgeLF}</p>
+                <p><strong>Countertop:</strong> ${escapeHtml(counterSqft)}</p>
+                <p><strong>Backsplash:</strong> ${escapeHtml(splashSqft || 'None')}</p>
+                <p><strong>Total (with waste):</strong> ${escapeHtml(totalSqft)}</p>
+                <p><strong>Edge:</strong> ${escapeHtml(edgeProfile)} - ${escapeHtml(edgeLF)}</p>
                 <hr>
-                <p><strong>Budget Range:</strong> ${priceBudget}</p>
-                <p><strong>Popular Range:</strong> ${pricePopular}</p>
-                <p><strong>Premium Range:</strong> ${pricePremium}</p>
+                <p><strong>Budget Range:</strong> ${escapeHtml(priceBudget)}</p>
+                <p><strong>Popular Range:</strong> ${escapeHtml(pricePopular)}</p>
+                <p><strong>Premium Range:</strong> ${escapeHtml(pricePremium)}</p>
             `
         });
 
@@ -272,25 +298,25 @@ app.post('/api/remnant-listing', async (req, res) => {
         await transporter.sendMail({
             from: `"Remnant Marketplace" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
-            subject: `New Remnant Listing: ${data.stoneName} ${data.stoneType}`,
+            subject: `New Remnant Listing: ${escapeHtml(data.stoneName)} ${escapeHtml(data.stoneType)}`,
             html: `
                 <h2>New Remnant Listing Submitted</h2>
                 <h3>Stone Details</h3>
-                <p><strong>Stone Name:</strong> ${data.stoneName}</p>
-                <p><strong>Type:</strong> ${data.stoneType}</p>
-                <p><strong>Dimensions:</strong> ${data.length}" x ${data.width}" (${data.squareFeet} sq ft)</p>
-                <p><strong>Thickness:</strong> ${data.thickness}</p>
-                <p><strong>Finish:</strong> ${data.finish || 'Polished'}</p>
-                <p><strong>Condition:</strong> ${data.condition || 'Excellent'}</p>
-                <p><strong>Asking Price:</strong> $${data.price}</p>
-                <p><strong>Description:</strong> ${data.description || 'None'}</p>
+                <p><strong>Stone Name:</strong> ${escapeHtml(data.stoneName)}</p>
+                <p><strong>Type:</strong> ${escapeHtml(data.stoneType)}</p>
+                <p><strong>Dimensions:</strong> ${escapeHtml(data.length)}" x ${escapeHtml(data.width)}" (${escapeHtml(data.squareFeet)} sq ft)</p>
+                <p><strong>Thickness:</strong> ${escapeHtml(data.thickness)}</p>
+                <p><strong>Finish:</strong> ${escapeHtml(data.finish || 'Polished')}</p>
+                <p><strong>Condition:</strong> ${escapeHtml(data.condition || 'Excellent')}</p>
+                <p><strong>Asking Price:</strong> $${escapeHtml(data.price)}</p>
+                <p><strong>Description:</strong> ${escapeHtml(data.description || 'None')}</p>
                 <hr>
                 <h3>Fabricator Contact</h3>
-                <p><strong>Business:</strong> ${data.businessName}</p>
-                <p><strong>Contact:</strong> ${data.contactName}</p>
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Phone:</strong> ${data.phone}</p>
-                <p><strong>Location:</strong> ${data.city}, AZ ${data.zip}</p>
+                <p><strong>Business:</strong> ${escapeHtml(data.businessName)}</p>
+                <p><strong>Contact:</strong> ${escapeHtml(data.contactName)}</p>
+                <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+                <p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>
+                <p><strong>Location:</strong> ${escapeHtml(data.city)}, AZ ${escapeHtml(data.zip)}</p>
                 <hr>
                 <p><em>Submitted: ${new Date().toLocaleString()}</em></p>
             `
@@ -303,14 +329,14 @@ app.post('/api/remnant-listing', async (req, res) => {
             subject: 'Your Remnant Listing Has Been Received',
             html: `
                 <h2>Thanks for listing your remnant!</h2>
-                <p>Hi ${data.contactName},</p>
-                <p>We've received your listing for <strong>${data.stoneName} ${data.stoneType}</strong>.</p>
+                <p>Hi ${escapeHtml(data.contactName)},</p>
+                <p>We've received your listing for <strong>${escapeHtml(data.stoneName)} ${escapeHtml(data.stoneType)}</strong>.</p>
                 <p>Our team will review it and add it to the marketplace within 24 hours. You'll receive another email once it's live.</p>
                 <h3>Listing Summary</h3>
                 <ul>
-                    <li>Stone: ${data.stoneName} ${data.stoneType}</li>
-                    <li>Size: ${data.length}" x ${data.width}" (${data.squareFeet} sq ft)</li>
-                    <li>Price: $${data.price}</li>
+                    <li>Stone: ${escapeHtml(data.stoneName)} ${escapeHtml(data.stoneType)}</li>
+                    <li>Size: ${escapeHtml(data.length)}" x ${escapeHtml(data.width)}" (${escapeHtml(data.squareFeet)} sq ft)</li>
+                    <li>Price: $${escapeHtml(data.price)}</li>
                 </ul>
                 <p>Questions? Reply to this email or call us at (602) 833-3189.</p>
                 <p>Thanks,<br>Surprise Granite Team</p>
@@ -333,7 +359,7 @@ app.post('/api/remnant-notify', async (req, res) => {
             from: `"Remnant Marketplace" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
             subject: 'New Remnant Notification Signup',
-            html: `<p>New remnant notification signup: <strong>${email}</strong></p><p>Date: ${new Date().toLocaleString()}</p>`
+            html: `<p>New remnant notification signup: <strong>${escapeHtml(email)}</strong></p><p>Date: ${new Date().toLocaleString()}</p>`
         });
 
         res.json({ success: true });
@@ -351,16 +377,16 @@ app.post('/api/remnant-inquiry', async (req, res) => {
         await transporter.sendMail({
             from: `"Remnant Inquiry" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
-            subject: `Remnant Inquiry: ${data.stoneName}`,
+            subject: `Remnant Inquiry: ${escapeHtml(data.stoneName)}`,
             html: `
                 <h2>New Remnant Inquiry</h2>
-                <p><strong>Stone:</strong> ${data.stoneName}</p>
+                <p><strong>Stone:</strong> ${escapeHtml(data.stoneName)}</p>
                 <hr>
                 <h3>Customer Info</h3>
-                <p><strong>Name:</strong> ${data.name}</p>
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Phone:</strong> ${data.phone}</p>
-                <p><strong>Message:</strong> ${data.message || 'No message'}</p>
+                <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+                <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+                <p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>
+                <p><strong>Message:</strong> ${escapeHtml(data.message || 'No message')}</p>
                 <hr>
                 <p><em>Submitted: ${new Date().toLocaleString()}</em></p>
             `
@@ -627,8 +653,8 @@ app.post('/api/calendar/book', async (req, res) => {
       .from('calendar_events')
       .insert([{
         created_by: calendarOwnerId,
-        title: `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${name}`,
-        description: `Project: ${project_type || 'Countertops'}\nPhone: ${phone || 'N/A'}\nEmail: ${email}\nAddress: ${address || 'N/A'}\n\nNotes: ${notes || 'None'}`,
+        title: `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${escapeHtml(name)}`,
+        description: `Project: ${escapeHtml(project_type || 'Countertops')}\nPhone: ${escapeHtml(phone || 'N/A')}\nEmail: ${escapeHtml(email)}\nAddress: ${escapeHtml(address || 'N/A')}\n\nNotes: ${escapeHtml(notes || 'None')}`,
         event_type: event_type || 'appointment',
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
@@ -672,20 +698,20 @@ app.post('/api/calendar/book', async (req, res) => {
         await transporter.sendMail({
           from: `"Surprise Granite" <${process.env.EMAIL_USER}>`,
           to: adminEmail,
-          subject: `New Appointment Booked: ${name} - ${dateFormatted} at ${timeFormatted}`,
+          subject: `New Appointment Booked: ${escapeHtml(name)} - ${dateFormatted} at ${timeFormatted}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
               <h2 style="color:#f59e0b;">New Appointment Booked</h2>
               <table style="width:100%;border-collapse:collapse;">
-                <tr><td style="padding:8px;font-weight:bold;">Customer:</td><td style="padding:8px;">${name}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;"><a href="mailto:${email}">${email}</a></td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Phone:</td><td style="padding:8px;">${phone ? `<a href="tel:${phone}">${phone}</a>` : 'N/A'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Customer:</td><td style="padding:8px;">${escapeHtml(name)}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;"><a href="mailto:${encodeURIComponent(email)}">${escapeHtml(email)}</a></td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Phone:</td><td style="padding:8px;">${phone ? `<a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>` : 'N/A'}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Date:</td><td style="padding:8px;">${dateFormatted}</td></tr>
                 <tr><td style="padding:8px;font-weight:bold;">Time:</td><td style="padding:8px;">${timeFormatted}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Type:</td><td style="padding:8px;">${event_type || 'appointment'}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;">Project:</td><td style="padding:8px;">${project_type || 'Countertops'}</td></tr>
-                ${address ? `<tr><td style="padding:8px;font-weight:bold;">Address:</td><td style="padding:8px;">${address}</td></tr>` : ''}
-                ${notes ? `<tr><td style="padding:8px;font-weight:bold;">Notes:</td><td style="padding:8px;">${notes}</td></tr>` : ''}
+                <tr><td style="padding:8px;font-weight:bold;">Type:</td><td style="padding:8px;">${escapeHtml(event_type || 'appointment')}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold;">Project:</td><td style="padding:8px;">${escapeHtml(project_type || 'Countertops')}</td></tr>
+                ${address ? `<tr><td style="padding:8px;font-weight:bold;">Address:</td><td style="padding:8px;">${escapeHtml(address)}</td></tr>` : ''}
+                ${notes ? `<tr><td style="padding:8px;font-weight:bold;">Notes:</td><td style="padding:8px;">${escapeHtml(notes)}</td></tr>` : ''}
               </table>
               <p style="margin-top:16px;"><a href="${googleCalendarUrl}" style="background:#f59e0b;color:#000;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Add to Google Calendar</a></p>
             </div>
@@ -705,12 +731,12 @@ app.post('/api/calendar/book', async (req, res) => {
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
             <h2 style="color:#f59e0b;">Your Appointment is Confirmed!</h2>
-            <p>Hi ${name},</p>
+            <p>Hi ${escapeHtml(name)},</p>
             <p>Your appointment with Surprise Granite has been scheduled:</p>
             <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin:16px 0;">
               <p style="margin:4px 0;"><strong>Date:</strong> ${dateFormatted}</p>
               <p style="margin:4px 0;"><strong>Time:</strong> ${timeFormatted}</p>
-              ${address ? `<p style="margin:4px 0;"><strong>Location:</strong> ${address}</p>` : ''}
+              ${address ? `<p style="margin:4px 0;"><strong>Location:</strong> ${escapeHtml(address)}</p>` : ''}
             </div>
             <p><a href="${googleCalendarUrl}" style="background:#f59e0b;color:#000;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Add to Google Calendar</a></p>
             <p style="margin-top:20px;color:#666;">Need to reschedule? Call us at <a href="tel:6028333189">(602) 833-3189</a></p>
@@ -798,17 +824,17 @@ app.post('/api/notify-lead', async (req, res) => {
     await transporter.sendMail({
       from: `"Surprise Granite" <${process.env.EMAIL_USER}>`,
       to: adminEmail,
-      subject: `New Lead: ${name || email} (${formLabel})`,
+      subject: `New Lead: ${escapeHtml(name || email)} (${escapeHtml(formLabel)})`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-          <h2 style="color:#f59e0b;margin-bottom:4px;">New Lead from ${formLabel}</h2>
-          <p style="color:#666;margin-top:0;">Source: ${sourceLabel}</p>
+          <h2 style="color:#f59e0b;margin-bottom:4px;">New Lead from ${escapeHtml(formLabel)}</h2>
+          <p style="color:#666;margin-top:0;">Source: ${escapeHtml(sourceLabel)}</p>
           <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Name</td><td style="padding:10px;border:1px solid #ddd;">${name || 'Not provided'}</td></tr>
-            <tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Email</td><td style="padding:10px;border:1px solid #ddd;"><a href="mailto:${email}">${email}</a></td></tr>
-            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Phone</td><td style="padding:10px;border:1px solid #ddd;">${phone ? `<a href="tel:${phone}">${phone}</a>` : 'Not provided'}</td></tr>
-            ${project_type ? `<tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Project</td><td style="padding:10px;border:1px solid #ddd;">${project_type}</td></tr>` : ''}
-            ${message || details ? `<tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Message</td><td style="padding:10px;border:1px solid #ddd;">${message || details}</td></tr>` : ''}
+            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Name</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(name || 'Not provided')}</td></tr>
+            <tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Email</td><td style="padding:10px;border:1px solid #ddd;"><a href="mailto:${encodeURIComponent(email)}">${escapeHtml(email)}</a></td></tr>
+            <tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Phone</td><td style="padding:10px;border:1px solid #ddd;">${phone ? `<a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>` : 'Not provided'}</td></tr>
+            ${project_type ? `<tr><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Project</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(project_type)}</td></tr>` : ''}
+            ${message || details ? `<tr style="background:#f8f9fa;"><td style="padding:10px;font-weight:bold;border:1px solid #ddd;">Message</td><td style="padding:10px;border:1px solid #ddd;">${escapeHtml(message || details)}</td></tr>` : ''}
           </table>
           <p style="color:#999;font-size:12px;">Submitted at ${new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' })} MST</p>
         </div>
