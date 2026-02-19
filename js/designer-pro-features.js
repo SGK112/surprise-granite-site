@@ -4638,32 +4638,46 @@
     maxDim = maxDim || 1200;
     quality = quality || 0.8;
     return new Promise(function(resolve, reject) {
-      var objectUrl = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function() {
-        var w = img.naturalWidth, h = img.naturalHeight;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-          else { w = Math.round(w * maxDim / h); h = maxDim; }
-        }
-        var canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        var dataUrl = canvas.toDataURL('image/jpeg', quality);
-        URL.revokeObjectURL(objectUrl);
-        resolve(dataUrl);
+      // First read the file as a data URL (works for all formats including HEIC on Safari)
+      var reader = new FileReader();
+      reader.onerror = function() { reject(new Error('Failed to read image file')); };
+      reader.onload = function(ev) {
+        var dataUrl = ev.target.result;
+        var img = new Image();
+        // Timeout: if image doesn't load in 10s, use raw data URL
+        var timeout = setTimeout(function() {
+          console.warn('[_resizeImage] Timeout loading image, using raw data URL');
+          resolve(dataUrl);
+        }, 10000);
+        img.onload = function() {
+          clearTimeout(timeout);
+          try {
+            var w = img.naturalWidth, h = img.naturalHeight;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+              else { w = Math.round(w * maxDim / h); h = maxDim; }
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            var resized = canvas.toDataURL('image/jpeg', quality);
+            resolve(resized);
+          } catch (e) {
+            console.warn('[_resizeImage] Canvas error, using raw data URL:', e.message);
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = function() {
+          clearTimeout(timeout);
+          // Image couldn't be decoded (HEIC on Chrome, etc.) — use raw data URL
+          console.warn('[_resizeImage] Image decode failed, using raw data URL');
+          resolve(dataUrl);
+        };
+        img.src = dataUrl;
       };
-      img.onerror = function() {
-        URL.revokeObjectURL(objectUrl);
-        // Fallback: read raw file as data URL
-        var reader = new FileReader();
-        reader.onload = function(ev) { resolve(ev.target.result); };
-        reader.onerror = function() { reject(new Error('Failed to read image')); };
-        reader.readAsDataURL(file);
-      };
-      img.src = objectUrl;
+      reader.readAsDataURL(file);
     });
   };
 
@@ -4731,13 +4745,14 @@
     if (window._pdfImages.length >= 4) return;
     var input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,image/*';
-    // Use offscreen positioning instead of display:none for better browser compat
+    input.accept = 'image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf';
     input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    input.setAttribute('capture', '');
     document.body.appendChild(input);
     input.onchange = function(e) {
       var file = e.target.files[0];
       if (!file) { input.remove(); return; }
+      console.log('[_pickPdfImage] File selected:', file.name, file.type, Math.round(file.size/1024) + 'KB');
       if (file.type === 'application/pdf') {
         handlePDFFile(file);
         input.remove();
