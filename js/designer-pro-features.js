@@ -4745,9 +4745,8 @@
     if (window._pdfImages.length >= 4) return;
     var input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf';
+    input.accept = 'image/*,.pdf';
     input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-    input.setAttribute('capture', '');
     document.body.appendChild(input);
     input.onchange = function(e) {
       var file = e.target.files[0];
