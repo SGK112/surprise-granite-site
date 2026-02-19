@@ -4671,22 +4671,50 @@
     if (!grid) return;
     grid.innerHTML = '';
     for (var i = 0; i < 4; i++) {
-      var slot = document.createElement('div');
-      slot.style.cssText = 'aspect-ratio:1; border:2px dashed var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
       if (window._pdfImages[i]) {
+        var slot = document.createElement('div');
+        slot.style.cssText = 'aspect-ratio:1; border:2px solid var(--primary); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
         if (typeof window._pdfImages[i].note === 'undefined') window._pdfImages[i].note = '';
-        slot.style.border = '2px solid var(--primary)';
         var thumbSrc = window._pdfImages[i].thumb || window._pdfImages[i].data;
         slot.innerHTML = '<img src="' + thumbSrc + '" style="width:100%;height:100%;object-fit:cover;">' +
           '<button onclick="event.stopPropagation();window._removePdfImage(' + i + ')" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);border:none;color:white;cursor:pointer;font-size:14px;line-height:22px;padding:0;z-index:2;">✕</button>' +
           '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 4px;text-align:center;">Photo ' + (i+1) + '</div>';
+        grid.appendChild(slot);
       } else {
-        slot.onmouseover = function(){this.style.borderColor='var(--primary)';this.style.background='rgba(99,102,241,0.08)';};
-        slot.onmouseout = function(){this.style.borderColor='var(--border)';this.style.background='var(--surface)';};
-        slot.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span style="font-size:11px;color:var(--text-muted);margin-top:4px;">Photo ' + (i+1) + '</span>';
-        slot.onclick = function(ev) { ev.stopPropagation(); window._pickPdfImage(); };
+        // Use <label> with embedded <input type="file"> — native click, no programmatic .click()
+        // macOS Photos media browser requires a real user-initiated label click to enable the Open button
+        var label = document.createElement('label');
+        label.style.cssText = 'aspect-ratio:1; border:2px dashed var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:var(--surface); transition:all 0.2s; position:relative; overflow:hidden;';
+        label.onmouseover = function(){this.style.borderColor='var(--primary)';this.style.background='rgba(99,102,241,0.08)';};
+        label.onmouseout = function(){this.style.borderColor='var(--border)';this.style.background='var(--surface)';};
+        label.innerHTML = '<input type="file" accept="image/*,.pdf" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;">' +
+          '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+          '<span style="font-size:11px;color:var(--text-muted);margin-top:4px;">Photo ' + (i+1) + '</span>';
+        var fileInput = label.querySelector('input[type="file"]');
+        fileInput.onchange = function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          if (file.type === 'application/pdf') {
+            handlePDFFile(file);
+            return;
+          }
+          var slotIdx = window._pdfImages.length;
+          var slotEl = document.getElementById('pdfImageSlots')?.children[slotIdx];
+          if (slotEl) slotEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Loading...</div>';
+          Promise.all([
+            window._resizeImage(file, 1200, 0.85),
+            window._resizeImage(file, 300, 0.6)
+          ]).then(function(results) {
+            window._pdfImages.push({ data: results[0], thumb: results[1], file: file });
+            window._renderPdfSlots();
+          }).catch(function(err) {
+            console.error('Image load error:', err);
+            if (typeof showToast === 'function') showToast('Failed to load image — try a JPEG or PNG', 'error');
+            window._renderPdfSlots();
+          });
+        };
+        grid.appendChild(label);
       }
-      grid.appendChild(slot);
     }
     // Per-image note inputs in a separate row below the grid
     var notesRow = document.getElementById('pdfSlotNotes');
