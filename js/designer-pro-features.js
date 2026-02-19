@@ -4534,7 +4534,7 @@
         <div class="pdf-importer-body">
           <div class="import-dropzone" id="pdfDropzone">
             <p style="font-size:15px; font-weight:500; color:var(--text); margin:0 0 4px;">Upload Room Photos</p>
-            <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Click each slot to add a photo • Up to 4 images for multi-angle scan</p>
+            <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Click a slot or drag photos here • Up to 4 images for multi-angle scan</p>
             <div style="margin-bottom:10px;">
               <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Known measurements (optional)</label>
               <input type="text" id="pdfUserMeasurements"
@@ -4549,7 +4549,7 @@
             <input type="file" id="pdfFileInput" style="display:none">
             <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
               <p style="font-size:11px; color:var(--text-muted); margin:0;">
-                <strong>Tip:</strong> Upload photos from different angles for best results. PDF blueprints and sketches also supported.
+                <strong>Tip:</strong> Drag photos from Finder or Photos app directly onto this area. You can also click slots to browse files. PDF blueprints supported too.
               </p>
             </div>
           </div>
