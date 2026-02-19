@@ -1499,6 +1499,37 @@
               throw new Error('Failed to submit booking');
             }
 
+            // Create calendar event via API server
+            try {
+              var timeMatch = selTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+              var calHours = parseInt(timeMatch[1]);
+              var calMinutes = timeMatch[2];
+              var calAmPm = timeMatch[3].toUpperCase();
+              if (calAmPm === 'PM' && calHours !== 12) calHours += 12;
+              if (calAmPm === 'AM' && calHours === 12) calHours = 0;
+              var time24 = calHours.toString().padStart(2, '0') + ':' + calMinutes;
+
+              await fetch('https://surprise-granite-email-api.onrender.com/api/calendar/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: fullName,
+                  email: leadData.email,
+                  phone: leadData.phone,
+                  date: appointmentDetails.preferred_date,
+                  time: time24,
+                  event_type: 'consultation',
+                  project_type: leadData.project_type,
+                  address: appointmentDetails.project_address,
+                  notes: document.getElementById('inputNotes').value.trim() || '',
+                  duration_minutes: 60
+                })
+              });
+              console.log('Calendar event created');
+            } catch (calErr) {
+              console.log('Calendar booking failed (lead still saved):', calErr);
+            }
+
             document.getElementById('successDateTime').textContent = formatDate(selDate) + ' at ' + selTime;
             document.getElementById('successAddress').textContent = document.getElementById('inputAddress').value.trim();
             document.getElementById('successEmail').textContent = document.getElementById('inputEmail').value.trim();
@@ -1573,7 +1604,7 @@
   </script>
 
   <!-- Remodely AI Widgets (Aria Voice) -->
-  <script defer src="../js/remodely-widgets.js?v=20260113b"></script>
+  <script defer src="../js/remodely-widgets.js?v=20260219a"></script>
 
   <!-- Remodely Tools Hub -->
   <script defer src="../js/remodely-hub.js?v=20260118"></script>

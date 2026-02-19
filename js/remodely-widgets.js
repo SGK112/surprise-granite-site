@@ -237,11 +237,16 @@ Remember: Keep responses brief and conversational!`,
    * Show booking modal (for CTA buttons)
    */
   function showBookingModal() {
+    console.log('[SGWidgets] showBookingModal called, RemodelyBooking:', !!window.RemodelyBooking, 'instance:', !!widgets.booking.instance);
     if (!widgets.booking.instance) {
       initBookingWidget();
     }
     if (widgets.booking.instance) {
       widgets.booking.instance.open();
+    } else {
+      // Fallback if booking widget failed to load
+      console.log('[SGWidgets] Booking widget not available, redirecting to /book/');
+      window.location.href = '/book/';
     }
   }
 
