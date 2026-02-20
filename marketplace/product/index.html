@@ -2682,6 +2682,43 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
 <script>
 (function() {
+  const BRAND_TO_YARD = {
+    'msi-surfaces': { slug: 'msi', name: 'MSI Surfaces' },
+    'MSI': { slug: 'msi', name: 'MSI Surfaces' },
+    'MSI Surfaces': { slug: 'msi', name: 'MSI Surfaces' },
+    'arizona-tile': { slug: 'arizona-tile', name: 'Arizona Tile' },
+    'Arizona Tile': { slug: 'arizona-tile', name: 'Arizona Tile' },
+    'cambria': { slug: 'cambria', name: 'Cambria Gallery' },
+    'Cambria': { slug: 'cambria', name: 'Cambria Gallery' },
+    'cosentino': { slug: 'cosentino', name: 'Cosentino Center' },
+    'Cosentino': { slug: 'cosentino', name: 'Cosentino Center' },
+    'silestone': { slug: 'cosentino', name: 'Cosentino Center' },
+    'Silestone': { slug: 'cosentino', name: 'Cosentino Center' },
+    'sensa': { slug: 'cosentino', name: 'Cosentino Center' },
+    'Sensa': { slug: 'cosentino', name: 'Cosentino Center' },
+    'daltile': { slug: 'daltile', name: 'Daltile Stone & Slab' },
+    'Daltile': { slug: 'daltile', name: 'Daltile Stone & Slab' },
+    'bolder-image-stone': { slug: 'bolder-image-stone', name: 'Bolder Image Stone' },
+    'Bolder Image Stone': { slug: 'bolder-image-stone', name: 'Bolder Image Stone' },
+    'Classic Surfaces': { slug: 'classic-surfaces', name: 'Classic Surfaces' },
+    'hanstone': { slug: 'esi', name: 'ESI - Edgebanding Services' },
+    'Hanstone Quartz': { slug: 'esi', name: 'ESI - Edgebanding Services' },
+    'pentalquartz': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+    'PentalQuartz': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+    'lx-hausys': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+    'LX Hausys': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+    'Radianz Quartz': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' }
+  };
+
+  function getYardLink(product) {
+    const key = product.vendor || product.brand || product.brandDisplay || '';
+    const yard = BRAND_TO_YARD[key];
+    if (yard) {
+      return `<a href="/stone-yards/${yard.slug}/">${yard.name}</a> in Arizona`;
+    }
+    return `our <a href="/stone-yards/">stone supplier partners</a> in Arizona`;
+  }
+
   // Get product handle from URL - supports both patterns:
   // 1. /marketplace/product/?handle=blanco-orion&category=slabs
   // 2. /countertops/blanco-orion-quartz/
@@ -2940,7 +2977,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       if (descHeading) descHeading.textContent = `About ${title}`;
       if (descText) {
         descText.innerHTML = description +
-          `<p style="margin-top:12px">This premium ${material.toLowerCase()} is available at Surprise Granite in Arizona. Visit our <a href="/stone-yards/">stone supplier partners</a> or schedule a <a href="/book/">free in-home estimate</a> to see this beautiful stone in person.</p>`;
+          `<p style="margin-top:12px">This premium ${material.toLowerCase()} is available at ${getYardLink(product)}. Schedule a <a href="/book/">free in-home estimate</a> to see this beautiful stone in person.</p>`;
       }
 
       // Update Twitter meta

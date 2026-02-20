@@ -2563,6 +2563,31 @@
       });
     }
 
+    const BRAND_TO_YARD = {
+      'MSI': { slug: 'msi', name: 'MSI Surfaces' },
+      'MSI Surfaces': { slug: 'msi', name: 'MSI Surfaces' },
+      'Arizona Tile': { slug: 'arizona-tile', name: 'Arizona Tile' },
+      'Cambria': { slug: 'cambria', name: 'Cambria Gallery' },
+      'Cosentino': { slug: 'cosentino', name: 'Cosentino Center' },
+      'Silestone': { slug: 'cosentino', name: 'Cosentino Center' },
+      'Sensa': { slug: 'cosentino', name: 'Cosentino Center' },
+      'Daltile': { slug: 'daltile', name: 'Daltile Stone & Slab' },
+      'Bolder Image Stone': { slug: 'bolder-image-stone', name: 'Bolder Image Stone' },
+      'Classic Surfaces': { slug: 'classic-surfaces', name: 'Classic Surfaces' },
+      'Hanstone Quartz': { slug: 'esi', name: 'ESI - Edgebanding Services' },
+      'PentalQuartz': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+      'LX Hausys': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' },
+      'Radianz Quartz': { slug: 'architectural-surfaces', name: 'Architectural Surfaces' }
+    };
+
+    function getDistributorLink(name) {
+      const yard = BRAND_TO_YARD[name];
+      if (yard) {
+        return `<a href="/stone-yards/${yard.slug}/" style="color:inherit;text-decoration:none">${escapeHtml(name)}</a>`;
+      }
+      return escapeHtml(name);
+    }
+
     function createSlabCard(slab) {
       const rawImageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
       const imageUrl = fixImageUrl(rawImageUrl) || getPlaceholderImage(slab.material_type);
@@ -2602,7 +2627,7 @@
             </a>
           </div>
           <div class="slab-card-body">
-            ${slab.distributor?.company_name ? `<div class="slab-distributor">${escapeHtml(slab.distributor.company_name)}</div>` : ''}
+            ${slab.distributor?.company_name ? `<div class="slab-distributor">${getDistributorLink(slab.distributor.company_name)}</div>` : ''}
             <h3 class="slab-title">${escapeHtml(slab.product_name)}</h3>
             ${slab.brand ? `<div class="slab-brand">${escapeHtml(slab.brand)}</div>` : ''}
             <div class="slab-details">
