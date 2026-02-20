@@ -5631,10 +5631,10 @@
             const statusColor = getStatusColor(lead.status);
             return `
             <div class="lead-card" onclick="viewLead('${lead.id}')"
-                 style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;"
+                 style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s; position: relative;"
                  onmouseover="this.style.borderColor='${statusColor}'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.3)'"
                  onmouseout="this.style.borderColor='var(--border-subtle)'; this.style.boxShadow='none'">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: ${statusColor};"></div>
+              <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: ${statusColor}; border-radius: 14px 14px 0 0;"></div>
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="flex: 1; min-width: 0;">
                   <div style="font-size: 17px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(leadName)}</div>
