@@ -22,6 +22,9 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
 // Email service for notifications
 const emailService = require('../services/emailService');
 
+// GA4 Analytics service
+const ga4Service = require('../services/ga4Service');
+
 // ============================================================
 // MIDDLEWARE: Verify Pro User
 // ============================================================
@@ -894,6 +897,10 @@ router.get('/admin/all-activity', verifySuperAdmin, async (req, res) => {
  */
 router.get('/admin/dashboard-stats', verifySuperAdmin, async (req, res) => {
   try {
+    const now = new Date();
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const twoWeeksAgo = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
+
     // Total users
     const { count: totalUsers } = await supabase
       .from('sg_users')
@@ -922,11 +929,36 @@ router.get('/admin/dashboard-stats', verifySuperAdmin, async (req, res) => {
       .select('*', { count: 'exact', head: true });
 
     // Recent signups (last 7 days)
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { count: recentSignups } = await supabase
       .from('sg_users')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', weekAgo);
+
+    // Previous week signups (for trend)
+    const { count: prevWeekSignups } = await supabase
+      .from('sg_users')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', twoWeeksAgo)
+      .lt('created_at', weekAgo);
+
+    // Recent favorites (last 7 days)
+    const { count: recentFavorites } = await supabase
+      .from('user_favorites')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', weekAgo);
+
+    // Previous week favorites
+    const { count: prevWeekFavorites } = await supabase
+      .from('user_favorites')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', twoWeeksAgo)
+      .lt('created_at', weekAgo);
+
+    // Calculate trends
+    function calcTrend(current, previous) {
+      if (!previous || previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    }
 
     res.json({
       success: true,
@@ -936,12 +968,79 @@ router.get('/admin/dashboard-stats', verifySuperAdmin, async (req, res) => {
         totalFavorites,
         activeReferralCodes,
         customerLinks,
-        recentSignups
+        recentSignups,
+        trends: {
+          signups: calcTrend(recentSignups, prevWeekSignups),
+          favorites: calcTrend(recentFavorites, prevWeekFavorites)
+        }
       }
     });
   } catch (err) {
     console.error('Error fetching dashboard stats:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ============================================================
+// GA4 ANALYTICS (GOD MODE)
+// ============================================================
+
+/**
+ * GET /api/pro/admin/ga4-analytics
+ * Get GA4 analytics data (super admin only)
+ * Query params: startDate, endDate, section (overview/pages/sources/conversions/demographics/realtime/timeseries/all)
+ */
+router.get('/admin/ga4-analytics', verifySuperAdmin, async (req, res) => {
+  try {
+    const { startDate = '30daysAgo', endDate = 'today', section = 'all' } = req.query;
+
+    const result = {};
+    const sections = section === 'all'
+      ? ['overview', 'pages', 'sources', 'conversions', 'demographics', 'realtime', 'timeseries']
+      : [section];
+
+    const promises = sections.map(async (s) => {
+      switch (s) {
+        case 'overview':
+          result.overview = await ga4Service.getTrafficOverview(startDate, endDate);
+          break;
+        case 'pages':
+          result.topPages = await ga4Service.getTopPages(startDate, endDate);
+          break;
+        case 'sources':
+          result.trafficSources = await ga4Service.getTrafficSources(startDate, endDate);
+          break;
+        case 'conversions':
+          result.conversions = await ga4Service.getConversionEvents(startDate, endDate);
+          break;
+        case 'demographics':
+          result.demographics = await ga4Service.getUserDemographics(startDate, endDate);
+          break;
+        case 'realtime':
+          result.realtime = await ga4Service.getRealtimeActiveUsers();
+          break;
+        case 'timeseries':
+          result.timeseries = await ga4Service.getDailyTimeSeries(startDate, endDate);
+          break;
+      }
+    });
+
+    await Promise.all(promises);
+
+    // If no GA4 credentials configured, return a clear message
+    const hasData = Object.values(result).some(v => v !== null);
+    if (!hasData) {
+      return res.json({
+        success: false,
+        error: 'GA4 not configured. Set GA4_SERVICE_ACCOUNT_JSON and GA4_PROPERTY_ID env vars on Render.',
+        result: {}
+      });
+    }
+
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error('GA4 analytics error:', err);
+    res.status(500).json({ error: 'Failed to fetch GA4 analytics' });
   }
 });
 

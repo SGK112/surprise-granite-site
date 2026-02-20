@@ -8,6 +8,8 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
     :root {
@@ -737,6 +739,196 @@
       }
     }
 
+    /* Analytics Tab */
+    .analytics-date-range {
+      display: flex;
+      gap: 8px;
+    }
+
+    .analytics-date-range .btn {
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+
+    .analytics-date-range .btn.active {
+      background: var(--gold);
+      color: var(--bg-primary);
+    }
+
+    .realtime-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .analytics-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .analytics-list-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Admin Stats Grid */
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .admin-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .admin-stat-card .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .admin-stat-card .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
+    .trend-indicator.up { color: var(--success); }
+    .trend-indicator.down { color: var(--error); }
+    .trend-indicator.flat { color: var(--text-muted); }
+
+    /* User Detail Modal (wider) */
+    .user-detail-modal {
+      max-width: 750px;
+    }
+
+    .user-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .user-detail-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .user-detail-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .user-detail-field {
+      background: var(--bg-secondary);
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .user-detail-field label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .user-detail-field span {
+      display: block;
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .role-management-row {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .role-management-row .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .role-management-row select {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .role-management-row select:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    @media (max-width: 768px) {
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+
+      .user-detail-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .role-management-row {
+        flex-direction: column;
+      }
+    }
+
     /* Super Admin Badge */
     .super-admin-badge {
       background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
@@ -871,6 +1063,14 @@
           </svg>
           All Users
         </a>
+        <a class="nav-item" data-tab="analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+          </svg>
+          Analytics
+        </a>
         <a class="nav-item" data-tab="activity">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -934,6 +1134,21 @@
           <div class="stat-card">
             <div class="stat-label">Pending Estimates</div>
             <div class="stat-value" id="statEstimates">-</div>
+          </div>
+        </div>
+
+        <!-- Admin Stats (Super Admin Only) -->
+        <div id="adminStatsSection" style="display: none;">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h2 class="card-title">Platform Stats</h2>
+              <span class="super-admin-badge">GOD MODE</span>
+            </div>
+            <div class="card-body">
+              <div class="admin-stats-grid" id="adminStatsGrid">
+                <div class="loading"><div class="spinner"></div>Loading...</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1106,6 +1321,144 @@
         </div>
       </div>
 
+      <!-- Analytics Tab (Admin Only) -->
+      <div class="tab-content" id="tab-analytics">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Analytics</h1>
+            <p class="page-subtitle">Google Analytics data for surprisegranite.com</p>
+          </div>
+          <div class="analytics-date-range">
+            <button class="btn btn-secondary btn-sm active" onclick="setAnalyticsRange('7daysAgo', this)">7d</button>
+            <button class="btn btn-secondary btn-sm" onclick="setAnalyticsRange('30daysAgo', this)">30d</button>
+            <button class="btn btn-secondary btn-sm" onclick="setAnalyticsRange('90daysAgo', this)">90d</button>
+          </div>
+        </div>
+
+        <!-- Realtime -->
+        <div class="stat-card" style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+          <span class="realtime-dot"></span>
+          <span style="font-size: 14px; color: var(--text-secondary);">Active users right now:</span>
+          <span id="realtimeUsers" style="font-size: 28px; font-weight: 700; color: var(--success);">-</span>
+        </div>
+
+        <!-- Overview Stats Row -->
+        <div class="stats-grid" id="analyticsStatsRow">
+          <div class="stat-card">
+            <div class="stat-label">Sessions</div>
+            <div class="stat-value" id="gaSessions">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Page Views</div>
+            <div class="stat-value" id="gaPageViews">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Bounce Rate</div>
+            <div class="stat-value" id="gaBounceRate">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg Duration</div>
+            <div class="stat-value" id="gaAvgDuration">-</div>
+          </div>
+        </div>
+
+        <!-- Charts Row: Traffic Over Time + Sources -->
+        <div class="chart-row">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Traffic Over Time</h2>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="trafficChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Traffic Sources</h2>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="sourcesChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Pages Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Top Pages</h2>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="table" id="topPagesTable">
+              <thead>
+                <tr>
+                  <th>Page Path</th>
+                  <th>Views</th>
+                  <th>Users</th>
+                  <th>Avg Time</th>
+                  <th>Bounce Rate</th>
+                </tr>
+              </thead>
+              <tbody id="topPagesBody">
+                <tr><td colspan="5"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts Row: Devices + Top Cities -->
+        <div class="chart-row">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Devices</h2>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="devicesChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Top Cities</h2>
+            </div>
+            <div class="card-body" id="topCitiesList">
+              <div class="loading"><div class="spinner"></div>Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversion Events -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Key Events</h2>
+          </div>
+          <div class="card-body" id="conversionsList">
+            <div class="loading"><div class="spinner"></div>Loading...</div>
+          </div>
+        </div>
+
+        <!-- GA4 Not Configured Message -->
+        <div id="ga4NotConfigured" style="display: none;">
+          <div class="card">
+            <div class="card-body">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <h3>GA4 Not Configured</h3>
+                <p>Set <code>GA4_SERVICE_ACCOUNT_JSON</code> and <code>GA4_PROPERTY_ID</code> environment variables on Render to enable analytics.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Activity Tab (Admin Only) -->
       <div class="tab-content" id="tab-activity">
         <div class="page-header">
@@ -1199,6 +1552,19 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('customerDetailModal')">Close</button>
         <button class="btn btn-primary" id="createEstimateBtn">Create Estimate from Wishlist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Detail Modal (Admin) -->
+  <div class="modal-overlay" id="userDetailModal">
+    <div class="modal user-detail-modal">
+      <div class="modal-header">
+        <h3 class="modal-title">User Details</h3>
+        <button class="modal-close" onclick="closeModal('userDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="userDetailContent">
+        <div class="loading"><div class="spinner"></div>Loading user...</div>
       </div>
     </div>
   </div>
@@ -1321,6 +1687,9 @@
         case 'all-users':
           loadAllUsers();
           break;
+        case 'analytics':
+          loadAnalytics();
+          break;
         case 'activity':
           loadActivityLog();
           break;
@@ -1387,8 +1756,62 @@
 
         // Display recent activity
         displayRecentActivity(customersRes.customers || []);
+
+        // Load admin stats if super admin
+        if (currentProfile.role === 'super_admin') {
+          loadAdminDashboardStats();
+        }
       } catch (err) {
         console.error('Dashboard load error:', err);
+      }
+    }
+
+    // Load admin platform stats
+    async function loadAdminDashboardStats() {
+      const section = document.getElementById('adminStatsSection');
+      section.style.display = 'block';
+
+      try {
+        const res = await apiCall('/api/pro/admin/dashboard-stats');
+        const s = res.stats;
+        const t = s.trends || {};
+
+        function trendHTML(val) {
+          if (val === undefined || val === null) return '';
+          const cls = val > 0 ? 'up' : val < 0 ? 'down' : 'flat';
+          const arrow = val > 0 ? '&#9650;' : val < 0 ? '&#9660;' : '&#8212;';
+          return `<span class="trend-indicator ${cls}">${arrow} ${Math.abs(val)}%</span>`;
+        }
+
+        document.getElementById('adminStatsGrid').innerHTML = `
+          <div class="admin-stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">${s.totalUsers || 0}</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="stat-label">Pro Users</div>
+            <div class="stat-value">${s.proUsers || 0}</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="stat-label">New This Week</div>
+            <div class="stat-value">${s.recentSignups || 0} ${trendHTML(t.signups)}</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="stat-label">Total Favorites</div>
+            <div class="stat-value">${s.totalFavorites || 0} ${trendHTML(t.favorites)}</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="stat-label">Referral Codes</div>
+            <div class="stat-value">${s.activeReferralCodes || 0}</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="stat-label">Customer Links</div>
+            <div class="stat-value">${s.customerLinks || 0}</div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Admin stats error:', err);
+        document.getElementById('adminStatsGrid').innerHTML = '<p style="color: var(--text-muted);">Failed to load stats</p>';
       }
     }
 
@@ -1732,15 +2155,131 @@
       `).join('');
     }
 
-    // View user (admin)
+    // View user (admin) — full detail modal
     async function viewUserAdmin(userId) {
+      openModal('userDetailModal');
+      document.getElementById('userDetailContent').innerHTML = '<div class="loading"><div class="spinner"></div>Loading user...</div>';
+
       try {
         const res = await apiCall(`/api/pro/admin/user/${userId}`);
-        // TODO: Show user detail modal
-        console.log('User details:', res);
-        showToast(`User has ${res.favorites?.length || 0} favorites`, 'info');
+        const u = res.user;
+        const favorites = res.favorites || [];
+        const activity = res.activity || [];
+
+        const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase();
+        const isGod = u.role === 'super_admin';
+
+        document.getElementById('userDetailContent').innerHTML = `
+          <!-- Header -->
+          <div class="user-detail-header">
+            <div class="user-detail-avatar" style="${isGod ? 'background: linear-gradient(135deg, #ff6b6b, #feca57);' : ''}">${initial}</div>
+            <div>
+              <div style="font-size: 18px; font-weight: 600;">${u.full_name || 'No name'}</div>
+              <div style="color: var(--text-secondary); font-size: 14px;">${u.email}</div>
+              ${isGod ? '<span class="super-admin-badge" style="margin-top: 4px;">GOD MODE</span>' : ''}
+            </div>
+          </div>
+
+          <!-- Meta fields -->
+          <div class="user-detail-meta">
+            <div class="user-detail-field">
+              <label>Role</label>
+              <span>${u.role || 'user'}</span>
+            </div>
+            <div class="user-detail-field">
+              <label>Subscription</label>
+              <span>${u.pro_subscription_tier || 'free'}</span>
+            </div>
+            <div class="user-detail-field">
+              <label>Joined</label>
+              <span>${formatDate(u.created_at)}</span>
+            </div>
+            <div class="user-detail-field">
+              <label>Favorites</label>
+              <span>${favorites.length}</span>
+            </div>
+            ${u.phone ? `<div class="user-detail-field"><label>Phone</label><span>${u.phone}</span></div>` : ''}
+            ${u.company_name ? `<div class="user-detail-field"><label>Company</label><span>${u.company_name}</span></div>` : ''}
+          </div>
+
+          <!-- Favorites grid -->
+          ${favorites.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Favorites (${favorites.length})</h4>
+              <div class="wishlist-grid">
+                ${favorites.slice(0, 6).map(f => `
+                  <div class="wishlist-item">
+                    <img src="${f.product_image || 'https://via.placeholder.com/200x140?text=No+Image'}" class="wishlist-item-image" alt="${f.product_title || 'Product'}">
+                    <div class="wishlist-item-info">
+                      <div class="wishlist-item-title">${f.product_title || 'Untitled'}</div>
+                      <div class="wishlist-item-type">${f.product_type || ''}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              ${favorites.length > 6 ? `<p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">+ ${favorites.length - 6} more</p>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Recent activity -->
+          ${activity.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Recent Activity</h4>
+              ${activity.slice(0, 5).map(a => `
+                <div class="analytics-list-item">
+                  <div>
+                    <span class="badge badge-info">${a.activity_type}</span>
+                    <span style="margin-left: 8px; font-size: 13px;">${a.details || ''}</span>
+                  </div>
+                  <span style="font-size: 12px; color: var(--text-muted);">${formatRelativeTime(a.created_at)}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Role Management -->
+          <div class="role-management-row">
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select id="editUserRole">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                <option value="pro" ${u.role === 'pro' ? 'selected' : ''}>Pro</option>
+                <option value="designer" ${u.role === 'designer' ? 'selected' : ''}>Designer</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subscription Tier</label>
+              <select id="editUserTier">
+                <option value="free" ${u.pro_subscription_tier === 'free' ? 'selected' : ''}>Free</option>
+                <option value="pro" ${u.pro_subscription_tier === 'pro' ? 'selected' : ''}>Pro</option>
+                <option value="designer" ${u.pro_subscription_tier === 'designer' ? 'selected' : ''}>Designer</option>
+                <option value="enterprise" ${u.pro_subscription_tier === 'enterprise' ? 'selected' : ''}>Enterprise</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveUserRole('${userId}')">Save</button>
+          </div>
+        `;
       } catch (err) {
-        showToast('Failed to load user', 'error');
+        console.error('View user error:', err);
+        document.getElementById('userDetailContent').innerHTML = '<p style="color: var(--error);">Failed to load user details</p>';
+      }
+    }
+
+    // Save user role changes
+    async function saveUserRole(userId) {
+      const role = document.getElementById('editUserRole').value;
+      const tier = document.getElementById('editUserTier').value;
+
+      try {
+        await apiCall(`/api/pro/admin/user/${userId}/role`, {
+          method: 'PUT',
+          body: JSON.stringify({ role, proSubscriptionTier: tier })
+        });
+        showToast('User updated successfully', 'success');
+      } catch (err) {
+        showToast('Failed to update user: ' + err.message, 'error');
       }
     }
 
@@ -1900,6 +2439,282 @@
         notificationPanel.classList.remove('open');
       }
     });
+
+    // ============================================================
+    // ANALYTICS (GA4)
+    // ============================================================
+    let currentAnalyticsRange = '7daysAgo';
+    let trafficChartInstance = null;
+    let sourcesChartInstance = null;
+    let devicesChartInstance = null;
+    let realtimeInterval = null;
+
+    function setAnalyticsRange(range, btn) {
+      currentAnalyticsRange = range;
+      document.querySelectorAll('.analytics-date-range .btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      loadAnalytics();
+    }
+
+    async function loadAnalytics() {
+      if (currentProfile.role !== 'super_admin') return;
+
+      try {
+        const res = await apiCall(`/api/pro/admin/ga4-analytics?startDate=${currentAnalyticsRange}&endDate=today`);
+
+        if (!res.success) {
+          // GA4 not configured
+          document.getElementById('ga4NotConfigured').style.display = 'block';
+          return;
+        }
+
+        document.getElementById('ga4NotConfigured').style.display = 'none';
+        const r = res.result;
+
+        // Overview stats
+        if (r.overview) {
+          document.getElementById('gaSessions').textContent = r.overview.sessions.toLocaleString();
+          document.getElementById('gaPageViews').textContent = r.overview.pageViews.toLocaleString();
+          document.getElementById('gaBounceRate').textContent = r.overview.bounceRate + '%';
+          document.getElementById('gaAvgDuration').textContent = r.overview.avgSessionDuration;
+        }
+
+        // Realtime
+        if (r.realtime) {
+          document.getElementById('realtimeUsers').textContent = r.realtime.activeUsers;
+        }
+
+        // Traffic over time chart
+        if (r.timeseries) {
+          renderTrafficChart(r.timeseries);
+        }
+
+        // Traffic sources chart
+        if (r.trafficSources) {
+          renderSourcesChart(r.trafficSources);
+        }
+
+        // Top pages table
+        if (r.topPages) {
+          renderTopPages(r.topPages);
+        }
+
+        // Devices chart
+        if (r.demographics?.devices) {
+          renderDevicesChart(r.demographics.devices);
+        }
+
+        // Top cities
+        if (r.demographics?.cities) {
+          renderTopCities(r.demographics.cities);
+        }
+
+        // Conversions
+        if (r.conversions) {
+          renderConversions(r.conversions);
+        }
+
+        // Start realtime refresh
+        startRealtimeRefresh();
+      } catch (err) {
+        console.error('Analytics load error:', err);
+        document.getElementById('ga4NotConfigured').style.display = 'block';
+      }
+    }
+
+    function startRealtimeRefresh() {
+      if (realtimeInterval) clearInterval(realtimeInterval);
+      realtimeInterval = setInterval(async () => {
+        try {
+          const res = await apiCall('/api/pro/admin/ga4-analytics?section=realtime');
+          if (res.success && res.result.realtime) {
+            document.getElementById('realtimeUsers').textContent = res.result.realtime.activeUsers;
+          }
+        } catch (e) { /* silent */ }
+      }, 30000);
+    }
+
+    // Chart.js dark theme defaults
+    function chartDefaults() {
+      return {
+        color: '#a0a0a0',
+        borderColor: '#2a2a3a',
+        backgroundColor: '#1a1a24'
+      };
+    }
+
+    function renderTrafficChart(timeseries) {
+      if (trafficChartInstance) trafficChartInstance.destroy();
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+
+      trafficChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeseries.map(d => {
+            const dt = new Date(d.date);
+            return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }),
+          datasets: [
+            {
+              label: 'Sessions',
+              data: timeseries.map(d => d.sessions),
+              borderColor: '#d4a855',
+              backgroundColor: 'rgba(212, 168, 85, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2
+            },
+            {
+              label: 'Users',
+              data: timeseries.map(d => d.users),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#a0a0a0' } }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#666', maxTicksLimit: 10 },
+              grid: { color: '#2a2a3a' }
+            },
+            y: {
+              ticks: { color: '#666' },
+              grid: { color: '#2a2a3a' },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function renderSourcesChart(sources) {
+      if (sourcesChartInstance) sourcesChartInstance.destroy();
+      const ctx = document.getElementById('sourcesChart').getContext('2d');
+
+      const colors = ['#d4a855', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+
+      sourcesChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: sources.map(s => s.channel),
+          datasets: [{
+            data: sources.map(s => s.sessions),
+            backgroundColor: sources.map((_, i) => colors[i % colors.length]),
+            borderColor: '#1a1a24',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#a0a0a0', padding: 12, font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTopPages(pages) {
+      const tbody = document.getElementById('topPagesBody');
+      if (!pages.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color: var(--text-muted);">No data</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pages.map(p => `
+        <tr>
+          <td><code style="font-size: 13px; color: var(--gold);">${p.path}</code></td>
+          <td>${p.views.toLocaleString()}</td>
+          <td>${p.users.toLocaleString()}</td>
+          <td>${p.avgDuration}</td>
+          <td>${p.bounceRate}%</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderDevicesChart(devices) {
+      if (devicesChartInstance) devicesChartInstance.destroy();
+      const ctx = document.getElementById('devicesChart').getContext('2d');
+
+      const colorMap = { desktop: '#3b82f6', mobile: '#d4a855', tablet: '#22c55e' };
+
+      devicesChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: devices.map(d => d.device.charAt(0).toUpperCase() + d.device.slice(1)),
+          datasets: [{
+            data: devices.map(d => d.sessions),
+            backgroundColor: devices.map(d => colorMap[d.device.toLowerCase()] || '#8b5cf6'),
+            borderColor: '#1a1a24',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#a0a0a0', padding: 12, font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTopCities(cities) {
+      const el = document.getElementById('topCitiesList');
+      if (!cities.length) {
+        el.innerHTML = '<p style="color: var(--text-muted);">No data</p>';
+        return;
+      }
+
+      const maxSessions = cities[0].sessions;
+      el.innerHTML = cities.map(c => `
+        <div class="analytics-list-item">
+          <div>
+            <span style="font-weight: 500;">${c.city === '(not set)' ? 'Unknown' : c.city}</span>
+            <span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">${c.users} users</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 60px; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${(c.sessions / maxSessions * 100).toFixed(0)}%; height: 100%; background: var(--gold); border-radius: 3px;"></div>
+            </div>
+            <span style="font-size: 13px; color: var(--text-secondary); min-width: 40px; text-align: right;">${c.sessions}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderConversions(conversions) {
+      const el = document.getElementById('conversionsList');
+      if (!conversions.length) {
+        el.innerHTML = '<p style="color: var(--text-muted);">No events tracked</p>';
+        return;
+      }
+
+      el.innerHTML = conversions.map(c => `
+        <div class="analytics-list-item">
+          <div>
+            <code style="font-size: 13px; color: var(--gold);">${c.event}</code>
+            <span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">${c.users} users</span>
+          </div>
+          <span style="font-weight: 600; color: var(--text-primary);">${c.count.toLocaleString()}</span>
+        </div>
+      `).join('');
+    }
 
     // Search users (admin)
     document.getElementById('userSearchInput')?.addEventListener('input', debounce(async (e) => {
