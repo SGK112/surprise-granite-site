@@ -3,7 +3,6 @@
  * Unified floating widget for all Remodely tools
  * - Room Designer Pro
  * - Aria Voice Assistant
- * - Countertop Calculator
  * - Design Tools
  */
 
@@ -358,7 +357,6 @@
         .rh-item-icon.designer { background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); }
         .rh-item-icon.aria { background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%); }
         .rh-item-icon.aria svg { color: #1a1a2e; }
-        .rh-item-icon.calc { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%); }
         .rh-item-icon.tools { background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%); }
         .rh-item-icon.account { background: linear-gradient(135deg, #34A853 0%, #4285F4 100%); }
         .rh-item-icon.login { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
@@ -573,28 +571,6 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </button>
-
-          <!-- Public: Cost Calculator (no auth required) -->
-          <a href="/tools/countertop-calculator/" class="rh-item">
-            <div class="rh-item-icon calc">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="2" width="16" height="20" rx="2"/>
-                <line x1="8" y1="6" x2="16" y2="6"/>
-                <line x1="8" y1="10" x2="8" y2="10"/>
-                <line x1="12" y1="10" x2="12" y2="10"/>
-                <line x1="16" y1="10" x2="16" y2="10"/>
-                <line x1="8" y1="14" x2="8" y2="14"/>
-                <line x1="12" y1="14" x2="12" y2="14"/>
-                <line x1="16" y1="14" x2="16" y2="14"/>
-                <line x1="8" y1="18" x2="8" y2="18"/>
-                <line x1="12" y1="18" x2="16" y2="18"/>
-              </svg>
-            </div>
-            <div class="rh-item-text">
-              <div class="rh-item-title">Cost Calculator</div>
-              <div class="rh-item-desc">Free instant estimates</div>
-            </div>
-          </a>
 
           <div class="rh-divider"></div>
 
