@@ -1978,7 +1978,7 @@
     // Send reminder for an event
     async function sendEventReminder(eventId) {
       try {
-        const response = await fetch('/api/calendar/events/' + eventId + '/reminder', {
+        const response = await fetch(API_BASE + '/api/calendar/events/' + eventId + '/reminder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -1997,7 +1997,7 @@
     // Send invoice receipt
     async function sendInvoiceReceipt(invoiceId) {
       try {
-        const response = await fetch('/api/invoices/' + invoiceId + '/receipt', {
+        const response = await fetch(API_BASE + '/api/invoices/' + invoiceId + '/receipt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -2136,7 +2136,7 @@
       showToast('Sending daily digest...', 'info');
 
       try {
-        const response = await fetch('/api/email/daily-digest', {
+        const response = await fetch(API_BASE + '/api/email/daily-digest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4452,7 +4452,7 @@
       }
 
       try {
-        const response = await fetch('/api/workflow/notify', {
+        const response = await fetch(API_BASE + '/api/workflow/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -5947,7 +5947,7 @@
       btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Sending...';
 
       try {
-        const response = await fetch('/api/email/send', {
+        const response = await fetch(API_BASE + '/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -7559,11 +7559,7 @@
       }
 
       try {
-        // Use local API for development, production API otherwise
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const apiBase = isLocal ? 'http://localhost:3001' : 'https://surprise-granite-email-api.onrender.com';
-
-        const response = await fetch(`${apiBase}/api/email/lead-welcome`, {
+        const response = await fetch(`${API_BASE}/api/email/lead-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -11746,7 +11742,7 @@
       }
 
       try {
-        const response = await fetch('/api/quickbooks/sync/invoices', {
+        const response = await fetch(API_BASE + '/api/quickbooks/sync/invoices', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -11777,7 +11773,7 @@
       }
 
       try {
-        const response = await fetch('/api/quickbooks/sync/estimates', {
+        const response = await fetch(API_BASE + '/api/quickbooks/sync/estimates', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
