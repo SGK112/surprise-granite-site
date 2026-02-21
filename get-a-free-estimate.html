@@ -291,6 +291,60 @@
       transform: scale(1.1);
     }
 
+    /* Bathroom Sub-Options */
+    .bathroom-sub-options {
+      display: none;
+      grid-column: 1 / -1;
+      background: rgba(204, 166, 0, 0.05);
+      border: 1px solid rgba(204, 166, 0, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      animation: fadeSlideIn 0.3s ease;
+    }
+
+    .bathroom-sub-options.show {
+      display: block;
+    }
+
+    .bathroom-sub-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cca600;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .bathroom-sub-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .bathroom-sub-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .bathroom-sub-card:hover {
+      border-color: rgba(204, 166, 0, 0.4);
+      background: rgba(204, 166, 0, 0.08);
+    }
+
+    .bathroom-sub-card.selected {
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.15);
+      color: #fff;
+    }
+
     .project-icon {
       width: 48px;
       height: 48px;
@@ -840,6 +894,16 @@
                   </div>
                   <span class="project-name">Bathroom Remodel</span>
                 </div>
+                <div class="bathroom-sub-options" id="bathroomSubOptions">
+                  <div class="bathroom-sub-label">What type of bathroom project?</div>
+                  <div class="bathroom-sub-grid">
+                    <div class="bathroom-sub-card" data-sub="shower-tile-remodel">Shower Tile / Remodel</div>
+                    <div class="bathroom-sub-card" data-sub="tub-to-shower">Tub-to-Shower Conversion</div>
+                    <div class="bathroom-sub-card" data-sub="vanity-countertop">Vanity & Countertop</div>
+                    <div class="bathroom-sub-card" data-sub="full-bathroom">Full Bathroom Renovation</div>
+                  </div>
+                </div>
+                <input type="hidden" name="bathroomSubType" id="bathroomSubType" value="">
                 <div class="project-card" data-value="cabinets">
                   <div class="project-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1109,6 +1173,29 @@
         document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
         this.classList.add('selected');
         document.getElementById('projectType').value = this.dataset.value;
+
+        // Show/hide bathroom sub-options
+        const subOptions = document.getElementById('bathroomSubOptions');
+        const subTypeInput = document.getElementById('bathroomSubType');
+        if (this.dataset.value === 'bathroom') {
+          subOptions.classList.add('show');
+          // Don't enable next until sub-option selected
+          document.getElementById('step1Next').disabled = true;
+        } else {
+          subOptions.classList.remove('show');
+          subTypeInput.value = '';
+          document.querySelectorAll('.bathroom-sub-card').forEach(s => s.classList.remove('selected'));
+          document.getElementById('step1Next').disabled = false;
+        }
+      });
+    });
+
+    // Bathroom sub-option selection
+    document.querySelectorAll('.bathroom-sub-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.bathroom-sub-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('bathroomSubType').value = this.dataset.sub;
         document.getElementById('step1Next').disabled = false;
       });
     });
@@ -1249,6 +1336,7 @@
         phone: document.getElementById('phone').value.trim(),
         zipCode: document.getElementById('zipCode').value.trim(),
         projectType: document.getElementById('projectType').value,
+        bathroomSubType: document.getElementById('bathroomSubType').value,
         contactMethod: document.getElementById('contactMethod').value,
         timeline: document.getElementById('timeline').value,
         budget: document.getElementById('budget').value,
@@ -1277,6 +1365,7 @@
             phone: formData.phone,
             zip_code: formData.zipCode,
             project_type: formData.projectType,
+            project_details: formData.bathroomSubType || null,
             timeline: formData.timeline,
             budget: formData.budget,
             message: formData.message,
