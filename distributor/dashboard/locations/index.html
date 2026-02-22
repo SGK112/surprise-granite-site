@@ -658,6 +658,8 @@
 
     let currentUser = null;
     let accessToken = null;
+    let isAdmin = false;
+    const SUPER_ADMIN_EMAILS = ['steve@surprisegranite.com','admin@surprisegranite.com','sgk112@gmail.com','joshb@surprisegranite.com'];
     let distributorProfile = null;
     let locations = [];
     let editingId = null;
@@ -683,6 +685,7 @@
 
         currentUser = session.user;
         accessToken = session.access_token;
+        isAdmin = SUPER_ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
         await loadDistributor();
         await loadLocations();
       } catch (error) {
@@ -718,15 +721,40 @@
         .eq('user_id', currentUser.id)
         .single();
 
-      if (!profile) {
+      if (!profile && !isAdmin) {
         window.location.href = '/distributor/signup/';
         return;
+      }
+      if (!profile && isAdmin) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewDistributorId = urlParams.get('distributor');
+        if (viewDistributorId) {
+          const { data: adminProfile } = await supabaseClient
+            .from('distributor_profiles')
+            .select('id')
+            .eq('id', viewDistributorId)
+            .single();
+          if (adminProfile) profile = adminProfile;
+        }
+        if (!profile) return;
       }
 
       distributorProfile = profile;
       document.getElementById('userName').textContent = profile.primary_contact_name;
       document.getElementById('userEmail').textContent = profile.primary_contact_email;
       document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
+
+      const sidebarLogo = document.querySelector('.sidebar-logo span');
+      if (sidebarLogo && profile.company_name) {
+        sidebarLogo.textContent = profile.company_name;
+      }
+      const sidebarImg = document.querySelector('.sidebar-logo img');
+      if (sidebarImg && profile.logo_url) {
+        sidebarImg.src = profile.logo_url;
+        sidebarImg.alt = profile.company_name;
+      } else if (sidebarImg && profile.company_name) {
+        sidebarImg.alt = profile.company_name;
+      }
     }
 
     async function loadLocations() {
@@ -920,7 +948,17 @@
       if (e.target.id === 'locationModal') closeModal();
     });
 
-    init();
+    init().then(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const distributorParam = urlParams.get('distributor');
+      if (distributorParam) {
+        document.querySelectorAll('.sidebar-nav a, a[href*="/distributor/dashboard/"]').forEach(link => {
+          const url = new URL(link.href, window.location.origin);
+          url.searchParams.set('distributor', distributorParam);
+          link.href = url.toString();
+        });
+      }
+    });
   </script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>

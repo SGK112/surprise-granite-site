@@ -1263,9 +1263,9 @@
               <div class="success-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
               </div>
-              <h2 class="success-title">You're on the Map!</h2>
+              <h2 class="success-title">Account Created!</h2>
               <p class="success-text">
-                Your Stone Yards listing has been created. Verify your email, then log in to add inventory and customize your profile.
+                Your distributor account has been created and is pending verification by our team. Once verified, your listing will appear on Stone Yards. In the meantime, verify your email, then log in to add inventory and customize your profile.
               </p>
 
               <a href="/log-in/?redirect=/distributor/dashboard/" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">
@@ -1645,13 +1645,32 @@
             website: formData.website || null,
             material_types: formData.material_types,
             service_regions: [formData.state],
-            onboarding_step: 4
+            onboarding_step: 4,
+            is_active: true,
+            is_stone_yard_partner: true,
+            verification_status: 'pending'
           })
           .select()
           .single();
 
         if (profileError) {
           console.error('Profile error:', profileError);
+        }
+
+        // 2b. Notify admin of new signup
+        try {
+          fetch('https://www.surprisegranite.com/api/email/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: 'joshb@surprisegranite.com',
+              subject: 'New Distributor Signup: ' + formData.company_name,
+              message: `New distributor "${formData.company_name}" has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state}\n\nReview and verify at: https://www.surprisegranite.com/distributor/dashboard/`,
+              type: 'admin_notification'
+            })
+          });
+        } catch (notifyErr) {
+          console.error('Admin notification failed:', notifyErr);
         }
 
         // 3. Create location

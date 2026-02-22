@@ -728,6 +728,8 @@
 
     let currentUser = null;
     let accessToken = null;
+    let isAdmin = false;
+    const SUPER_ADMIN_EMAILS = ['steve@surprisegranite.com','admin@surprisegranite.com','sgk112@gmail.com','joshb@surprisegranite.com'];
     let currentPage = 1;
     const pageSize = 20;
     let searchTimeout = null;
@@ -756,8 +758,20 @@
       }
       currentUser = session.user;
       accessToken = session.access_token;
+      isAdmin = SUPER_ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
       loadInventory();
       setupDropZone();
+
+      // Propagate distributor param to nav links
+      const urlParams = new URLSearchParams(window.location.search);
+      const distributorParam = urlParams.get('distributor');
+      if (distributorParam) {
+        document.querySelectorAll('a[href*="/distributor/dashboard/"]').forEach(link => {
+          const url = new URL(link.href, window.location.origin);
+          url.searchParams.set('distributor', distributorParam);
+          link.href = url.toString();
+        });
+      }
     }
 
     function showDemoInventory() {
@@ -800,12 +814,30 @@
           .eq('user_id', currentUser.id)
           .single();
 
-        if (!profile) {
+        if (!profile && !isAdmin) {
           window.location.href = '/distributor/signup/';
           return;
         }
 
-        query = query.eq('distributor_id', profile.id);
+        if (!profile && isAdmin) {
+          // Admin without profile - check for ?distributor= param or load first distributor
+          const urlParams = new URLSearchParams(window.location.search);
+          const viewDistributorId = urlParams.get('distributor');
+          if (viewDistributorId) {
+            const { data: adminProfile } = await supabaseClient
+              .from('distributor_profiles')
+              .select('id')
+              .eq('id', viewDistributorId)
+              .single();
+            if (adminProfile) {
+              query = query.eq('distributor_id', adminProfile.id);
+            }
+          } else {
+            // Show all inventory for admin
+          }
+        } else if (profile) {
+          query = query.eq('distributor_id', profile.id);
+        }
 
         if (status) query = query.eq('status', status);
         if (material) query = query.eq('material_type', material);

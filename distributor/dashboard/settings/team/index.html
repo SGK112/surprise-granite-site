@@ -1001,6 +1001,9 @@
       });
     }
 
+    let isAdmin = false;
+    const SUPER_ADMIN_EMAILS = ['steve@surprisegranite.com','admin@surprisegranite.com','sgk112@gmail.com','joshb@surprisegranite.com'];
+
     let currentUser = null;
     let currentRole = null;
     let distributorId = null;
@@ -1053,12 +1056,29 @@
         }
 
         currentUser = user;
+        isAdmin = SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
 
-        const distributors = await window.SgSSOAuth.loadUserDistributors();
+        let distributors = await window.SgSSOAuth.loadUserDistributors();
 
-        if (!distributors || distributors.length === 0) {
+        if ((!distributors || distributors.length === 0) && !isAdmin) {
           window.location.href = '/distributor/signup/';
           return;
+        }
+        if ((!distributors || distributors.length === 0) && isAdmin) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const viewDistributorId = urlParams.get('distributor');
+          if (viewDistributorId) {
+            const supabaseClient = window._sgSupabaseClient;
+            const { data: adminProfile } = await supabaseClient
+              .from('distributor_profiles')
+              .select('*')
+              .eq('id', viewDistributorId)
+              .single();
+            if (adminProfile) {
+              distributors = [{ distributor_id: adminProfile.id, role: 'admin', company_name: adminProfile.company_name, logo_url: adminProfile.logo_url }];
+            }
+          }
+          if (!distributors || distributors.length === 0) return;
         }
 
         const savedContext = sessionStorage.getItem('sg_distributor_context');
@@ -1071,6 +1091,19 @@
 
         updateUserInfo(user, distributor);
 
+        // Dynamic sidebar branding
+        const sidebarLogo = document.querySelector('.sidebar-logo span');
+        if (sidebarLogo && distributor.company_name) {
+          sidebarLogo.textContent = distributor.company_name;
+        }
+        const sidebarImg = document.querySelector('.sidebar-logo img');
+        if (sidebarImg && distributor.logo_url) {
+          sidebarImg.src = distributor.logo_url;
+          sidebarImg.alt = distributor.company_name;
+        } else if (sidebarImg && distributor.company_name) {
+          sidebarImg.alt = distributor.company_name;
+        }
+
         if (!['admin'].includes(currentRole)) {
           document.getElementById('loadingState').style.display = 'none';
           document.getElementById('permissionDenied').style.display = 'block';
@@ -1079,6 +1112,17 @@
         }
 
         await loadTeamMembers();
+
+        // URL param propagation
+        const urlParams2 = new URLSearchParams(window.location.search);
+        const distributorParam = urlParams2.get('distributor');
+        if (distributorParam) {
+          document.querySelectorAll('.sidebar-nav a, a[href*="/distributor/dashboard/"]').forEach(link => {
+            const url = new URL(link.href, window.location.origin);
+            url.searchParams.set('distributor', distributorParam);
+            link.href = url.toString();
+          });
+        }
 
       } catch (error) {
         console.error('Init error:', error);
