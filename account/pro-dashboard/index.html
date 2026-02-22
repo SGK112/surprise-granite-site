@@ -1585,7 +1585,7 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, storageKey: 'sg-auth-token' } });
       await checkAuth();
       setupNavigation();
     });

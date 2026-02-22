@@ -799,7 +799,7 @@
       const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MzA2MjAsImV4cCI6MjA1MjIwNjYyMH0.j4d1I5E0iMzKaCOnAc66ElkUBffnTiBgLhPFJAaQxQU';
 
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, storageKey: 'sg-auth-token' } });
 
       // Check current auth state
       const { data: { session } } = await supabase.auth.getSession();

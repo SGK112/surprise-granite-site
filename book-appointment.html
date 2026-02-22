@@ -1343,7 +1343,7 @@
 
     function getSupabase() {
       if (!supabaseClient && window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, storageKey: 'sg-auth-token' } });
       }
       return supabaseClient;
     }

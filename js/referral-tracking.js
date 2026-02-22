@@ -112,7 +112,7 @@
     } else if (window.SgAuth?.getClient) {
       supabase = window.SgAuth.getClient();
     } else {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, storageKey: 'sg-auth-token' } });
     }
 
     // Listen for auth state changes
