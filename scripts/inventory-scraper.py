@@ -15,6 +15,20 @@ Vendors supported:
     - cambria (Cambria)
     - caesarstone (Caesarstone)
     - silestone (Silestone)
+    - bolder-image (Bolder Image Stone)
+    - aracruz (Aracruz RE)
+    - sun-stone (Sun Stone Supply)
+    - classic-surfaces (Classic Surfaces)
+    - stone-collection (The Stone Collection)
+    - pentalquartz (PentalQuartz / ARC Surfaces)
+    - hanstone (HanStone Quartz)
+    - lx-hausys (LX Hausys Viatera)
+    - vicostone (Vicostone)
+    - polarstone (Polarstone)
+    - radianz (Radianz Quartz)
+    - dekton (Dekton by Cosentino)
+    - sensa (Sensa by Cosentino)
+    - neolith (Neolith)
     - all (scrape all vendors)
 """
 
@@ -980,6 +994,1170 @@ class SilestoneScaper(BaseScraper):
         self.products.append(prod)
 
 
+# ─── Tier 1: Phoenix-local wholesale distributors ───────────────────────────
+
+
+class BolderImageScraper(BaseScraper):
+    """Scraper for Bolder Image Stone (bolderimagestone.com)"""
+
+    vendor_name = "bolder-image"
+    base_url = "https://www.bolderimagestone.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Bolder Image Stone scrape...")
+
+        categories = [
+            ('/catalogue/', 'granite'),
+            ('/collection/quartz/', 'quartz'),
+            ('/collection/natural-stone/', 'granite'),
+        ]
+
+        for category_url, material_type in categories:
+            self._scrape_category(category_url, material_type)
+
+        logger.info(f"Bolder Image scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _scrape_category(self, category_path: str, material_type: str):
+        url = f"{self.base_url}{category_path}"
+        soup = self.fetch_page(url)
+        if not soup:
+            return
+
+        products = soup.select('.product-card a[href], .product-item a[href], .collection-item a[href]')
+        if not products:
+            products = soup.select('[class*="product"] a[href], .grid-item a[href], .portfolio-item a[href]')
+        if not products:
+            products = soup.select('a[href*="/product/"], a[href*="/collection/"]')
+
+        logger.info(f"Found {len(products)} products in {category_path}")
+
+        for product in products:
+            try:
+                self._parse_product(product, material_type)
+            except Exception as e:
+                logger.warning(f"Error parsing Bolder Image product: {e}")
+
+    def _parse_product(self, element, material_type: str):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+        if not link:
+            return
+
+        href = link.get('href', '')
+        if not href:
+            return
+        product_url = urljoin(self.base_url, href)
+
+        name_el = element.select_one('.product-name, .title, h3, h4, .name')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['home', 'about', 'contact', 'view all', 'catalogue', 'collection']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        # Detect material from name/URL
+        detected = material_type
+        text_lower = f"{name} {href}".lower()
+        if 'quartz' in text_lower and 'quartzite' not in text_lower:
+            detected = 'quartz'
+        elif 'quartzite' in text_lower:
+            detected = 'quartzite'
+        elif 'marble' in text_lower:
+            detected = 'marble'
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=detected, color_family=self.get_color_family(name),
+            description=f"Bolder Image Stone {detected.title()}",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class AracruzScraper(BaseScraper):
+    """Scraper for Aracruz RE (aracruzre.com) — WooCommerce"""
+
+    vendor_name = "aracruz"
+    base_url = "https://www.aracruzre.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Aracruz RE scrape...")
+
+        categories = [
+            ('/product-category/granite-slab/', 'granite'),
+            ('/product-category/quartz-slab/', 'quartz'),
+        ]
+
+        for category_url, material_type in categories:
+            self._scrape_category(category_url, material_type)
+
+        logger.info(f"Aracruz scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _scrape_category(self, category_path: str, material_type: str):
+        page = 1
+        while True:
+            url = f"{self.base_url}{category_path}" if page == 1 else f"{self.base_url}{category_path}page/{page}/"
+            soup = self.fetch_page(url)
+            if not soup:
+                break
+
+            products = soup.select('.product, .product-item, li.product')
+            if not products:
+                products = soup.select('a[href*="/product/"]')
+
+            if not products:
+                break
+
+            logger.info(f"Found {len(products)} products on page {page} of {category_path}")
+
+            for product in products:
+                try:
+                    self._parse_woo_product(product, material_type)
+                except Exception as e:
+                    logger.warning(f"Error parsing Aracruz product: {e}")
+
+            # Check for next page
+            next_link = soup.select_one('a.next, .woocommerce-pagination a.next')
+            if not next_link:
+                break
+            page += 1
+
+    def _parse_woo_product(self, element, material_type: str):
+        link = element.select_one('a[href*="/product/"]')
+        if not link and element.name == 'a' and '/product/' in element.get('href', ''):
+            link = element
+        if not link:
+            return
+
+        href = link.get('href', '')
+        product_url = urljoin(self.base_url, href)
+
+        name_el = element.select_one('.woocommerce-loop-product__title, .product-title, h2, h3')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        # Detect material from name
+        detected = material_type
+        name_lower = name.lower()
+        for mat in ['quartzite', 'quartz', 'marble', 'soapstone', 'granite']:
+            if mat in name_lower:
+                detected = mat
+                break
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=detected, color_family=self.get_color_family(name),
+            description=f"Aracruz RE {detected.title()}",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class SunStoneScraper(BaseScraper):
+    """Scraper for Sun Stone Supply (sunstonesurfaces.com) — WooCommerce"""
+
+    vendor_name = "sun-stone"
+    base_url = "https://www.sunstonesurfaces.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Sun Stone Supply scrape...")
+
+        categories = [
+            ('/product-category/quartz-slabs/', 'quartz'),
+        ]
+
+        for category_url, material_type in categories:
+            self._scrape_category(category_url, material_type)
+
+        logger.info(f"Sun Stone scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _scrape_category(self, category_path: str, material_type: str):
+        page = 1
+        while True:
+            url = f"{self.base_url}{category_path}" if page == 1 else f"{self.base_url}{category_path}page/{page}/"
+            soup = self.fetch_page(url)
+            if not soup:
+                break
+
+            products = soup.select('.product, li.product')
+            if not products:
+                products = soup.select('a[href*="/product/"]')
+
+            if not products:
+                break
+
+            logger.info(f"Found {len(products)} products on page {page} of {category_path}")
+
+            for product in products:
+                try:
+                    self._parse_woo_product(product, material_type)
+                except Exception as e:
+                    logger.warning(f"Error parsing Sun Stone product: {e}")
+
+            next_link = soup.select_one('a.next, .woocommerce-pagination a.next')
+            if not next_link:
+                break
+            page += 1
+
+    def _parse_woo_product(self, element, material_type: str):
+        link = element.select_one('a[href*="/product/"]')
+        if not link and element.name == 'a' and '/product/' in element.get('href', ''):
+            link = element
+        if not link:
+            return
+
+        href = link.get('href', '')
+        product_url = urljoin(self.base_url, href)
+
+        name_el = element.select_one('.woocommerce-loop-product__title, .product-title, h2, h3')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=material_type, color_family=self.get_color_family(name),
+            description=f"Sun Stone Supply {material_type.title()}",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class ClassicSurfacesScraper(BaseScraper):
+    """Scraper for Classic Surfaces (classic-surfaces.com)"""
+
+    vendor_name = "classic-surfaces"
+    base_url = "https://www.classic-surfaces.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Classic Surfaces scrape...")
+
+        categories = [
+            ('/quartz-and-stone-countertop-products/', None),
+        ]
+
+        for category_url, material_type in categories:
+            self._scrape_category(category_url, material_type)
+
+        logger.info(f"Classic Surfaces scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _scrape_category(self, category_path: str, material_type: Optional[str]):
+        url = f"{self.base_url}{category_path}"
+        soup = self.fetch_page(url)
+        if not soup:
+            return
+
+        products = soup.select('.product-card a[href], .product-item a[href], .grid-item a[href]')
+        if not products:
+            products = soup.select('[class*="product"] a[href], [class*="stone"] a[href]')
+        if not products:
+            products = soup.select('a[href*="product"], a[href*="stone"], a[href*="quartz"]')
+
+        logger.info(f"Found {len(products)} products in {category_path}")
+
+        for product in products:
+            try:
+                self._parse_product(product, material_type)
+            except Exception as e:
+                logger.warning(f"Error parsing Classic Surfaces product: {e}")
+
+    def _parse_product(self, element, material_type: Optional[str]):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+        if not link:
+            return
+
+        href = link.get('href', '')
+        if not href:
+            return
+        product_url = urljoin(self.base_url, href)
+
+        name_el = element.select_one('.product-name, .title, h3, h4, .name')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['home', 'about', 'contact', 'view all', 'products']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        # Detect material from name/URL
+        detected = material_type or 'quartz'
+        text_lower = f"{name} {href}".lower()
+        if 'quartzite' in text_lower:
+            detected = 'quartzite'
+        elif 'quartz' in text_lower:
+            detected = 'quartz'
+        elif 'marble' in text_lower:
+            detected = 'marble'
+        elif 'granite' in text_lower:
+            detected = 'granite'
+        elif 'dolomite' in text_lower:
+            detected = 'dolomite'
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=detected, color_family=self.get_color_family(name),
+            description=f"Classic Surfaces {detected.title()}",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class StoneCollectionScraper(BaseScraper):
+    """Scraper for The Stone Collection (thestonecollection.com)"""
+
+    vendor_name = "stone-collection"
+    base_url = "https://www.thestonecollection.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting The Stone Collection scrape...")
+
+        categories = [
+            ('/slab-products/', None),
+        ]
+
+        for category_url, material_type in categories:
+            self._scrape_category(category_url, material_type)
+
+        logger.info(f"Stone Collection scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _scrape_category(self, category_path: str, material_type: Optional[str]):
+        url = f"{self.base_url}{category_path}"
+        soup = self.fetch_page(url)
+        if not soup:
+            return
+
+        products = soup.select('.product-card a[href], .product-item a[href], .slab-item a[href]')
+        if not products:
+            products = soup.select('[class*="product"] a[href], [class*="slab"] a[href]')
+        if not products:
+            products = soup.select('.grid-item a[href], .portfolio-item a[href]')
+
+        logger.info(f"Found {len(products)} products in {category_path}")
+
+        for product in products:
+            try:
+                self._parse_product(product, material_type)
+            except Exception as e:
+                logger.warning(f"Error parsing Stone Collection product: {e}")
+
+    def _parse_product(self, element, material_type: Optional[str]):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+        if not link:
+            return
+
+        href = link.get('href', '')
+        if not href:
+            return
+        product_url = urljoin(self.base_url, href)
+
+        name_el = element.select_one('.product-name, .title, h3, h4, .name')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['home', 'about', 'contact', 'view all', 'slab products']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        # Detect material
+        detected = material_type or 'granite'
+        text_lower = f"{name} {href}".lower()
+        if 'quartzite' in text_lower:
+            detected = 'quartzite'
+        elif 'quartz' in text_lower:
+            detected = 'quartz'
+        elif 'marble' in text_lower:
+            detected = 'marble'
+        elif 'onyx' in text_lower:
+            detected = 'onyx'
+        elif 'granite' in text_lower:
+            detected = 'granite'
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=detected, color_family=self.get_color_family(name),
+            description=f"The Stone Collection {detected.title()}",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+# ─── Tier 2: Manufacturer brands ────────────────────────────────────────────
+
+
+class PentalQuartzScraper(BaseScraper):
+    """Scraper for PentalQuartz (arcsurfaces.com)"""
+
+    vendor_name = "pentalquartz"
+    base_url = "https://www.arcsurfaces.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting PentalQuartz scrape...")
+
+        url = f"{self.base_url}/quartz/pentalquartz/collections/"
+        soup = self.fetch_page(url)
+        if not soup:
+            logger.warning("Failed to fetch PentalQuartz page")
+            return self.products
+
+        products = soup.select('.color-card a[href], .product-card a[href], .collection-item a[href]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="product"] a[href]')
+        if not products:
+            products = soup.select('a[href*="pentalquartz"]')
+
+        logger.info(f"Found {len(products)} PentalQuartz colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing PentalQuartz product: {e}")
+
+        logger.info(f"PentalQuartz scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+        if not link:
+            return
+
+        href = link.get('href', '')
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .title, h3, h4, .name')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'collections', 'home', 'about', 'contact']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="PentalQuartz by ARC Surfaces",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class HanStoneScraper(BaseScraper):
+    """Scraper for HanStone Quartz (hanstone.com)"""
+
+    vendor_name = "hanstone"
+    base_url = "https://www.hanstone.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting HanStone scrape...")
+
+        url = f"{self.base_url}/collections/all_colors.php"
+        soup = self.fetch_page(url)
+        if not soup:
+            # Try alternate URL
+            soup = self.fetch_page(f"{self.base_url}/collections/")
+        if not soup:
+            logger.warning("Failed to fetch HanStone page")
+            return self.products
+
+        products = soup.select('.color-card, .color-item, .product-card, [data-color]')
+        if not products:
+            products = soup.select('a[href*="color"], a[href*="collection"]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="swatch"] a[href]')
+
+        logger.info(f"Found {len(products)} HanStone colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing HanStone product: {e}")
+
+        logger.info(f"HanStone scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name:
+            # Try data attribute
+            name = element.get('data-color', '') or element.get('data-name', '')
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'all colors', 'home', 'about', 'contact', 'collections']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="HanStone Quartz",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class LXHausysScraper(BaseScraper):
+    """Scraper for LX Hausys Viatera (lxhausys.com) — JS-heavy, best-effort"""
+
+    vendor_name = "lx-hausys"
+    base_url = "https://www.lxhausys.com/us"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting LX Hausys (Viatera) scrape...")
+
+        url = f"{self.base_url}/products/viatera-quartz-surface/viatera-finder"
+        soup = self.fetch_page(url)
+        if not soup:
+            # Try alternate paths
+            soup = self.fetch_page(f"{self.base_url}/products/viatera-quartz-surface/")
+        if not soup:
+            logger.warning("Failed to fetch LX Hausys page — site may require Selenium")
+            return self.products
+
+        products = soup.select('.color-card, .product-card, .color-item, [data-color]')
+        if not products:
+            products = soup.select('a[href*="viatera"], [class*="color"] a[href]')
+        if not products:
+            products = soup.select('[class*="product"] a[href], [class*="swatch"]')
+
+        logger.info(f"Found {len(products)} Viatera colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing LX Hausys product: {e}")
+
+        if not self.products:
+            logger.info("LX Hausys site is heavily JS-driven; consider Selenium for full catalog")
+
+        logger.info(f"LX Hausys scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name:
+            name = element.get('data-color', '') or element.get('data-name', '')
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'home', 'about', 'contact', 'finder', 'viatera']
+        if any(name.lower() == word for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="LX Hausys Viatera Quartz",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class VicostoneScraper(BaseScraper):
+    """Scraper for Vicostone (us.vicostone.com) — 140+ quartz colors"""
+
+    vendor_name = "vicostone"
+    base_url = "https://us.vicostone.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Vicostone scrape...")
+
+        url = f"{self.base_url}/en/quartz-stone"
+        soup = self.fetch_page(url)
+        if not soup:
+            soup = self.fetch_page(f"{self.base_url}/en/quartz-stone/")
+        if not soup:
+            logger.warning("Failed to fetch Vicostone page")
+            return self.products
+
+        products = soup.select('.color-card, .product-card, .product-item, [data-product]')
+        if not products:
+            products = soup.select('a[href*="quartz-stone/"], a[href*="/product/"]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="product"] a[href]')
+
+        logger.info(f"Found {len(products)} Vicostone colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing Vicostone product: {e}")
+
+        logger.info(f"Vicostone scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .product-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name:
+            name = element.get('data-name', '') or element.get('data-color', '')
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'home', 'about', 'contact', 'quartz stone']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="Vicostone Quartz",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class PolarstoneScraper(BaseScraper):
+    """Scraper for Polarstone (polarstoneus.com) — homepage gallery"""
+
+    vendor_name = "polarstone"
+    base_url = "https://www.polarstoneus.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Polarstone scrape...")
+
+        # Polarstone uses homepage gallery
+        soup = self.fetch_page(self.base_url)
+        if not soup:
+            soup = self.fetch_page(f"{self.base_url}/")
+        if not soup:
+            logger.warning("Failed to fetch Polarstone page")
+            return self.products
+
+        products = soup.select('.color-card, .product-card, .product-item, .gallery-item')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="product"] a[href]')
+        if not products:
+            products = soup.select('a[href*="color"], a[href*="product"]')
+
+        logger.info(f"Found {len(products)} Polarstone colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing Polarstone product: {e}")
+
+        logger.info(f"Polarstone scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .product-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['home', 'about', 'contact', 'view all']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="Polarstone Quartz",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class RadianzScraper(BaseScraper):
+    """Scraper for Radianz Quartz (radianz-quartz.com)"""
+
+    vendor_name = "radianz"
+    base_url = "https://www.radianz-quartz.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Radianz scrape...")
+
+        url = f"{self.base_url}/radianz/us/color/list"
+        soup = self.fetch_page(url)
+        if not soup:
+            soup = self.fetch_page(f"{self.base_url}/radianz/us/color/list/")
+        if not soup:
+            logger.warning("Failed to fetch Radianz page")
+            return self.products
+
+        products = soup.select('.color-card, .color-item, .product-card, [data-color]')
+        if not products:
+            products = soup.select('a[href*="color/"], [class*="color"] a[href]')
+        if not products:
+            products = soup.select('[class*="product"] a[href], [class*="swatch"]')
+
+        logger.info(f"Found {len(products)} Radianz colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing Radianz product: {e}")
+
+        logger.info(f"Radianz scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name:
+            name = element.get('data-color', '') or element.get('data-name', '')
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'home', 'about', 'contact', 'color list']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="quartz", color_family=self.get_color_family(name),
+            description="Radianz Quartz by Samsung",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+# ─── Tier 3: Cosentino extensions + Neolith ─────────────────────────────────
+
+
+class DektonScraper(BaseScraper):
+    """Scraper for Dekton (cosentino.com) — sintered stone"""
+
+    vendor_name = "dekton"
+    base_url = "https://www.cosentino.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Dekton scrape...")
+
+        urls_to_try = [
+            f"{self.base_url}/usa/colors/dekton/",
+            f"{self.base_url}/usa/dekton/colors/",
+            f"{self.base_url}/usa/dekton/",
+        ]
+
+        soup = None
+        for url in urls_to_try:
+            soup = self.fetch_page(url)
+            if soup:
+                logger.info(f"Successfully fetched Dekton from: {url}")
+                break
+
+        if not soup:
+            logger.warning("Failed to fetch Dekton page — site may require JavaScript")
+            return self.products
+
+        # Same structure as Silestone (Cosentino)
+        products = soup.select('.colour-card, .color-card, .product-card, .color-item, [data-colour], [data-color]')
+        if not products:
+            products = soup.select('a[href*="/colors/"], a[href*="/colour/"], a[href*="/dekton/"]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="colour"] a[href]')
+
+        logger.info(f"Found {len(products)} Dekton color elements")
+
+        for product in products:
+            try:
+                self._parse_cosentino_product(product, "dekton")
+            except Exception as e:
+                logger.warning(f"Error parsing Dekton product: {e}")
+
+        if not self.products:
+            logger.info("Dekton/Cosentino site may require Selenium for JavaScript rendering")
+
+        logger.info(f"Dekton scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_cosentino_product(self, element, brand: str):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        if href:
+            valid_patterns = ['/dekton/', '/color/', '/colours/', '/colors/']
+            if not any(p in href for p in valid_patterns):
+                return
+            skip_paths = ['/usa/dekton/$', '/colors/$', '/colours/$', f'/colors/{brand}/$']
+            if any(href.rstrip('/').endswith(p.rstrip('$')) for p in skip_paths):
+                return
+
+        name_el = element.select_one('.colour-name, .color-name, .product-name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+            if (not name or len(name) < 3) and href:
+                parts = href.strip('/').split('/')
+                for part in reversed(parts):
+                    if part and part not in ['dekton', 'colors', 'colours', 'usa', 'color']:
+                        name = part.replace('-', ' ').title()
+                        break
+        if not name or len(name) < 3:
+            return
+
+        skip_words = ['view all', 'see all', 'filter', 'home', 'about', 'contact',
+                      'technology', 'sustainability', 'where to buy', 'find a dealer',
+                      'kitchen', 'bathroom', 'countertop', 'cladding', 'flooring',
+                      'outdoor', 'facade', 'colors', 'colours']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+            if image_url and ('icon' in image_url.lower() or 'logo' in image_url.lower() or 'svg' in image_url.lower()):
+                image_url = ""
+
+        if not image_url:
+            return
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="sintered-stone", color_family=self.get_color_family(name),
+            description="Dekton Sintered Stone by Cosentino",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class SensaScraper(BaseScraper):
+    """Scraper for Sensa (cosentino.com) — natural granite & quartzite"""
+
+    vendor_name = "sensa"
+    base_url = "https://www.cosentino.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Sensa scrape...")
+
+        urls_to_try = [
+            f"{self.base_url}/usa/colors/sensa/",
+            f"{self.base_url}/usa/sensa/colors/",
+            f"{self.base_url}/usa/sensa/",
+        ]
+
+        soup = None
+        for url in urls_to_try:
+            soup = self.fetch_page(url)
+            if soup:
+                logger.info(f"Successfully fetched Sensa from: {url}")
+                break
+
+        if not soup:
+            logger.warning("Failed to fetch Sensa page — site may require JavaScript")
+            return self.products
+
+        # Same structure as Silestone/Dekton (Cosentino)
+        products = soup.select('.colour-card, .color-card, .product-card, .color-item, [data-colour], [data-color]')
+        if not products:
+            products = soup.select('a[href*="/colors/"], a[href*="/colour/"], a[href*="/sensa/"]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="colour"] a[href]')
+
+        logger.info(f"Found {len(products)} Sensa color elements")
+
+        for product in products:
+            try:
+                self._parse_cosentino_product(product)
+            except Exception as e:
+                logger.warning(f"Error parsing Sensa product: {e}")
+
+        if not self.products:
+            logger.info("Sensa/Cosentino site may require Selenium for JavaScript rendering")
+
+        logger.info(f"Sensa scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_cosentino_product(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        if href:
+            valid_patterns = ['/sensa/', '/color/', '/colours/', '/colors/']
+            if not any(p in href for p in valid_patterns):
+                return
+            skip_paths = ['/usa/sensa/$', '/colors/$', '/colours/$', '/colors/sensa/$']
+            if any(href.rstrip('/').endswith(p.rstrip('$')) for p in skip_paths):
+                return
+
+        name_el = element.select_one('.colour-name, .color-name, .product-name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+            if (not name or len(name) < 3) and href:
+                parts = href.strip('/').split('/')
+                for part in reversed(parts):
+                    if part and part not in ['sensa', 'colors', 'colours', 'usa', 'color']:
+                        name = part.replace('-', ' ').title()
+                        break
+        if not name or len(name) < 3:
+            return
+
+        skip_words = ['view all', 'see all', 'filter', 'home', 'about', 'contact',
+                      'technology', 'sustainability', 'where to buy', 'find a dealer',
+                      'kitchen', 'bathroom', 'countertop', 'colors', 'colours']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        # Detect material — Sensa covers granite and quartzite
+        detected = 'granite'
+        if 'quartzite' in name.lower():
+            detected = 'quartzite'
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+            if image_url and ('icon' in image_url.lower() or 'logo' in image_url.lower() or 'svg' in image_url.lower()):
+                image_url = ""
+
+        if not image_url:
+            return
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type=detected, color_family=self.get_color_family(name),
+            description=f"Sensa {detected.title()} by Cosentino",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
+class NeolithScraper(BaseScraper):
+    """Scraper for Neolith (neolith.com) — sintered stone"""
+
+    vendor_name = "neolith"
+    base_url = "https://www.neolith.com"
+
+    def scrape(self) -> List[Product]:
+        logger.info("Starting Neolith scrape...")
+
+        url = f"{self.base_url}/us/all-colors/"
+        soup = self.fetch_page(url)
+        if not soup:
+            soup = self.fetch_page(f"{self.base_url}/us/all-colors")
+        if not soup:
+            soup = self.fetch_page(f"{self.base_url}/en/all-colors/")
+        if not soup:
+            logger.warning("Failed to fetch Neolith page")
+            return self.products
+
+        products = soup.select('.color-card, .product-card, .color-item, [data-color]')
+        if not products:
+            products = soup.select('a[href*="color"], a[href*="model"]')
+        if not products:
+            products = soup.select('[class*="color"] a[href], [class*="product"] a[href]')
+
+        logger.info(f"Found {len(products)} Neolith colors")
+
+        for product in products:
+            try:
+                self._parse_color(product)
+            except Exception as e:
+                logger.warning(f"Error parsing Neolith product: {e}")
+
+        logger.info(f"Neolith scrape complete: {len(self.products)} products found")
+        return self.products
+
+    def _parse_color(self, element):
+        if element.name == 'a':
+            link = element
+        else:
+            link = element.select_one('a[href]')
+
+        href = link.get('href', '') if link else ''
+        product_url = urljoin(self.base_url, href) if href else ""
+
+        name_el = element.select_one('.color-name, .product-name, .name, h3, h4, .title')
+        name = name_el.get_text(strip=True) if name_el else None
+        if not name and link:
+            name = link.get('title', '') or link.get_text(strip=True)
+        if not name:
+            name = element.get('data-color', '') or element.get('data-name', '')
+        if not name or len(name) < 2:
+            return
+
+        skip_words = ['view all', 'all colors', 'home', 'about', 'contact', 'where to buy']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        img = element.select_one('img')
+        image_url = ""
+        if img:
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+
+        self.products.append(Product(
+            id="", name=name, vendor=self.vendor_name,
+            material_type="sintered-stone", color_family=self.get_color_family(name),
+            description="Neolith Sintered Stone",
+            image_url=image_url, product_url=product_url, available=True
+        ))
+
+
 class InventoryManager:
     """Manages inventory comparison and updates"""
 
@@ -1154,7 +2332,10 @@ def create_session() -> requests.Session:
 def main():
     parser = argparse.ArgumentParser(description='Scrape vendor websites for inventory updates')
     parser.add_argument('--vendor', '-v', default='all',
-                        help='Vendor to scrape (msi, arizona-tile, daltile, cambria, caesarstone, silestone, all)')
+                        help='Vendor to scrape (msi, arizona-tile, daltile, cambria, caesarstone, silestone, '
+                             'bolder-image, aracruz, sun-stone, classic-surfaces, stone-collection, '
+                             'pentalquartz, hanstone, lx-hausys, vicostone, polarstone, radianz, '
+                             'dekton, sensa, neolith, all)')
     parser.add_argument('--dry-run', '-d', action='store_true',
                         help='Run without saving changes')
     parser.add_argument('--output', '-o', default=str(OUTPUT_DIR),
@@ -1170,6 +2351,23 @@ def main():
         'cambria': CambriaScraper,
         'caesarstone': CaesarstoneScraper,
         'silestone': SilestoneScaper,
+        # Tier 1 — Phoenix-local wholesale
+        'bolder-image': BolderImageScraper,
+        'aracruz': AracruzScraper,
+        'sun-stone': SunStoneScraper,
+        'classic-surfaces': ClassicSurfacesScraper,
+        'stone-collection': StoneCollectionScraper,
+        # Tier 2 — Manufacturer brands
+        'pentalquartz': PentalQuartzScraper,
+        'hanstone': HanStoneScraper,
+        'lx-hausys': LXHausysScraper,
+        'vicostone': VicostoneScraper,
+        'polarstone': PolarstoneScraper,
+        'radianz': RadianzScraper,
+        # Tier 3 — Cosentino extensions + Neolith
+        'dekton': DektonScraper,
+        'sensa': SensaScraper,
+        'neolith': NeolithScraper,
     }
 
     # Determine which scrapers to run

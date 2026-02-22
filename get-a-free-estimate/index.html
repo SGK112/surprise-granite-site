@@ -841,8 +841,10 @@
         }
       }
 
-      // Pre-fill message with product/material info
-      if (material || product) {
+      // Pre-fill message with product/material/calculator info
+      const sqft = params.get('sqft');
+      const estimate = params.get('estimate');
+      if (material || product || sqft) {
         const messageField = document.querySelector('textarea[name="message"]');
         if (messageField) {
           let prefill = '';
@@ -851,6 +853,12 @@
           }
           if (material) {
             prefill += (prefill ? '\nMaterial type: ' : 'Material type: ') + decodeURIComponent(material);
+          }
+          if (sqft) {
+            prefill += (prefill ? '\n' : '') + 'Estimated area: ' + sqft + ' sq ft';
+          }
+          if (estimate) {
+            prefill += '\nEstimated material cost: $' + parseFloat(estimate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
           }
           messageField.value = prefill;
         }

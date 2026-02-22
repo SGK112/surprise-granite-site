@@ -460,6 +460,35 @@
     document.body.style.overflow = '';
   };
 
+  // Global add-to-cart for marketplace inline buttons
+  window.sgAddToCart = async function(variantId, btn) {
+    if (!variantId || !window.ShopifyCart) {
+      var card = btn.closest('a[href], .product-card[onclick]');
+      if (card && card.href) window.location.href = card.href;
+      return;
+    }
+    try {
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+      await window.ShopifyCart.addItem(variantId, 1);
+      btn.textContent = 'Added!';
+      btn.style.background = '#22c55e';
+      if (window.openCartDrawer) window.openCartDrawer();
+      setTimeout(function() {
+        btn.textContent = 'Add to Cart';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    } catch (err) {
+      console.error('Add to cart error:', err);
+      btn.textContent = 'Error';
+      setTimeout(function() {
+        btn.textContent = 'Add to Cart';
+        btn.disabled = false;
+      }, 2000);
+    }
+  };
+
   // Render cart drawer items
   function renderCartDrawer() {
     const cart = window.SgCart ? window.SgCart.getCart() : [];
@@ -559,6 +588,7 @@
         const href = linkEl ? linkEl.href : '';
         const id = product.getAttribute('sf-data-product') ||
                    name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const variantId = product.getAttribute('data-variant-id') || '';
 
         // Create quick add button
         const btn = document.createElement('button');
@@ -579,6 +609,7 @@
           // Add to cart
           window.SgCart.addToCart({
             id: id,
+            variantId: variantId,
             name: name,
             price: price,
             image: image,
@@ -674,16 +705,17 @@
       const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
       const image = imgEl ? imgEl.src : '';
       const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const variantId = product.getAttribute('data-variant-id') || '';
 
       // Create button bar
       const bar = document.createElement('div');
       bar.className = 'sg-add-to-cart-bar';
       bar.innerHTML = `
-        <button class="sg-add-btn" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${image}">
+        <button class="sg-add-btn" data-id="${id}" data-variant-id="${variantId}" data-name="${name}" data-price="${price}" data-image="${image}">
           <svg viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>
           Add to Cart
         </button>
-        <button class="sg-buy-btn" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${image}">
+        <button class="sg-buy-btn" data-id="${id}" data-variant-id="${variantId}" data-name="${name}" data-price="${price}" data-image="${image}">
           Buy Now
         </button>
       `;
@@ -704,6 +736,7 @@
 
         window.SgCart.addToCart({
           id: this.dataset.id,
+          variantId: this.dataset.variantId,
           name: this.dataset.name,
           price: parseFloat(this.dataset.price),
           image: this.dataset.image,
@@ -734,6 +767,7 @@
         window.SgCart.clearCart();
         window.SgCart.addToCart({
           id: this.dataset.id,
+          variantId: this.dataset.variantId,
           name: this.dataset.name,
           price: parseFloat(this.dataset.price),
           image: this.dataset.image,
@@ -804,8 +838,7 @@
       /* Hide original Shopyflow buttons */
       .sf-add-to-cart,
       [sf-add-to-cart],
-      .shopyflow-add,
-      .add-to-cart-btn:not(.sg-add-btn) {
+      .shopyflow-add {
         display: none !important;
       }
     `;
