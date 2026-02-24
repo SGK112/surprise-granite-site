@@ -28784,16 +28784,16 @@
       return null;
     }
 
-    function addCatalogCabinet(sku) {
+    function addCatalogCabinet(sku, dropX, dropY) {
       const cab = getCatalogCabinet(sku);
       if (!cab) return;
 
       const catalog = CABINET_CATALOGS[currentCatalog];
       const series = catalog.series[currentCabinetSeries] || { color: '#8B4513', name: 'Default', finish: 'wood-grain', grainType: 'oak' };
 
-      // Calculate position (center of visible area)
-      const centerX = (canvas.width / 2 - panX) / pixelsPerFoot;
-      const centerY = (canvas.height / 2 - panY) / pixelsPerFoot;
+      // Use drop position if provided, otherwise center of visible area
+      const centerX = dropX !== undefined ? dropX / pixelsPerFoot : (canvas.width / 2 - panX) / pixelsPerFoot;
+      const centerY = dropY !== undefined ? dropY / pixelsPerFoot : (canvas.height / 2 - panY) / pixelsPerFoot;
 
       // Use series finish type if defined, otherwise use cabinetSettings
       const finishType = series.finish || cabinetSettings.cabinetFinish || 'wood-grain';
@@ -37538,6 +37538,13 @@
         return;
       }
 
+      // Check for catalog cabinet drag-drop
+      const catalogSku = e.dataTransfer.getData('catalog-cabinet');
+      if (catalogSku) {
+        addCatalogCabinet(catalogSku, x, y);
+        return;
+      }
+
       // Check for element-type (sidebar elements)
       const type = e.dataTransfer.getData('element-type');
       if (type) {
@@ -39275,11 +39282,7 @@
           break;
         case 'delete':
           if (!contextMenuElement.locked) {
-            elements = elements.filter(el => el !== contextMenuElement);
-            if (selectedElement === contextMenuElement) {
-              selectedElement = null;
-              updateProperties();
-            }
+            deleteElementWithUndo(contextMenuElement);
           }
           break;
         case 'replace':
@@ -68270,9 +68273,7 @@
             el.boxCount = 1;
             el.fillerWidth = 0;
 
-            // Add toe kick for single cabinets too
-            const toeKickCost = el.width * TAKEOFF_STANDARDS.cabinet.toeKick.pricePerLF;
-            baseCost += toeKickCost;
+            // Track toe kick LF (priced as separate line item below)
             el.toeKickLF = el.width;
           }
         } else {
