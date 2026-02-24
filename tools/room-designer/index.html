@@ -37027,7 +37027,7 @@
 
       if (isPanning) {
         isPanning = false;
-        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
+        canvas.style.cursor = (currentTool === 'wall' || currentTool === 'countertop' || currentTool === 'layout' || currentTool === 'peninsula' || currentTool === 'measure') ? 'crosshair' : (currentTool === 'pan' ? 'grab' : 'default');
         return;
       }
 
@@ -37284,7 +37284,8 @@
         case 'w': setTool('wall'); break;
         case 'c': setTool('countertop'); break;
         case 'h': setTool('pan'); break;
-        case 'l': setTool('layout'); break; // L for layout tool
+        case 'l': lockElementsTogether(); break; // L for link/lock elements
+        case 'm': setTool('measure'); break; // M for measure tool
         case 'p': setTool('peninsula'); break; // P for peninsula builder
         case 'f': fitToScreen(); break; // F to fit
         case 'delete':
@@ -37311,6 +37312,8 @@
               selectedElement.x = cx - selectedElement.width * pixelsPerFoot / 2;
               selectedElement.y = cy - selectedElement.height * pixelsPerFoot / 2;
             }
+            markElement3DDirty(selectedElement.id);
+            saveUndoState();
             updateProperties();
             draw();
           }
@@ -37345,12 +37348,6 @@
             const activeIdx = Array.from(tabs).findIndex(t => t.classList.contains('active'));
             const nextIdx = (activeIdx + 1) % tabs.length;
             tabs[nextIdx].click();
-          }
-          break;
-        case 'l':
-          // L key to toggle link mode (when not in layout tool)
-          if (currentTool !== 'layout') {
-            lockElementsTogether();
           }
           break;
         case 'u':
@@ -37484,7 +37481,7 @@
     function onKeyUp(e) {
       if (e.code === 'Space') {
         spacePressed = false;
-        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
+        canvas.style.cursor = (currentTool === 'wall' || currentTool === 'countertop' || currentTool === 'layout' || currentTool === 'peninsula' || currentTool === 'measure') ? 'crosshair' : (currentTool === 'pan' ? 'grab' : 'default');
       }
     }
 
@@ -38236,7 +38233,7 @@
 
       // Reset cursor from lock mode cell cursor
       if (wasActive && canvas) {
-        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
+        canvas.style.cursor = (currentTool === 'wall' || currentTool === 'countertop' || currentTool === 'layout' || currentTool === 'peninsula' || currentTool === 'measure') ? 'crosshair' : (currentTool === 'pan' ? 'grab' : 'default');
       }
 
       if (wasActive) {
@@ -64500,7 +64497,7 @@
       // Mark element as needing 3D update
       markElement3DDirty(selectedElement.id);
 
-      // Update display with formatted dimensions
+      saveUndoState();
       updateProperties();
       draw();
     }
@@ -79737,6 +79734,10 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
           if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
         });
       }
+
+      // Initialize undo stack with loaded state
+      selectedElement = null;
+      saveUndoState();
 
       // Redraw everything
       draw();
