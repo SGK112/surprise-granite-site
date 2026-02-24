@@ -257,7 +257,7 @@
       </a>
       <div style="flex: 1; min-width: 0;">
         <div class="embed-title" id="projectName">Kitchen Design</div>
-        <div class="embed-meta" id="projectMeta">12' × 10' Kitchen</div>
+        <div class="embed-meta" id="projectMeta">144" × 120" Kitchen</div>
       </div>
       <div class="embed-meta" id="companyName">Remodely</div>
     </div>
@@ -327,7 +327,7 @@
 
         // Update UI
         document.getElementById('projectName').textContent = design.project_name || design.name || 'Kitchen Design';
-        document.getElementById('projectMeta').textContent = `${design.room_width || 12}' × ${design.room_depth || 10}' ${design.room_type || 'Kitchen'}`;
+        document.getElementById('projectMeta').textContent = `${Math.round((design.room_width || 12) * 12)}" × ${Math.round((design.room_depth || 10) * 12)}" ${design.room_type || 'Kitchen'}`;
         document.getElementById('companyName').textContent = design.settings?.company_name || 'Remodely';
         document.getElementById('quoteTotal').textContent = '$' + (design.quote_total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         document.getElementById('openDesigner').href = `/tools/room-designer/?token=${shareToken}`;
@@ -341,7 +341,26 @@
       }
     }
 
+    // Global state for cleanup
+    let activeViewer = null;
+    const textureLoader = new THREE.TextureLoader();
+
     function init3DViewer(design) {
+      // Dispose previous viewer if exists
+      if (activeViewer) {
+        cancelAnimationFrame(activeViewer.animationId);
+        activeViewer.controls.dispose();
+        activeViewer.scene.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (obj.material.map) obj.material.map.dispose();
+            obj.material.dispose();
+          }
+        });
+        activeViewer.renderer.dispose();
+        activeViewer = null;
+      }
+
       const container = document.getElementById('viewer3d');
       container.innerHTML = '';
 
@@ -349,53 +368,94 @@
       scene.background = new THREE.Color(0x0d0d15);
 
       const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      renderer.physicallyCorrectLights = true;
       container.appendChild(renderer.domElement);
 
-      // Lighting
-      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+      // Lighting — multi-light setup for quality
+      const ambient = new THREE.AmbientLight(0xffffff, 0.35);
       scene.add(ambient);
-      const directional = new THREE.DirectionalLight(0xffffff, 0.8);
-      directional.position.set(10, 15, 10);
-      directional.castShadow = true;
-      scene.add(directional);
 
-      // Room dimensions
+      // Hemisphere light for natural sky/ground bounce
+      const hemi = new THREE.HemisphereLight(0xddeeff, 0x8B7355, 0.3);
+      scene.add(hemi);
+
+      // Key light (sun)
+      const sun = new THREE.DirectionalLight(0xFFF8E7, 1.0);
+      sun.position.set(10, 18, 8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.width = 2048;
+      sun.shadow.mapSize.height = 2048;
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 60;
+      sun.shadow.camera.left = -20;
+      sun.shadow.camera.right = 20;
+      sun.shadow.camera.top = 20;
+      sun.shadow.camera.bottom = -20;
+      sun.shadow.bias = -0.001;
+      scene.add(sun);
+
+      // Fill light (softer, from opposite side)
+      const fill = new THREE.DirectionalLight(0xE8F0FF, 0.35);
+      fill.position.set(-8, 12, -5);
+      scene.add(fill);
+
+      // Accent spot for countertops
       const roomWidth = design.room_width || 12;
       const roomDepth = design.room_depth || 10;
-      const roomHeight = 8;
+      const roomHeight = design.room_height || 8;
+
+      const counterSpot = new THREE.SpotLight(0xFFFFFF, 0.5, 20, Math.PI / 4, 0.5);
+      counterSpot.position.set(roomWidth / 2, roomHeight, roomDepth / 3);
+      counterSpot.target.position.set(roomWidth / 2, 3, roomDepth / 3);
+      scene.add(counterSpot);
+      scene.add(counterSpot.target);
 
       // Floor
-      const floorMat = new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.8 });
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.8, metalness: 0 });
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth + 4, roomDepth + 4), floorMat);
       floor.rotation.x = -Math.PI / 2;
       floor.position.set(roomWidth / 2, 0, roomDepth / 2);
       floor.receiveShadow = true;
       scene.add(floor);
 
-      // Walls
+      // Walls — slight thickness for realism
       const wallMat = new THREE.MeshStandardMaterial({ color: 0xFFFAF0, roughness: 0.9, side: THREE.DoubleSide });
+      const wallThick = 0.15;
 
       // Back wall
-      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth, roomHeight), wallMat);
-      backWall.position.set(roomWidth / 2, roomHeight / 2, 0);
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(roomWidth, roomHeight, wallThick), wallMat);
+      backWall.position.set(roomWidth / 2, roomHeight / 2, -wallThick / 2);
+      backWall.receiveShadow = true;
       scene.add(backWall);
 
       // Left wall
-      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(roomDepth, roomHeight), wallMat);
-      leftWall.rotation.y = Math.PI / 2;
-      leftWall.position.set(0, roomHeight / 2, roomDepth / 2);
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, roomHeight, roomDepth), wallMat);
+      leftWall.position.set(-wallThick / 2, roomHeight / 2, roomDepth / 2);
+      leftWall.receiveShadow = true;
       scene.add(leftWall);
 
-      // Right wall
-      const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(roomDepth, roomHeight), wallMat);
-      rightWall.rotation.y = -Math.PI / 2;
-      rightWall.position.set(roomWidth, roomHeight / 2, roomDepth / 2);
+      // Right wall (transparent for viewing)
+      const rightWallMat = new THREE.MeshStandardMaterial({ color: 0xFFFAF0, roughness: 0.9, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, roomHeight, roomDepth), rightWallMat);
+      rightWall.position.set(roomWidth + wallThick / 2, roomHeight / 2, roomDepth / 2);
       scene.add(rightWall);
 
-      // Simplified elements rendering
+      // Ceiling (subtle, semi-transparent)
+      const ceilMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 1, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+      const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth, roomDepth), ceilMat);
+      ceiling.rotation.x = Math.PI / 2;
+      ceiling.position.set(roomWidth / 2, roomHeight, roomDepth / 2);
+      scene.add(ceiling);
+
+      // Elements rendering
       const elements = design.elements || [];
       const savedScale = design.settings?.pixelsPerFoot || 40;
 
@@ -404,23 +464,68 @@
 
         const w = el.width;
         const d = el.height;
-        const h = getElementHeight(el.type);
+        const elHeight = el.actualHeight || getElementHeight(el.type);
 
         // Convert position from pixels to feet
         const xPos = (el.x / savedScale) + w / 2;
         const zPos = (el.y / savedScale) + d / 2;
-        const yPos = getYPosition(el.type, h);
+        const yPos = getYPosition(el.type, elHeight);
 
-        // Element color
+        // Parse element color
         let color = el.color || '#808080';
         if (typeof color === 'string' && color.startsWith('#')) {
           color = parseInt(color.replace('#', ''), 16);
         }
 
-        const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(w, h, d),
-          new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 })
-        );
+        // Material properties vary by type
+        let roughness = 0.5;
+        let metalness = 0;
+        if (['countertop', 'countertop-l', 'countertop-u', 'countertop-corner', 'island-countertop'].includes(el.type)) {
+          roughness = 0.15; metalness = 0.05; // Polished stone
+        } else if (['refrigerator', 'range', 'slide-in-range', 'oven', 'dishwasher', 'microwave', 'range-hood'].includes(el.type)) {
+          roughness = 0.2; metalness = 0.6; // Stainless steel
+        } else if (['sink'].includes(el.type)) {
+          roughness = 0.1; metalness = 0.8;
+        } else if (['flooring', 'tile', 'hardwood'].includes(el.type)) {
+          roughness = 0.7; metalness = 0;
+        }
+
+        const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+
+        // Load texture if available
+        const textureUrl = el.textureUrl || el.materialUrl;
+        if (textureUrl) {
+          try {
+            let fullUrl = textureUrl;
+            if (textureUrl.startsWith('/') && !textureUrl.startsWith('//')) {
+              fullUrl = window.location.origin + textureUrl;
+            }
+            textureLoader.load(fullUrl, tex => {
+              tex.wrapS = THREE.RepeatWrapping;
+              tex.wrapT = THREE.RepeatWrapping;
+              const repeatX = Math.max(1, w / 5);
+              const repeatY = Math.max(1, d / 5);
+              tex.repeat.set(repeatX, repeatY);
+              mat.map = tex;
+              mat.needsUpdate = true;
+            });
+          } catch (e) { /* texture load failed, use solid color */ }
+        }
+
+        // Skip rendering flooring as a box — it's just a thin plane
+        let geom;
+        if (['flooring', 'tile', 'hardwood', 'laminate', 'vinyl', 'carpet'].includes(el.type)) {
+          geom = new THREE.PlaneGeometry(w, d);
+          const mesh = new THREE.Mesh(geom, mat);
+          mesh.rotation.x = -Math.PI / 2;
+          mesh.position.set(xPos, 0.01, zPos);
+          mesh.receiveShadow = true;
+          scene.add(mesh);
+          return;
+        }
+
+        geom = new THREE.BoxGeometry(w, elHeight, d);
+        const mesh = new THREE.Mesh(geom, mat);
         mesh.position.set(xPos, yPos, zPos);
         mesh.rotation.y = -(el.rotation || 0) * Math.PI / 180;
         mesh.castShadow = true;
@@ -428,41 +533,109 @@
         scene.add(mesh);
       });
 
-      // Camera controls
+      // Camera & controls
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.target.set(roomWidth / 2, 1.5, roomDepth / 2);
-      camera.position.set(roomWidth * 1.2, roomWidth * 0.6, roomDepth * 1.3);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.minDistance = 2;
+      controls.maxDistance = Math.max(roomWidth, roomDepth) * 3;
+      controls.maxPolarAngle = Math.PI * 0.48; // Prevent going under floor
+
+      // Position camera at a nice angle
+      const camDist = Math.max(roomWidth, roomDepth) * 1.1;
+      camera.position.set(roomWidth / 2 + camDist * 0.7, camDist * 0.45, roomDepth / 2 + camDist * 0.7);
       controls.update();
 
-      // Animation
+      // Animation loop
+      let animationId;
       function animate() {
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
         controls.update();
         renderer.render(scene, camera);
       }
       animate();
 
+      // Store for cleanup
+      activeViewer = { scene, camera, renderer, controls, animationId };
+
       // Handle resize
-      window.addEventListener('resize', () => {
+      const onResize = () => {
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
-      });
+      };
+      window.addEventListener('resize', onResize);
     }
 
     function getElementHeight(type) {
       const heights = {
-        'base-cabinet': 2.875, 'wall-cabinet': 2.5, 'tall-cabinet': 7,
-        'countertop': 0.125, 'island': 3, 'refrigerator': 6, 'range': 3,
-        'sink': 0.5, 'dishwasher': 2.875, 'window': 3, 'door': 6.67
+        // Base cabinets (34.5" = 2.875')
+        'base-cabinet': 2.875, 'sink-base': 2.875, 'drawer-base': 2.875,
+        'corner-cabinet': 2.875, 'lazy-susan': 2.875, 'blind-corner': 2.875,
+        'filler': 2.875, 'scribe': 2.875,
+        // Wall cabinets (30" = 2.5')
+        'wall-cabinet': 2.5, 'glass-cabinet': 2.5, 'microwave-cabinet': 2.5,
+        'above-microwave-cabinet': 1.25,
+        // Tall cabinets (84" = 7')
+        'tall-cabinet': 7, 'pantry': 7, 'fridge-cabinet': 7,
+        'single-oven-cabinet': 7, 'tall-oven': 7, 'double-oven-cabinet': 7,
+        'linen-closet': 7,
+        // Countertops (1.5" = 0.125')
+        'countertop': 0.125, 'countertop-l': 0.125, 'countertop-u': 0.125,
+        'countertop-corner': 0.125, 'island-countertop': 0.125,
+        // Islands (36" = 3')
+        'island': 3,
+        // Appliances
+        'refrigerator': 5.833, 'range': 3, 'slide-in-range': 3,
+        'oven': 2.5, 'wall-oven-double': 4.5, 'cooktop': 0.25,
+        'microwave': 1.25, 'range-hood': 1.5, 'dishwasher': 2.875,
+        'washer': 3.25, 'dryer': 3.25,
+        'wine-cooler': 2.875, 'beverage-center': 2.875, 'ice-maker': 2.875,
+        'trash-compactor': 2.875, 'warming-drawer': 0.833,
+        // Plumbing
+        'sink': 0.5, 'toilet': 2.5, 'bathtub': 1.75,
+        'bathtub-freestanding': 2.083, 'shower-pan': 0.25,
+        'pedestal-sink': 2.833,
+        // Fixtures
+        'faucet': 1.167, 'mirror': 2.5, 'towel-bar': 0.25,
+        'shower-niche': 1,
+        // Walls
+        'wall': 8, 'wall-block': 8, 'wall-concrete': 8, 'wall-framed': 8,
+        'pony-wall': 3.5, 'knee-wall': 3, 'shower-wall': 6,
+        // Doors & windows
+        'door': 6.67, 'door-entry': 6.67, 'door-sliding': 6.67,
+        'door-french': 6.67, 'door-pocket': 6.67,
+        'window': 3, 'window-large': 4, 'window-small': 2, 'skylight': 0.25,
+        // Flooring
+        'flooring': 0.04, 'tile': 0.04, 'hardwood': 0.04,
+        'laminate': 0.04, 'vinyl': 0.04, 'carpet': 0.04,
+        // Backsplash
+        'backsplash': 1.5,
+        // Structural
+        'beam': 0.667, 'column': 8, 'soffit': 1
       };
       return heights[type] || 2;
     }
 
     function getYPosition(type, h) {
-      if (type === 'wall-cabinet') return 4.5 + h/2;
-      if (type === 'countertop') return 3 + h/2;
-      if (['window', 'door'].includes(type)) return h/2;
+      // Wall-mounted elements
+      if (['wall-cabinet', 'glass-cabinet', 'microwave-cabinet'].includes(type)) return 4.5 + h/2;
+      if (type === 'above-microwave-cabinet') return 5.75 + h/2;
+      if (type === 'countertop' || type === 'countertop-l' || type === 'countertop-u' ||
+          type === 'countertop-corner' || type === 'island-countertop') return 3 + h/2;
+      if (type === 'cooktop') return 3 + h/2;
+      if (type === 'sink') return 2.75 + h/2;
+      if (type === 'range-hood') return 5 + h/2;
+      if (['window', 'window-large', 'window-small'].includes(type)) return 3 + h/2;
+      if (type === 'skylight') return 8;
+      if (type === 'mirror') return 4 + h/2;
+      if (type === 'shower-niche') return 4 + h/2;
+      if (type === 'backsplash') return 3.125 + h/2;
+      if (type === 'beam' || type === 'soffit') return 8 - h/2;
+      if (['flooring', 'tile', 'hardwood', 'laminate', 'vinyl', 'carpet'].includes(type)) return 0.02;
+      if (['door', 'door-entry', 'door-sliding', 'door-french', 'door-pocket'].includes(type)) return h/2;
+      // Floor-standing elements
       return h/2;
     }
 
