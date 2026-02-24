@@ -12465,6 +12465,10 @@
           <span class="header-zoom-level" id="zoomLevel" onclick="resetZoom()" title="Click to reset to 100%">100%</span>
           <button class="header-zoom-btn" onclick="zoomIn()" title="Zoom In (+)">+</button>
         </div>
+        <div class="header-zoom-controls" style="margin-left:8px; gap:2px;">
+          <button class="header-zoom-btn" id="btnToggleGrid" onclick="toggleGridBtn()" title="Toggle Grid (G)" style="font-size:13px; width:auto; padding:0 7px;">Grid</button>
+          <button class="header-zoom-btn" id="btnToggleSnap" onclick="toggleSnapBtn()" title="Toggle Snap" style="font-size:13px; width:auto; padding:0 7px; opacity:1;">Snap</button>
+        </div>
       </div>
 
       <div class="header-right">
@@ -12478,8 +12482,8 @@
           </button>
         </div>
 
-        <!-- Gaming-Style Notification Hub -->
-        <div class="notification-hub" id="notificationHub">
+        <!-- Gaming-Style Notification Hub (hidden — messaging panel handles communications) -->
+        <div class="notification-hub" id="notificationHub" style="display: none;">
           <button class="notification-hub-btn" id="notifHubBtn" onclick="toggleNotificationHub()" title="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -12773,10 +12777,10 @@
         <!-- Quick Favorites -->
         <div class="sidebar-section" id="favoritesSection">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Your favorite elements and materials">
-            <span class="sidebar-title">⭐ Favorites</span>
-            <span class="sidebar-toggle">▼</span>
+            <span class="sidebar-title">Favorites</span>
+            <span class="sidebar-toggle">▶</span>
           </div>
-          <div class="sidebar-content">
+          <div class="sidebar-content collapsed">
             <div id="favoritesList" class="favorites-grid">
               <div class="favorites-empty" id="favoritesEmpty">
                 <span style="font-size: 20px;">⭐</span>
@@ -12795,10 +12799,10 @@
         <!-- Design Notes -->
         <div class="sidebar-section" id="notesSection">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Add notes and annotations">
-            <span class="sidebar-title">📝 Notes</span>
-            <span class="sidebar-toggle">▼</span>
+            <span class="sidebar-title">Notes</span>
+            <span class="sidebar-toggle">▶</span>
           </div>
-          <div class="sidebar-content">
+          <div class="sidebar-content collapsed">
             <div id="notesList" class="notes-list">
               <div class="notes-empty" id="notesEmpty">
                 <span style="font-size: 20px;">📝</span>
@@ -13168,6 +13172,14 @@
 
         <!-- Bathroom Fixtures (collapsed by default) -->
         <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleMoreCategories(this)" title="Bathroom, Laundry, Closet, Furniture, Decor, Electrical" style="background: rgba(99, 102, 241, 0.08); border-top: 1px solid rgba(99, 102, 241, 0.15);">
+            <span class="sidebar-title" style="font-size: 11px; color: #8b8ba7;">More Categories</span>
+            <span class="sidebar-toggle">▶</span>
+          </div>
+          <div id="moreCategoriesContainer" style="display: none;">
+
+        <!-- Bathroom (collapsed by default) -->
+        <div class="sidebar-section">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Toilets, tubs, vanities & showers">
             <span class="sidebar-title">Bathroom</span>
             <span class="sidebar-toggle">▶</span>
@@ -13243,6 +13255,9 @@
             </div>
           </div>
         </div>
+
+          </div> <!-- end moreCategoriesContainer -->
+        </div> <!-- end More Categories sidebar-section -->
 
         <!-- Materials Library -->
         <div class="sidebar-section">
@@ -13817,7 +13832,7 @@
         </div>
 
         <!-- Unified Messages Panel -->
-        <div class="panel-section" id="teamChatSection">
+        <div class="panel-section" id="teamChatSection" style="display: none;">
           <div class="panel-title" onclick="togglePanelSection('teamChatSection')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
             <span style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 14px;">💬</span>
@@ -16252,7 +16267,7 @@
 
         <!-- Action Buttons -->
         <div style="display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <button class="btn btn-secondary" onclick="downloadQuotePDF()" style="flex: 1;">
+          <button class="btn btn-secondary" onclick="exportToPDF()" style="flex: 1;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px;">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
@@ -16774,6 +16789,8 @@
       DEFAULT_PIXELS_PER_FOOT: 40,
       GRID_SUBDIVISIONS: 12, // 12 subdivisions = 1 inch grid (12" per foot)
       MEASUREMENT_PRECISION: 16, // 1/16" precision
+      SHOW_GRID: true,
+      SNAP_ENABLED: true,
       WALL_THICKNESS: 6,
       PRICING: {
         'base-cabinet': 150,
@@ -20258,7 +20275,7 @@
     const SNAP_DIMENSIONS = {
       widths: [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 6, 8],
       depths: [1, 1.5, 2, 2.5, 3, 4],
-      tolerance: 0.0833  // 1" snap tolerance
+      tolerance: 0.03125  // 3/8" snap tolerance - much less aggressive during resize
     };
 
     // ===== MATERIAL TYPE RESTRICTIONS =====
@@ -25625,10 +25642,17 @@
     window.walls = walls;
     // Note: draw() function is exposed later after it's defined
     let isDragging = false;
+    let hoveredElement = null; // Element under cursor for hover highlight
+    let dragPending = false; // True after mousedown on element, before threshold met
+    let dragStartScreen = { x: 0, y: 0 }; // Screen coords at mousedown for threshold calc
+    const DRAG_THRESHOLD = 6; // Pixels of movement before drag initiates
     let dragOffset = { x: 0, y: 0 };
     let autoRotationApplied = false; // Track if auto-rotation was applied during this drag
     let lastSnappedWall = null; // Track which wall we last snapped to
     let drawPending = false; // Throttle flag for requestAnimationFrame-based draw batching
+    let measureStart = null; // First point for 2D measure tool {x, y} in world coords
+    let measureEnd = null;   // Second point (live preview during drag)
+    let measureFixed = null; // Completed measurement to keep displaying
 
     // DOM element cache for frequently accessed elements
     const domCache = {
@@ -26108,10 +26132,14 @@
           room.elements.forEach(el => {
             const elMesh = createSimple3DElement(el);
             if (elMesh) {
-              // Convert 2D position to 3D
+              // Convert 2D position to 3D, accounting for rotation
+              const rot = ((el.rotation || 0) % 360 + 360) % 360;
+              const w = (rot === 90 || rot === 270) ? el.height : el.width;
+              const h = (rot === 90 || rot === 270) ? el.width : el.height;
               const x3d = (el.x / pixelsPerFoot);
               const z3d = (el.y / pixelsPerFoot);
-              elMesh.position.set(x3d + el.width / 2, 0, z3d + el.height / 2);
+              elMesh.position.set(x3d + w / 2, 0, z3d + h / 2);
+              elMesh.rotation.y = -(el.rotation || 0) * Math.PI / 180;
               roomGroup.add(elMesh);
             }
           });
@@ -27460,6 +27488,10 @@
       roomDepth = state.roomDepth;
 
       selectedElement = null;
+      hoveredElement = null;
+      measureStart = null;
+      measureEnd = null;
+      measureFixed = null;
       updateProperties();
       calculateQuote();
       draw();
@@ -27494,6 +27526,7 @@
       elementListDirty = true;
       walls = [];
       selectedElement = null;
+      hoveredElement = null;
       undoStack = [];
       redoStack = [];
 
@@ -29028,6 +29061,7 @@
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseup', onMouseUp);
       canvas.addEventListener('mouseleave', onMouseUp);
+      document.addEventListener('mouseup', () => { dragPending = false; }); // Clear stuck dragPending
       canvas.addEventListener('contextmenu', onContextMenu);
       canvas.addEventListener('dblclick', onDoubleClick);
       canvas.addEventListener('wheel', onWheel, { passive: false });
@@ -29355,6 +29389,9 @@
       // Draw layout tool preview
       drawLayoutToolPreview();
 
+      // Draw 2D measure tool line
+      drawMeasureLine();
+
       ctx.restore();
 
       // Use cached DOM element for performance
@@ -29384,7 +29421,7 @@
 
     // Draw snap guides when dragging cabinets near walls
     function drawSnapGuides() {
-      if (!isDragging || !selectedElement) return;
+      if (!isDragging || !selectedElement || !CONFIG.SNAP_ENABLED) return;
 
       const isCabinetType = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan',
@@ -29393,126 +29430,52 @@
 
       if (!isCabinetType) return;
 
-      // Draw hint text at top of canvas
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to screen coordinates
-      ctx.font = '12px Inter';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.textAlign = 'center';
-      ctx.fillText('Hold SHIFT for free placement (no snap/rotate)', canvas.width / 2, 25);
-      ctx.restore();
-
-      const snapZone = pixelsPerFoot * 0.5; // Match the reduced snap distance
+      const snapZone = pixelsPerFoot * 0.5;
       const roomW = roomWidth * pixelsPerFoot;
       const roomH = roomDepth * pixelsPerFoot;
 
+      const rot = ((selectedElement.rotation || 0) % 360 + 360) % 360;
       const elX = selectedElement.x;
       const elY = selectedElement.y;
-      const elW = selectedElement.width * pixelsPerFoot;
-      const elH = selectedElement.height * pixelsPerFoot;
+      const elW = (rot === 90 || rot === 270) ? selectedElement.height * pixelsPerFoot : selectedElement.width * pixelsPerFoot;
+      const elH = (rot === 90 || rot === 270) ? selectedElement.width * pixelsPerFoot : selectedElement.height * pixelsPerFoot;
 
       ctx.save();
-      ctx.setLineDash([8, 4]);
-      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 1.5;
 
-      // Back wall snap guide (top)
+      // Wall snap guides — thin dashed lines at the wall edges when element is near
+      // Back wall (top)
       if (Math.abs(elY) < snapZone) {
-        ctx.strokeStyle = '#4CAF50';
-        ctx.beginPath();
-        ctx.moveTo(-50, 0);
-        ctx.lineTo(roomW + 50, 0);
-        ctx.stroke();
-        // Highlight indicator
-        ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
-        ctx.fillRect(-50, 0, roomW + 100, snapZone);
+        ctx.strokeStyle = 'rgba(76, 175, 80, 0.6)';
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(roomW, 0); ctx.stroke();
       }
-
-      // Left wall snap guide
+      // Left wall
       if (Math.abs(elX) < snapZone) {
-        ctx.strokeStyle = '#2196F3';
-        ctx.beginPath();
-        ctx.moveTo(0, -50);
-        ctx.lineTo(0, roomH + 50);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(33, 150, 243, 0.2)';
-        ctx.fillRect(0, -50, snapZone, roomH + 100);
+        ctx.strokeStyle = 'rgba(33, 150, 243, 0.6)';
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, roomH); ctx.stroke();
       }
-
-      // Right wall snap guide
+      // Right wall
       if (Math.abs((elX + elW) - roomW) < snapZone) {
-        ctx.strokeStyle = '#FF9800';
-        ctx.beginPath();
-        ctx.moveTo(roomW, -50);
-        ctx.lineTo(roomW, roomH + 50);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255, 152, 0, 0.2)';
-        ctx.fillRect(roomW - snapZone, -50, snapZone, roomH + 100);
+        ctx.strokeStyle = 'rgba(255, 152, 0, 0.6)';
+        ctx.beginPath(); ctx.moveTo(roomW, 0); ctx.lineTo(roomW, roomH); ctx.stroke();
       }
-
-      // Front wall snap guide (bottom)
+      // Front wall (bottom)
       if (Math.abs((elY + elH) - roomH) < snapZone) {
-        ctx.strokeStyle = '#9C27B0';
-        ctx.beginPath();
-        ctx.moveTo(-50, roomH);
-        ctx.lineTo(roomW + 50, roomH);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(156, 39, 176, 0.2)';
-        ctx.fillRect(-50, roomH - snapZone, roomW + 100, snapZone);
+        ctx.strokeStyle = 'rgba(156, 39, 176, 0.6)';
+        ctx.beginPath(); ctx.moveTo(0, roomH); ctx.lineTo(roomW, roomH); ctx.stroke();
       }
 
-      // Corner indicators for corner cabinets
-      const isCornerCabinet = ['corner-cabinet', 'lazy-susan'].includes(selectedElement.type);
-      if (isCornerCabinet) {
-        const cornerZone = pixelsPerFoot * 1.0;
-
-        // Top-left corner
-        if (Math.abs(elX) < cornerZone && Math.abs(elY) < cornerZone) {
-          ctx.fillStyle = 'rgba(76, 175, 80, 0.4)';
-          ctx.beginPath();
-          ctx.arc(0, 0, cornerZone, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.fill();
-        }
-
-        // Top-right corner
-        if (Math.abs((elX + elW) - roomW) < cornerZone && Math.abs(elY) < cornerZone) {
-          ctx.fillStyle = 'rgba(255, 152, 0, 0.4)';
-          ctx.beginPath();
-          ctx.arc(roomW, 0, cornerZone, Math.PI / 2, Math.PI);
-          ctx.lineTo(roomW, 0);
-          ctx.fill();
-        }
-
-        // Bottom-left corner
-        if (Math.abs(elX) < cornerZone && Math.abs((elY + elH) - roomH) < cornerZone) {
-          ctx.fillStyle = 'rgba(33, 150, 243, 0.4)';
-          ctx.beginPath();
-          ctx.arc(0, roomH, cornerZone, -Math.PI / 2, 0);
-          ctx.lineTo(0, roomH);
-          ctx.fill();
-        }
-
-        // Bottom-right corner
-        if (Math.abs((elX + elW) - roomW) < cornerZone && Math.abs((elY + elH) - roomH) < cornerZone) {
-          ctx.fillStyle = 'rgba(156, 39, 176, 0.4)';
-          ctx.beginPath();
-          ctx.arc(roomW, roomH, cornerZone, Math.PI, Math.PI * 1.5);
-          ctx.lineTo(roomW, roomH);
-          ctx.fill();
-        }
-      }
-
-      // === ELEMENT-TO-ELEMENT ALIGNMENT GUIDES ===
-      // Show alignment when current element aligns with other elements
-      // Limit to nearest 5 elements to avoid visual clutter in dense templates
-      const alignThreshold = pixelsPerFoot * 0.25; // 3" tolerance
-      const elCenterX = elX + elW / 2;
-      const elCenterY = elY + elH / 2;
+      // Element-to-element: only show edge-to-edge butting guides (most useful for kitchen layout)
+      const alignThreshold = pixelsPerFoot * 0.25;
       const elRight = elX + elW;
       const elBottom = elY + elH;
+      const elCenterX = elX + elW / 2;
+      const elCenterY = elY + elH / 2;
 
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([3, 3]);
       ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(139, 195, 74, 0.7)';
 
       const nearbyElements = elements
         .filter(o => o.id !== selectedElement.id && o.type !== 'flooring' && o.type !== 'tile')
@@ -29522,188 +29485,42 @@
           return { el: o, dist: Math.hypot(ox - elCenterX, oy - elCenterY) };
         })
         .sort((a, b) => a.dist - b.dist)
-        .slice(0, 5)
+        .slice(0, 3)
         .map(o => o.el);
 
       nearbyElements.forEach(other => {
-
         const otherX = other.x;
         const otherY = other.y;
-        const otherW = other.width * pixelsPerFoot;
-        const otherH = other.height * pixelsPerFoot;
-        const otherCenterX = otherX + otherW / 2;
-        const otherCenterY = otherY + otherH / 2;
+        const oRot = ((other.rotation || 0) % 360 + 360) % 360;
+        const otherW = (oRot === 90 || oRot === 270) ? other.height * pixelsPerFoot : other.width * pixelsPerFoot;
+        const otherH = (oRot === 90 || oRot === 270) ? other.width * pixelsPerFoot : other.height * pixelsPerFoot;
         const otherRight = otherX + otherW;
         const otherBottom = otherY + otherH;
 
-        // Vertical alignment guides (X axis matches)
-        // Left edge to left edge
-        if (Math.abs(elX - otherX) < alignThreshold) {
-          ctx.strokeStyle = '#00BCD4';
-          ctx.beginPath();
-          ctx.moveTo(otherX, Math.min(elY, otherY) - 20);
-          ctx.lineTo(otherX, Math.max(elBottom, otherBottom) + 20);
-          ctx.stroke();
-        }
-        // Right edge to right edge
-        if (Math.abs(elRight - otherRight) < alignThreshold) {
-          ctx.strokeStyle = '#00BCD4';
-          ctx.beginPath();
-          ctx.moveTo(otherRight, Math.min(elY, otherY) - 20);
-          ctx.lineTo(otherRight, Math.max(elBottom, otherBottom) + 20);
-          ctx.stroke();
-        }
-        // Center to center (vertical)
-        if (Math.abs(elCenterX - otherCenterX) < alignThreshold) {
-          ctx.strokeStyle = '#E91E63';
-          ctx.beginPath();
-          ctx.moveTo(otherCenterX, Math.min(elY, otherY) - 20);
-          ctx.lineTo(otherCenterX, Math.max(elBottom, otherBottom) + 20);
-          ctx.stroke();
-        }
-        // Left edge to right edge (butting together)
+        // Butting guides only — element edges touching
         if (Math.abs(elX - otherRight) < alignThreshold) {
-          ctx.strokeStyle = '#8BC34A';
           ctx.beginPath();
-          ctx.moveTo(otherRight, Math.min(elY, otherY) - 10);
-          ctx.lineTo(otherRight, Math.max(elBottom, otherBottom) + 10);
+          ctx.moveTo(otherRight, Math.min(elY, otherY));
+          ctx.lineTo(otherRight, Math.max(elBottom, otherBottom));
           ctx.stroke();
         }
-        // Right edge to left edge (butting together)
         if (Math.abs(elRight - otherX) < alignThreshold) {
-          ctx.strokeStyle = '#8BC34A';
           ctx.beginPath();
-          ctx.moveTo(otherX, Math.min(elY, otherY) - 10);
-          ctx.lineTo(otherX, Math.max(elBottom, otherBottom) + 10);
+          ctx.moveTo(otherX, Math.min(elY, otherY));
+          ctx.lineTo(otherX, Math.max(elBottom, otherBottom));
           ctx.stroke();
         }
-
-        // Horizontal alignment guides (Y axis matches)
-        // Top edge to top edge
-        if (Math.abs(elY - otherY) < alignThreshold) {
-          ctx.strokeStyle = '#00BCD4';
-          ctx.beginPath();
-          ctx.moveTo(Math.min(elX, otherX) - 20, otherY);
-          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherY);
-          ctx.stroke();
-        }
-        // Bottom edge to bottom edge
-        if (Math.abs(elBottom - otherBottom) < alignThreshold) {
-          ctx.strokeStyle = '#00BCD4';
-          ctx.beginPath();
-          ctx.moveTo(Math.min(elX, otherX) - 20, otherBottom);
-          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherBottom);
-          ctx.stroke();
-        }
-        // Center to center (horizontal)
-        if (Math.abs(elCenterY - otherCenterY) < alignThreshold) {
-          ctx.strokeStyle = '#E91E63';
-          ctx.beginPath();
-          ctx.moveTo(Math.min(elX, otherX) - 20, otherCenterY);
-          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherCenterY);
-          ctx.stroke();
-        }
-        // Top edge to bottom edge (stacking)
         if (Math.abs(elY - otherBottom) < alignThreshold) {
-          ctx.strokeStyle = '#8BC34A';
           ctx.beginPath();
-          ctx.moveTo(Math.min(elX, otherX) - 10, otherBottom);
-          ctx.lineTo(Math.max(elRight, otherRight) + 10, otherBottom);
+          ctx.moveTo(Math.min(elX, otherX), otherBottom);
+          ctx.lineTo(Math.max(elRight, otherRight), otherBottom);
           ctx.stroke();
         }
-        // Bottom edge to top edge (stacking)
         if (Math.abs(elBottom - otherY) < alignThreshold) {
-          ctx.strokeStyle = '#8BC34A';
           ctx.beginPath();
-          ctx.moveTo(Math.min(elX, otherX) - 10, otherY);
-          ctx.lineTo(Math.max(elRight, otherRight) + 10, otherY);
+          ctx.moveTo(Math.min(elX, otherX), otherY);
+          ctx.lineTo(Math.max(elRight, otherRight), otherY);
           ctx.stroke();
-        }
-
-        // === DISTANCE MEASUREMENTS ===
-        // Show gap distance when elements are close but not touching
-        const gapThreshold = pixelsPerFoot * 4; // Show distances up to 4 feet
-
-        // Horizontal gap (elements side by side)
-        if (elY < otherBottom && elBottom > otherY) { // Vertically overlapping
-          let hGap = 0;
-          let gapX = 0;
-          let gapY = Math.max(elY, otherY) + Math.min(elH, otherH) / 2;
-
-          if (elX > otherRight) {
-            hGap = elX - otherRight;
-            gapX = otherRight + hGap / 2;
-          } else if (otherX > elRight) {
-            hGap = otherX - elRight;
-            gapX = elRight + hGap / 2;
-          }
-
-          if (hGap > 0 && hGap < gapThreshold) {
-            // Draw gap indicator
-            ctx.strokeStyle = '#FFC107';
-            ctx.setLineDash([2, 2]);
-            ctx.beginPath();
-            if (elX > otherRight) {
-              ctx.moveTo(otherRight, gapY);
-              ctx.lineTo(elX, gapY);
-            } else {
-              ctx.moveTo(elRight, gapY);
-              ctx.lineTo(otherX, gapY);
-            }
-            ctx.stroke();
-
-            // Draw measurement text
-            const gapFeet = hGap / pixelsPerFoot;
-            const gapInches = Math.round(gapFeet * 12);
-            const gapText = `${gapInches}"`;
-
-            ctx.font = '10px Inter';
-            ctx.fillStyle = '#FFC107';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(gapText, gapX, gapY - 3);
-          }
-        }
-
-        // Vertical gap (elements stacked)
-        if (elX < otherRight && elRight > otherX) { // Horizontally overlapping
-          let vGap = 0;
-          let gapY = 0;
-          let gapX = Math.max(elX, otherX) + Math.min(elW, otherW) / 2;
-
-          if (elY > otherBottom) {
-            vGap = elY - otherBottom;
-            gapY = otherBottom + vGap / 2;
-          } else if (otherY > elBottom) {
-            vGap = otherY - elBottom;
-            gapY = elBottom + vGap / 2;
-          }
-
-          if (vGap > 0 && vGap < gapThreshold) {
-            // Draw gap indicator
-            ctx.strokeStyle = '#FFC107';
-            ctx.setLineDash([2, 2]);
-            ctx.beginPath();
-            if (elY > otherBottom) {
-              ctx.moveTo(gapX, otherBottom);
-              ctx.lineTo(gapX, elY);
-            } else {
-              ctx.moveTo(gapX, elBottom);
-              ctx.lineTo(gapX, otherY);
-            }
-            ctx.stroke();
-
-            // Draw measurement text
-            const gapFeet = vGap / pixelsPerFoot;
-            const gapInches = Math.round(gapFeet * 12);
-            const gapText = `${gapInches}"`;
-
-            ctx.font = '10px Inter';
-            ctx.fillStyle = '#FFC107';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(gapText, gapX + 5, gapY);
-          }
         }
       });
 
@@ -29724,51 +29541,23 @@
     }
 
     function drawGrid() {
-      const gridSize = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
       const roomW = roomWidth * pixelsPerFoot;
       const roomH = roomDepth * pixelsPerFoot;
 
-      // Calculate visible area for grid
-      const startX = -panX - pixelsPerFoot;
-      const startY = -panY - pixelsPerFoot;
-      const endX = canvas.width - panX + pixelsPerFoot;
-      const endY = canvas.height - panY + pixelsPerFoot;
-
-      // Sub-grid (faint lines)
-      ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+      // Grid only inside room — clean and minimal, 1ft lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
       ctx.lineWidth = 1;
 
-      const gridStartX = Math.floor(startX / gridSize) * gridSize;
-      const gridStartY = Math.floor(startY / gridSize) * gridSize;
-
-      for (let x = gridStartX; x < endX; x += gridSize) {
+      for (let x = pixelsPerFoot; x < roomW; x += pixelsPerFoot) {
         ctx.beginPath();
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, roomH);
         ctx.stroke();
       }
-      for (let y = gridStartY; y < endY; y += gridSize) {
+      for (let y = pixelsPerFoot; y < roomH; y += pixelsPerFoot) {
         ctx.beginPath();
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
-        ctx.stroke();
-      }
-
-      // Main grid (1ft lines)
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      const mainStartX = Math.floor(startX / pixelsPerFoot) * pixelsPerFoot;
-      const mainStartY = Math.floor(startY / pixelsPerFoot) * pixelsPerFoot;
-
-      for (let x = mainStartX; x < endX; x += pixelsPerFoot) {
-        ctx.beginPath();
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
-        ctx.stroke();
-      }
-      for (let y = mainStartY; y < endY; y += pixelsPerFoot) {
-        ctx.beginPath();
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
+        ctx.moveTo(0, y);
+        ctx.lineTo(roomW, y);
         ctx.stroke();
       }
     }
@@ -29887,32 +29676,14 @@
       ctx.fillText(`${Math.round(roomDepth * 12)}"`, 0, 0);
       ctx.restore();
 
-      // Foot markers along room edges (display in inches)
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.font = `${Math.max(9, pixelsPerFoot / 5)}px Inter`;
+      // Tick marks at each foot along room edges (no labels — total dimension shown above)
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
       for (let x = pixelsPerFoot; x < roomW; x += pixelsPerFoot) {
-        ctx.fillText(`${Math.round(x / pixelsPerFoot * 12)}"`, x, -25);
-        // Tick mark
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, -6);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, -4); ctx.stroke();
       }
       for (let y = pixelsPerFoot; y < roomH; y += pixelsPerFoot) {
-        ctx.save();
-        ctx.translate(-25, y);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`${Math.round(y / pixelsPerFoot * 12)}"`, 0, 0);
-        ctx.restore();
-        // Tick mark
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(-6, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(-4, y); ctx.stroke();
       }
 
     }
@@ -35542,7 +35313,7 @@
       });
 
       sortedElements.forEach(el => {
-        drawElement(el, el === selectedElement);
+        drawElement(el, el === selectedElement, el === hoveredElement);
       });
 
       // Draw link mode overlay: highlight pending elements and connection lines
@@ -35685,7 +35456,7 @@
     // Cache for texture patterns (performance optimization)
     const texturePatternCache = new Map();
 
-    function drawElement(el, isSelected) {
+    function drawElement(el, isSelected, isHovered) {
       let x = el.x;
       let y = el.y;
       let w = el.width * pixelsPerFoot;
@@ -35790,8 +35561,8 @@
       const isLocked = el.groupId !== undefined;
 
       if (!isLOrUShape) {
-        ctx.strokeStyle = isSelected ? '#6366f1' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
-        ctx.lineWidth = isSelected ? 3 : 1.5;
+        ctx.strokeStyle = isSelected ? '#6366f1' : isHovered ? 'rgba(99, 102, 241, 0.7)' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
+        ctx.lineWidth = isSelected ? 3 : isHovered ? 2.5 : 1.5;
         ctx.strokeRect(x, y, w, h);
       } else if (isSelected) {
         // Draw L-shape selection outline
@@ -35864,15 +35635,14 @@
         ctx.fillText(displayLabel, x + w/2, y + h - 6);
       }
 
-      // Dimensions — always show on elements large enough, highlighted when selected
+      // Dimensions — only show on selected or hovered elements to reduce clutter
       const dimFontSize = Math.max(9, Math.min(12, pixelsPerFoot / 4));
       if (isSelected) {
         ctx.fillStyle = '#6366f1';
         ctx.font = `bold ${dimFontSize + 2}px Inter`;
         ctx.textAlign = 'center';
         ctx.fillText(formatSize(el.width, el.height), x + w/2, y - 8);
-      } else if (w > 50 && h > 30) {
-        // Compact inline dimension on non-selected elements
+      } else if (el === hoveredElement && w > 50 && h > 30) {
         const dimText = formatSize(el.width, el.height);
         ctx.font = `${dimFontSize}px Inter`;
         const dimW = ctx.measureText(dimText).width + 6;
@@ -36077,15 +35847,23 @@
       if (!el || el.locked) return null;
 
       const handles = getResizeHandles(el);
-      const hs = HANDLE_SIZE + 4; // Slightly larger hit area
+      // Adaptive hit area: 24px normally, but scale down for small elements to prevent overlap
+      const elSize = Math.min(el.width * pixelsPerFoot, el.height * pixelsPerFoot);
+      const maxHitArea = Math.max(HANDLE_SIZE, Math.min(HANDLE_SIZE + 14, elSize / 3));
 
+      // Use distance-based selection: find closest handle within hit area
+      let closest = null;
+      let closestDist = Infinity;
       for (const [name, handle] of Object.entries(handles)) {
-        if (worldX >= handle.x - hs/2 && worldX <= handle.x + hs/2 &&
-            worldY >= handle.y - hs/2 && worldY <= handle.y + hs/2) {
-          return { name, ...handle };
+        const dx = worldX - handle.x;
+        const dy = worldY - handle.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= maxHitArea && dist < closestDist) {
+          closestDist = dist;
+          closest = { name, ...handle };
         }
       }
-      return null;
+      return closest;
     }
 
     function getCursorForHandle(handleName) {
@@ -36103,8 +35881,9 @@
     }
 
     function applyResize(el, handle, dx, dy) {
-      // Transform world-space delta to local-space delta based on rotation
-      const rotation = (el.rotation || 0) * Math.PI / 180;
+      // Use the rotation captured at resize start, not current rotation
+      // (protects against auto-rotation changing mid-resize)
+      const rotation = (resizeStart.rotation || 0) * Math.PI / 180;
       let localDx = dx;
       let localDy = dy;
 
@@ -36252,6 +36031,9 @@
         return;
       }
 
+      // Clear hover on any click
+      hoveredElement = null;
+
       const rect = canvas.getBoundingClientRect();
       const screenX = e.clientX - rect.left;
       const screenY = e.clientY - rect.top;
@@ -36322,6 +36104,13 @@
         return;
       }
 
+      if (currentTool === 'measure') {
+        measureStart = { x, y };
+        measureEnd = null;
+        measureFixed = null;
+        return;
+      }
+
       if (currentTool !== 'select') return;
 
       // Check if clicking on a resize handle of selected element
@@ -36336,7 +36125,8 @@
             width: selectedElement.width,
             height: selectedElement.height,
             elX: selectedElement.x,
-            elY: selectedElement.y
+            elY: selectedElement.y,
+            rotation: selectedElement.rotation || 0
           };
           canvas.style.cursor = getCursorForHandle(handle.name);
           return;
@@ -36395,9 +36185,12 @@
         selectedElement = clicked;
         updateLockUI();
         if (!clicked.locked) {
-          isDragging = true;
+          // Don't start dragging immediately — wait for mouse to move past threshold
+          isDragging = false;
+          dragPending = true;
+          dragStartScreen = { x: e.clientX, y: e.clientY };
           dragOffset = { x: x - clicked.x, y: y - clicked.y };
-          autoRotationApplied = false; // Reset auto-rotation tracking for new drag
+          autoRotationApplied = false;
           lastSnappedWall = null;
         }
         updateProperties();
@@ -36457,6 +36250,13 @@
         } else {
           updateCanvasSize();
         }
+        drawThrottled();
+        return;
+      }
+
+      // Handle measure tool preview
+      if (currentTool === 'measure' && measureStart) {
+        measureEnd = { x, y };
         drawThrottled();
         return;
       }
@@ -36566,6 +36366,30 @@
         }
       }
 
+      // Hover highlighting for unselected elements
+      if (currentTool === 'select' && !isDragging && !isResizing && !dragPending) {
+        const hovered = [...elements].reverse().find(el => isPointInElement(x, y, el));
+        const newHovered = (hovered && hovered !== selectedElement) ? hovered : null;
+        if (newHovered !== hoveredElement) {
+          hoveredElement = newHovered;
+          drawThrottled();
+        }
+        if (newHovered && !selectedElement) {
+          canvas.style.cursor = 'pointer';
+        }
+      }
+
+      // Check drag threshold — promote dragPending to isDragging once mouse moves enough
+      if (dragPending && !isDragging && selectedElement) {
+        const dx = e.clientX - dragStartScreen.x;
+        const dy = e.clientY - dragStartScreen.y;
+        if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+          isDragging = true;
+          dragPending = false;
+          // Undo state saved on mouseUp, not here — avoids double-save
+        }
+      }
+
       if (!isDragging || !selectedElement || selectedElement.locked) return;
 
       // Hold Shift to disable ALL snapping (completely free placement)
@@ -36598,12 +36422,13 @@
       let snapY = Math.round((y - dragOffset.y) / gridSnap) * gridSnap;
 
       // Element-to-element snapping (for placing cabinets together)
-      const snapDistance = pixelsPerFoot * 0.4; // Reduced from 0.5 for less aggressive snap
+      const snapDistance = pixelsPerFoot * 0.15; // ~1.8 inches - gentle alignment snap
 
-      // Element dimensions in physical coordinates (X,Y extents on canvas).
-      // drawElement handles the visual rotation swap, so physical coords = screen footprint.
-      const elW = selectedElement.width * pixelsPerFoot;
-      const elH = selectedElement.height * pixelsPerFoot;
+      // Element dimensions in screen footprint (X,Y extents on canvas).
+      // For 90°/270° rotated elements, width and height swap on screen.
+      const elRot = ((selectedElement.rotation || 0) % 360 + 360) % 360;
+      const elW = (elRot === 90 || elRot === 270) ? selectedElement.height * pixelsPerFoot : selectedElement.width * pixelsPerFoot;
+      const elH = (elRot === 90 || elRot === 270) ? selectedElement.width * pixelsPerFoot : selectedElement.height * pixelsPerFoot;
 
       // Check if this is a cabinet-type element for stricter alignment
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
@@ -36624,13 +36449,32 @@
                          'wall-wood-2x6', 'wall-brick', 'wall-steel', 'wall-aluminum',
                          'pony-wall', 'pony-wall-bar', 'knee-wall'];
 
+      // === PRIORITY-BASED SNAP SYSTEM ===
+      // Collect snap candidates, then pick the closest one per axis.
+      // This prevents multiple rules from fighting over the same axis.
+      // Skipped when snap is disabled — elements follow grid only.
+      if (!CONFIG.SNAP_ENABLED) {
+        // Skip all element/wall/corner snapping — just apply grid position
+        const dx = snapX - selectedElement.x;
+        const dy = snapY - selectedElement.y;
+        selectedElement.x = snapX;
+        selectedElement.y = snapY;
+        markElement3DDirty(selectedElement.id);
+        if (selectedElement.groupId) moveGroupedElements(selectedElement, dx, dy);
+        drawThrottled();
+        return;
+      }
+      let bestSnapX = { dist: Infinity, value: snapX, priority: 0, alignY: null };
+      let bestSnapY = { dist: Infinity, value: snapY, priority: 0, alignX: null };
+
       elements.forEach(other => {
         if (other.id === selectedElement.id) return;
 
         const otherX = other.x;
         const otherY = other.y;
-        const otherW = other.width * pixelsPerFoot;
-        const otherH = other.height * pixelsPerFoot;
+        const otherRot = ((other.rotation || 0) % 360 + 360) % 360;
+        const otherW = (otherRot === 90 || otherRot === 270) ? other.height * pixelsPerFoot : other.width * pixelsPerFoot;
+        const otherH = (otherRot === 90 || otherRot === 270) ? other.width * pixelsPerFoot : other.height * pixelsPerFoot;
         const isOtherCabinet = cabinetTypes.includes(other.type) ||
                                other.type?.startsWith('base-cabinet-') ||
                                other.type?.startsWith('wall-cabinet-') ||
@@ -36639,142 +36483,129 @@
                                other.type?.startsWith('sink-base-');
         const isOtherWall = wallTypes.includes(other.type);
 
-        // WALL ELEMENTS: Cabinets should snap AGAINST walls (back of cabinet to wall surface)
-        if (isOtherWall && isCabinetElement) {
-          const wallSnapDist = pixelsPerFoot * 0.75; // Generous snap distance for walls
+        // Helper: propose a snap candidate — only wins if closer than current best (or higher priority)
+        function proposeSnapX(dist, value, priority, alignY) {
+          if (priority > bestSnapX.priority || (priority === bestSnapX.priority && dist < bestSnapX.dist)) {
+            bestSnapX = { dist, value, priority, alignY };
+          }
+        }
+        function proposeSnapY(dist, value, priority, alignX) {
+          if (priority > bestSnapY.priority || (priority === bestSnapY.priority && dist < bestSnapY.dist)) {
+            bestSnapY = { dist, value, priority, alignX };
+          }
+        }
 
-          // Determine wall orientation
+        // WALL ELEMENTS: Cabinets snap AGAINST walls (priority 3 - highest)
+        if (isOtherWall && isCabinetElement) {
+          const wallSnapDist = pixelsPerFoot * 0.25;
           const isVerticalWall = otherH > otherW;
 
           if (isVerticalWall) {
-            // Vertical wall - cabinet can snap to left or right side
-            // Snap cabinet's back (left edge) against wall's right face
-            if (Math.abs(snapX - (otherX + otherW)) < wallSnapDist) {
-              snapX = otherX + otherW; // Cabinet left edge meets wall right edge
-            }
-            // Snap cabinet's back (right edge) against wall's left face
-            if (Math.abs((snapX + elW) - otherX) < wallSnapDist) {
-              snapX = otherX - elW; // Cabinet right edge meets wall left edge
-            }
+            let d = Math.abs(snapX - (otherX + otherW));
+            if (d < wallSnapDist) proposeSnapX(d, otherX + otherW, 3, null);
+            d = Math.abs((snapX + elW) - otherX);
+            if (d < wallSnapDist) proposeSnapX(d, otherX - elW, 3, null);
           } else {
-            // Horizontal wall - cabinet can snap to top or bottom side
-            // Snap cabinet's back (top edge) against wall's bottom face
-            if (Math.abs(snapY - (otherY + otherH)) < wallSnapDist) {
-              snapY = otherY + otherH; // Cabinet top edge meets wall bottom edge
-            }
-            // Snap cabinet's back (bottom edge) against wall's top face
-            if (Math.abs((snapY + elH) - otherY) < wallSnapDist) {
-              snapY = otherY - elH; // Cabinet bottom edge meets wall top edge
-            }
+            let d = Math.abs(snapY - (otherY + otherH));
+            if (d < wallSnapDist) proposeSnapY(d, otherY + otherH, 3, null);
+            d = Math.abs((snapY + elH) - otherY);
+            if (d < wallSnapDist) proposeSnapY(d, otherY - elH, 3, null);
           }
-          return; // Skip regular element snapping for walls
+          return;
         }
 
-        // Skip walls for regular element-to-element snapping (handled above)
         if (isOtherWall) return;
 
-        // For cabinets, use tighter snap for edge-to-edge (butt joints)
-        const edgeSnapDist = isCabinetElement ? pixelsPerFoot * 0.5 : snapDistance;
-
-        // When both are cabinets, use much larger snap distance for forming runs
-        const cabinetRunSnapDist = (isCabinetElement && isOtherCabinet) ? pixelsPerFoot * 0.8 : edgeSnapDist;
-
-        // Snap right edge of selected to left edge of other (place side by side)
-        if (Math.abs((snapX + elW) - otherX) < cabinetRunSnapDist) {
-          snapX = otherX - elW;
-          // Only align Y if already close (within 0.3ft) - don't force alignment
-          if (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.3) {
-            snapY = otherY;
-          }
-        }
-        // Snap left edge of selected to right edge of other
-        if (Math.abs(snapX - (otherX + otherW)) < cabinetRunSnapDist) {
-          snapX = otherX + otherW;
-          // Only align Y if already close (within 0.3ft) - don't force alignment
-          if (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.3) {
-            snapY = otherY;
-          }
-        }
-        // Snap bottom edge of selected to top edge of other (vertical cabinet runs)
-        // Use cabinetRunSnapDist for cabinet-to-cabinet vertical runs (left/right walls)
+        // Cabinet edge-to-edge snapping (priority 2)
+        const edgeSnapDist = isCabinetElement ? pixelsPerFoot * 0.2 : snapDistance;
+        const cabinetRunSnapDist = (isCabinetElement && isOtherCabinet) ? pixelsPerFoot * 0.25 : edgeSnapDist;
         const verticalSnapDist = (isCabinetElement && isOtherCabinet) ? cabinetRunSnapDist : edgeSnapDist;
-        if (Math.abs((snapY + elH) - otherY) < verticalSnapDist) {
-          snapY = otherY - elH;
-          // Align X (backs) when forming vertical cabinet runs
-          if (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.3) {
-            snapX = otherX;
-          }
+
+        // Right edge → left edge
+        let d = Math.abs((snapX + elW) - otherX);
+        if (d < cabinetRunSnapDist) {
+          const alignY = (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.15) ? otherY : null;
+          proposeSnapX(d, otherX - elW, 2, alignY);
         }
-        // Snap top edge of selected to bottom edge of other
-        if (Math.abs(snapY - (otherY + otherH)) < verticalSnapDist) {
-          snapY = otherY + otherH;
-          // Align X (backs) when forming vertical cabinet runs
-          if (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.3) {
-            snapX = otherX;
-          }
+        // Left edge → right edge
+        d = Math.abs(snapX - (otherX + otherW));
+        if (d < cabinetRunSnapDist) {
+          const alignY = (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.15) ? otherY : null;
+          proposeSnapX(d, otherX + otherW, 2, alignY);
+        }
+        // Bottom edge → top edge
+        d = Math.abs((snapY + elH) - otherY);
+        if (d < verticalSnapDist) {
+          const alignX = (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.15) ? otherX : null;
+          proposeSnapY(d, otherY - elH, 2, alignX);
+        }
+        // Top edge → bottom edge
+        d = Math.abs(snapY - (otherY + otherH));
+        if (d < verticalSnapDist) {
+          const alignX = (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.15) ? otherX : null;
+          proposeSnapY(d, otherY + otherH, 2, alignX);
         }
 
-        // Align tops when close (for cabinet runs along a wall)
-        if (Math.abs(snapY - otherY) < snapDistance) {
-          snapY = otherY;
-        }
-        // Align bottoms when close
-        if (Math.abs((snapY + elH) - (otherY + otherH)) < snapDistance) {
-          snapY = otherY + otherH - elH;
-        }
-        // Align lefts when close
-        if (Math.abs(snapX - otherX) < snapDistance) {
-          snapX = otherX;
-        }
-        // Align rights when close
-        if (Math.abs((snapX + elW) - (otherX + otherW)) < snapDistance) {
-          snapX = otherX + otherW - elW;
-        }
-
-        // === CABINET RUN BACK ALIGNMENT ===
-        // When placing cabinets in a run, align their backs (wall-facing edge)
-        // This ensures a straight cabinet run even with different depth cabinets
-        if (isCabinetElement && isOtherCabinet) {
-          // Check if we're placing cabinets side by side (horizontally adjacent)
-          const isHorizontallyAdjacent = Math.abs((snapX + elW) - otherX) < pixelsPerFoot * 0.2 ||
-                                          Math.abs(snapX - (otherX + otherW)) < pixelsPerFoot * 0.2;
-
-          // Check if we're placing cabinets vertically adjacent
-          const isVerticallyAdjacent = Math.abs((snapY + elH) - otherY) < pixelsPerFoot * 0.2 ||
-                                        Math.abs(snapY - (otherY + otherH)) < pixelsPerFoot * 0.2;
-
-          if (isHorizontallyAdjacent) {
-            // Align backs (top edge in 2D = back wall in 3D for back wall cabinets)
-            // If other cabinet is near top wall, align our top to theirs
-            if (otherY < pixelsPerFoot * 0.5 && Math.abs(snapY - otherY) < pixelsPerFoot * 0.5) {
-              snapY = otherY; // Align backs at wall
-            }
-            // If other cabinet is near bottom wall, align our bottoms
-            const roomBottom = roomDepth * pixelsPerFoot;
-            if (otherY + otherH > roomBottom - pixelsPerFoot * 0.5 &&
-                Math.abs((snapY + elH) - (otherY + otherH)) < pixelsPerFoot * 0.5) {
-              snapY = otherY + otherH - elH; // Align fronts at wall
-            }
-          }
-
-          if (isVerticallyAdjacent) {
-            // Align backs for side wall cabinet runs
-            // If other cabinet is near left wall, align our lefts
-            if (otherX < pixelsPerFoot * 0.5 && Math.abs(snapX - otherX) < pixelsPerFoot * 0.5) {
-              snapX = otherX; // Align backs at left wall
-            }
-            // If other cabinet is near right wall, align our rights
-            const roomRight = roomWidth * pixelsPerFoot;
-            if (otherX + otherW > roomRight - pixelsPerFoot * 0.5 &&
-                Math.abs((snapX + elW) - (otherX + otherW)) < pixelsPerFoot * 0.5) {
-              snapX = otherX + otherW - elW; // Align backs at right wall
-            }
-          }
-        }
+        // Alignment snaps (priority 1 - lowest, only if no edge snap won)
+        d = Math.abs(snapY - otherY);
+        if (d < snapDistance) proposeSnapY(d, otherY, 1, null);
+        d = Math.abs((snapY + elH) - (otherY + otherH));
+        if (d < snapDistance) proposeSnapY(d, otherY + otherH - elH, 1, null);
+        d = Math.abs(snapX - otherX);
+        if (d < snapDistance) proposeSnapX(d, otherX, 1, null);
+        d = Math.abs((snapX + elW) - (otherX + otherW));
+        if (d < snapDistance) proposeSnapX(d, otherX + otherW - elW, 1, null);
       });
 
+      // Apply the best snap candidates
+      snapX = bestSnapX.value;
+      snapY = bestSnapY.value;
+      // Apply cross-axis alignment from edge snaps (e.g. Y-align when X-snapped to cabinet)
+      if (bestSnapX.alignY !== null) snapY = bestSnapX.alignY;
+      if (bestSnapY.alignX !== null) snapX = bestSnapY.alignX;
+
+      // === CABINET RUN BACK ALIGNMENT (post-snap refinement) ===
+      // Only triggers when cabinets are already snapped edge-to-edge
+      if (isCabinetElement) {
+        const adjTolerance = pixelsPerFoot * 0.1;
+        const backAlignDist = pixelsPerFoot * 0.2;
+        elements.forEach(other => {
+          if (other.id === selectedElement.id) return;
+          const otherX = other.x;
+          const otherY = other.y;
+          const oRot = ((other.rotation || 0) % 360 + 360) % 360;
+          const otherW = (oRot === 90 || oRot === 270) ? other.height * pixelsPerFoot : other.width * pixelsPerFoot;
+          const otherH = (oRot === 90 || oRot === 270) ? other.width * pixelsPerFoot : other.height * pixelsPerFoot;
+          const isOtherCabinet = cabinetTypes.includes(other.type) ||
+                                 other.type?.startsWith('base-cabinet-') ||
+                                 other.type?.startsWith('wall-cabinet-') ||
+                                 other.type?.startsWith('tall-cabinet-') ||
+                                 other.type?.startsWith('drawer-base-') ||
+                                 other.type?.startsWith('sink-base-');
+          if (!isOtherCabinet) return;
+
+          const isHAdj = Math.abs((snapX + elW) - otherX) < adjTolerance ||
+                          Math.abs(snapX - (otherX + otherW)) < adjTolerance;
+          const isVAdj = Math.abs((snapY + elH) - otherY) < adjTolerance ||
+                          Math.abs(snapY - (otherY + otherH)) < adjTolerance;
+
+          if (isHAdj) {
+            if (otherY < pixelsPerFoot * 0.25 && Math.abs(snapY - otherY) < backAlignDist) snapY = otherY;
+            const roomBottom = roomDepth * pixelsPerFoot;
+            if (otherY + otherH > roomBottom - pixelsPerFoot * 0.25 &&
+                Math.abs((snapY + elH) - (otherY + otherH)) < backAlignDist) snapY = otherY + otherH - elH;
+          }
+          if (isVAdj) {
+            if (otherX < pixelsPerFoot * 0.25 && Math.abs(snapX - otherX) < backAlignDist) snapX = otherX;
+            const roomRight = roomWidth * pixelsPerFoot;
+            if (otherX + otherW > roomRight - pixelsPerFoot * 0.25 &&
+                Math.abs((snapX + elW) - (otherX + otherW)) < backAlignDist) snapX = otherX + otherW - elW;
+          }
+        });
+      }
+
       // Wall snapping for cabinets and countertops
-      const wallSnapDistance = pixelsPerFoot * 0.5; // Snap within 0.5 feet of walls (reduced for less aggressive snap)
+      const wallSnapDistance = pixelsPerFoot * 0.25; // ~3 inches - room boundary wall snap
       const isCabinetType = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan',
                              'island', 'countertop', 'sink', 'stove', 'dishwasher',
@@ -36790,26 +36621,31 @@
         const roomRightWall = roomWidth * pixelsPerFoot;
         const roomBottomWall = roomDepth * pixelsPerFoot;
 
+        // Only apply room boundary snaps if no element-to-element snap won on that axis
+        // This prevents room walls from overriding cabinet-to-cabinet edge snaps
+        const hasElementSnapX = bestSnapX.priority >= 2;
+        const hasElementSnapY = bestSnapY.priority >= 2;
+
         // Snap to back wall (top of 2D canvas = back wall in 3D)
-        if (Math.abs(snapY - roomTopWall) < wallSnapDistance) {
+        if (!hasElementSnapY && Math.abs(snapY - roomTopWall) < wallSnapDistance) {
           snapY = roomTopWall;
           snappedToWall = 'back';
         }
 
         // Snap to left wall
-        if (Math.abs(snapX - roomLeftWall) < wallSnapDistance) {
+        if (!hasElementSnapX && Math.abs(snapX - roomLeftWall) < wallSnapDistance) {
           snapX = roomLeftWall;
           snappedToWall = 'left';
         }
 
         // Snap to right wall (right edge of element to wall)
-        if (Math.abs((snapX + elW) - roomRightWall) < wallSnapDistance) {
+        if (!hasElementSnapX && Math.abs((snapX + elW) - roomRightWall) < wallSnapDistance) {
           snapX = roomRightWall - elW;
           snappedToWall = 'right';
         }
 
         // Snap to front (bottom edge in 2D - not usually needed but available)
-        if (Math.abs((snapY + elH) - roomBottomWall) < wallSnapDistance) {
+        if (!hasElementSnapY && Math.abs((snapY + elH) - roomBottomWall) < wallSnapDistance) {
           snapY = roomBottomWall - elH;
           snappedToWall = 'front';
         }
@@ -36851,12 +36687,42 @@
               targetRotation = selectedElement.rotation || 0;
           }
 
+          // If rotation changes, we need to swap the element's screen footprint
+          // and recalculate snap position so the element stays against the wall
+          const oldRot = ((elRot) % 360 + 360) % 360;
+          const newRot = ((targetRotation) % 360 + 360) % 360;
+          const wasSwapped = (oldRot === 90 || oldRot === 270);
+          const nowSwapped = (newRot === 90 || newRot === 270);
+
+          if (wasSwapped !== nowSwapped) {
+            // Dimensions swap on screen — recalculate position to keep element at wall
+            const oldW = elW;
+            const oldH = elH;
+            const newW = oldH; // Swapped
+            const newH = oldW;
+            // Keep center position stable, adjust x/y for new footprint
+            const cx = snapX + oldW / 2;
+            const cy = snapY + oldH / 2;
+            snapX = cx - newW / 2;
+            snapY = cy - newH / 2;
+            // Re-snap to the wall with new dimensions
+            if (snappedToWall === 'left') snapX = 0;
+            else if (snappedToWall === 'right') snapX = roomRightWall - newW;
+            else if (snappedToWall === 'back') snapY = 0;
+            else if (snappedToWall === 'front') snapY = roomBottomWall - newH;
+          }
+
           selectedElement.rotation = targetRotation;
           showSnapFeedback(`Snapped to ${snappedToWall} wall`);
         } else if (!snappedToWall) {
           // Reset when not snapped to any wall
           lastSnappedWall = null;
         }
+
+        // Recalculate screen footprint after potential auto-rotation change
+        const curRot = ((selectedElement.rotation || 0) % 360 + 360) % 360;
+        const curElW = (curRot === 90 || curRot === 270) ? selectedElement.height * pixelsPerFoot : selectedElement.width * pixelsPerFoot;
+        const curElH = (curRot === 90 || curRot === 270) ? selectedElement.width * pixelsPerFoot : selectedElement.height * pixelsPerFoot;
 
         // Snap to custom drawn walls - cabinets snap AGAINST walls (like magnets attracting)
         walls.forEach(wall => {
@@ -36871,18 +36737,18 @@
           const isVerticalWall = wall.height > wall.width;
 
           // Calculate element center
-          const elCenterX = snapX + elW / 2;
-          const elCenterY = snapY + elH / 2;
+          const elCenterX = snapX + curElW / 2;
+          const elCenterY = snapY + curElH / 2;
 
           if (isVerticalWall) {
             // Vertical wall - snap cabinet against whichever side is closer
             const distToLeftSide = Math.abs(snapX - wallRight); // Cabinet left to wall right
-            const distToRightSide = Math.abs((snapX + elW) - wallLeft); // Cabinet right to wall left
+            const distToRightSide = Math.abs((snapX + curElW) - wallLeft); // Cabinet right to wall left
 
             if (elCenterX < wallCenterX) {
               // Cabinet is to the left of wall - snap cabinet's right edge to wall's left edge
               if (distToRightSide < wallSnapDistance) {
-                snapX = wallLeft - elW;
+                snapX = wallLeft - curElW;
               }
             } else {
               // Cabinet is to the right of wall - snap cabinet's left edge to wall's right edge
@@ -36893,12 +36759,12 @@
           } else {
             // Horizontal wall - snap cabinet against whichever side is closer
             const distToTopSide = Math.abs(snapY - wallBottom); // Cabinet top to wall bottom
-            const distToBottomSide = Math.abs((snapY + elH) - wallTop); // Cabinet bottom to wall top
+            const distToBottomSide = Math.abs((snapY + curElH) - wallTop); // Cabinet bottom to wall top
 
             if (elCenterY < wallCenterY) {
               // Cabinet is above wall - snap cabinet's bottom edge to wall's top edge
               if (distToBottomSide < wallSnapDistance) {
-                snapY = wallTop - elH;
+                snapY = wallTop - curElH;
               }
             } else {
               // Cabinet is below wall - snap cabinet's top edge to wall's bottom edge
@@ -36912,43 +36778,63 @@
         // Special corner snap for corner cabinets and lazy-susan
         const isCornerCabinet = ['corner-cabinet', 'lazy-susan'].includes(selectedElement.type);
         if (isCornerCabinet) {
-          const cornerSnapDistance = pixelsPerFoot * 1.0; // Larger snap distance for corners
+          const cornerSnapDistance = pixelsPerFoot * 0.35; // ~4 inches for corner snap
+          // Use post-rotation dimensions for proximity checks and positioning
+          const cW = curElW;
+          const cH = curElH;
+
+          let cornerSnapped = false;
+          let newCornerRot = null;
 
           // Check if near top-left corner (back-left in 3D)
           if (Math.abs(snapX - roomLeftWall) < cornerSnapDistance &&
               Math.abs(snapY - roomTopWall) < cornerSnapDistance) {
-            snapX = roomLeftWall;
-            snapY = roomTopWall;
-            selectedElement.rotation = 0; // L opens toward front-right
+            newCornerRot = 0;
+            cornerSnapped = true;
             showSnapFeedback('Corner Snap: Back-Left');
           }
           // Check if near top-right corner (back-right in 3D)
-          else if (Math.abs((snapX + elW) - roomRightWall) < cornerSnapDistance &&
+          else if (Math.abs((snapX + cW) - roomRightWall) < cornerSnapDistance &&
                    Math.abs(snapY - roomTopWall) < cornerSnapDistance) {
-            snapX = roomRightWall - elW;
-            snapY = roomTopWall;
-            selectedElement.rotation = 270; // L opens toward front-left
+            newCornerRot = 270;
+            cornerSnapped = true;
             showSnapFeedback('Corner Snap: Back-Right');
           }
           // Check if near bottom-left corner (front-left in 3D)
           else if (Math.abs(snapX - roomLeftWall) < cornerSnapDistance &&
-                   Math.abs((snapY + elH) - roomBottomWall) < cornerSnapDistance) {
-            snapX = roomLeftWall;
-            snapY = roomBottomWall - elH;
-            selectedElement.rotation = 90; // L opens toward back-right
+                   Math.abs((snapY + cH) - roomBottomWall) < cornerSnapDistance) {
+            newCornerRot = 90;
+            cornerSnapped = true;
             showSnapFeedback('Corner Snap: Front-Left');
           }
           // Check if near bottom-right corner (front-right in 3D)
-          else if (Math.abs((snapX + elW) - roomRightWall) < cornerSnapDistance &&
-                   Math.abs((snapY + elH) - roomBottomWall) < cornerSnapDistance) {
-            snapX = roomRightWall - elW;
-            snapY = roomBottomWall - elH;
-            selectedElement.rotation = 180; // L opens toward back-left
+          else if (Math.abs((snapX + cW) - roomRightWall) < cornerSnapDistance &&
+                   Math.abs((snapY + cH) - roomBottomWall) < cornerSnapDistance) {
+            newCornerRot = 180;
+            cornerSnapped = true;
             showSnapFeedback('Corner Snap: Front-Right');
+          }
+
+          if (cornerSnapped && newCornerRot !== null) {
+            // Calculate new screen footprint after corner rotation
+            const finalW = (newCornerRot === 90 || newCornerRot === 270) ? selectedElement.height * pixelsPerFoot : selectedElement.width * pixelsPerFoot;
+            const finalH = (newCornerRot === 90 || newCornerRot === 270) ? selectedElement.width * pixelsPerFoot : selectedElement.height * pixelsPerFoot;
+            selectedElement.rotation = newCornerRot;
+
+            // Position at corner using final dimensions
+            if (newCornerRot === 0) { snapX = roomLeftWall; snapY = roomTopWall; }
+            else if (newCornerRot === 270) { snapX = roomRightWall - finalW; snapY = roomTopWall; }
+            else if (newCornerRot === 90) { snapX = roomLeftWall; snapY = roomBottomWall - finalH; }
+            else if (newCornerRot === 180) { snapX = roomRightWall - finalW; snapY = roomBottomWall - finalH; }
           }
         }
 
         // Cabinet-to-cabinet alignment for L and U shaped runs
+        // Recalculate screen footprint after auto-rotation and corner snap may have changed rotation
+        const finalRot = ((selectedElement.rotation || 0) % 360 + 360) % 360;
+        const finalElW = (finalRot === 90 || finalRot === 270) ? selectedElement.height * pixelsPerFoot : selectedElement.width * pixelsPerFoot;
+        const finalElH = (finalRot === 90 || finalRot === 270) ? selectedElement.width * pixelsPerFoot : selectedElement.height * pixelsPerFoot;
+
         // Find adjacent cabinets and align depth with them
         const adjacentCabinets = elements.filter(el => {
           if (el === selectedElement) return false;
@@ -36956,45 +36842,51 @@
 
           const elX = el.x;
           const elY = el.y;
-          const elRight = elX + el.width * pixelsPerFoot;
-          const elBottom = elY + el.height * pixelsPerFoot;
+          const adjRot = ((el.rotation || 0) % 360 + 360) % 360;
+          const adjW = (adjRot === 90 || adjRot === 270) ? el.height * pixelsPerFoot : el.width * pixelsPerFoot;
+          const adjH = (adjRot === 90 || adjRot === 270) ? el.width * pixelsPerFoot : el.height * pixelsPerFoot;
+          const elRight = elX + adjW;
+          const elBottom = elY + adjH;
 
-          // Check if horizontally adjacent (within 0.5 feet)
+          // Check if horizontally adjacent
           const horizGap = Math.min(
             Math.abs(snapX - elRight),
-            Math.abs((snapX + elW) - elX)
+            Math.abs((snapX + finalElW) - elX)
           );
 
           // Check if vertically adjacent
           const vertGap = Math.min(
             Math.abs(snapY - elBottom),
-            Math.abs((snapY + elH) - elY)
+            Math.abs((snapY + finalElH) - elY)
           );
 
-          return horizGap < pixelsPerFoot * 0.5 || vertGap < pixelsPerFoot * 0.5;
+          return horizGap < pixelsPerFoot * 0.15 || vertGap < pixelsPerFoot * 0.15;
         });
 
         // If there are adjacent cabinets, help align for L-shape connections
         if (adjacentCabinets.length > 0) {
           adjacentCabinets.forEach(adj => {
-            const adjRight = adj.x + adj.width * pixelsPerFoot;
-            const adjBottom = adj.y + adj.height * pixelsPerFoot;
+            const aRot = ((adj.rotation || 0) % 360 + 360) % 360;
+            const aW = (aRot === 90 || aRot === 270) ? adj.height * pixelsPerFoot : adj.width * pixelsPerFoot;
+            const aH = (aRot === 90 || aRot === 270) ? adj.width * pixelsPerFoot : adj.height * pixelsPerFoot;
+            const adjRight = adj.x + aW;
+            const adjBottom = adj.y + aH;
 
             // Snap to form perpendicular L-connection
             // If adjacent cabinet is horizontal (on back wall), connect vertically (on side wall)
             if (Math.abs(adj.y - roomTopWall) < wallSnapDistance) {
               // Adjacent is on back wall, snap our top to their bottom for L
-              if (Math.abs(snapY - adjBottom) < pixelsPerFoot * 0.5) {
+              if (Math.abs(snapY - adjBottom) < pixelsPerFoot * 0.2) {
                 snapY = adjBottom;
               }
             }
 
             // If we're forming an L, snap our edge to their edge
-            if (Math.abs(snapX - adjRight) < pixelsPerFoot * 0.3) {
+            if (Math.abs(snapX - adjRight) < pixelsPerFoot * 0.15) {
               snapX = adjRight;
             }
-            if (Math.abs((snapX + elW) - adj.x) < pixelsPerFoot * 0.3) {
-              snapX = adj.x - elW;
+            if (Math.abs((snapX + finalElW) - adj.x) < pixelsPerFoot * 0.15) {
+              snapX = adj.x - finalElW;
             }
           });
         }
@@ -37154,6 +37046,32 @@
         return;
       }
 
+      // Handle measure tool completion
+      if (currentTool === 'measure' && measureStart && measureEnd) {
+        measureFixed = { start: measureStart, end: measureEnd };
+        const dx = (measureEnd.x - measureStart.x) / pixelsPerFoot;
+        const dy = (measureEnd.y - measureStart.y) / pixelsPerFoot;
+        const distFt = Math.sqrt(dx * dx + dy * dy);
+        const distIn = distFt * 12;
+        const wholeIn = Math.floor(distIn);
+        const frac = distIn - wholeIn;
+        let fracStr = '';
+        if (frac >= 0.875) fracStr = '';
+        else if (frac >= 0.8125) fracStr = '7/8';
+        else if (frac >= 0.6875) fracStr = '3/4';
+        else if (frac >= 0.5625) fracStr = '5/8';
+        else if (frac >= 0.4375) fracStr = '1/2';
+        else if (frac >= 0.3125) fracStr = '3/8';
+        else if (frac >= 0.1875) fracStr = '1/4';
+        else if (frac >= 0.0625) fracStr = '1/8';
+        const display = fracStr ? `${wholeIn + (frac >= 0.875 ? 1 : 0)} ${fracStr}"` : `${wholeIn + (frac >= 0.875 ? 1 : 0)}"`;
+        showSnapFeedback(`Distance: ${display}`);
+        measureStart = null;
+        measureEnd = null;
+        draw();
+        return;
+      }
+
       // Handle peninsula tool click-to-place
       if (currentTool === 'peninsula' && !isDragging) {
         const rect = canvas.getBoundingClientRect();
@@ -37176,6 +37094,7 @@
       }
 
       isDragging = false;
+      dragPending = false;
     }
 
     function onContextMenu(e) {
@@ -37198,7 +37117,7 @@
 
     function onDoubleClick(e) {
       // If in layout mode, finalize the cabinet run
-      if (currentTool === 'layout' && layoutMode.points.length >= 2) {
+      if (currentTool === 'layout' && layoutMode.corners && layoutMode.corners.length >= 2) {
         finalizeLayoutRun();
         return;
       }
@@ -37331,11 +37250,7 @@
           break;
         case 'g':
           // G to toggle grid visibility
-          if (typeof CONFIG !== 'undefined') {
-            CONFIG.SHOW_GRID = !CONFIG.SHOW_GRID;
-            showSnapFeedback(CONFIG.SHOW_GRID ? 'Grid: ON' : 'Grid: OFF');
-            draw();
-          }
+          toggleGridBtn();
           break;
         case 't':
           // T to cycle through tab panels (Elements, Materials, Properties)
@@ -37360,9 +37275,12 @@
           break;
         case 'escape':
           // Cancel layout tool if active
-          if (currentTool === 'layout' && layoutMode.points.length > 0) {
-            layoutMode.points = [];
+          if (currentTool === 'layout' && layoutMode.corners && layoutMode.corners.length > 0) {
+            layoutMode.corners = [];
+            layoutMode.isDrawing = false;
+            resetLayoutMode();
             showSnapFeedback('Layout cancelled');
+            draw();
           }
           // Cancel seam placement mode
           if (seamPlacementMode) {
@@ -37426,8 +37344,8 @@
         case 'arrowdown':
         case 'arrowleft':
         case 'arrowright':
-          // Arrow keys nudge selected element
-          if (selectedElement && !selectedElement.locked) {
+          // Arrow keys nudge selected element (not during drag/resize)
+          if (selectedElement && !selectedElement.locked && !isDragging && !isResizing) {
             e.preventDefault();
             // Shift = fine nudge (1"), Ctrl = large nudge (1'), default = 3"
             const nudgeAmount = e.shiftKey ? pixelsPerFoot / 12 : // 1 inch
@@ -39182,6 +39100,7 @@
       elements = elements.filter(el => el !== element);
       elementListDirty = true;
       selectedElement = null;
+      hoveredElement = null;
       updateProperties();
       calculateQuote();
       saveUndoState();
@@ -39594,7 +39513,10 @@
           resetLayoutMode();
         }
 
-        canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout' || tool === 'peninsula') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
+        hoveredElement = null;
+        // Clear measurement when switching away from measure tool
+        if (tool !== 'measure') { measureStart = null; measureEnd = null; measureFixed = null; }
+        canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout' || tool === 'peninsula' || tool === 'measure') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
         draw();
       } catch (err) {
         console.error('setTool error:', err);
@@ -40874,6 +40796,7 @@
         if (currentTool !== 'layout') return;
         if (!layoutMode.isDrawing && (!layoutMode.corners || layoutMode.corners.length === 0)) return;
 
+      ctx.save();
       // Build the complete path including current endpoint
       const allPoints = [...layoutMode.corners];
       if (layoutMode.isDrawing && layoutMode.currentEnd) {
@@ -41035,10 +40958,70 @@
         ctx.fillText('📐 Layout Tool - Click & drag to draw', 20, 28);
         ctx.fillText('Straight lines snap to H/V • Auto-turns at corners', 20, 44);
       }
+      ctx.restore();
       } catch (err) {
         console.error('drawLayoutToolPreview error:', err);
         // Don't break the draw loop - just skip the preview
       }
+    }
+
+    // Draw 2D measurement line between two points
+    function drawMeasureLine() {
+      const pts = measureStart && measureEnd ? { start: measureStart, end: measureEnd } : measureFixed;
+      if (!pts) return;
+
+      const s = pts.start;
+      const e = pts.end;
+      const dx = (e.x - s.x) / pixelsPerFoot;
+      const dy = (e.y - s.y) / pixelsPerFoot;
+      const distFt = Math.sqrt(dx * dx + dy * dy);
+      if (distFt < 0.01) return;
+      const distIn = distFt * 12;
+      const wholeIn = Math.floor(distIn);
+      const frac = distIn - wholeIn;
+      let fracStr = '';
+      if (frac >= 0.875) fracStr = '';
+      else if (frac >= 0.8125) fracStr = ' 7/8';
+      else if (frac >= 0.6875) fracStr = ' 3/4';
+      else if (frac >= 0.5625) fracStr = ' 5/8';
+      else if (frac >= 0.4375) fracStr = ' 1/2';
+      else if (frac >= 0.3125) fracStr = ' 3/8';
+      else if (frac >= 0.1875) fracStr = ' 1/4';
+      else if (frac >= 0.0625) fracStr = ' 1/8';
+      const label = `${wholeIn + (frac >= 0.875 ? 1 : 0)}${fracStr}"`;
+
+      // Draw dashed line
+      ctx.save();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(e.x, e.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw endpoints
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw label at midpoint
+      const mx = (s.x + e.x) / 2;
+      const my = (s.y + e.y) / 2;
+      ctx.font = 'bold 13px Inter, sans-serif';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(mx - tw / 2 - 6, my - 18, tw + 12, 22);
+      ctx.fillStyle = '#f59e0b';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, mx, my - 7);
+      ctx.restore();
     }
 
     // Fill room with flooring
@@ -41535,6 +41518,16 @@
         content.classList.toggle('collapsed');
         section.classList.toggle('expanded', !isCollapsing);
         toggle.textContent = isCollapsing ? '▶' : '▼';
+      }
+    }
+
+    function toggleMoreCategories(header) {
+      const container = document.getElementById('moreCategoriesContainer');
+      const toggle = header.querySelector('.sidebar-toggle');
+      if (container) {
+        const isHidden = container.style.display === 'none';
+        container.style.display = isHidden ? 'block' : 'none';
+        if (toggle) toggle.textContent = isHidden ? '▼' : '▶';
       }
     }
 
@@ -61716,6 +61709,21 @@
       showSnapFeedback('Zoom reset to 100%');
     }
 
+    function toggleGridBtn() {
+      CONFIG.SHOW_GRID = !CONFIG.SHOW_GRID;
+      const btn = document.getElementById('btnToggleGrid');
+      if (btn) btn.style.opacity = CONFIG.SHOW_GRID ? '1' : '0.45';
+      showSnapFeedback(CONFIG.SHOW_GRID ? 'Grid: ON' : 'Grid: OFF');
+      draw();
+    }
+
+    function toggleSnapBtn() {
+      CONFIG.SNAP_ENABLED = !CONFIG.SNAP_ENABLED;
+      const btn = document.getElementById('btnToggleSnap');
+      if (btn) btn.style.opacity = CONFIG.SNAP_ENABLED ? '1' : '0.45';
+      showSnapFeedback(CONFIG.SNAP_ENABLED ? 'Snap: ON' : 'Snap: OFF');
+    }
+
     function toggleViewLock() {
       viewLocked = !viewLocked;
       const btn = document.getElementById('lockViewBtn');
@@ -68274,8 +68282,12 @@
           unit = 'unit';
         }
 
-        const totalBaseCost = baseCost + fillerCost;
-        const retailPrice = totalBaseCost * (1 + margin / 100);
+        let totalBaseCost = baseCost + fillerCost;
+        let retailPrice = totalBaseCost * (1 + margin / 100);
+
+        // Apply per-element overrides from Quote Preview modal
+        if (el.overrideCost !== undefined) totalBaseCost = el.overrideCost;
+        if (el.overrideRetail !== undefined) retailPrice = el.overrideRetail;
 
         // Store calculated prices on element
         el.costPrice = totalBaseCost;
@@ -72788,12 +72800,16 @@
 
           // When user signs in, clear cached designs so they reload from server
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            currentUser = window.SgAuth?.getUser() || null;
             allDesigns = { my: [], shared: [], recent: [] };
             // If My Designs modal is open, refresh it
             const modal = document.getElementById('myDesignsModal');
             if (modal && modal.classList.contains('active')) {
               loadMyDesigns();
             }
+          }
+          if (event === 'SIGNED_OUT') {
+            currentUser = null;
           }
         });
       }
@@ -75801,6 +75817,14 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
         if (showDemoUpgradeModal('export')) return;
       }
 
+      if (typeof window.jspdf === 'undefined') {
+        showToast('PDF export requires jsPDF library — check your connection', 'error');
+        return;
+      }
+
+      // Re-run quote calculation so sidebar DOM reflects any price overrides
+      calculateQuote();
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'letter');
 
@@ -75859,15 +75883,18 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
 
-      // Table header
+      // Table header with Price column
       doc.setFillColor(240, 240, 240);
       doc.rect(15, yPos, 180, 8, 'F');
       doc.setTextColor(51, 51, 51);
       doc.text('Item', 18, yPos + 5.5);
-      doc.text('Type', 75, yPos + 5.5);
-      doc.text('Dimensions', 120, yPos + 5.5);
-      doc.text('Material', 155, yPos + 5.5);
+      doc.text('Type', 65, yPos + 5.5);
+      doc.text('Dimensions', 105, yPos + 5.5);
+      doc.text('Material', 140, yPos + 5.5);
+      doc.text('Price', 175, yPos + 5.5);
       yPos += 10;
+
+      const canViewPrices = checkPermission('canViewPrices');
 
       elements.forEach((el, index) => {
         if (yPos > 250) {
@@ -75880,28 +75907,136 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
         doc.rect(15, yPos - 4, 180, 8, 'F');
 
         doc.setTextColor(51, 51, 51);
-        doc.text(el.label || 'Element', 18, yPos + 1);
-        doc.text(el.type.replace(/-/g, ' '), 75, yPos + 1);
-        doc.text(`${Math.round(el.width * 12)}" × ${Math.round(el.height * 12)}"`, 120, yPos + 1);
-        doc.text(el.material || '-', 155, yPos + 1);
+        const label = (el.label || 'Element').substring(0, 25);
+        doc.text(label, 18, yPos + 1);
+        doc.text((el.type.replace(/-/g, ' ')).substring(0, 18), 65, yPos + 1);
+        doc.text(`${Math.round(el.width * 12)}" × ${Math.round(el.height * 12)}"`, 105, yPos + 1);
+        doc.text((el.material || el.sku || '-').substring(0, 14), 140, yPos + 1);
+
+        // Price column — use pre-calculated retail from calculateQuote when available
+        if (canViewPrices) {
+          const retail = el.retailPrice || 0;
+          doc.text('$' + retail.toFixed(0), 175, yPos + 1);
+        }
         yPos += 8;
       });
 
-      // Quote total
-      yPos += 10;
-      doc.setFillColor(184, 154, 91);
-      doc.rect(15, yPos, 180, 15, 'F');
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Estimated Total:', 20, yPos + 10);
-      doc.text(quoteTotal, 155, yPos + 10);
+      // ===== ITEMIZED QUOTE BREAKDOWN =====
+      // Run calculateQuote to get grouped items
+      const quoteData = { items: {}, totalCost: 0, totalRetail: 0 };
+      // Re-use the rendered quote items from the sidebar
+      const quoteItemsEl = document.getElementById('quoteItems');
 
-      // Footer
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text('This is an estimate only. Final pricing may vary based on material selection and installation requirements.', 15, 270);
-      doc.text('Surprise Granite • surprisegranite.com • (623) 466-4177', 15, 276);
+      if (canViewPrices) {
+        doc.addPage();
+        yPos = 20;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(51, 51, 51);
+        doc.text('Itemized Quote', 15, yPos);
+        yPos += 10;
+
+        // Table header
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, yPos, 180, 8, 'F');
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Description', 18, yPos + 5.5);
+        doc.text('Details', 100, yPos + 5.5);
+        doc.text('Amount', 170, yPos + 5.5);
+        yPos += 10;
+
+        doc.setFont('helvetica', 'normal');
+
+        // Extract line items from the quote panel DOM
+        const lineItems = quoteItemsEl ? quoteItemsEl.querySelectorAll('.quote-item') : [];
+        lineItems.forEach((item, i) => {
+          if (yPos > 255) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          const nameEl = item.querySelector('.quote-item-name');
+          const valueEl = item.querySelector('.quote-item-value');
+          if (!nameEl) return;
+
+          const bgColor = i % 2 === 0 ? [255, 255, 255] : [248, 248, 248];
+          doc.setFillColor(...bgColor);
+          doc.rect(15, yPos - 4, 180, 8, 'F');
+
+          // Get text content, strip margin badge
+          let name = nameEl.textContent.replace(/\d+%$/, '').trim();
+          if (name.length > 45) name = name.substring(0, 42) + '...';
+
+          // Split name and detail
+          const dashIdx = name.indexOf(' - ');
+          if (dashIdx > 0) {
+            doc.setTextColor(51, 51, 51);
+            doc.text(name.substring(0, dashIdx).trim().substring(0, 40), 18, yPos + 1);
+            doc.setTextColor(120, 120, 120);
+            doc.text(name.substring(dashIdx + 3).trim().substring(0, 30), 100, yPos + 1);
+          } else {
+            doc.setTextColor(51, 51, 51);
+            doc.text(name.substring(0, 40), 18, yPos + 1);
+          }
+
+          if (valueEl) {
+            doc.setTextColor(51, 51, 51);
+            doc.setFont('helvetica', 'bold');
+            doc.text(valueEl.textContent.trim(), 170, yPos + 1);
+            doc.setFont('helvetica', 'normal');
+          }
+          yPos += 8;
+        });
+
+        // Total bar
+        yPos += 5;
+        doc.setFillColor(184, 154, 91);
+        doc.rect(15, yPos, 180, 12, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total:', 20, yPos + 8.5);
+        doc.text(quoteTotal, 165, yPos + 8.5);
+
+        // Cost/margin breakdown if permitted
+        const canViewCosts = checkPermission('canViewCosts');
+        if (canViewCosts && window.currentQuoteCost !== undefined) {
+          yPos += 16;
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(102, 102, 102);
+          doc.text(`Cost: $${window.currentQuoteCost.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 20, yPos);
+          const marginAmt = (window.currentQuoteTotal || 0) - (window.currentQuoteCost || 0);
+          doc.text(`Margin: $${marginAmt.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 80, yPos);
+          if (window.currentQuoteCost > 0) {
+            const marginPct = ((marginAmt / window.currentQuoteCost) * 100).toFixed(1);
+            doc.text(`(${marginPct}%)`, 140, yPos);
+          }
+        }
+      } else {
+        // No price permission — just show total
+        yPos += 10;
+        doc.setFillColor(184, 154, 91);
+        doc.rect(15, yPos, 180, 15, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Estimated Total:', 20, yPos + 10);
+        doc.text(quoteTotal, 155, yPos + 10);
+      }
+
+      // Footer on last page
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text('This is an estimate. Final pricing may vary based on material selection and installation.', 15, 268);
+        doc.text('Surprise Granite • surprisegranite.com • (623) 466-4177', 15, 273);
+        doc.text(`Page ${p} of ${pageCount}`, 180, 273);
+      }
 
       doc.save(`${projectName.replace(/\s+/g, '-')}-proposal.pdf`);
     }
@@ -76060,7 +76195,16 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
 
       const projectName = document.getElementById('projectName').value || 'Room Design';
 
-      let csv = 'Item,Type,Category,Width (in),Height (in),Material,SKU,Notes\n';
+      // Re-run quote calculation so totals reflect any price overrides
+      calculateQuote();
+
+      const canViewPrices = checkPermission('canViewPrices');
+      const canViewCosts = checkPermission('canViewCosts');
+
+      // Header row with pricing columns
+      let csv = 'Item,Type,Category,Width (in),Height (in),Material,SKU';
+      if (canViewPrices) csv += ',Unit Price,Qty,Margin %,Total';
+      csv += '\n';
 
       elements.forEach(el => {
         const row = [
@@ -76070,21 +76214,40 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
           (el.width * 12).toFixed(1),
           (el.height * 12).toFixed(1),
           `"${el.material || ''}"`,
-          `"${el.catalogSku || ''}"`,
-          `""`
+          `"${el.catalogSku || el.sku || ''}"`
         ];
+
+        if (canViewPrices) {
+          const priceInfo = getElementPrice(el);
+          const margin = getElementMargin(el);
+          let qty = 1;
+          if (['countertop', 'backsplash', 'flooring', 'tile'].includes(el.type)) {
+            qty = parseFloat((el.width * el.height).toFixed(2));
+          }
+          // Use pre-calculated retail from calculateQuote when available (respects overrides)
+          const total = el.retailPrice || (priceInfo.price * qty * (1 + margin / 100));
+          row.push((priceInfo.price || 0).toFixed(2));
+          row.push(qty);
+          row.push(margin);
+          row.push(total.toFixed(2));
+        }
+
         csv += row.join(',') + '\n';
       });
 
-      // Summary section
+      // Quote summary section
       csv += '\n';
-      csv += 'Summary\n';
-      csv += `Project,${projectName}\n`;
+      csv += 'Quote Summary\n';
+      csv += `Project,"${projectName}"\n`;
       csv += `Room Type,${document.getElementById('roomType').value}\n`;
-      csv += `Room Dimensions,${Math.round(roomWidth * 12)}" x ${Math.round(roomDepth * 12)}"\n`;
+      csv += `Room Dimensions,"${Math.round(roomWidth * 12)}in x ${Math.round(roomDepth * 12)}in"\n`;
       csv += `Total Elements,${elements.length}\n`;
-      csv += `Estimated Total,${document.getElementById('quoteTotal').textContent}\n`;
-      csv += `Generated,${new Date().toLocaleString()}\n`;
+      csv += `Estimated Total,"${document.getElementById('quoteTotal').textContent}"\n`;
+      if (canViewCosts && window.currentQuoteCost !== undefined) {
+        csv += `Cost,$${window.currentQuoteCost.toFixed(2)}\n`;
+        csv += `Margin,$${((window.currentQuoteTotal || 0) - (window.currentQuoteCost || 0)).toFixed(2)}\n`;
+      }
+      csv += `Generated,"${new Date().toLocaleString()}"\n`;
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -79952,6 +80115,7 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     let unreadMsgCount = 0;
     let msgSyncInterval = null;
     let msgSubscriptions = [];
+    let currentUser = null;
 
     function toggleMessagingPanel() {
       msgPanelOpen ? closeMessagingPanel() : openMessagingPanel();
@@ -80423,6 +80587,7 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     window.addEventListener('load', function() {
       const user = window.SgAuth?.getUser();
       if (user) {
+        currentUser = user;
         loadConversations().then(() => {
           updateMsgBadge();
         }).catch(() => {});
