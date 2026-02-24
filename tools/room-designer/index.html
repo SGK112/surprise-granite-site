@@ -35075,6 +35075,92 @@
           ctx.fill();
           break;
         }
+
+        case 'towel-bar': {
+          // Horizontal bar mounted on wall
+          ctx.strokeStyle = '#B0B0B0';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x + w * 0.1, y + h * 0.5);
+          ctx.lineTo(x + w * 0.9, y + h * 0.5);
+          ctx.stroke();
+          // End brackets
+          ctx.fillStyle = '#999';
+          ctx.fillRect(x + w * 0.08, y + h * 0.3, w * 0.06, h * 0.4);
+          ctx.fillRect(x + w * 0.86, y + h * 0.3, w * 0.06, h * 0.4);
+          break;
+        }
+
+        case 'toilet-paper': {
+          // Toilet paper holder with roll
+          ctx.fillStyle = '#C0C0C0';
+          ctx.fillRect(x + w * 0.15, y + h * 0.2, w * 0.7, h * 0.15);
+          // Roll
+          ctx.fillStyle = '#F5F5F0';
+          ctx.beginPath();
+          ctx.arc(x + w * 0.5, y + h * 0.6, Math.min(w, h) * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#DDD';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          break;
+        }
+
+        case 'shower-glass':
+        case 'shower-door': {
+          // Glass panel — translucent with frame lines
+          ctx.fillStyle = 'rgba(200, 225, 245, 0.3)';
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = 'rgba(180, 200, 220, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+          // Glass shine line
+          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x + w * 0.3, y + 2);
+          ctx.lineTo(x + w * 0.3, y + h - 2);
+          ctx.stroke();
+          break;
+        }
+
+        case 'outdoor-sink': {
+          // Stainless outdoor sink
+          ctx.fillStyle = '#C0C0C0';
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = 'rgba(50,50,50,0.4)';
+          const pad = Math.min(w, h) * 0.15;
+          ctx.fillRect(x + pad, y + pad, w - pad * 2, h - pad * 2);
+          // Faucet dot
+          ctx.fillStyle = '#888';
+          ctx.beginPath();
+          ctx.arc(x + w * 0.5, y + pad * 0.7, 3, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+
+        case 'coffee-system': {
+          // Coffee machine outline
+          ctx.fillStyle = el.color || '#333';
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = 'rgba(100,100,100,0.6)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+          // Cup area
+          ctx.fillStyle = 'rgba(80,60,40,0.5)';
+          ctx.fillRect(x + w * 0.3, y + h * 0.5, w * 0.4, h * 0.3);
+          break;
+        }
+
+        default: {
+          // Generic element — show a subtle icon/border so it's not totally blank
+          ctx.fillStyle = el.color || '#808080';
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+          break;
+        }
       }
 
       ctx.lineWidth = 1;
