@@ -7216,6 +7216,7 @@
         if (editingLeadId) {
           // Update existing lead - add updated_at timestamp
           leadData.updated_at = new Date().toISOString();
+          console.log('[SaveLead] Updating lead:', editingLeadId);
 
           const { data: updateData, error: updateError } = await supabaseClient
             .from('leads')
@@ -7225,11 +7226,13 @@
             .single();
           data = updateData;
           error = updateError;
+          console.log('[SaveLead] Update result:', error ? error.message : 'success');
         } else {
           // Insert new lead - add user_id, created_at and form_name
           leadData.user_id = user.id;
           leadData.created_at = new Date().toISOString();
           leadData.form_name = 'manual-entry';
+          console.log('[SaveLead] Inserting new lead');
 
           const { data: insertData, error: insertError } = await supabaseClient
             .from('leads')
@@ -7238,6 +7241,7 @@
             .single();
           data = insertData;
           error = insertError;
+          console.log('[SaveLead] Insert result:', error ? error.message : 'success, id=' + data?.id);
         }
 
         if (error) throw error;
@@ -7281,8 +7285,10 @@
 
         // Send welcome email if checkbox is checked (new leads only)
         const sendEmail = document.getElementById('new-lead-send-email').checked;
+        console.log('[SaveLead] Send email?', sendEmail, 'editing?', !!editingLeadId);
         if (sendEmail && email && !editingLeadId) {
           try {
+            console.log('[SaveLead] Sending welcome email...');
             await sendLeadWelcomeEmail({
               firstName,
               lastName,
@@ -7560,9 +7566,12 @@
       }
 
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
         const response = await fetch(`${API_BASE}/api/email/lead-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             email: email,
             first_name: firstName,
@@ -7578,6 +7587,7 @@
             source: 'Manual Entry - Account'
           })
         });
+        clearTimeout(timeout);
 
         const result = await response.json();
         if (!response.ok) {
@@ -7587,7 +7597,11 @@
         console.log('Welcome email sent successfully to:', email);
         return true;
       } catch (error) {
-        console.error('Failed to send welcome email:', error);
+        if (error.name === 'AbortError') {
+          console.warn('Welcome email timed out after 15s');
+        } else {
+          console.error('Failed to send welcome email:', error);
+        }
         return false;
       }
     }
