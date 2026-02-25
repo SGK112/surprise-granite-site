@@ -12458,7 +12458,14 @@
     }
 
     // Preview invoice using the professional template
+    let isPreviewingInvoice = false;
+
     async function previewInvoice() {
+      if (isPreviewingInvoice) {
+        console.log('[Invoices] Already previewing, skipping');
+        return;
+      }
+
       const formData = getInvoiceFormData();
       console.log('[Invoices] previewInvoice formData:', formData);
 
@@ -12471,6 +12478,7 @@
         return;
       }
 
+      isPreviewingInvoice = true;
       const btn = document.getElementById('invoice-preview-btn');
       if (btn) {
         btn.disabled = true;
@@ -12478,11 +12486,13 @@
       }
 
       try {
-        // Get user
+        // Get user with timeout to prevent hanging
         console.log('[Invoices] Step 1: Getting user...');
         let user = currentUser;
         if (!user) {
-          const { data: { session } } = await supabaseClient.auth.getSession();
+          const sessionPromise = supabaseClient.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
         if (!user) throw new Error('Not authenticated');
@@ -12580,9 +12590,11 @@
         console.error('[Invoices] Preview error:', err);
         showToast('Error generating preview: ' + (err.message || JSON.stringify(err)), 'error');
       } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        isPreviewingInvoice = false;
+        const resetBtn = document.getElementById('invoice-preview-btn');
+        if (resetBtn) {
+          resetBtn.disabled = false;
+          resetBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
         }
       }
     }
@@ -12873,8 +12885,10 @@
         // This avoids the hanging getUser() call
         let user = currentUser;
         if (!user) {
-          // Fallback: try to get from session (faster than getUser)
-          const { data: { session } } = await supabaseClient.auth.getSession();
+          // Fallback: try to get from session with timeout to prevent hanging
+          const sessionPromise = supabaseClient.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
         if (!user) throw new Error('Not authenticated - please refresh and log in again');
@@ -16941,7 +16955,14 @@
     }
 
     // Preview estimate using the professional template
+    let isPreviewingEstimate = false;
+
     async function previewEstimate() {
+      if (isPreviewingEstimate) {
+        console.log('[Estimates] Already previewing, skipping');
+        return;
+      }
+
       const customerName = document.getElementById('estimate-customer-name').value.trim();
       const customerEmail = document.getElementById('estimate-customer-email').value.trim();
       const customerPhone = document.getElementById('estimate-customer-phone').value.trim();
@@ -16977,6 +16998,7 @@
         return;
       }
 
+      isPreviewingEstimate = true;
       const btn = document.querySelector('#create-estimate-modal .btn-modern.primary');
       if (btn) {
         btn.disabled = true;
@@ -16984,10 +17006,12 @@
       }
 
       try {
-        // Get user
+        // Get user with timeout to prevent hanging
         let user = currentUser;
         if (!user) {
-          const { data: { session } } = await supabaseClient.auth.getSession();
+          const sessionPromise = supabaseClient.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
         if (!user) throw new Error('Not authenticated');
@@ -17071,9 +17095,11 @@
         console.error('[Estimates] Preview error:', err);
         showToast('Error generating preview: ' + err.message, 'error');
       } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
+        isPreviewingEstimate = false;
+        const resetBtn = document.querySelector('#create-estimate-modal .btn-modern.primary');
+        if (resetBtn) {
+          resetBtn.disabled = false;
+          resetBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview & Send';
         }
       }
     }
@@ -25749,11 +25775,13 @@
     // Create estimate from profile panel
     function createEstimateFromProfile() {
       if (!currentProfileData) return;
+      const profileId = currentProfileData.id;
+      const profileType = currentProfileType;
       closeProfilePanel();
-      if (currentProfileType === 'lead') {
-        startEstimateFromLead(currentProfileData.id);
+      if (profileType === 'lead') {
+        startEstimateFromLead(profileId);
       } else {
-        startEstimateFromCustomer(currentProfileData.id);
+        startEstimateFromCustomer(profileId);
       }
     }
 
