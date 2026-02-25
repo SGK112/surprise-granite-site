@@ -6054,8 +6054,9 @@
         const lead = allLeads.find(l => l.id === leadId);
         if (lead) lead.status = newStatus;
 
-        // Update stats without full re-render to keep dropdown state
+        // Re-render leads so status badges and colors update
         updateStats();
+        renderLeads();
         showToast(`Status → ${newStatus}`, 'success');
       } catch (err) {
         console.error('Error updating status:', err);
@@ -16305,7 +16306,7 @@
         // Fallback to mailto
         const subject = encodeURIComponent(`Payment Request - $${quickPayData.amount.toFixed(2)}`);
         const body = encodeURIComponent(`Hi ${quickPayData.name},\n\nHere's your payment link for ${quickPayData.description}:\n\nAmount: $${quickPayData.amount.toFixed(2)}\nPay here: ${quickPayData.url}\n\nThank you!\nSurprise Granite`);
-        window.open(`mailto:${quickPayData.email}?subject=${subject}&body=${body}`);
+        window.location.href = `mailto:${quickPayData.email}?subject=${subject}&body=${body}`;
         showToast('Opening email client...', 'info');
       } finally {
         btn.disabled = false;
