@@ -13123,6 +13123,52 @@
           </div>
         </div>
 
+        <!-- Cabinet Catalog (expanded by default, right after Cabinets) -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Browse cabinet SKUs">
+            <span class="sidebar-title">Cabinet Catalog <span style="font-size:9px;color:#888;margin-left:6px;">ProCraft | MSI</span></span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="catalog-brand">
+              <select id="catalogSelect" onchange="changeCatalog(this.value)">
+                <option value="procraft">ProCraft Cabinetry</option>
+                <option value="msi">MSI Cabinetry</option>
+                <option value="custom">Custom / Import</option>
+              </select>
+            </div>
+            <div class="catalog-series" id="catalogSeries">
+              <select id="seriesSelect" onchange="changeSeries(this.value)">
+                <option value="shaker-white">Shaker White</option>
+                <option value="shaker-grey">Shaker Grey</option>
+                <option value="shaker-espresso">Shaker Espresso</option>
+              </select>
+            </div>
+            <div class="materials-tabs" id="cabinetCategoryTabs">
+              <button class="material-tab active" onclick="showCabinetCategory('base', this)">Base</button>
+              <button class="material-tab" onclick="showCabinetCategory('drawer', this)">Drawer</button>
+              <button class="material-tab" onclick="showCabinetCategory('sink', this)">Sink</button>
+              <button class="material-tab" onclick="showCabinetCategory('wall', this)">Wall</button>
+              <button class="material-tab" onclick="showCabinetCategory('tall', this)">Tall</button>
+              <button class="material-tab" onclick="showCabinetCategory('corner', this)">Corner</button>
+              <button class="material-tab" onclick="showCabinetCategory('lazySusan', this)">L.Susan</button>
+            </div>
+            <div class="cabinet-catalog-list" id="cabinetCatalogList">
+              <!-- Cabinets rendered by JS -->
+            </div>
+            <div class="catalog-actions">
+              <button class="btn btn-sm btn-secondary" onclick="importCabinetList()" title="Import cabinet list from CSV or JSON">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import List
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Surfaces -->
         <div class="sidebar-section">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Countertops & flooring">
@@ -13157,9 +13203,20 @@
           </div>
         </div>
 
+        <!-- Doors & Windows -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Doors, windows & wall openings">
+            <span class="sidebar-title">Doors & Windows</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="element-grid" id="openingsGrid"></div>
+          </div>
+        </div>
+
         <!-- Structure -->
         <div class="sidebar-section">
-          <div class="sidebar-header" onclick="toggleSection(this)" title="Doors, windows & walls">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Walls, beams & structural elements">
             <span class="sidebar-title">Structure</span>
             <span class="sidebar-toggle">▼</span>
           </div>
@@ -13308,52 +13365,6 @@
               <!-- Materials rendered by JS -->
             </div>
             <div class="material-hint">Click material, then click element to apply</div>
-          </div>
-        </div>
-
-        <!-- Cabinet Catalog (collapsed by default) -->
-        <div class="sidebar-section">
-          <div class="sidebar-header" onclick="toggleSection(this)" title="Browse cabinet SKUs">
-            <span class="sidebar-title">Cabinet Catalog</span>
-            <span class="sidebar-toggle">▶</span>
-          </div>
-          <div class="sidebar-content collapsed">
-            <div class="catalog-brand">
-              <select id="catalogSelect" onchange="changeCatalog(this.value)">
-                <option value="procraft">ProCraft Cabinetry</option>
-                <option value="msi">MSI Cabinetry</option>
-                <option value="custom">Custom / Import</option>
-              </select>
-            </div>
-            <div class="catalog-series" id="catalogSeries">
-              <select id="seriesSelect" onchange="changeSeries(this.value)">
-                <option value="shaker-white">Shaker White</option>
-                <option value="shaker-grey">Shaker Grey</option>
-                <option value="shaker-espresso">Shaker Espresso</option>
-              </select>
-            </div>
-            <div class="materials-tabs" id="cabinetCategoryTabs">
-              <button class="material-tab active" onclick="showCabinetCategory('base', this)">Base</button>
-              <button class="material-tab" onclick="showCabinetCategory('drawer', this)">Drawer</button>
-              <button class="material-tab" onclick="showCabinetCategory('sink', this)">Sink</button>
-              <button class="material-tab" onclick="showCabinetCategory('wall', this)">Wall</button>
-              <button class="material-tab" onclick="showCabinetCategory('tall', this)">Tall</button>
-              <button class="material-tab" onclick="showCabinetCategory('corner', this)">Corner</button>
-              <button class="material-tab" onclick="showCabinetCategory('lazySusan', this)">L.Susan</button>
-            </div>
-            <div class="cabinet-catalog-list" id="cabinetCatalogList">
-              <!-- Cabinets rendered by JS -->
-            </div>
-            <div class="catalog-actions">
-              <button class="btn btn-sm btn-secondary" onclick="importCabinetList()" title="Import cabinet list from CSV or JSON">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                Import List
-              </button>
-            </div>
           </div>
         </div>
 
@@ -13890,7 +13901,7 @@
           </div>
           <div class="panel-content">
           <div class="room-templates-grid">
-            <button class="template-btn" onclick="loadRoomTemplate('kitchen-l')" title="L-shaped kitchen 16x14 with prep sink island">
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-l')" title="L-shaped kitchen 16x14 with island">
               <span class="template-icon">🍳</span>
               <span class="template-name">L-Kitchen</span>
             </button>
@@ -14005,6 +14016,26 @@
             <button class="template-btn" onclick="loadRoomTemplate('outdoor-grill-station')" title="Outdoor grill station with built-in grill, bar seating">
               <span class="template-icon">🔥</span>
               <span class="template-name">Grill Station</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('outdoor-bbq-island')" title="L-shaped outdoor BBQ with bar seating island">
+              <span class="template-icon">🍖</span>
+              <span class="template-name">BBQ L-Island</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-island-only')" title="Standalone kitchen island for quoting island countertops">
+              <span class="template-icon">🏝</span>
+              <span class="template-name">Island Only</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('family-room')" title="Family room with L-sectional, entertainment center">
+              <span class="template-icon">📺</span>
+              <span class="template-name">Family Room</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('game-room')" title="Game/media room with bar, game table, theater seating">
+              <span class="template-icon">🎱</span>
+              <span class="template-name">Game Room</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('fireplace-living')" title="Living room with granite fireplace mantle and hearth">
+              <span class="template-icon">🪵</span>
+              <span class="template-name">Fireplace Room</span>
             </button>
             <button class="template-btn" onclick="loadRoomTemplate('coffee-bar')" title="Coffee bar / espresso station">
               <span class="template-icon">☕</span>
@@ -14695,6 +14726,20 @@
                 </div>
               </div>
             </div>
+            <!-- Shape Editing (Notch / Bump-Out / Radius) -->
+            <div class="property-row" id="shapeEditingRow" style="display: none;">
+              <div style="width: 100%; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <span style="font-weight: 600; color: #f472b6; font-size: 13px;">SHAPE EDITING</span>
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                  <button class="quick-btn" style="flex:1;font-size:10px;padding:5px 4px;" onclick="addShapeModification('notch')" title="Cut a rectangular notch from a corner">+ Notch</button>
+                  <button class="quick-btn" style="flex:1;font-size:10px;padding:5px 4px;" onclick="addShapeModification('bump-out')" title="Extend an edge outward">+ Bump-Out</button>
+                  <button class="quick-btn" style="flex:1;font-size:10px;padding:5px 4px;" onclick="addShapeModification('radius')" title="Round a corner">+ Radius</button>
+                </div>
+                <div id="shapeModificationsList"></div>
+              </div>
+            </div>
             <!-- Sink-specific properties -->
             <div class="property-row" id="sinkColorRow" style="display: none;">
               <span class="property-label">Sink Finish</span>
@@ -15355,6 +15400,21 @@
           </button>
           <button class="template-btn" onclick="loadRoomTemplate('outdoor-grill-station'); closeModal('templateModal');" title="Outdoor grill station">
             <span class="template-icon">🔥</span><span class="template-name">Grill Station</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('outdoor-bbq-island'); closeModal('templateModal');" title="L-shaped outdoor BBQ island">
+            <span class="template-icon">🍖</span><span class="template-name">BBQ L-Island</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-island-only'); closeModal('templateModal');" title="Standalone island">
+            <span class="template-icon">🏝</span><span class="template-name">Island Only</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('family-room'); closeModal('templateModal');" title="Family room">
+            <span class="template-icon">📺</span><span class="template-name">Family Room</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('game-room'); closeModal('templateModal');" title="Game/media room">
+            <span class="template-icon">🎱</span><span class="template-name">Game Room</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('fireplace-living'); closeModal('templateModal');" title="Living room with fireplace">
+            <span class="template-icon">🪵</span><span class="template-name">Fireplace Room</span>
           </button>
           <button class="template-btn" onclick="loadRoomTemplate('coffee-bar'); closeModal('templateModal');" title="Coffee bar">
             <span class="template-icon">☕</span><span class="template-name">Coffee Bar</span>
@@ -23013,6 +23073,7 @@
       'sliding-door': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="44" height="40" rx="1" fill="#BC8F8F"/><rect x="4" y="6" width="20" height="36" fill="#ADD8E6" opacity="0.6"/><rect x="24" y="6" width="20" height="36" fill="#ADD8E6" opacity="0.4"/><line x1="24" y1="6" x2="24" y2="42" stroke="#888" stroke-width="2"/><rect x="4" y="42" width="40" height="2" fill="#666"/></svg>',
       'entry-archway': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M4 44 L4 16 Q4 4 24 4 Q44 4 44 16 L44 44" fill="none" stroke="#DAA520" stroke-width="4"/><path d="M8 44 L8 18 Q8 8 24 8 Q40 8 40 18 L40 44" fill="#F5DEB3" opacity="0.3"/></svg>',
       'garage-door': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="44" height="40" rx="1" fill="#A9A9A9"/><rect x="4" y="6" width="40" height="8" fill="#888"/><rect x="4" y="16" width="40" height="8" fill="#999"/><rect x="4" y="26" width="40" height="8" fill="#888"/><rect x="4" y="36" width="40" height="6" fill="#999"/><rect x="20" y="38" width="8" height="2" fill="#666"/></svg>',
+      'pass-through': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="1" fill="none" stroke="#DAA520" stroke-width="3" stroke-dasharray="6 3"/><rect x="8" y="12" width="32" height="24" fill="#F5DEB3" opacity="0.2"/><line x1="4" y1="24" x2="44" y2="24" stroke="#DAA520" stroke-width="1" stroke-dasharray="4 2" opacity="0.5"/></svg>',
       'window': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="2" fill="#FFF"/><rect x="6" y="10" width="17" height="13" fill="#87CEEB"/><rect x="25" y="10" width="17" height="13" fill="#87CEEB"/><rect x="6" y="25" width="17" height="13" fill="#87CEEB"/><rect x="25" y="25" width="17" height="13" fill="#87CEEB"/><line x1="24" y1="10" x2="24" y2="38" stroke="#FFF" stroke-width="2"/><line x1="6" y1="24" x2="42" y2="24" stroke="#FFF" stroke-width="2"/></svg>',
       'wall': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="40" height="8" fill="#666"/><rect x="4" y="14" width="18" height="8" fill="#555"/><rect x="24" y="14" width="20" height="8" fill="#555"/><rect x="4" y="24" width="40" height="8" fill="#666"/><rect x="4" y="34" width="18" height="8" fill="#555"/><rect x="24" y="34" width="20" height="8" fill="#555"/></svg>',
       'wall-wood-2x4': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="2" width="6" height="44" fill="#DEB887"/><rect x="20" y="2" width="6" height="44" fill="#DEB887"/><rect x="32" y="2" width="6" height="44" fill="#DEB887"/><rect x="6" y="10" width="36" height="4" fill="#D2B48C"/><rect x="6" y="32" width="36" height="4" fill="#D2B48C"/></svg>',
@@ -23462,8 +23523,7 @@
         { type: 'access-door', width: 1.75, height: 2, color: '#696969', label: 'Access Door' },
         { type: 'trash-drawer', width: 1.5, height: 2, color: '#696969', label: 'Trash Drawer' }
       ],
-      structure: [
-        // Doors & Entryways
+      openings: [
         { type: 'door', width: 3, height: 0.5, color: '#DEB887', label: 'Standard Door' },
         { type: 'double-door', width: 5, height: 0.5, color: '#D2B48C', label: 'Double Door' },
         { type: 'sliding-door', width: 6, height: 0.5, color: '#BC8F8F', label: 'Sliding Door' },
@@ -23471,10 +23531,12 @@
         { type: 'french-door', width: 5, height: 0.5, color: '#F5F5DC', label: 'French Door' },
         { type: 'entry-archway', width: 4, height: 0.5, color: '#DAA520', label: 'Archway' },
         { type: 'garage-door', width: 8, height: 0.5, color: '#A9A9A9', label: 'Garage Door' },
-        // Windows
         { type: 'window', width: 4, height: 0.5, color: '#87CEEB', label: 'Window' },
         { type: 'window-large', width: 6, height: 0.5, color: '#87CEEB', label: 'Picture Window' },
         { type: 'window-bay', width: 5, height: 1, color: '#87CEEB', label: 'Bay Window' },
+        { type: 'pass-through', width: 4, height: 0.5, color: '#DAA520', label: 'Pass-Through' },
+      ],
+      structure: [
         // Trim & Molding
         { type: 'crown-molding', width: 10, height: 0.25, color: '#F5F5F5', label: 'Crown Molding' },
         { type: 'baseboard', width: 10, height: 0.15, color: '#F5F5F5', label: 'Baseboard' },
@@ -26293,6 +26355,12 @@
         // Increment version
         const currentVersion = elementVersions.get(elementId) || 0;
         elementVersions.set(elementId, currentVersion + 1);
+        // If this is a door/window type, force room structure rebuild for wall cutouts
+        const el = elements.find(e => e.id === elementId);
+        if (el && isDoorWindowType(el.type)) {
+          cachedRoomStructure = null;
+          forceFullRebuild3D = true;
+        }
       }
     }
 
@@ -27560,7 +27628,7 @@
 
     function renderSidebar() {
       // Render element grids with SVG icons
-      ['cabinets', 'surfaces', 'appliances', 'structure', 'bathroom', 'laundry', 'closet', 'furniture', 'decor', 'electrical'].forEach(category => {
+      ['cabinets', 'surfaces', 'appliances', 'openings', 'structure', 'bathroom', 'laundry', 'closet', 'furniture', 'decor', 'electrical'].forEach(category => {
         const grid = document.getElementById(category + 'Grid');
         if (!grid) return;
 
@@ -28563,6 +28631,24 @@
       element.materialPrice = matDisplayPrice ? matDisplayPrice.amount : (selectedMaterial.price || null);
       element.materialBrand = selectedMaterial.brand || null;
       element.materialCategory = selectedMaterial.category || null;
+
+      // Set cabinet finish type for 3D rendering when applying cabinet materials
+      const isCabinetElement = element.type?.includes('cabinet') || element.type === 'sink-base' ||
+        element.type === 'drawer-base' || element.type === 'lazy-susan' || element.type === 'island' ||
+        element.type === 'blind-corner' || element.type === 'pantry';
+      if (selectedMaterial.category === 'cabinets' || (isCabinetElement && selectedMaterial.url)) {
+        const matName = (selectedMaterial.name || '').toLowerCase();
+        if (matName.includes('gloss') || matName.includes('high-gloss')) {
+          element.cabinetFinish = 'gloss';
+        } else if (matName.includes('matte') || matName.includes('laminate')) {
+          element.cabinetFinish = 'matte';
+        } else if (matName.includes('white') || matName.includes('grey') || matName.includes('gray') ||
+                   matName.includes('black') || matName.includes('dove') || matName.includes('onyx')) {
+          element.cabinetFinish = 'painted';
+        } else {
+          element.cabinetFinish = 'wood-grain';
+        }
+      }
 
       // Mark element as needing 3D update
       markElement3DDirty(element.id);
@@ -29595,6 +29681,50 @@
       return null;
     }
 
+    function isDoorWindowType(type) {
+      return ['door', 'double-door', 'sliding-door', 'glass-door', 'french-door',
+              'entry-archway', 'garage-door', 'window', 'window-large', 'window-bay',
+              'bay-window', 'picture-window', 'pass-through'].includes(type);
+    }
+
+    function getWallOpenings(roomW, roomH) {
+      // Find door/window elements snapped to room walls and return gap positions in pixels
+      const openings = [];
+      const snapThreshold = 0.5 * pixelsPerFoot; // 0.5ft tolerance
+
+      elements.forEach(el => {
+        if (!isDoorWindowType(el.type)) return;
+        if (el.hidden) return;
+
+        const rot = (el.rotation || 0) % 360;
+        const isRotated = (rot === 90 || rot === 270);
+        const elW = (isRotated ? el.height : el.width) * pixelsPerFoot;
+        const elH = (isRotated ? el.width : el.height) * pixelsPerFoot;
+        const elX = el.x * pixelsPerFoot;
+        const elY = el.y * pixelsPerFoot;
+
+        // Check which wall this element is on based on proximity
+        // Top wall (y near 0)
+        if (elY <= snapThreshold && elY >= -snapThreshold) {
+          openings.push({ wall: 'top', start: elX, end: elX + elW });
+        }
+        // Bottom wall (y + height near roomH)
+        else if (Math.abs((elY + elH) - roomH) <= snapThreshold || Math.abs(elY - roomH) <= snapThreshold) {
+          openings.push({ wall: 'bottom', start: elX, end: elX + elW });
+        }
+        // Left wall (x near 0)
+        if (elX <= snapThreshold && elX >= -snapThreshold) {
+          openings.push({ wall: 'left', start: elY, end: elY + elH });
+        }
+        // Right wall (x + width near roomW)
+        else if (Math.abs((elX + elW) - roomW) <= snapThreshold || Math.abs(elX - roomW) <= snapThreshold) {
+          openings.push({ wall: 'right', start: elY, end: elY + elH });
+        }
+      });
+
+      return openings;
+    }
+
     function drawRoomBoundary() {
       const roomW = roomWidth * pixelsPerFoot;
       const roomH = roomDepth * pixelsPerFoot;
@@ -29603,10 +29733,64 @@
       ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, roomW, roomH);
 
-      // Room border with measurements
+      // Room border with measurements — break walls where doors/windows are placed
       ctx.strokeStyle = '#4a4a6a';
       ctx.lineWidth = 3;
-      ctx.strokeRect(0, 0, roomW, roomH);
+
+      const wallOpenings = getWallOpenings(roomW, roomH);
+      const walls = [
+        { name: 'top',    x1: 0, y1: 0, x2: roomW, y2: 0 },
+        { name: 'right',  x1: roomW, y1: 0, x2: roomW, y2: roomH },
+        { name: 'bottom', x1: roomW, y1: roomH, x2: 0, y2: roomH },
+        { name: 'left',   x1: 0, y1: roomH, x2: 0, y2: 0 },
+      ];
+
+      walls.forEach(wall => {
+        const openings = wallOpenings.filter(o => o.wall === wall.name).sort((a, b) => a.start - b.start);
+        if (openings.length === 0) {
+          // No openings — draw full wall segment
+          ctx.beginPath();
+          ctx.moveTo(wall.x1, wall.y1);
+          ctx.lineTo(wall.x2, wall.y2);
+          ctx.stroke();
+        } else {
+          // Draw segments between openings
+          const isHoriz = (wall.name === 'top' || wall.name === 'bottom');
+          const fixedCoord = isHoriz ? wall.y1 : wall.x1;
+          const wallStart = isHoriz ? Math.min(wall.x1, wall.x2) : Math.min(wall.y1, wall.y2);
+          const wallEnd = isHoriz ? Math.max(wall.x1, wall.x2) : Math.max(wall.y1, wall.y2);
+
+          let cursor = wallStart;
+          openings.forEach(op => {
+            if (op.start > cursor) {
+              ctx.beginPath();
+              if (isHoriz) { ctx.moveTo(cursor, fixedCoord); ctx.lineTo(op.start, fixedCoord); }
+              else { ctx.moveTo(fixedCoord, cursor); ctx.lineTo(fixedCoord, op.start); }
+              ctx.stroke();
+            }
+            // Draw light dashed line across the opening
+            ctx.save();
+            ctx.strokeStyle = 'rgba(74,74,106,0.3)';
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            if (isHoriz) { ctx.moveTo(op.start, fixedCoord); ctx.lineTo(op.end, fixedCoord); }
+            else { ctx.moveTo(fixedCoord, op.start); ctx.lineTo(fixedCoord, op.end); }
+            ctx.stroke();
+            ctx.restore();
+            ctx.strokeStyle = '#4a4a6a';
+            ctx.lineWidth = 3;
+            cursor = op.end;
+          });
+          // Draw remaining segment after last opening
+          if (cursor < wallEnd) {
+            ctx.beginPath();
+            if (isHoriz) { ctx.moveTo(cursor, fixedCoord); ctx.lineTo(wallEnd, fixedCoord); }
+            else { ctx.moveTo(fixedCoord, cursor); ctx.lineTo(fixedCoord, wallEnd); }
+            ctx.stroke();
+          }
+        }
+      });
 
       // Corner markers (static - top-left, top-right, bottom-left)
       const markerSize = 12;
@@ -29912,6 +30096,203 @@
       ctx.beginPath();
       ctx.arc(handleX + handleW/2, handleY + handleLen - 2, handleW/2, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // ===== COUNTERTOP SHAPE MODIFICATION SYSTEM =====
+    // Builds a polygon outline from a countertop element + its shapeModifications array
+    // Returns [{x, y}, ...] clockwise polygon in scaled coordinates
+    function buildCountertopPolygon(el, scale) {
+      const wIn = el.width * 12;  // width in inches
+      const hIn = el.height * 12; // depth in inches
+      const mods = el.shapeModifications || [];
+      if (mods.length === 0) return null; // Use default rectangle
+
+      // Collect modifications by type
+      const notches = {};  // keyed by corner
+      const radii = {};    // keyed by corner
+      const bumpOuts = { top: [], right: [], bottom: [], left: [] };
+
+      mods.forEach(mod => {
+        if (mod.type === 'notch') {
+          notches[mod.corner] = mod;
+        } else if (mod.type === 'radius') {
+          if (!notches[mod.corner]) radii[mod.corner] = mod; // notch takes precedence
+        } else if (mod.type === 'bump-out') {
+          const edge = (mod.edge === 'front') ? 'bottom' : (mod.edge === 'back') ? 'top' : mod.edge;
+          if (bumpOuts[edge]) bumpOuts[edge].push(mod);
+        }
+      });
+
+      // Sort bump-outs by start position
+      Object.values(bumpOuts).forEach(arr => arr.sort((a, b) => a.start - b.start));
+
+      const points = [];
+
+      // Helper to add radius arc points
+      function addRadiusArc(cx, cy, startAngle, endAngle, radius) {
+        const segments = 8;
+        for (let i = 0; i <= segments; i++) {
+          const angle = startAngle + (endAngle - startAngle) * (i / segments);
+          points.push({ x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius });
+        }
+      }
+
+      // Helper to add edge with bump-outs (for horizontal edges)
+      function addHorizEdge(y, x1, x2, edgeBumps, bumpDir) {
+        const dir = x2 > x1 ? 1 : -1;
+        const sortedBumps = dir > 0 ? [...edgeBumps] : [...edgeBumps].reverse();
+        let cursor = x1;
+
+        sortedBumps.forEach(bump => {
+          const bStart = dir > 0 ? bump.start : (wIn - bump.start - bump.width);
+          const bEnd = bStart + bump.width;
+          const actualStart = dir > 0 ? bStart : bEnd;
+          const actualEnd = dir > 0 ? bEnd : bStart;
+
+          if (dir > 0) {
+            if (bStart > cursor) points.push({ x: bStart, y });
+            points.push({ x: bStart, y: y + bumpDir * bump.depth });
+            points.push({ x: bEnd, y: y + bumpDir * bump.depth });
+            points.push({ x: bEnd, y });
+            cursor = bEnd;
+          } else {
+            const rStart = wIn - bump.start;
+            const rEnd = rStart - bump.width;
+            if (rStart < cursor) points.push({ x: rStart, y });
+            points.push({ x: rStart, y: y + bumpDir * bump.depth });
+            points.push({ x: rEnd, y: y + bumpDir * bump.depth });
+            points.push({ x: rEnd, y });
+            cursor = rEnd;
+          }
+        });
+      }
+
+      // Helper to add edge with bump-outs (for vertical edges)
+      function addVertEdge(x, y1, y2, edgeBumps, bumpDir) {
+        const dir = y2 > y1 ? 1 : -1;
+        const sortedBumps = dir > 0 ? [...edgeBumps] : [...edgeBumps].reverse();
+        let cursor = y1;
+
+        sortedBumps.forEach(bump => {
+          const bStart = dir > 0 ? bump.start : (hIn - bump.start - bump.width);
+          const bEnd = bStart + bump.width;
+
+          if (dir > 0) {
+            if (bStart > cursor) points.push({ x, y: bStart });
+            points.push({ x: x + bumpDir * bump.depth, y: bStart });
+            points.push({ x: x + bumpDir * bump.depth, y: bEnd });
+            points.push({ x, y: bEnd });
+            cursor = bEnd;
+          } else {
+            const rStart = hIn - bump.start;
+            const rEnd = rStart - bump.width;
+            if (rStart < cursor) points.push({ x, y: rStart });
+            points.push({ x: x + bumpDir * bump.depth, y: rStart });
+            points.push({ x: x + bumpDir * bump.depth, y: rEnd });
+            points.push({ x, y: rEnd });
+            cursor = rEnd;
+          }
+        });
+      }
+
+      // === TOP-LEFT CORNER ===
+      if (notches['top-left']) {
+        const n = notches['top-left'];
+        points.push({ x: n.width, y: 0 });
+        // Top edge bump-outs
+        addHorizEdge(0, n.width, wIn, bumpOuts.top, -1);
+      } else if (radii['top-left']) {
+        const r = radii['top-left'].radius;
+        addRadiusArc(r, r, Math.PI, Math.PI * 1.5, r);
+        addHorizEdge(0, r, wIn, bumpOuts.top, -1);
+      } else {
+        points.push({ x: 0, y: 0 });
+        addHorizEdge(0, 0, wIn, bumpOuts.top, -1);
+      }
+
+      // === TOP-RIGHT CORNER ===
+      if (notches['top-right']) {
+        const n = notches['top-right'];
+        points.push({ x: wIn, y: n.depth });
+        // Right edge bump-outs
+        addVertEdge(wIn, n.depth, hIn, bumpOuts.right, 1);
+      } else if (radii['top-right']) {
+        const r = radii['top-right'].radius;
+        addRadiusArc(wIn - r, r, Math.PI * 1.5, Math.PI * 2, r);
+        addVertEdge(wIn, r, hIn, bumpOuts.right, 1);
+      } else {
+        points.push({ x: wIn, y: 0 });
+        addVertEdge(wIn, 0, hIn, bumpOuts.right, 1);
+      }
+
+      // === BOTTOM-RIGHT CORNER ===
+      if (notches['bottom-right']) {
+        const n = notches['bottom-right'];
+        points.push({ x: wIn - n.width, y: hIn });
+        // Bottom edge bump-outs (right to left)
+        addHorizEdge(hIn, wIn - n.width, 0, bumpOuts.bottom, 1);
+      } else if (radii['bottom-right']) {
+        const r = radii['bottom-right'].radius;
+        addRadiusArc(wIn - r, hIn - r, 0, Math.PI * 0.5, r);
+        addHorizEdge(hIn, wIn - r, 0, bumpOuts.bottom, 1);
+      } else {
+        points.push({ x: wIn, y: hIn });
+        addHorizEdge(hIn, wIn, 0, bumpOuts.bottom, 1);
+      }
+
+      // === BOTTOM-LEFT CORNER ===
+      if (notches['bottom-left']) {
+        const n = notches['bottom-left'];
+        points.push({ x: 0, y: hIn - n.depth });
+        // Left edge bump-outs (bottom to top)
+        addVertEdge(0, hIn - n.depth, 0, bumpOuts.left, -1);
+      } else if (radii['bottom-left']) {
+        const r = radii['bottom-left'].radius;
+        addRadiusArc(r, hIn - r, Math.PI * 0.5, Math.PI, r);
+        addVertEdge(0, hIn - r, 0, bumpOuts.left, -1);
+      } else {
+        points.push({ x: 0, y: hIn });
+        addVertEdge(0, hIn, 0, bumpOuts.left, -1);
+      }
+
+      // === HANDLE NOTCH RETURNS (the inner L-shaped part) ===
+      // Top-left notch: need to connect back from (0, n.depth) to start
+      if (notches['top-left']) {
+        const n = notches['top-left'];
+        // Last point from left edge walk should end near (0, 0) area
+        // But notch means we need: ...(0, n.depth) → (n.width, n.depth) → (n.width, 0) = first point
+        points.push({ x: 0, y: n.depth });
+        points.push({ x: n.width, y: n.depth });
+      }
+
+      // Scale all points
+      return points.map(p => ({ x: p.x * scale, y: p.y * scale }));
+    }
+
+    // Convert polygon to canvas Path2D for 2D rendering
+    function countertopPolygonToPath2D(polygon, offsetX, offsetY) {
+      if (!polygon || polygon.length < 3) return null;
+      const path = new Path2D();
+      path.moveTo(polygon[0].x + offsetX, polygon[0].y + offsetY);
+      for (let i = 1; i < polygon.length; i++) {
+        path.lineTo(polygon[i].x + offsetX, polygon[i].y + offsetY);
+      }
+      path.closePath();
+      return path;
+    }
+
+    // Convert polygon to THREE.Shape for 3D rendering (center-origin)
+    function countertopPolygonToShape3D(polygon, totalW, totalD) {
+      if (!polygon || polygon.length < 3) return null;
+      const halfW = totalW / 2;
+      const halfD = totalD / 2;
+      const shape = new THREE.Shape();
+      shape.moveTo(polygon[0].x - halfW, -(polygon[0].y - halfD));
+      for (let i = 1; i < polygon.length; i++) {
+        shape.lineTo(polygon[i].x - halfW, -(polygon[i].y - halfD));
+      }
+      shape.closePath();
+      return shape;
     }
 
     // Draw countertop surface with material-specific patterns
@@ -31222,8 +31603,15 @@
 
           break;
 
-        case 'countertop':
+        case 'countertop': {
           // Draw countertop with material-specific patterns (only if no texture)
+          // Clip to polygon if shape modifications exist
+          const detailShapeMods = el.shapeModifications?.length > 0;
+          const detailPoly = detailShapeMods ? buildCountertopPolygon(el, pixelsPerFoot / 12) : null;
+          const detailPath = detailPoly ? countertopPolygonToPath2D(detailPoly, x, y) : null;
+
+          if (detailPath) ctx.save(), ctx.clip(detailPath);
+
           if (!hasTexture) {
             drawCountertopSurface(ctx, x, y, w, h, el.color, el.materialName);
           } else {
@@ -31235,6 +31623,9 @@
             ctx.fillRect(x, y + h - 3, w, 3);
             ctx.fillRect(x + w - 3, y, 3, h);
           }
+
+          if (detailPath) ctx.restore();
+        }
 
           // Draw slab boundary indicators (show where standard slabs would end)
           // Only show when countertop is selected
@@ -32599,6 +32990,26 @@
           }
           ctx.lineTo(x + w - archFrameWidth, y + h);
           ctx.stroke();
+          break;
+
+        case 'pass-through':
+          // Pass-through opening - dashed rectangle indicating wall opening
+          ctx.fillStyle = 'rgba(218,165,32,0.15)';
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = 'rgba(218,165,32,0.7)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 4]);
+          ctx.strokeRect(x, y, w, h);
+          ctx.setLineDash([]);
+          // Center line indicating pass-through direction
+          ctx.strokeStyle = 'rgba(218,165,32,0.4)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x, y + h/2);
+          ctx.lineTo(x + w, y + h/2);
+          ctx.stroke();
+          ctx.setLineDash([]);
           break;
 
         case 'garage-door':
@@ -35478,7 +35889,7 @@
         flooring: ['flooring', 'tile', 'rug', 'threshold'],
         walls: ['wall', 'wall-block', 'wall-concrete', 'wall-framed', 'wall-wood-2x4', 'wall-wood-2x6', 'wall-brick', 'wall-steel', 'wall-aluminum', 'pony-wall', 'pony-wall-bar', 'knee-wall', 'shower-wall', 'wall-tile', 'accent-wall'],
         windows: ['window', 'window-large', 'bay-window', 'picture-window'],
-        doors: ['door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door'],
+        doors: ['door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door', 'pass-through'],
         niches: ['wall-niche', 'shower-niche', 'fireplace-niche', 'tv-niche', 'niche-surround'],
         fixtures: ['toilet', 'toilet-round', 'toilet-wall', 'bidet', 'bathtub', 'bathtub-freestanding', 'bathtub-corner', 'bathtub-walk-in', 'shower', 'shower-base-36', 'shower-base-48', 'shower-base-60', 'grab-bar', 'grab-bar-24', 'grab-bar-36', 'grab-bar-42', 'shower-pan', 'shower-curb', 'shower-bench', 'towel-warmer'],
         bathroom: ['vanity-24', 'vanity-30', 'vanity-36', 'vanity-48', 'vanity-60', 'vanity-72'],
@@ -35580,12 +35991,21 @@
 
       // Draw base shape with texture or color (skip for L/U shaped - they draw their own shape)
       const isLOrUShape = el.type === 'countertop-l' || el.type === 'countertop-u';
+      // Build polygon path for countertops with shape modifications
+      const hasShapeMods = el.type === 'countertop' && el.shapeModifications?.length > 0;
+      const ctopPoly = hasShapeMods ? buildCountertopPolygon(el, pixelsPerFoot / 12) : null;
+      const ctopPath = ctopPoly ? countertopPolygonToPath2D(ctopPoly, x, y) : null;
+
       if (!isLOrUShape) {
         if (el.textureImg) {
           ctx.save();
-          ctx.beginPath();
-          ctx.rect(x, y, w, h);
-          ctx.clip();
+          if (ctopPath) {
+            ctx.clip(ctopPath);
+          } else {
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+          }
 
           const imgW = el.textureImg.naturalWidth || el.textureImg.width;
           const imgH = el.textureImg.naturalHeight || el.textureImg.height;
@@ -35629,7 +36049,11 @@
           ctx.restore();
         } else {
           ctx.fillStyle = el.color;
-          ctx.fillRect(x, y, w, h);
+          if (ctopPath) {
+            ctx.fill(ctopPath);
+          } else {
+            ctx.fillRect(x, y, w, h);
+          }
         }
       }
 
@@ -35649,7 +36073,11 @@
       if (!isLOrUShape) {
         ctx.strokeStyle = isSelected ? '#6366f1' : isHovered ? 'rgba(99, 102, 241, 0.7)' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
         ctx.lineWidth = isSelected ? 3 : isHovered ? 2.5 : 1.5;
-        ctx.strokeRect(x, y, w, h);
+        if (ctopPath) {
+          ctx.stroke(ctopPath);
+        } else {
+          ctx.strokeRect(x, y, w, h);
+        }
       } else if (isSelected) {
         // Draw L-shape selection outline
         const armWidthFt = el.armWidth || 2.17;
@@ -39186,6 +39614,11 @@
       lastDeletedElement = JSON.parse(JSON.stringify(element));
       lastDeletedElement._originalIndex = elements.indexOf(element);
 
+      // If deleting a door/window, force room structure rebuild for wall cutouts
+      if (isDoorWindowType(element.type)) {
+        cachedRoomStructure = null;
+        forceFullRebuild3D = true;
+      }
       // Remove element
       elements = elements.filter(el => el !== element);
       elementListDirty = true;
@@ -42902,6 +43335,7 @@
         'glass-door': 6.667,       // 80 inches
         'entry-archway': 7,       // 84 inches (arched opening)
         'garage-door': 7,         // 84 inches
+        'pass-through': 3.667,    // ~44 inches (counter height 36" to header ~80")
         'window': 3,               // 36 inches - standard double-hung
         'window-large': 4,        // 48 inches (large picture)
         'window-bay': 3,          // 36 inches (bay)
@@ -43451,6 +43885,8 @@
           return sillHeight + height / 2; // Position center based on sill
         }
 
+        // Pass-through - sill at counter height
+        case 'pass-through':
         // Doors and archways - sill at floor level
         case 'door':
         case 'double-door':
@@ -48128,8 +48564,35 @@
           const edgeInset = skipEdgeProfile ? 0 : effectiveH;
 
           // Main slab body - full size for flat/square/eased, or front-inset for decorative edges
-          // Skip when sinks present (use ExtrudeGeometry with cutouts instead)
-          if (sinkCutouts.length === 0) {
+          // Use polygon shape when shapeModifications exist, ExtrudeGeometry when sinks present
+          const hasShapeMods3D = el.shapeModifications?.length > 0;
+
+          if (hasShapeMods3D) {
+            // Polygon-based countertop with shape modifications (+ optional sink cutouts)
+            const polyShape = countertopPolygonToShape3D(buildCountertopPolygon(el, 1/12), slabW, slabD);
+            if (polyShape) {
+              // Add sink holes if any
+              sinkCutouts.forEach(sink => {
+                const holeW = sink.w * 0.85;
+                const holeD = sink.d * 0.85;
+                const hole = new THREE.Path();
+                hole.moveTo(sink.x - holeW/2, -(sink.z - holeD/2));
+                hole.lineTo(sink.x - holeW/2, -(sink.z + holeD/2));
+                hole.lineTo(sink.x + holeW/2, -(sink.z + holeD/2));
+                hole.lineTo(sink.x + holeW/2, -(sink.z - holeD/2));
+                hole.lineTo(sink.x - holeW/2, -(sink.z - holeD/2));
+                polyShape.holes.push(hole);
+              });
+
+              const polyGeo = new THREE.ExtrudeGeometry(polyShape, { depth: effectiveH, bevelEnabled: false });
+              polyGeo.rotateX(-Math.PI / 2);
+              const polyMesh = new THREE.Mesh(polyGeo, ctopMat);
+              polyMesh.position.set(slabOffsetX, -effectiveH/2, slabOffsetZ);
+              polyMesh.castShadow = true;
+              polyMesh.receiveShadow = true;
+              group.add(polyMesh);
+            }
+          } else if (sinkCutouts.length === 0) {
             const bodyDepth = slabD - (hasFrontWaterfall ? 0 : edgeInset);
             const bodyOffsetZ = (hasFrontWaterfall ? 0 : -edgeInset / 2);
             const mainBody = new THREE.Mesh(
@@ -48251,7 +48714,8 @@
           }
 
           // Countertop with sink cutouts — uses ExtrudeGeometry with holes
-          if (sinkCutouts.length > 0) {
+          // Skip if shape mods already handled this above
+          if (sinkCutouts.length > 0 && !hasShapeMods3D) {
             // Create full-thickness countertop with sink holes using ExtrudeGeometry
             const topShape = new THREE.Shape();
             const topHalfW = slabW / 2;
@@ -55766,6 +56230,94 @@
           break;
         }
 
+        case 'pass-through': {
+          // Pass-through - simple rectangular opening with frame trim
+          const ptColor = el.color ? parseInt(el.color.replace('#', ''), 16) : 0xDAA520;
+          const ptWallDepth = Math.max(0.5, d || 0.67);
+
+          const ptInteriorMat = new THREE.MeshStandardMaterial({
+            color: 0x1A1A1A, roughness: 0.9, side: THREE.DoubleSide
+          });
+          const ptSideMat = new THREE.MeshStandardMaterial({
+            color: 0x2A2A2A, roughness: 0.85, side: THREE.DoubleSide
+          });
+          const ptTrimMat = new THREE.MeshStandardMaterial({
+            color: ptColor, roughness: 0.5
+          });
+
+          // Back wall (dark opening)
+          const ptBackShape = new THREE.Shape();
+          ptBackShape.moveTo(-w/2, -h/2);
+          ptBackShape.lineTo(-w/2, h/2);
+          ptBackShape.lineTo(w/2, h/2);
+          ptBackShape.lineTo(w/2, -h/2);
+          ptBackShape.lineTo(-w/2, -h/2);
+          const ptBackGeom = new THREE.ShapeGeometry(ptBackShape);
+          const ptBack = new THREE.Mesh(ptBackGeom, ptInteriorMat);
+          ptBack.position.set(0, 0, -ptWallDepth);
+          group.add(ptBack);
+
+          // Side walls (reveals)
+          const ptLeftReveal = new THREE.Mesh(
+            new THREE.PlaneGeometry(ptWallDepth, h), ptSideMat
+          );
+          ptLeftReveal.rotation.y = Math.PI / 2;
+          ptLeftReveal.position.set(-w/2, 0, -ptWallDepth/2);
+          group.add(ptLeftReveal);
+
+          const ptRightReveal = new THREE.Mesh(
+            new THREE.PlaneGeometry(ptWallDepth, h), ptSideMat
+          );
+          ptRightReveal.rotation.y = -Math.PI / 2;
+          ptRightReveal.position.set(w/2, 0, -ptWallDepth/2);
+          group.add(ptRightReveal);
+
+          // Top reveal
+          const ptTopReveal = new THREE.Mesh(
+            new THREE.PlaneGeometry(w, ptWallDepth), ptSideMat
+          );
+          ptTopReveal.rotation.x = Math.PI / 2;
+          ptTopReveal.position.set(0, h/2, -ptWallDepth/2);
+          group.add(ptTopReveal);
+
+          // Bottom sill
+          const ptBottomReveal = new THREE.Mesh(
+            new THREE.PlaneGeometry(w, ptWallDepth), ptSideMat
+          );
+          ptBottomReveal.rotation.x = -Math.PI / 2;
+          ptBottomReveal.position.set(0, -h/2, -ptWallDepth/2);
+          group.add(ptBottomReveal);
+
+          // Frame trim
+          const ptTrimW = 0.08;
+          // Top trim
+          const ptTopTrim = new THREE.Mesh(
+            new THREE.BoxGeometry(w + ptTrimW * 2, ptTrimW, ptTrimW), ptTrimMat
+          );
+          ptTopTrim.position.set(0, h/2 + ptTrimW/2, 0);
+          group.add(ptTopTrim);
+          // Bottom trim
+          const ptBotTrim = new THREE.Mesh(
+            new THREE.BoxGeometry(w + ptTrimW * 2, ptTrimW, ptTrimW), ptTrimMat
+          );
+          ptBotTrim.position.set(0, -h/2 - ptTrimW/2, 0);
+          group.add(ptBotTrim);
+          // Left trim
+          const ptLeftTrim = new THREE.Mesh(
+            new THREE.BoxGeometry(ptTrimW, h + ptTrimW * 2, ptTrimW), ptTrimMat
+          );
+          ptLeftTrim.position.set(-w/2 - ptTrimW/2, 0, 0);
+          group.add(ptLeftTrim);
+          // Right trim
+          const ptRightTrim = new THREE.Mesh(
+            new THREE.BoxGeometry(ptTrimW, h + ptTrimW * 2, ptTrimW), ptTrimMat
+          );
+          ptRightTrim.position.set(w/2 + ptTrimW/2, 0, 0);
+          group.add(ptRightTrim);
+
+          break;
+        }
+
         case 'garage-door': {
           // Garage door with proper sectional panel construction
           const doorColor = el.color ? parseInt(el.color.replace('#', ''), 16) : 0xD4D4D4;
@@ -59853,59 +60405,161 @@
         if (!window._roomWalls) window._roomWalls = [];
         window._roomWalls = [];
 
+        // Helper: find openings on a given wall for 3D cutouts
+        function getWallForElement3D(el) {
+          const snapThresh = 0.5;
+          const rot = (el.rotation || 0) % 360;
+          const isRotated = (rot === 90 || rot === 270);
+          const elW = isRotated ? el.height : el.width;
+          const elH = isRotated ? el.width : el.height;
+
+          if (el.y <= snapThresh && el.y >= -snapThresh) return 'back';
+          if (Math.abs((el.y + elH) - roomDepth) <= snapThresh || Math.abs(el.y - roomDepth) <= snapThresh) return 'front';
+          if (el.x <= snapThresh && el.x >= -snapThresh) return 'left';
+          if (Math.abs((el.x + elW) - roomWidth) <= snapThresh || Math.abs(el.x - roomWidth) <= snapThresh) return 'right';
+          return null;
+        }
+
+        function getOpeningsForWall3D(wallName) {
+          const ops = [];
+          elements.forEach(el => {
+            if (!isDoorWindowType(el.type) || el.hidden) return;
+            const wall = getWallForElement3D(el);
+            if (wall !== wallName) return;
+
+            const rot = (el.rotation || 0) % 360;
+            const isRotated = (rot === 90 || rot === 270);
+            const elW = isRotated ? el.height : el.width;
+
+            // Position along wall
+            let pos;
+            if (wallName === 'back' || wallName === 'front') {
+              pos = el.x; // X position along wall
+            } else {
+              pos = el.y; // Y position along wall (maps to Z in 3D)
+            }
+
+            // Opening height from floor
+            const sillH = el.sillHeight !== undefined ? el.sillHeight : getDefaultSillHeight(el.type);
+            const heightLookup = {
+              'door': 6.667, 'double-door': 6.667, 'sliding-door': 6.667,
+              'french-door': 6.667, 'glass-door': 6.667, 'entry-archway': 7,
+              'garage-door': 7, 'pass-through': 3.667,
+              'window': 3, 'window-large': 4, 'window-bay': 3,
+              'bay-window': 3, 'picture-window': 5
+            };
+            const openingH = heightLookup[el.type] || 6.667;
+
+            ops.push({ start: pos, width: elW, sillHeight: sillH, openingHeight: openingH });
+          });
+          return ops;
+        }
+
+        function createWallWithOpenings(wallWidth, wallHeight2, wallThick2, openings, mat) {
+          if (openings.length === 0) {
+            return new THREE.Mesh(new THREE.BoxGeometry(wallWidth, wallHeight2, wallThick2), mat);
+          }
+
+          // Create wall shape with holes
+          const shape = new THREE.Shape();
+          shape.moveTo(0, 0);
+          shape.lineTo(wallWidth, 0);
+          shape.lineTo(wallWidth, wallHeight2);
+          shape.lineTo(0, wallHeight2);
+          shape.lineTo(0, 0);
+
+          openings.forEach(op => {
+            const hole = new THREE.Path();
+            const hx = op.start;
+            const hy = op.sillHeight;
+            const hw = op.width;
+            const hh = op.openingHeight;
+            // Clamp to wall bounds
+            const x1 = Math.max(0.01, hx);
+            const x2 = Math.min(wallWidth - 0.01, hx + hw);
+            const y1 = Math.max(0.01, hy);
+            const y2 = Math.min(wallHeight2 - 0.01, hy + hh);
+            if (x2 > x1 && y2 > y1) {
+              hole.moveTo(x1, y1);
+              hole.lineTo(x2, y1);
+              hole.lineTo(x2, y2);
+              hole.lineTo(x1, y2);
+              hole.lineTo(x1, y1);
+              shape.holes.push(hole);
+            }
+          });
+
+          const extrudeSettings = { depth: wallThick2, bevelEnabled: false };
+          const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+          return new THREE.Mesh(geom, mat);
+        }
+
         // --- Back wall (Z = 0) ---
+        const backOpenings = getOpeningsForWall3D('back');
         const backWallMat = createWallMaterial(roomWidth, wallHeight);
-        const backWall = new THREE.Mesh(
-          new THREE.BoxGeometry(roomWidth, wallHeight, wallThick),
-          backWallMat
-        );
-        backWall.position.set(roomWidth / 2, wallHeight / 2, -wallThick / 2);
+        const backWall = createWallWithOpenings(roomWidth, wallHeight, wallThick, backOpenings, backWallMat);
+        if (backOpenings.length > 0) {
+          // ExtrudeGeometry: shape is in XY plane, extruded along Z
+          backWall.position.set(0, 0, -wallThick);
+        } else {
+          backWall.position.set(roomWidth / 2, wallHeight / 2, -wallThick / 2);
+        }
         backWall.receiveShadow = true;
         backWall.castShadow = true;
         backWall.userData.isRoomStructure = true;
-        backWall.userData.wallFacing = new THREE.Vector3(0, 0, 1); // Normal faces into room
+        backWall.userData.wallFacing = new THREE.Vector3(0, 0, 1);
         structure.push(backWall);
         window._roomWalls.push(backWall);
 
         // --- Left wall (X = 0) ---
+        const leftOpenings = getOpeningsForWall3D('left');
         const leftWallMat = createWallMaterial(roomDepth, wallHeight);
-        const leftWall = new THREE.Mesh(
-          new THREE.BoxGeometry(wallThick, wallHeight, roomDepth),
-          leftWallMat
-        );
-        leftWall.position.set(-wallThick / 2, wallHeight / 2, roomDepth / 2);
+        const leftWall = createWallWithOpenings(roomDepth, wallHeight, wallThick, leftOpenings, leftWallMat);
+        if (leftOpenings.length > 0) {
+          // Shape is in XY (X=depth along wall, Y=height), extrude along Z
+          // Rotate to align: wall runs along Z axis
+          leftWall.rotation.y = Math.PI / 2;
+          leftWall.position.set(0, 0, 0);
+        } else {
+          leftWall.position.set(-wallThick / 2, wallHeight / 2, roomDepth / 2);
+        }
         leftWall.receiveShadow = true;
         leftWall.castShadow = true;
         leftWall.userData.isRoomStructure = true;
-        leftWall.userData.wallFacing = new THREE.Vector3(1, 0, 0); // Normal faces right into room
+        leftWall.userData.wallFacing = new THREE.Vector3(1, 0, 0);
         structure.push(leftWall);
         window._roomWalls.push(leftWall);
 
         // --- Right wall (X = roomWidth) ---
+        const rightOpenings = getOpeningsForWall3D('right');
         const rightWallMat = createWallMaterial(roomDepth, wallHeight);
-        const rightWall = new THREE.Mesh(
-          new THREE.BoxGeometry(wallThick, wallHeight, roomDepth),
-          rightWallMat
-        );
-        rightWall.position.set(roomWidth + wallThick / 2, wallHeight / 2, roomDepth / 2);
+        const rightWall = createWallWithOpenings(roomDepth, wallHeight, wallThick, rightOpenings, rightWallMat);
+        if (rightOpenings.length > 0) {
+          rightWall.rotation.y = -Math.PI / 2;
+          rightWall.position.set(roomWidth, 0, roomDepth);
+        } else {
+          rightWall.position.set(roomWidth + wallThick / 2, wallHeight / 2, roomDepth / 2);
+        }
         rightWall.receiveShadow = true;
         rightWall.castShadow = true;
         rightWall.userData.isRoomStructure = true;
-        rightWall.userData.wallFacing = new THREE.Vector3(-1, 0, 0); // Normal faces left into room
+        rightWall.userData.wallFacing = new THREE.Vector3(-1, 0, 0);
         structure.push(rightWall);
         window._roomWalls.push(rightWall);
 
         // --- Front wall (Z = roomDepth) - ALWAYS rendered, camera-aware fading ---
+        const frontOpenings = getOpeningsForWall3D('front');
         const frontWallMat = createWallMaterial(roomWidth, wallHeight);
-        const frontWall = new THREE.Mesh(
-          new THREE.BoxGeometry(roomWidth, wallHeight, wallThick),
-          frontWallMat
-        );
-        frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth + wallThick / 2);
+        const frontWall = createWallWithOpenings(roomWidth, wallHeight, wallThick, frontOpenings, frontWallMat);
+        if (frontOpenings.length > 0) {
+          frontWall.position.set(0, 0, roomDepth);
+        } else {
+          frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth + wallThick / 2);
+        }
         frontWall.receiveShadow = true;
         frontWall.castShadow = true;
         frontWall.userData.isRoomStructure = true;
-        frontWall.userData.wallFacing = new THREE.Vector3(0, 0, -1); // Normal faces back into room
+        frontWall.userData.wallFacing = new THREE.Vector3(0, 0, -1);
         structure.push(frontWall);
         window._roomWalls.push(frontWall);
 
@@ -60268,7 +60922,7 @@
         const windowDoorTypes = [
           'window', 'window-large', 'window-bay', 'bay-window', 'picture-window',
           'door', 'double-door', 'sliding-door', 'french-door', 'glass-door',
-          'entry-archway', 'garage-door'
+          'entry-archway', 'garage-door', 'pass-through'
         ];
         // Niches embed INTO the wall
         const nicheTypes = ['wall-niche', 'fireplace-niche', 'tv-niche', 'shower-niche'];
@@ -61896,11 +62550,13 @@
           { type: 'backsplash', x: 5, y: 0, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
           { type: 'backsplash', x: 15.92, y: 0, width: 0.08, height: 12.5, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 90 },
 
-          // === LARGE ISLAND with prep sink (45" work aisle from back counter) ===
+          // === LARGE ISLAND (clean — add sink if needed) ===
           { type: 'base-cabinet', x: 3.5, y: 6, width: 3.5, height: 2, label: 'Island Base 42"', rotation: 180 },
-          { type: 'sink-base', x: 7, y: 6, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
+          { type: 'base-cabinet', x: 7, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           { type: 'countertop', x: 3.375, y: 5.875, width: 6.75, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 7.75, y: 6.375, width: 1.5, height: 1.25, label: 'Prep Sink 15"', rotation: 180, sinkSize: 'prep' },
+
+          // === ENTRY DOOR (left wall, typical kitchen entry) ===
+          { type: 'door', x: 0, y: 10, width: 0.5, height: 3, label: 'Entry Door', rotation: 270 },
         ]
       },
       'kitchen-galley': {
@@ -61990,12 +62646,11 @@
           { type: 'backsplash', x: 0, y: 5.5, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Left Backsplash', rotation: 270 },
           { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 16, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 90 },
 
-          // === LARGE CENTER ISLAND ===
+          // === LARGE CENTER ISLAND (clean — add sink if needed) ===
           { type: 'base-cabinet', x: 6, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'sink-base', x: 9, y: 6, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
+          { type: 'base-cabinet', x: 9, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           { type: 'base-cabinet', x: 12, y: 6, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
           { type: 'countertop', x: 5.875, y: 5.875, width: 8.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 9.75, y: 6.375, width: 1.5, height: 1.25, label: 'Prep Sink 15"', rotation: 180, sinkSize: 'prep' },
         ]
       },
       'kitchen-single': {
@@ -62107,15 +62762,13 @@
           { type: 'countertop', x: 17.835, y: 6.375, width: 2.165, height: 2.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
           { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 90 },
 
-          // === TWO-LEVEL ISLAND (center of room) ===
-          // Lower level: sink base + cabinets (standard 36" height)
+          // === TWO-LEVEL ISLAND (center of room, clean — add sink if needed) ===
+          // Lower level: base cabinets (standard 36" height)
           { type: 'base-cabinet', x: 5, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'sink-base', x: 8, y: 6, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
+          { type: 'base-cabinet', x: 8, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           { type: 'base-cabinet', x: 11, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           // Lower countertop
           { type: 'countertop', x: 4.875, y: 5.875, width: 9.25, height: 2.25, label: 'Island Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
-          // Island prep sink (offset toward working side / back wall)
-          { type: 'sink', x: 8.75, y: 6.125, width: 1.5, height: 1.25, label: 'Prep Sink 15"', rotation: 180, sinkSize: 'prep' },
           // Elevated bar top (42" bar height — cabinets are 40.5" so counter sits at 42")
           { type: 'countertop', x: 4.875, y: 8.375, width: 9.25, height: 2.25, label: 'Bar Top', rotation: 0, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125, overhangSupport: 'corbels' },
           // Bar-height cabinets (40.5" = 3.375ft, + 1.5" countertop = 42" bar height)
@@ -63052,6 +63705,203 @@
           { type: 'bar-stool', x: 12, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
           { type: 'bar-stool', x: 14, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
         ]
+      },
+
+      'outdoor-bbq-island': {
+        name: 'Outdoor BBQ L-Island',
+        roomType: 'outdoor',
+        width: 18,
+        depth: 10,
+        elements: [
+          // =============================================
+          // OUTDOOR BBQ L-ISLAND - L-shaped outdoor kitchen
+          // Back wall grill run + right wall bar seating island
+          // Perfect for patio entertaining with granite counters
+          // =============================================
+
+          // === BACK WALL (y=0) - Main cooking run ===
+          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Storage', rotation: 0 },
+          { type: 'outdoor-fridge', x: 2, y: 0, width: 2, height: 2, label: 'Outdoor Fridge', rotation: 0 },
+          { type: 'base-cabinet', x: 4, y: 0, width: 2, height: 2, label: 'Prep Base', rotation: 0 },
+          { type: 'grill-builtin', x: 6, y: 0, width: 3, height: 2, label: 'BBQ Grill 36"', rotation: 0 },
+          { type: 'side-burner', x: 9, y: 0, width: 1.5, height: 2, label: 'Side Burner', rotation: 0 },
+          { type: 'base-cabinet', x: 10.5, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'sink-base', x: 12.5, y: 0, width: 2, height: 2, label: 'Sink Base', rotation: 0 },
+          { type: 'outdoor-ice-maker', x: 14.5, y: 0, width: 1.5, height: 2, label: 'Ice Maker', rotation: 0 },
+          // Back wall countertop
+          { type: 'countertop', x: -0.125, y: -0.04, width: 16.25, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 12.75, y: 0.25, width: 1.5, height: 1.5, label: 'Outdoor Sink', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 16, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
+
+          // === RIGHT RETURN (x=16) - Bar seating island ===
+          { type: 'base-cabinet', x: 16, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 16, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 16, y: 4, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 16, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          // Right return countertop with bar overhang
+          { type: 'countertop', x: 15.835, y: -0.04, width: 2.165, height: 8.29, label: 'Bar Counter', rotation: 90, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+
+          // === BAR STOOLS along right return ===
+          { type: 'bar-stool', x: 14, y: 1, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 14, y: 3, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 14, y: 5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 14, y: 7, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+        ]
+      },
+
+      'kitchen-island-only': {
+        name: 'Kitchen Island Only',
+        roomType: 'kitchen',
+        width: 12,
+        depth: 8,
+        elements: [
+          // =============================================
+          // KITCHEN ISLAND ONLY - For quoting standalone islands
+          // Center island with seating overhang, sink, and waterfall edges
+          // =============================================
+
+          // === CENTER ISLAND ===
+          { type: 'base-cabinet', x: 2, y: 2.5, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 4, y: 2.5, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'sink-base', x: 6, y: 2.5, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
+          { type: 'drawer-base', x: 9, y: 2.5, width: 2, height: 2, label: 'Drawer Base 24"', rotation: 180 },
+          // Island countertop with waterfall sides and seating overhang
+          { type: 'countertop', x: 1.375, y: 2.375, width: 10.25, height: 3.125, label: 'Island Counter', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 1, overhangLeft: 0.625, overhangRight: 0.625 },
+          { type: 'sink', x: 6.5, y: 2.75, width: 2, height: 1.5, label: 'Island Sink', rotation: 0 },
+
+          // === BAR STOOLS (front of island for seating) ===
+          { type: 'bar-stool', x: 3, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 5, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 7, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 9, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+        ]
+      },
+
+      'family-room': {
+        name: 'Family Room',
+        roomType: 'living',
+        width: 20,
+        depth: 16,
+        elements: [
+          // =============================================
+          // FAMILY ROOM - Large furniture room with sectional
+          // Entertainment wall, L-sectional, built-in shelving
+          // =============================================
+
+          // === BACK WALL (y=0) - Entertainment Center ===
+          { type: 'bookshelf-tall', x: 0, y: 0, width: 3, height: 1.5, label: 'Built-in Shelf', rotation: 0 },
+          { type: 'entertainment-center', x: 3, y: 0, width: 6, height: 2, label: 'Entertainment Center', rotation: 0 },
+          { type: 'bookshelf-tall', x: 9, y: 0, width: 3, height: 1.5, label: 'Built-in Shelf', rotation: 0 },
+          // Mantle/countertop across entertainment area
+          { type: 'countertop', x: 2.875, y: -0.04, width: 6.25, height: 2.165, color: '#5a4a3a', label: 'Media Top', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+
+          // === L-SECTIONAL centered in room ===
+          { type: 'sectional-l', x: 4, y: 6, width: 8, height: 8, label: 'L-Sectional', rotation: 0 },
+
+          // === COFFEE TABLE ===
+          { type: 'coffee-table-rect', x: 6, y: 4, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
+
+          // === SIDE TABLES ===
+          { type: 'side-table', x: 3, y: 6, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 12.5, y: 6, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+
+          // === RIGHT WALL - Reading nook ===
+          { type: 'armchair', x: 16, y: 2, width: 2.5, height: 2.5, label: 'Reading Chair', rotation: 90 },
+          { type: 'side-table', x: 16.5, y: 4.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'bookshelf', x: 18.5, y: 1, width: 1, height: 5, label: 'Bookshelf', rotation: 90 },
+
+          // === ACCENTS ===
+          { type: 'area-rug-lg', x: 3, y: 3, width: 12, height: 10, label: 'Area Rug', rotation: 0 },
+          { type: 'potted-plant-md', x: 0.5, y: 13, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'potted-plant-md', x: 17, y: 13, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+
+          // === ENTRY ===
+          { type: 'door', x: 14, y: 15.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
+        ]
+      },
+
+      'game-room': {
+        name: 'Game / Media Room',
+        roomType: 'living',
+        width: 20,
+        depth: 14,
+        elements: [
+          // =============================================
+          // GAME / MEDIA ROOM - Entertainment with bar area
+          // Built-in bar with granite, theater seating, game table
+          // =============================================
+
+          // === BACK WALL (y=0) - Bar with granite counter ===
+          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Bar Storage', rotation: 0 },
+          { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 2, label: 'Bar Base', rotation: 0 },
+          { type: 'sink-base', x: 4, y: 0, width: 2, height: 2, label: 'Bar Sink Base', rotation: 0 },
+          { type: 'base-cabinet', x: 6, y: 0, width: 2, height: 2, label: 'Bar Base', rotation: 0 },
+          { type: 'refrigerator', x: 8, y: 0, width: 2, height: 2.5, label: 'Beverage Center', rotation: 0 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 10.25, height: 2.165, label: 'Bar Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 4.25, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
+          { type: 'wall-cabinet', x: 0, y: 0, width: 1, height: 4, label: 'Glassware', rotation: 0 },
+          { type: 'wall-cabinet', x: 4, y: 0, width: 1, height: 4, label: 'Bottle Display', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 10, height: 0.08, verticalHeight: 1.5, label: 'Bar Backsplash', rotation: 0 },
+
+          // === BAR STOOLS ===
+          { type: 'bar-stool', x: 0.5, y: 2.75, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 2.5, y: 2.75, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 4.5, y: 2.75, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 6.5, y: 2.75, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+
+          // === RIGHT SIDE - Media/TV area ===
+          { type: 'entertainment-center', x: 12, y: 0, width: 6, height: 2, label: 'Media Center', rotation: 0 },
+          { type: 'sofa-3seat', x: 12.5, y: 5, width: 7, height: 3, label: 'Theater Sofa', rotation: 0 },
+          { type: 'recliner', x: 11, y: 5.5, width: 3, height: 3, label: 'Recliner', rotation: 45 },
+
+          // === CENTER - Game table ===
+          { type: 'dining-table-square', x: 4, y: 7, width: 4, height: 4, label: 'Game Table', rotation: 0 },
+          { type: 'dining-chair', x: 4.5, y: 6, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 6.5, y: 6, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 4.5, y: 11, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 6.5, y: 11, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+
+          // === ACCENTS ===
+          { type: 'area-rug-lg', x: 3, y: 6, width: 8, height: 7, label: 'Area Rug', rotation: 0 },
+        ]
+      },
+
+      'fireplace-living': {
+        name: 'Living Room w/ Fireplace',
+        roomType: 'living',
+        width: 18,
+        depth: 14,
+        elements: [
+          // =============================================
+          // LIVING ROOM WITH FIREPLACE - Granite mantle + surround
+          // Fireplace as focal point with granite hearth and mantle
+          // Great for quoting fireplace surrounds
+          // =============================================
+
+          // === BACK WALL (y=0) - Fireplace + flanking built-ins ===
+          { type: 'bookshelf-tall', x: 0, y: 0, width: 3, height: 1.5, label: 'Built-in Left', rotation: 0 },
+          // Fireplace surround using base cabinets + countertop as mantle
+          { type: 'base-cabinet', x: 5, y: 0, width: 6, height: 1, label: 'Fireplace Base', rotation: 0 },
+          // Granite mantle
+          { type: 'countertop', x: 4.5, y: -0.04, width: 7.25, height: 1.165, color: '#3a3a3a', label: 'Granite Mantle', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.5, overhangRight: 0.5 },
+          // Hearth (floor-level countertop)
+          { type: 'countertop', x: 5.5, y: 1, width: 5, height: 1.5, color: '#3a3a3a', label: 'Granite Hearth', rotation: 0, overhangFront: 0.25, overhangBack: 0, overhangLeft: 0.25, overhangRight: 0.25 },
+          { type: 'bookshelf-tall', x: 13, y: 0, width: 3, height: 1.5, label: 'Built-in Right', rotation: 0 },
+
+          // === SEATING facing fireplace ===
+          { type: 'sofa-3seat', x: 4, y: 7, width: 7, height: 3, label: 'Sofa', rotation: 0 },
+          { type: 'armchair', x: 1, y: 5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 330 },
+          { type: 'armchair', x: 13, y: 5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 30 },
+          { type: 'coffee-table-rect', x: 5.5, y: 4.5, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
+          { type: 'side-table', x: 3.5, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 11.5, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+
+          // === ACCENTS ===
+          { type: 'area-rug-lg', x: 2.5, y: 3.5, width: 11, height: 8, label: 'Area Rug', rotation: 0 },
+          { type: 'console-table', x: 0, y: 11, width: 4, height: 1.25, label: 'Console Table', rotation: 270 },
+          { type: 'potted-plant-md', x: 0.5, y: 12, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'potted-plant-sm', x: 15.5, y: 0.5, width: 1.5, height: 1.5, label: 'Plant', rotation: 0 },
+        ]
       }
     };
 
@@ -63828,6 +64678,16 @@
           }
         }
 
+        // Shape Editing row for countertops (notch, bump-out, radius)
+        const shapeEditingRow = document.getElementById('shapeEditingRow');
+        if (shapeEditingRow) {
+          const isStandardCountertop = selectedElement.type === 'countertop';
+          shapeEditingRow.style.display = isStandardCountertop ? 'flex' : 'none';
+          if (isStandardCountertop) {
+            renderShapeModificationsList();
+          }
+        }
+
         // Sink-specific properties (color, mount type)
         const isSink = selectedElement.type.startsWith('sink');
         const sinkColorRow = document.getElementById('sinkColorRow');
@@ -63913,7 +64773,7 @@
 
         // Window/Door sill height (height from floor)
         const windowDoorTypes = ['window', 'window-large', 'window-bay', 'bay-window', 'picture-window',
-          'door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door'];
+          'door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door', 'pass-through'];
         const isWindowOrDoor = windowDoorTypes.includes(selectedElement.type);
         const sillHeightRow = document.getElementById('sillHeightRow');
         const customSillRow = document.getElementById('customSillRow');
@@ -63945,7 +64805,7 @@
         }
 
         // Door/Archway height controls
-        const doorTypes = ['door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door'];
+        const doorTypes = ['door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door', 'pass-through'];
         const isDoor = doorTypes.includes(selectedElement.type);
         const isArchway = selectedElement.type === 'entry-archway';
         const doorHeightRow = document.getElementById('doorHeightRow');
@@ -64872,6 +65732,8 @@
           return 3.5;     // 42" - above counter height (kitchen bay windows)
         case 'picture-window':
           return 1.5;     // 18" - near floor for panoramic views
+        case 'pass-through':
+          return 3;       // 36" - counter height
         case 'door':
         case 'double-door':
         case 'sliding-door':
@@ -66996,6 +67858,117 @@
       draw();
       update3DScene();
       showSnapFeedback(`Grout: ${selectedElement.groutColor} / ${selectedElement.groutWidth}/16"`);
+    }
+
+    // ===== COUNTERTOP SHAPE MODIFICATION UI =====
+    function addShapeModification(type) {
+      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      if (!selectedElement.shapeModifications) selectedElement.shapeModifications = [];
+
+      const id = 'mod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+      let mod;
+      if (type === 'notch') {
+        mod = { id, type: 'notch', corner: 'top-left', width: 6, depth: 4 };
+      } else if (type === 'bump-out') {
+        mod = { id, type: 'bump-out', edge: 'front', start: 12, width: 18, depth: 6 };
+      } else if (type === 'radius') {
+        mod = { id, type: 'radius', corner: 'top-right', radius: 3 };
+      }
+
+      selectedElement.shapeModifications.push(mod);
+      markElement3DDirty(selectedElement.id);
+      draw();
+      update3DScene();
+      saveUndoState();
+      renderShapeModificationsList();
+      showToast(`Added ${type} to countertop`, 'success');
+    }
+
+    function removeShapeModification(modId) {
+      if (!selectedElement || !selectedElement.shapeModifications) return;
+      selectedElement.shapeModifications = selectedElement.shapeModifications.filter(m => m.id !== modId);
+      markElement3DDirty(selectedElement.id);
+      draw();
+      update3DScene();
+      saveUndoState();
+      renderShapeModificationsList();
+    }
+
+    function updateShapeModification(modId, field, value) {
+      if (!selectedElement || !selectedElement.shapeModifications) return;
+      const mod = selectedElement.shapeModifications.find(m => m.id === modId);
+      if (!mod) return;
+      if (field === 'corner' || field === 'edge') {
+        mod[field] = value;
+      } else {
+        mod[field] = parseFloat(value) || 0;
+      }
+      markElement3DDirty(selectedElement.id);
+      draw();
+      update3DScene();
+      saveUndoState();
+    }
+
+    function renderShapeModificationsList() {
+      const container = document.getElementById('shapeModificationsList');
+      if (!container) return;
+      const mods = selectedElement?.shapeModifications || [];
+      if (mods.length === 0) {
+        container.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.4);text-align:center;padding:4px;">No shape modifications. Click a button above to add one.</div>';
+        return;
+      }
+
+      const cornerOpts = '<option value="top-left">Back-Left</option><option value="top-right">Back-Right</option><option value="bottom-left">Front-Left</option><option value="bottom-right">Front-Right</option>';
+      const edgeOpts = '<option value="front">Front</option><option value="back">Back</option><option value="left">Left</option><option value="right">Right</option>';
+
+      container.innerHTML = mods.map(mod => {
+        const delBtn = `<button onclick="removeShapeModification('${mod.id}')" style="background:rgba(239,68,68,0.3);border:none;color:#fca5a5;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:10px;" title="Remove">✕</button>`;
+
+        if (mod.type === 'notch') {
+          return `<div style="background:rgba(244,114,182,0.08);border:1px solid rgba(244,114,182,0.2);border-radius:6px;padding:6px;margin-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:600;color:#f472b6;">Notch</span>${delBtn}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Corner</label>
+                <select onchange="updateShapeModification('${mod.id}','corner',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;">${cornerOpts.replace('value="'+mod.corner+'"', 'value="'+mod.corner+'" selected')}</select></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Width (in)</label>
+                <input type="number" value="${mod.width}" min="1" max="48" step="0.5" onchange="updateShapeModification('${mod.id}','width',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Depth (in)</label>
+                <input type="number" value="${mod.depth}" min="1" max="24" step="0.5" onchange="updateShapeModification('${mod.id}','depth',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+            </div>
+          </div>`;
+        } else if (mod.type === 'bump-out') {
+          return `<div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:6px;padding:6px;margin-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:600;color:#60a5fa;">Bump-Out</span>${delBtn}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Edge</label>
+                <select onchange="updateShapeModification('${mod.id}','edge',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;">${edgeOpts.replace('value="'+mod.edge+'"', 'value="'+mod.edge+'" selected')}</select></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Start (in)</label>
+                <input type="number" value="${mod.start}" min="0" max="180" step="1" onchange="updateShapeModification('${mod.id}','start',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Width (in)</label>
+                <input type="number" value="${mod.width}" min="1" max="96" step="1" onchange="updateShapeModification('${mod.id}','width',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Depth (in)</label>
+                <input type="number" value="${mod.depth}" min="1" max="24" step="1" onchange="updateShapeModification('${mod.id}','depth',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+            </div>
+          </div>`;
+        } else if (mod.type === 'radius') {
+          return `<div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:6px;margin-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:600;color:#34d399;">Radius</span>${delBtn}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Corner</label>
+                <select onchange="updateShapeModification('${mod.id}','corner',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;">${cornerOpts.replace('value="'+mod.corner+'"', 'value="'+mod.corner+'" selected')}</select></div>
+              <div><label style="font-size:9px;color:rgba(255,255,255,0.5);">Radius (in)</label>
+                <input type="number" value="${mod.radius}" min="0.5" max="24" step="0.5" onchange="updateShapeModification('${mod.id}','radius',this.value)" style="width:100%;padding:3px;border-radius:3px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:10px;"></div>
+            </div>
+          </div>`;
+        }
+        return '';
+      }).join('');
     }
 
     // Add a seam to the selected countertop
