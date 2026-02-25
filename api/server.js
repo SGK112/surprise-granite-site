@@ -3735,11 +3735,11 @@ app.use('/api/pro-plans', (req, res, next) => { req.url = '/pro-plans'; stripeRo
 app.use('/api/pro-billing-portal', (req, res, next) => { req.url = '/billing-portal'; stripeRouter(req, res, next); });
 app.use('/api/pro-subscription', (req, res, next) => { req.url = req.url.replace('/api/pro-subscription', '/subscription'); stripeRouter(req, res, next); });
 app.use('/api/create-payment-intent', (req, res, next) => { req.url = '/payment-intent'; stripeRouter(req, res, next); });
-app.use('/api/balance', (req, res, next) => { req.url = '/balance'; stripeRouter(req, res, next); });
-app.use('/api/payouts', (req, res, next) => { req.url = req.url.replace('/api/payouts', '/payouts'); stripeRouter(req, res, next); });
-app.use('/api/transactions', (req, res, next) => { req.url = '/transactions'; stripeRouter(req, res, next); });
-app.use('/api/balance-transactions', (req, res, next) => { req.url = '/balance-transactions'; stripeRouter(req, res, next); });
-app.use('/api/connect', (req, res, next) => { req.url = req.url.replace('/api/connect', '/connect'); stripeRouter(req, res, next); });
+app.use('/api/balance', authenticateJWT, (req, res, next) => { req.url = '/balance'; stripeRouter(req, res, next); });
+app.use('/api/payouts', authenticateJWT, (req, res, next) => { req.url = '/payouts' + (req.url === '/' ? '' : req.url); stripeRouter(req, res, next); });
+app.use('/api/transactions', authenticateJWT, (req, res, next) => { req.url = '/transactions'; stripeRouter(req, res, next); });
+app.use('/api/balance-transactions', authenticateJWT, (req, res, next) => { req.url = '/balance-transactions'; stripeRouter(req, res, next); });
+app.use('/api/connect', authenticateJWT, (req, res, next) => { req.url = '/connect' + (req.url === '/' ? '' : req.url); stripeRouter(req, res, next); });
 // AI legacy paths
 app.use('/api/visualize', (req, res, next) => { req.url = '/visualize'; aiRouter(req, res, next); });
 app.use('/api/generate-video', (req, res, next) => { req.url = req.url.replace('/api/generate-video', '/video'); aiRouter(req, res, next); });
