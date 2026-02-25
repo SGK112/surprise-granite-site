@@ -358,7 +358,13 @@
       } else if (inv.stripe_hosted_url) {
         payBtn.href = inv.stripe_hosted_url;
       } else {
-        payBtn.style.display = 'none';
+        // Build pay link to /pay with pre-filled invoice details
+        const payParams = new URLSearchParams();
+        payParams.set('amount', Math.round(amountDue * 100));
+        payParams.set('email', inv.customer_email || '');
+        payParams.set('invoice', inv.invoice_number || '');
+        payParams.set('memo', inv.project_name || 'Invoice Payment');
+        payBtn.href = '/pay/?' + payParams.toString();
       }
     }
 

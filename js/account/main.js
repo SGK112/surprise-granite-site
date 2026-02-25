@@ -12479,12 +12479,14 @@
 
       try {
         // Get user
+        console.log('[Invoices] Step 1: Getting user...');
         let user = currentUser;
         if (!user) {
           const { data: { session } } = await supabaseClient.auth.getSession();
           user = session?.user;
         }
         if (!user) throw new Error('Not authenticated');
+        console.log('[Invoices] Step 1 done, user:', user.id);
 
         const total = formData.items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
 
@@ -12511,7 +12513,7 @@
 
         if (formData.customerId) invoiceData.customer_id = formData.customerId;
 
-        // Handle deposits
+        // Handle deposits - only add deposit columns if deposit is enabled
         if (formData.depositEnabled && formData.depositAmount > 0) {
           invoiceData.deposit_requested = formData.depositAmount;
           invoiceData.deposit_percent = formData.depositPercent || null;
@@ -12522,13 +12524,18 @@
           invoiceData.amount_paid = formData.depositReceivedAmount;
         }
 
+        console.log('[Invoices] Step 2: Inserting invoice...', invoiceData);
         const { data: invoice, error } = await supabaseClient
           .from('invoices')
           .insert(invoiceData)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('[Invoices] Step 2 FAILED:', error);
+          throw error;
+        }
+        console.log('[Invoices] Step 2 done, invoice:', invoice.id);
 
         // Save line items
         if (formData.items.length > 0) {
@@ -12540,28 +12547,38 @@
             unit_price: item.amount,
             total: item.quantity * item.amount
           }));
-          await supabaseClient.from('invoice_items').insert(invoiceItems);
+          console.log('[Invoices] Step 3: Inserting line items...');
+          const { error: itemsErr } = await supabaseClient.from('invoice_items').insert(invoiceItems);
+          if (itemsErr) console.warn('[Invoices] Step 3 items error (non-fatal):', itemsErr);
+          else console.log('[Invoices] Step 3 done');
         }
 
         // Generate token for preview
         const token = crypto.randomUUID();
-        await supabaseClient.from('invoice_tokens').insert([{
+        console.log('[Invoices] Step 4: Inserting token...');
+        const { error: tokenErr } = await supabaseClient.from('invoice_tokens').insert([{
           invoice_id: invoice.id,
           token: token,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           created_by: user.id
         }]);
+        if (tokenErr) {
+          console.error('[Invoices] Step 4 token error:', tokenErr);
+          throw tokenErr;
+        }
+        console.log('[Invoices] Step 4 done');
 
         // Store invoice ID for sending later
         window._pendingInvoiceId = invoice.id;
         window._pendingInvoiceToken = token;
 
         // Show preview modal with iframe
+        console.log('[Invoices] Step 5: Showing preview...');
         showInvoiceTemplatePreview(token, formData.customerEmail);
 
       } catch (err) {
         console.error('[Invoices] Preview error:', err);
-        showToast('Error generating preview: ' + err.message, 'error');
+        showToast('Error generating preview: ' + (err.message || JSON.stringify(err)), 'error');
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -25771,14 +25788,19 @@
         const email = lead.email || lead.homeowner_email || '';
         const leadId = lead.id;
 
-        let query = supabaseClient.from('estimates').select('id', { count: 'exact', head: true });
+        // Use GET with count instead of HEAD to avoid CORS issues with some CDN/proxy configs
+        let query = supabaseClient.from('estimates').select('id', { count: 'exact' });
         if (leadId) {
           query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
         } else if (email) {
           query = query.ilike('customer_email', email);
         }
 
-        const { count } = await query;
+        const { count, error } = await query;
+        if (error) {
+          console.warn('Estimate count query error:', error.message);
+          return;
+        }
         const badge = document.getElementById('tab-badge-estimates');
         if (badge) {
           badge.textContent = count || 0;
@@ -25795,14 +25817,19 @@
         const email = lead.email || lead.homeowner_email || '';
         const leadId = lead.id;
 
-        let query = supabaseClient.from('invoices').select('id', { count: 'exact', head: true });
+        // Use GET with count instead of HEAD to avoid CORS issues with some CDN/proxy configs
+        let query = supabaseClient.from('invoices').select('id', { count: 'exact' });
         if (leadId) {
           query = query.or(`lead_id.eq.${leadId}${email ? `,customer_email.ilike.${email}` : ''}`);
         } else if (email) {
           query = query.ilike('customer_email', email);
         }
 
-        const { count } = await query;
+        const { count, error } = await query;
+        if (error) {
+          console.warn('Invoice count query error:', error.message);
+          return;
+        }
         const badge = document.getElementById('tab-badge-invoices');
         if (badge) {
           badge.textContent = count || 0;
