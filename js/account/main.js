@@ -5675,6 +5675,7 @@
               <div class="lead-quick-actions">
                 ${leadPhone ? `<button onclick="event.stopPropagation(); window.location.href='tel:${encodeURIComponent(leadPhone)}'" class="btn-action call" title="Call"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>Call</button>` : ''}
                 ${leadEmail ? `<button onclick="event.stopPropagation(); openLeadEmailModal('${lead.id}')" class="btn-action email" title="Email"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Email</button>` : ''}
+                <button onclick="event.stopPropagation(); openQuickPayModal({ name: '${leadName.replace(/'/g, "\\'")}', email: '${leadEmail.replace(/'/g, "\\'")}', phone: '${leadPhone.replace(/'/g, "\\'")}' })" class="btn-action pay" title="Send Payment Link"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Pay</button>
                 <button onclick="event.stopPropagation(); convertLeadToProject('${lead.id}')" class="btn-action project" title="Convert to Project"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>Project</button>
                 <button onclick="event.stopPropagation(); quickArchiveLead('${lead.id}')" class="btn-action archive" title="${lead.status === 'archived' ? 'Restore' : 'Archive'}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>${lead.status === 'archived' ? 'Restore' : 'Archive'}</button>
                 <button onclick="event.stopPropagation(); quickDeleteLead('${lead.id}')" class="btn-action delete" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>
@@ -8337,6 +8338,7 @@
               <div class="list-item-meta">
                 <div style="font-weight: 700; font-size: 15px; color: var(--gold-primary); margin-bottom: 4px;">$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <span class="badge-modern" style="background: ${ordersColor}20; color: ${ordersColor};">${ordersCount} orders</span>
+                <button onclick="event.stopPropagation(); openQuickPayModal({ name: '${(c.name || '').replace(/'/g, "\\'")}', email: '${(c.email || '').replace(/'/g, "\\'")}', phone: '${(c.phone || '').replace(/'/g, "\\'")}' })" style="margin-top: 6px; padding: 4px 10px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 6px; color: #8b5cf6; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'" title="Send Payment Link">$ Pay</button>
               </div>
             </div>
           `;}).join('')}
@@ -16142,11 +16144,24 @@
     // ============ QUICK PAY FUNCTIONS ============
     let quickPayData = {};
 
-    function openQuickPayModal() {
+    function openQuickPayModal(prefillData) {
       document.getElementById('quick-pay-modal').classList.add('active');
       document.getElementById('quick-pay-form-state').style.display = 'block';
       document.getElementById('quick-pay-result-state').style.display = 'none';
       document.getElementById('quick-pay-form').reset();
+      if (prefillData) {
+        if (prefillData.name) document.getElementById('qp-name').value = prefillData.name;
+        if (prefillData.email) document.getElementById('qp-email').value = prefillData.email;
+        if (prefillData.phone) document.getElementById('qp-phone').value = prefillData.phone;
+      }
+    }
+
+    function openQuickPayFromProfile() {
+      if (!currentProfileData) return;
+      const name = currentProfileData.full_name || currentProfileData.name || currentProfileData.homeowner_name || '';
+      const email = currentProfileData.email || currentProfileData.homeowner_email || '';
+      const phone = currentProfileData.phone || currentProfileData.homeowner_phone || '';
+      openQuickPayModal({ name, email, phone });
     }
 
     function closeQuickPayModal() {
@@ -26363,6 +26378,7 @@
     let schedulerContractors = [];
 
     const DEFAULT_JOB_PHASES = [
+      { id: 'consultation', name: 'Design Consultation', icon: '🎨', type: 'consultation', duration: 60, defaultTime: '10:00', daysBeforeInstall: null, enabled: true },
       { id: 'template', name: 'Template/Measure', icon: '📐', type: 'template', duration: 60, defaultTime: '09:00', daysBeforeInstall: null, enabled: true },
       { id: 'demo', name: 'Demo/Tear-out', icon: '🔨', type: 'site_visit', duration: 120, defaultTime: '08:00', daysBeforeInstall: 1, enabled: false },
       { id: 'plumbing_disconnect', name: 'Plumbing Disconnect', icon: '🔌', type: 'plumbing_disconnect', duration: 60, defaultTime: '07:30', daysBeforeInstall: 0, enabled: false },
@@ -26427,6 +26443,9 @@
         } else if (phase.id === 'template') {
           phase.date = new Date(installDate);
           phase.date.setDate(phase.date.getDate() - leadTimeFab - leadTimeTemplate);
+        } else if (phase.id === 'consultation') {
+          phase.date = new Date(installDate);
+          phase.date.setDate(phase.date.getDate() - leadTimeFab - leadTimeTemplate - 3);
         } else if (phase.id === 'demo') {
           phase.date = new Date(installDate);
           phase.date.setDate(phase.date.getDate() - 1);
