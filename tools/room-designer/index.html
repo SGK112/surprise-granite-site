@@ -14740,6 +14740,16 @@
                 <div id="shapeModificationsList"></div>
               </div>
             </div>
+            <div class="property-row" id="slabLayoutRow" style="display: none;">
+              <div style="width: 100%; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <span style="font-weight: 600; color: #f472b6; font-size: 13px;">SLAB LAYOUT</span>
+                </div>
+                <button class="quick-btn" style="width:100%;font-size:11px;padding:6px 8px;" onclick="if(selectedElement) openSlabPreview(selectedElement)" title="Position your countertop piece on the full slab">
+                  Open Slab Preview (or double-click countertop)
+                </button>
+              </div>
+            </div>
             <!-- Sink-specific properties -->
             <div class="property-row" id="sinkColorRow" style="display: none;">
               <span class="property-label">Sink Finish</span>
@@ -15428,6 +15438,34 @@
           <button class="template-btn" onclick="loadRoomTemplate('home-office'); closeModal('templateModal');" title="Home office">
             <span class="template-icon">💻</span><span class="template-name">Home Office</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slab Preview Modal -->
+  <div class="modal-overlay" id="slabPreviewModal" style="display: none;">
+    <div class="modal" style="max-width: 800px; width: 95vw;">
+      <div class="modal-header">
+        <h3 id="slabPreviewTitle">Slab Layout</h3>
+        <button class="close-btn" onclick="closeSlabPreview()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <p style="margin-bottom: 12px; color: #888; font-size: 12px;">Drag the slab image to position the pattern on your countertop piece. Use the slider to adjust scale.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
+          <label style="font-size: 12px; color: #aaa; white-space: nowrap;">Slab Scale:</label>
+          <input type="range" id="slabScaleSlider" min="20" max="200" value="100" step="5"
+            style="flex: 1; min-width: 120px; accent-color: #f472b6;"
+            oninput="updateSlabPreviewScale(this.value)">
+          <span id="slabScaleLabel" style="font-size: 12px; color: #ccc; min-width: 36px;">100%</span>
+          <button onclick="resetSlabPosition()" style="padding: 4px 10px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); border-radius: 4px; color: #a5b4fc; font-size: 11px; cursor: pointer;">Reset</button>
+        </div>
+        <div id="slabPreviewContainer" style="position: relative; width: 100%; height: 450px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; background: #1a1a2e; cursor: grab;">
+          <canvas id="slabPreviewCanvas" style="position: absolute; top: 0; left: 0;"></canvas>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;">
+          <button onclick="closeSlabPreview()" style="padding: 8px 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #ccc; font-size: 13px; cursor: pointer;">Cancel</button>
+          <button onclick="applySlabPosition()" style="padding: 8px 20px; background: linear-gradient(135deg, #f472b6, #ec4899); border: none; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; cursor: pointer;">Apply</button>
         </div>
       </div>
     </div>
@@ -23832,11 +23870,11 @@
       ],
       quartz: [
         // Surprise Granite Collection
-        { id: 'quartz-stellar-white', name: 'Stellar White', color: '#f5f5f5', price: 15.57, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb21af6fbc914_msi-surfaces-quartz-surprise-granite-stellar-white-moment.webp', brand: 'MSI' },
-        { id: 'quartz-shell-white', name: 'Shell White', color: '#faf8f5', price: 12.30, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb28a6bfbc8cb_msi-surfaces-quartz-surprise-granite-shell-white-close-up.webp', brand: 'MSI' },
-        { id: 'quartz-perla-white', name: 'Perla White', color: '#f0ece5', price: 22.95, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb20436fbc89c_msi-surfaces-quartz-surprise-granite-perla-white-moment.webp', brand: 'MSI' },
-        { id: 'quartz-stellar-gray', name: 'Stellar Gray', color: '#8a8a8a', price: 15.57, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb2590afbc90f_msi-surfaces-quartz-surprise-granite-sstellar-gray-moment.webp', brand: 'MSI' },
-        { id: 'quartz-calacatta', name: 'Calacatta Laurent', color: '#f8f6f0', price: 22.95, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.webp', brand: 'Dekton' },
+        { id: 'quartz-stellar-white', name: 'Stellar White', color: '#f5f5f5', price: 15.57, url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/stellar-white-quartz.jpg', brand: 'MSI' },
+        { id: 'quartz-shell-white', name: 'Shell White', color: '#faf8f5', price: 12.30, url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/shell-white-quartz.jpg', brand: 'MSI' },
+        { id: 'quartz-perla-white', name: 'Perla White', color: '#f0ece5', price: 22.95, url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/perla-white-quartz.jpg', brand: 'MSI' },
+        { id: 'quartz-stellar-gray', name: 'Stellar Gray', color: '#8a8a8a', price: 15.57, url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/stellar-gray-quartz.jpg', brand: 'MSI' },
+        { id: 'quartz-calacatta', name: 'Calacatta Laurent', color: '#f8f6f0', price: 22.95, url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/calacatta-laza-quartz.jpg', brand: 'Dekton' },
         // MSI Premium Natural Quartz (Jan 2025 Price List) - with CDN images
         { id: 'msi-aruca-white', name: 'Aruca White', color: '#F5F5F5', sku: 'QSL-ARUCAWHT', price: 8.40, brand: 'MSI Quartz', url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/aruca-white-quartz.jpg' },
         { id: 'msi-frost-white', name: 'Frost White', color: '#FFFFFF', sku: 'QSL-FRSTWHT', price: 8.40, brand: 'MSI Quartz', url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/frost-white-quartz.jpg' },
@@ -23918,11 +23956,11 @@
       ],
       porcelain: [],
       cabinets: [
-        { id: 'cabinet-white', name: 'Shaker White', color: '#f5f5f5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb22994fbb0d6_Liberty%20Shaker%20White%20Cabinet.webp' },
-        { id: 'cabinet-grey', name: 'Shaker Grey', color: '#7a7a7a', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb22121fbb0d7_Liberty%20Shaker%20Grey%20Cabinet.webp' },
-        { id: 'cabinet-espresso', name: 'Shaker Espresso', color: '#3d2b1f', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb20cc6fbb0d5_Liberty%20Shaker%20Espresso.webp' },
-        { id: 'cabinet-black', name: 'Onyx Black', color: '#1a1a1a', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb24601fbb0e8_Onyx%20Black%20Shaker.webp' },
-        { id: 'cabinet-uptown', name: 'Uptown White', color: '#fefefe', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb232ddfbb0eb_Uptown%20White%20Shaker.webp' },
+        { id: 'cabinet-white', name: 'Shaker White', color: '#f5f5f5' },
+        { id: 'cabinet-grey', name: 'Shaker Grey', color: '#7a7a7a' },
+        { id: 'cabinet-espresso', name: 'Shaker Espresso', color: '#3d2b1f' },
+        { id: 'cabinet-black', name: 'Onyx Black', color: '#1a1a1a' },
+        { id: 'cabinet-uptown', name: 'Uptown White', color: '#fefefe' },
         // MSI Cabinet Collection - Base Cabinets (Jan 2025 Pricing)
         // Colors represent default shaker white finish - actual color changes based on selected series
         { id: 'msi-cab-b09', name: 'MSI Base 9"', color: '#e8ddd0', sku: 'B09', price: 119.13, brand: 'MSI', type: 'base', width: 9, finish: 'shaker-white' },
@@ -23955,7 +23993,7 @@
       ],
       tile: [
         // Existing tiles
-        { id: 'tile-perla', name: 'Taja Perla', color: '#d4cfc5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb2d4d0fbcc56_taja-perla-porcelain-close-up-thumbnail.jpg' },
+        { id: 'tile-perla', name: 'Taja Perla', color: '#d4cfc5' },
         { id: 'tile-white', name: 'White Subway', color: '#ffffff', url: '' },
         { id: 'tile-marble', name: 'Carrara Look', color: '#e8e8e8', url: '' },
         { id: 'tile-slate', name: 'Slate Grey', color: '#708090', url: '' },
@@ -23966,7 +24004,7 @@
         { id: 'daltile-panoramic-cement', name: 'PANORAMIC Cement', color: '#9E9E9E', sku: 'PAN-CEM', price: 8.90, brand: 'Daltile', series: 'PANORAMIC' }
       ],
       flooring: [
-        { id: 'floor-premium', name: 'Premium LVP', color: '#b8956c', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2d85bfbb1d2_All%20Flooring%20Hero%20Background%20Image.webp' },
+        { id: 'floor-premium', name: 'Premium LVP', color: '#b8956c' },
         { id: 'floor-oak', name: 'Natural Oak', color: '#c4a76c', url: '' },
         { id: 'floor-walnut', name: 'Dark Walnut', color: '#5d4037', url: '' },
         { id: 'floor-maple', name: 'Light Maple', color: '#deb887', url: '' },
@@ -36011,13 +36049,18 @@
           const imgH = el.textureImg.naturalHeight || el.textureImg.height;
 
           if (imgW > 0 && imgH > 0) {
+            // Slab positioning: offset and scale from slab preview
+            const texScale = el.textureScale || 1;
+            const texOffX = (el.textureOffsetX || 0) * pixelsPerFoot;
+            const texOffY = (el.textureOffsetY || 0) * pixelsPerFoot;
+
             // Use cached pattern for performance (much faster than nested loops)
-            const cacheKey = `${el.texture || el.textureImg.src}_${pixelsPerFoot}`;
+            const cacheKey = `${el.texture || el.textureImg.src}_${pixelsPerFoot}_${texScale}`;
             let pattern = texturePatternCache.get(cacheKey);
 
             if (!pattern) {
               // Create scaled texture canvas for pattern
-              const slabWidthPx = 10 * pixelsPerFoot;
+              const slabWidthPx = 10 * pixelsPerFoot * texScale;
               const drawW = Math.max(w, slabWidthPx);
               const drawH = drawW * (imgH / imgW);
 
@@ -36038,6 +36081,12 @@
             }
 
             if (pattern) {
+              // Apply slab offset via transform
+              if (texOffX !== 0 || texOffY !== 0) {
+                const mat = new DOMMatrix();
+                mat.translateSelf(texOffX, texOffY);
+                pattern.setTransform(mat);
+              }
               ctx.fillStyle = pattern;
               ctx.fillRect(x, y, w, h);
             } else {
@@ -37644,6 +37693,11 @@
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
       if (clicked) {
+        // Countertops with textures: open slab preview
+        if (clicked.type === 'countertop' && (clicked.textureImg || clicked.texture)) {
+          openSlabPreview(clicked);
+          return;
+        }
         const newLabel = prompt('Enter label:', clicked.label);
         if (newLabel) {
           clicked.label = newLabel;
@@ -44868,13 +44922,18 @@
         const slabDepthFt = 5;
 
         // Calculate texture repeat based on countertop dimensions
+        const texScale = options.textureScale || 1;
         let repeatX = 1, repeatY = 1;
         if (options.width && options.depth) {
-          repeatX = options.width / slabWidthFt;
-          repeatY = options.depth / slabDepthFt;
+          repeatX = options.width / (slabWidthFt * texScale);
+          repeatY = options.depth / (slabDepthFt * texScale);
           repeatX = Math.max(0.3, repeatX);
           repeatY = Math.max(0.3, repeatY);
         }
+
+        // Slab offset (in feet, convert to UV fraction of slab)
+        const texOffsetU = (options.textureOffsetX || 0) / (slabWidthFt * texScale);
+        const texOffsetV = (options.textureOffsetY || 0) / (slabDepthFt * texScale);
 
         // Check texture cache (uses LRU cache)
         const cachedTexture = getTextureFromCache(fullUrl) || getTextureFromCache(textureUrl);
@@ -44883,6 +44942,7 @@
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
           texture.repeat.set(repeatX, repeatY);
+          texture.offset.set(-texOffsetU, -texOffsetV);
           texture.encoding = THREE.sRGBEncoding; // Updated for Three.js r152+
           // Maximum anisotropy for sharp textures at viewing angles
           texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
@@ -48243,7 +48303,10 @@
             isCountertop: true,
             width: w,
             depth: d,
-            finish: el.finish || 'polished'
+            finish: el.finish || 'polished',
+            textureOffsetX: el.textureOffsetX || 0,
+            textureOffsetY: el.textureOffsetY || 0,
+            textureScale: el.textureScale || 1
           });
 
           // For 2cm counters: add plywood underlayment
@@ -63905,6 +63968,299 @@
       }
     };
 
+    // ========================================================
+    // SLAB PREVIEW - Double-click countertop to position slab
+    // ========================================================
+    let slabPreviewState = {
+      element: null,
+      offsetX: 0,   // in feet
+      offsetY: 0,   // in feet
+      scale: 1,
+      dragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
+      startOffX: 0,
+      startOffY: 0
+    };
+
+    function openSlabPreview(el) {
+      // If no texture loaded yet, try to load it
+      if (!el.textureImg && el.texture) {
+        const img = loadImageWithCors(el.texture, () => {
+          el.textureImg = img;
+          openSlabPreview(el);
+        }, () => {
+          showToast('Could not load slab texture image', 'error');
+        });
+        return;
+      }
+      if (!el.textureImg) {
+        showToast('No slab texture applied — select a material with a texture image first', 'info');
+        return;
+      }
+
+      slabPreviewState.element = el;
+      slabPreviewState.offsetX = el.textureOffsetX || 0;
+      slabPreviewState.offsetY = el.textureOffsetY || 0;
+      slabPreviewState.scale = el.textureScale || 1;
+
+      const slider = document.getElementById('slabScaleSlider');
+      slider.value = Math.round(slabPreviewState.scale * 100);
+      document.getElementById('slabScaleLabel').textContent = Math.round(slabPreviewState.scale * 100) + '%';
+      document.getElementById('slabPreviewTitle').textContent = 'Slab Layout — ' + (el.materialName || el.label || 'Countertop');
+
+      document.getElementById('slabPreviewModal').style.display = 'flex';
+
+      // Setup canvas
+      requestAnimationFrame(() => drawSlabPreview());
+      setupSlabPreviewDrag();
+    }
+
+    function closeSlabPreview() {
+      document.getElementById('slabPreviewModal').style.display = 'none';
+      slabPreviewState.element = null;
+    }
+
+    function applySlabPosition() {
+      const el = slabPreviewState.element;
+      if (!el) return;
+
+      el.textureOffsetX = slabPreviewState.offsetX;
+      el.textureOffsetY = slabPreviewState.offsetY;
+      el.textureScale = slabPreviewState.scale;
+
+      // Invalidate texture pattern cache for this element
+      texturePatternCache.clear();
+
+      markElement3DDirty(el);
+      draw();
+      update3DScene();
+      saveUndoState();
+      closeSlabPreview();
+      showToast('Slab position applied', 'success');
+    }
+
+    function resetSlabPosition() {
+      slabPreviewState.offsetX = 0;
+      slabPreviewState.offsetY = 0;
+      slabPreviewState.scale = 1;
+      document.getElementById('slabScaleSlider').value = 100;
+      document.getElementById('slabScaleLabel').textContent = '100%';
+      drawSlabPreview();
+    }
+
+    function updateSlabPreviewScale(val) {
+      slabPreviewState.scale = val / 100;
+      document.getElementById('slabScaleLabel').textContent = val + '%';
+      drawSlabPreview();
+    }
+
+    function drawSlabPreview() {
+      const el = slabPreviewState.element;
+      if (!el || !el.textureImg) return;
+
+      const container = document.getElementById('slabPreviewContainer');
+      const canvas = document.getElementById('slabPreviewCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+      canvas.style.width = cw + 'px';
+      canvas.style.height = ch + 'px';
+
+      ctx.clearRect(0, 0, cw, ch);
+
+      const img = el.textureImg;
+      const imgW = img.naturalWidth || img.width;
+      const imgH = img.naturalHeight || img.height;
+      if (imgW === 0 || imgH === 0) return;
+
+      // Standard slab size: 120" x 55" (10' x ~4.6')
+      const SLAB_W_IN = 120;
+      const SLAB_H_IN = 55;
+
+      // Calculate scale to fit slab in preview container with padding
+      const padding = 30;
+      const availW = cw - padding * 2;
+      const availH = ch - padding * 2;
+      const pxPerInch = Math.min(availW / SLAB_W_IN, availH / SLAB_H_IN);
+
+      const slabPxW = SLAB_W_IN * pxPerInch;
+      const slabPxH = SLAB_H_IN * pxPerInch;
+      const slabX = (cw - slabPxW) / 2;
+      const slabY = (ch - slabPxH) / 2;
+
+      // Draw slab background (the full stone slab)
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(slabX, slabY, slabPxW, slabPxH, 4);
+      ctx.clip();
+
+      // Draw the texture image scaled to fill the slab
+      const texDrawW = slabPxW * slabPreviewState.scale;
+      const texDrawH = texDrawW * (imgH / imgW);
+      ctx.drawImage(img, slabX, slabY, texDrawW, texDrawH);
+      // Tile if needed
+      if (texDrawH < slabPxH) {
+        let ty = slabY + texDrawH;
+        while (ty < slabY + slabPxH) {
+          ctx.drawImage(img, slabX, ty, texDrawW, Math.min(texDrawH, slabY + slabPxH - ty));
+          ty += texDrawH;
+        }
+      }
+      ctx.restore();
+
+      // Slab border
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(slabX, slabY, slabPxW, slabPxH, 4);
+      ctx.stroke();
+
+      // Slab dimensions label
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Full Slab: ${SLAB_W_IN}" × ${SLAB_H_IN}" (${(SLAB_W_IN * SLAB_H_IN / 144).toFixed(1)} sqft)`, cw / 2, slabY - 8);
+
+      // Countertop piece dimensions (in inches)
+      const pieceW = el.width * 12;
+      const pieceH = el.height * 12;
+      const piecePxW = pieceW * pxPerInch;
+      const piecePxH = pieceH * pxPerInch;
+
+      // Position of piece on slab (offset in inches)
+      const offXin = slabPreviewState.offsetX * 12;
+      const offYin = slabPreviewState.offsetY * 12;
+      const pieceX = slabX + offXin * pxPerInch;
+      const pieceY = slabY + offYin * pxPerInch;
+
+      // Draw the countertop piece outline (highlighted)
+      ctx.save();
+
+      // Dim area outside the piece
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath();
+      ctx.rect(slabX, slabY, slabPxW, slabPxH);
+      // Cut out the piece area
+      ctx.moveTo(pieceX, pieceY);
+      ctx.lineTo(pieceX, pieceY + piecePxH);
+      ctx.lineTo(pieceX + piecePxW, pieceY + piecePxH);
+      ctx.lineTo(pieceX + piecePxW, pieceY);
+      ctx.closePath();
+      ctx.fill('evenodd');
+
+      // Piece outline
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.strokeRect(pieceX, pieceY, piecePxW, piecePxH);
+      ctx.setLineDash([]);
+
+      // Corner handles
+      const handleSize = 6;
+      ctx.fillStyle = '#f472b6';
+      [[pieceX, pieceY], [pieceX + piecePxW, pieceY],
+       [pieceX, pieceY + piecePxH], [pieceX + piecePxW, pieceY + piecePxH]].forEach(([hx, hy]) => {
+        ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+      });
+
+      ctx.restore();
+
+      // Piece dimensions label
+      ctx.fillStyle = '#f472b6';
+      ctx.font = 'bold 12px system-ui';
+      ctx.textAlign = 'center';
+      const labelText = `${el.label || 'Piece'}: ${pieceW.toFixed(0)}" × ${pieceH.toFixed(0)}" (${(pieceW * pieceH / 144).toFixed(1)} sqft)`;
+      ctx.fillText(labelText, pieceX + piecePxW / 2, pieceY + piecePxH + 16);
+    }
+
+    function setupSlabPreviewDrag() {
+      const container = document.getElementById('slabPreviewContainer');
+      const canvas = document.getElementById('slabPreviewCanvas');
+
+      // Remove old listeners by replacing the canvas event target
+      const newCanvas = canvas;
+
+      newCanvas.onmousedown = (e) => {
+        slabPreviewState.dragging = true;
+        slabPreviewState.dragStartX = e.clientX;
+        slabPreviewState.dragStartY = e.clientY;
+        slabPreviewState.startOffX = slabPreviewState.offsetX;
+        slabPreviewState.startOffY = slabPreviewState.offsetY;
+        container.style.cursor = 'grabbing';
+        e.preventDefault();
+      };
+
+      newCanvas.onmousemove = (e) => {
+        if (!slabPreviewState.dragging) return;
+        const el = slabPreviewState.element;
+        if (!el) return;
+
+        // Calculate pxPerInch from container
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        const padding = 30;
+        const pxPerInch = Math.min((cw - padding * 2) / 120, (ch - padding * 2) / 55);
+
+        const dx = (e.clientX - slabPreviewState.dragStartX) / pxPerInch / 12; // convert to feet
+        const dy = (e.clientY - slabPreviewState.dragStartY) / pxPerInch / 12;
+
+        slabPreviewState.offsetX = slabPreviewState.startOffX + dx;
+        slabPreviewState.offsetY = slabPreviewState.startOffY + dy;
+
+        drawSlabPreview();
+      };
+
+      newCanvas.onmouseup = () => {
+        slabPreviewState.dragging = false;
+        container.style.cursor = 'grab';
+      };
+
+      newCanvas.onmouseleave = () => {
+        slabPreviewState.dragging = false;
+        container.style.cursor = 'grab';
+      };
+
+      // Touch support
+      newCanvas.ontouchstart = (e) => {
+        const t = e.touches[0];
+        slabPreviewState.dragging = true;
+        slabPreviewState.dragStartX = t.clientX;
+        slabPreviewState.dragStartY = t.clientY;
+        slabPreviewState.startOffX = slabPreviewState.offsetX;
+        slabPreviewState.startOffY = slabPreviewState.offsetY;
+        e.preventDefault();
+      };
+
+      newCanvas.ontouchmove = (e) => {
+        if (!slabPreviewState.dragging) return;
+        const t = e.touches[0];
+        const el = slabPreviewState.element;
+        if (!el) return;
+
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        const padding = 30;
+        const pxPerInch = Math.min((cw - padding * 2) / 120, (ch - padding * 2) / 55);
+
+        const dx = (t.clientX - slabPreviewState.dragStartX) / pxPerInch / 12;
+        const dy = (t.clientY - slabPreviewState.dragStartY) / pxPerInch / 12;
+
+        slabPreviewState.offsetX = slabPreviewState.startOffX + dx;
+        slabPreviewState.offsetY = slabPreviewState.startOffY + dy;
+
+        drawSlabPreview();
+        e.preventDefault();
+      };
+
+      newCanvas.ontouchend = () => {
+        slabPreviewState.dragging = false;
+      };
+    }
+
     // Export current design as template code (for developers to copy)
     function exportAsTemplate() {
       const templateName = prompt('Enter a name for this template:', 'My Kitchen');
@@ -64686,6 +65042,13 @@
           if (isStandardCountertop) {
             renderShapeModificationsList();
           }
+        }
+
+        // Slab Layout row - show for countertops with textures
+        const slabLayoutRow = document.getElementById('slabLayoutRow');
+        if (slabLayoutRow) {
+          const hasSlabTexture = selectedElement.type === 'countertop' && (selectedElement.textureImg || selectedElement.texture);
+          slabLayoutRow.style.display = hasSlabTexture ? 'flex' : 'none';
         }
 
         // Sink-specific properties (color, mount type)
