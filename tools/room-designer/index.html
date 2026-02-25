@@ -23994,9 +23994,9 @@
       tile: [
         // Existing tiles
         { id: 'tile-perla', name: 'Taja Perla', color: '#d4cfc5' },
-        { id: 'tile-white', name: 'White Subway', color: '#ffffff', url: '' },
-        { id: 'tile-marble', name: 'Carrara Look', color: '#e8e8e8', url: '' },
-        { id: 'tile-slate', name: 'Slate Grey', color: '#708090', url: '' },
+        { id: 'tile-white', name: 'White Subway', color: '#ffffff' },
+        { id: 'tile-marble', name: 'Carrara Look', color: '#e8e8e8' },
+        { id: 'tile-slate', name: 'Slate Grey', color: '#708090' },
         // Daltile PANORAMIC Porcelain Surfaces (CTF Price List Jan 2026)
         { id: 'daltile-panoramic-calacatta', name: 'PANORAMIC Calacatta', color: '#FAFAFA', sku: 'PAN-CAL', price: 31.20, brand: 'Daltile', series: 'PANORAMIC' },
         { id: 'daltile-panoramic-statuario', name: 'PANORAMIC Statuario', color: '#F8F8F8', sku: 'PAN-STA', price: 31.20, brand: 'Daltile', series: 'PANORAMIC' },
@@ -24005,9 +24005,9 @@
       ],
       flooring: [
         { id: 'floor-premium', name: 'Premium LVP', color: '#b8956c' },
-        { id: 'floor-oak', name: 'Natural Oak', color: '#c4a76c', url: '' },
-        { id: 'floor-walnut', name: 'Dark Walnut', color: '#5d4037', url: '' },
-        { id: 'floor-maple', name: 'Light Maple', color: '#deb887', url: '' },
+        { id: 'floor-oak', name: 'Natural Oak', color: '#c4a76c' },
+        { id: 'floor-walnut', name: 'Dark Walnut', color: '#5d4037' },
+        { id: 'floor-maple', name: 'Light Maple', color: '#deb887' },
         // MSI Everlife LVT Flooring - Ashton Series (Tier 4 Pricing Q1 2025) - with CDN images
         { id: 'msi-lvt-bergen-hills', name: 'Ashton Bergen Hills', color: '#C4A76C', sku: 'ASHTON-BERGENHILLS', price: 1.25, brand: 'MSI Everlife', series: 'Ashton', warranty: '25yr Res' },
         { id: 'msi-lvt-maracay-brown', name: 'Ashton Maracay Brown', color: '#8B7355', sku: 'ASHTON-MARACAYBROWN', price: 1.25, brand: 'MSI Everlife', series: 'Ashton', warranty: '25yr Res' },
@@ -24333,6 +24333,8 @@
         for (const product of countertops) {
           if (!product.name || !product.primaryImage) continue;
           if (!product.primaryImage.startsWith('http')) continue;
+          // Skip dead Webflow CDN URLs (return 403 Forbidden)
+          if (product.primaryImage.includes('cdn.prod.website-files.com')) continue;
 
           // Map type to category
           const category = TYPE_CATEGORY_MAP[product.type];
@@ -26637,46 +26639,20 @@
       changeCatalog(currentCatalog);
       renderCabinetCatalog();
 
-      // Load extended stone pricing from Excel import (async, non-blocking)
+      // Load extended data sources (async, non-blocking)
       loadStonePricing().then(count => {
-        if (count > 0) {
-          showToast(`Loaded ${count} stone materials with pricing`, 'success');
-        }
-        // Load countertops.json (874 products with images) after stone pricing
         return loadCountertopsJson();
       }).then(ctCount => {
-        if (ctCount > 0) {
-          showToast(`Loaded ${ctCount} countertop colors with images`, 'success');
-        }
-        // Load tile.json (466 tiles) then bravo-tile.json (pricing)
         return loadTileJson();
       }).then(tileCount => {
-        if (tileCount > 0) {
-          showToast(`Loaded ${tileCount} tile products`, 'success');
-        }
         return loadBravoTileJson();
       }).then(bravoCount => {
-        if (bravoCount > 0) {
-          showToast(`Loaded Bravo Tile pricing for ${bravoCount} products`, 'success');
-        }
-        // Load sinks from sinks.json
         return loadSinksJson();
       }).then(sinksCount => {
-        if (sinksCount > 0) {
-          showToast(`Loaded ${sinksCount} sinks from marketplace`, 'success');
-        }
-        // Load faucets from faucets.json
         return loadFaucetsJson();
       }).then(faucetsCount => {
-        if (faucetsCount > 0) {
-          showToast(`Loaded ${faucetsCount} faucets from marketplace`, 'success');
-        }
-        // Load flooring from flooring.json
         return loadFlooringJson();
       }).then(flooringCount => {
-        if (flooringCount > 0) {
-          showToast(`Loaded ${flooringCount} flooring products from marketplace`, 'success');
-        }
         // Load products from Supabase last
         loadSupabaseProducts();
         // Pre-fetch distributor data for the default tab after static data loads
@@ -62549,14 +62525,45 @@
 
     // ===== ROOM =====
     function updateRoom() {
+      const oldWidth = roomWidth;
+      const oldDepth = roomDepth;
       roomWidth = (parseInt(document.getElementById('roomWidth').value) || 240) / 12;
       roomDepth = (parseInt(document.getElementById('roomDepth').value) || 192) / 12;
+
+      // Auto-reposition elements that were against the right or front walls
+      const dw = roomWidth - oldWidth;
+      const dd = roomDepth - oldDepth;
+      if ((dw !== 0 || dd !== 0) && elements.length > 0) {
+        const snapThresh = 1.0; // 1 foot threshold for wall detection
+        elements.forEach(el => {
+          if (el.roomId && el.roomId !== currentRoom) return;
+          const rot = (el.rotation || 0) % 360;
+          const isRotated = (rot === 90 || rot === 270);
+          const elW = isRotated ? el.height : el.width;
+          const elH = isRotated ? el.width : el.height;
+          const elXft = el.x / pixelsPerFoot;
+          const elYft = el.y / pixelsPerFoot;
+
+          // Right wall elements: right edge near old room width
+          if (dw !== 0 && Math.abs((elXft + elW) - oldWidth) < snapThresh) {
+            el.x += dw * pixelsPerFoot;
+          }
+          // Front wall elements: bottom edge near old room depth
+          if (dd !== 0 && Math.abs((elYft + elH) - oldDepth) < snapThresh) {
+            el.y += dd * pixelsPerFoot;
+          }
+        });
+        // Mark all elements dirty for 3D rebuild
+        elements.forEach(el => { if (el._3dVersion !== undefined) el._3dVersion++; });
+      }
 
       if (document.getElementById('scaleMode').value === 'fit') {
         fitToScreen();
       } else {
         updateCanvasSize();
       }
+
+      draw();
 
       if (currentView === '3d') {
         init3D();
@@ -62580,8 +62587,8 @@
       'kitchen-l': {
         name: 'L-Shaped Kitchen',
         roomType: 'kitchen',
-        width: 16,
-        depth: 14,
+        width: 20,
+        depth: 18,
         elements: [
           // === BACK WALL (y=0) - Pantry, fridge, sink run ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry 24"', rotation: 0 },
@@ -62596,35 +62603,35 @@
           { type: 'wall-cabinet', x: 9, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
           { type: 'wall-cabinet', x: 12, y: 0, width: 2, height: 1, label: 'Upper 24"', rotation: 0 },
 
-          // === RIGHT WALL (x=14) - Range + extended cabinet run ===
-          { type: 'base-cabinet', x: 14, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 13.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
-          { type: 'range-hood', x: 15, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 10.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'countertop', x: 13.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 13.835, y: 6.375, width: 2.165, height: 6.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 15, y: 0, width: 1, height: 4, label: 'Upper 48"', rotation: 90 },
-          { type: 'wall-cabinet', x: 15, y: 6.5, width: 1, height: 6, label: 'Upper 72"', rotation: 90 },
+          // === RIGHT WALL (x=18) - Range + extended cabinet run ===
+          { type: 'base-cabinet', x: 18, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 17.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 19, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 10.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 17.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 17.835, y: 6.375, width: 2.165, height: 6.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 19, y: 0, width: 1, height: 4, label: 'Upper 48"', rotation: 90 },
+          { type: 'wall-cabinet', x: 19, y: 6.5, width: 1, height: 6, label: 'Upper 72"', rotation: 90 },
 
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 5, y: 0, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 15.92, y: 0, width: 0.08, height: 12.5, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 5, y: 0, width: 9, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 12.5, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
 
           // === LARGE ISLAND (clean — add sink if needed) ===
-          { type: 'base-cabinet', x: 3.5, y: 6, width: 3.5, height: 2, label: 'Island Base 42"', rotation: 180 },
-          { type: 'base-cabinet', x: 7, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'countertop', x: 3.375, y: 5.875, width: 6.75, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'base-cabinet', x: 5, y: 8, width: 3.5, height: 2, label: 'Island Base 42"', rotation: 180 },
+          { type: 'base-cabinet', x: 8.5, y: 8, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'countertop', x: 4.875, y: 7.835, width: 6.75, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
 
         ]
       },
       'kitchen-galley': {
         name: 'Galley Kitchen',
         roomType: 'kitchen',
-        width: 14,
-        depth: 10,
+        width: 18,
+        depth: 14,
         elements: [
           // === BACK WALL (y=0) - Sink side with window ===
           { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
@@ -62639,27 +62646,27 @@
           { type: 'wall-cabinet', x: 4, y: 0, width: 5, height: 1, label: 'Upper 60"', rotation: 0 },
           { type: 'wall-cabinet', x: 9, y: 0, width: 5, height: 1, label: 'Upper 60"', rotation: 0 },
 
-          // === FRONT WALL (y=8) - Cooking side ===
-          { type: 'refrigerator', x: 0, y: 7.5, width: 3, height: 2.5, label: 'Refrigerator 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 3, y: 8, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
-          { type: 'base-cabinet', x: 5, y: 8, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
-          { type: 'range', x: 7, y: 7.75, width: 2.5, height: 2.25, label: 'Range 30"', rotation: 180 },
-          { type: 'range-hood', x: 7.25, y: 9, width: 2.5, height: 1, label: 'Range Hood', rotation: 180 },
-          { type: 'base-cabinet', x: 9.5, y: 8, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
-          { type: 'base-cabinet', x: 11.5, y: 8, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
-          { type: 'countertop', x: 3, y: 7.835, width: 11.125, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 3, y: 9, width: 4, height: 1, label: 'Upper 48"', rotation: 180 },
-          { type: 'wall-cabinet', x: 9.5, y: 9, width: 4.5, height: 1, label: 'Upper 54"', rotation: 180 },
+          // === FRONT WALL (y=12) - Cooking side ===
+          { type: 'refrigerator', x: 0, y: 11.5, width: 3, height: 2.5, label: 'Refrigerator 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 3, y: 12, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 5, y: 12, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
+          { type: 'range', x: 7, y: 11.75, width: 2.5, height: 2.25, label: 'Range 30"', rotation: 180 },
+          { type: 'range-hood', x: 7.25, y: 13, width: 2.5, height: 1, label: 'Range Hood', rotation: 180 },
+          { type: 'base-cabinet', x: 9.5, y: 12, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 11.5, y: 12, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
+          { type: 'countertop', x: 3, y: 11.835, width: 11.125, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 3, y: 13, width: 4, height: 1, label: 'Upper 48"', rotation: 180 },
+          { type: 'wall-cabinet', x: 9.5, y: 13, width: 4.5, height: 1, label: 'Upper 54"', rotation: 180 },
           // === BACKSPLASH ===
           { type: 'backsplash', x: 0, y: 0, width: 14, height: 0.08, verticalHeight: 1.5, label: 'Subway Tile', rotation: 0 },
-          { type: 'backsplash', x: 3, y: 9.92, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Subway Tile', rotation: 180 },
+          { type: 'backsplash', x: 3, y: 13.92, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Subway Tile', rotation: 180 },
         ]
       },
       'kitchen-u': {
         name: 'U-Shaped Kitchen',
         roomType: 'kitchen',
-        width: 20,
-        depth: 16,
+        width: 24,
+        depth: 20,
         elements: [
           // === BACK WALL (y=0) - Farmhouse sink centered under window ===
           { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
@@ -62687,38 +62694,38 @@
           { type: 'countertop', x: -0.04, y: 5.375, width: 2.165, height: 10.75, label: 'Left Counter', rotation: 270, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'wall-cabinet', x: 0, y: 5.5, width: 1, height: 10.5, label: 'Left Uppers', rotation: 270 },
 
-          // === RIGHT WALL (x=18) - Range + wine storage ===
-          { type: 'base-cabinet', x: 18, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 17.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
-          { type: 'range-hood', x: 19, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 10.5, width: 2, height: 2, label: 'Wine Storage', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 12.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 14.5, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
-          { type: 'countertop', x: 17.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 17.835, y: 6.375, width: 2.165, height: 9.75, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 19, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
-          { type: 'wall-cabinet', x: 19, y: 6.5, width: 1, height: 9.5, label: 'Uppers', rotation: 90 },
+          // === RIGHT WALL (x=22) - Range + wine storage ===
+          { type: 'base-cabinet', x: 22, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 21.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 23, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 10.5, width: 2, height: 2, label: 'Wine Storage', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 12.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 14.5, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
+          { type: 'countertop', x: 21.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 21.835, y: 6.375, width: 2.165, height: 9.75, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 23, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
+          { type: 'wall-cabinet', x: 23, y: 6.5, width: 1, height: 9.5, label: 'Uppers', rotation: 90 },
 
           // === BACKSPLASH ===
           { type: 'backsplash', x: 2, y: 0, width: 16, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
           { type: 'backsplash', x: 0, y: 5.5, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Left Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 16, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 23.92, y: 0, width: 0.08, height: 16, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 0 },
 
           // === LARGE CENTER ISLAND (clean — add sink if needed) ===
-          { type: 'base-cabinet', x: 6, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 9, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 12, y: 6, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
-          { type: 'countertop', x: 5.875, y: 5.875, width: 8.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'base-cabinet', x: 7, y: 8, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 10, y: 8, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 13, y: 8, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'countertop', x: 6.875, y: 7.835, width: 8.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
         ]
       },
       'kitchen-single': {
         name: 'Single Wall Kitchen',
         roomType: 'kitchen',
-        width: 16,
-        depth: 12,
+        width: 20,
+        depth: 16,
         elements: [
           // === SINGLE WALL (y=0) - Full run with pantry ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry', rotation: 0 },
@@ -62737,17 +62744,17 @@
           { type: 'backsplash', x: 5, y: 0, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
 
           // === LARGE ISLAND (no prep sink — 45" work aisle from back counter) ===
-          { type: 'base-cabinet', x: 4, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 7, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 10, y: 6, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
-          { type: 'countertop', x: 3.875, y: 5.875, width: 8.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'base-cabinet', x: 5, y: 8, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 8, y: 8, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 11, y: 8, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'countertop', x: 4.875, y: 7.835, width: 8.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
         ]
       },
       'kitchen-peninsula': {
         name: 'Peninsula Kitchen',
         roomType: 'kitchen',
-        width: 16,
-        depth: 16,
+        width: 20,
+        depth: 20,
         elements: [
           // === BACK WALL (y=0) - Pantry + fridge + sink run ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry', rotation: 0 },
@@ -62762,33 +62769,33 @@
           { type: 'wall-cabinet', x: 9, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
           { type: 'wall-cabinet', x: 12, y: 0, width: 2, height: 1, label: 'Upper 24"', rotation: 0 },
 
-          // === RIGHT WALL (x=14) - Range + extended run ===
-          { type: 'base-cabinet', x: 14, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 13.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
-          { type: 'range-hood', x: 15, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 14, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'countertop', x: 13.835, y: -0.04, width: 2.165, height: 4.21, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 13.835, y: 6.375, width: 2.165, height: 2.25, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'wall-cabinet', x: 15, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
-          { type: 'wall-cabinet', x: 15, y: 6.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
+          // === RIGHT WALL (x=18) - Range + extended run ===
+          { type: 'base-cabinet', x: 18, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 17.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 19, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 17.835, y: -0.04, width: 2.165, height: 4.21, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 17.835, y: 6.375, width: 2.165, height: 2.25, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'wall-cabinet', x: 19, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
+          { type: 'wall-cabinet', x: 19, y: 6.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
 
           // === PENINSULA - L-shaped attached to right wall ===
-          { type: 'base-cabinet', x: 14, y: 8.5, width: 2, height: 3.5, label: 'Peninsula Base', rotation: 90 },
+          { type: 'base-cabinet', x: 18, y: 8.5, width: 2, height: 3.5, label: 'Peninsula Base', rotation: 90 },
+          { type: 'base-cabinet', x: 14, y: 10, width: 4, height: 2, label: 'Peninsula Base', rotation: 180 },
           { type: 'base-cabinet', x: 10, y: 10, width: 4, height: 2, label: 'Peninsula Base', rotation: 180 },
-          { type: 'base-cabinet', x: 6, y: 10, width: 4, height: 2, label: 'Peninsula Base', rotation: 180 },
-          { type: 'countertop', x: 5.875, y: 8.375, width: 10.125, height: 3.708, label: 'Peninsula Top', rotation: 0, waterfallSides: ['left'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 9.875, y: 8.375, width: 10.125, height: 4.458, label: 'Peninsula Top', rotation: 0, waterfallSides: ['left'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0 },
 
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 5, y: 0, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 15.92, y: 0, width: 0.08, height: 8.5, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 5, y: 0, width: 9, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 8.5, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
         ]
       },
       'kitchen-grand-island': {
         name: 'Grand Kitchen with Island',
         roomType: 'kitchen',
-        width: 20,
-        depth: 16,
+        width: 24,
+        depth: 20,
         elements: [
           // === BACK WALL (y=0) - Main run with farmhouse sink ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry 24"', rotation: 0 },
@@ -62811,38 +62818,38 @@
           { type: 'backsplash', x: 5, y: 0, width: 15, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
 
           // === RIGHT WALL - Cooktop + wall oven ===
-          { type: 'base-cabinet', x: 18, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 4, width: 2, height: 2.5, label: 'Cooktop Base', rotation: 90 },
-          { type: 'cooktop', x: 18.125, y: 4.25, width: 1.75, height: 2, label: 'Cooktop 30"', rotation: 90 },
-          { type: 'range-hood', x: 18.25, y: 4.25, width: 1.5, height: 2, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 18, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'double-oven-cabinet', x: 18, y: 8.5, width: 2, height: 2.5, label: 'Double Wall Oven', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 4, width: 2, height: 2.5, label: 'Cooktop Base', rotation: 90 },
+          { type: 'cooktop', x: 22.125, y: 4.25, width: 1.75, height: 2, label: 'Cooktop 30"', rotation: 90 },
+          { type: 'range-hood', x: 22.25, y: 4.25, width: 1.5, height: 2, label: 'Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 22, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'double-oven-cabinet', x: 22, y: 8.5, width: 2, height: 2.5, label: 'Double Wall Oven', rotation: 90 },
           // Right wall countertops
-          { type: 'countertop', x: 17.835, y: -0.04, width: 2.165, height: 4.165, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 17.835, y: 6.375, width: 2.165, height: 2.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'backsplash', x: 19.92, y: 0, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 0 },
+          { type: 'countertop', x: 21.835, y: -0.04, width: 2.165, height: 4.165, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 21.835, y: 6.375, width: 2.165, height: 2.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'backsplash', x: 23.92, y: 0, width: 0.08, height: 11, verticalHeight: 1.5, label: 'Right Backsplash', rotation: 0 },
 
           // === TWO-LEVEL ISLAND (center of room, clean — add sink if needed) ===
           // Lower level: base cabinets (standard 36" height)
-          { type: 'base-cabinet', x: 5, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 8, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 11, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 6, y: 7.5, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 9, y: 7.5, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 12, y: 7.5, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           // Lower countertop
-          { type: 'countertop', x: 4.875, y: 5.875, width: 9.25, height: 2.25, label: 'Island Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 5.875, y: 7.335, width: 9.25, height: 2.25, label: 'Island Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
           // Elevated bar top (42" bar height — cabinets are 40.5" so counter sits at 42")
-          { type: 'countertop', x: 4.875, y: 8.375, width: 9.25, height: 2.25, label: 'Bar Top', rotation: 0, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125, overhangSupport: 'corbels' },
+          { type: 'countertop', x: 5.875, y: 9.46, width: 9.25, height: 2.25, label: 'Bar Top', rotation: 0, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125, overhangSupport: 'corbels' },
           // Bar-height cabinets (40.5" = 3.375ft, + 1.5" countertop = 42" bar height)
-          { type: 'base-cabinet', x: 5, y: 8.25, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
-          { type: 'base-cabinet', x: 8, y: 8.25, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
-          { type: 'base-cabinet', x: 11, y: 8.25, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
+          { type: 'base-cabinet', x: 6, y: 9.5, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
+          { type: 'base-cabinet', x: 9, y: 9.5, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
+          { type: 'base-cabinet', x: 12, y: 9.5, width: 3, height: 2, label: 'Bar Cabinet', rotation: 0, cabinetHeight: 3.375 },
         ]
       },
       'kitchen-lshape-bar': {
         name: 'L-Kitchen with Bar Island',
         roomType: 'kitchen',
-        width: 16,
-        depth: 15,
+        width: 20,
+        depth: 18,
         elements: [
           // === BACK WALL (y=0) - Main cooking wall with cooktop ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry', rotation: 0 },
@@ -62865,24 +62872,24 @@
 
           // === L-SHAPED ISLAND with ELEVATED BAR TOP (45" work aisle from back counter) ===
           // Main island body (horizontal run)
-          { type: 'base-cabinet', x: 4, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 7, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 10, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 5, y: 7.2, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 8, y: 7.2, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 11, y: 7.2, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
           // L-extension (perpendicular bar section — 42" bar height, 2 cabinets)
-          { type: 'base-cabinet', x: 11, y: 8, width: 2, height: 2, label: 'Bar Cabinet', rotation: 90, cabinetHeight: 3.375 },
-          { type: 'base-cabinet', x: 11, y: 10, width: 2, height: 2, label: 'Bar Cabinet', rotation: 90, cabinetHeight: 3.375 },
+          { type: 'base-cabinet', x: 12, y: 9.2, width: 2, height: 2, label: 'Bar Cabinet', rotation: 90, cabinetHeight: 3.375 },
+          { type: 'base-cabinet', x: 12, y: 11.2, width: 2, height: 2, label: 'Bar Cabinet', rotation: 90, cabinetHeight: 3.375 },
           // Main island countertop (standard 36" working height)
-          { type: 'countertop', x: 3.875, y: 5.875, width: 9.25, height: 2.25, label: 'Island Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 4.875, y: 7.035, width: 9.25, height: 2.25, label: 'Island Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
           // Elevated bar top on L-extension (sits on 40.5" bar cabinets = 42" total)
-          { type: 'countertop', x: 10.875, y: 7.875, width: 2.25, height: 4.208, label: 'Bar Top', rotation: 90, overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 11.835, y: 9.075, width: 2.998, height: 4.25, label: 'Bar Top', rotation: 90, overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
           // Bar stools side has 10" overhang for seating
         ]
       },
       'bathroom-master': {
         name: 'Master Bathroom',
         roomType: 'bathroom',
-        width: 14,
-        depth: 12,
+        width: 18,
+        depth: 16,
         elements: [
           // === BACK WALL (y=0) - Extended double vanity with tower ===
           { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 1.75, label: 'Vanity', rotation: 0 },
@@ -62898,14 +62905,14 @@
           { type: 'mirror', x: 5.75, y: 0, width: 3.5, height: 0.15, label: 'Mirror', rotation: 0 },
           { type: 'backsplash', x: 0, y: 0, width: 9.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
           // === RIGHT WALL - Toilet (15" min clearance from back wall)
-          { type: 'toilet', x: 12.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          { type: 'toilet', x: 16.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
           // === LEFT WALL - Soaking tub ===
           { type: 'bathtub', x: 0, y: 5, width: 2.7, height: 5, label: 'Soaking Tub', rotation: 270 },
           // === RIGHT SIDE - Walk-in shower ===
-          { type: 'shower-pan', x: 10, y: 4, width: 4, height: 4, label: 'Walk-in Shower', rotation: 0 },
-          { type: 'shower-wall', x: 10, y: 4, width: 0.25, height: 4, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-curb', x: 12, y: 6.5, width: 2, height: 1.25, label: 'Bench', rotation: 90 },
-          { type: 'shower-niche', x: 13.5, y: 4.5, width: 0.5, height: 2, label: 'Niche', rotation: 90 },
+          { type: 'shower-pan', x: 14, y: 4, width: 4, height: 4, label: 'Walk-in Shower', rotation: 0 },
+          { type: 'shower-wall', x: 14, y: 4, width: 0.25, height: 4, label: 'Glass Panel', rotation: 0 },
+          { type: 'shower-curb', x: 16, y: 6.5, width: 2, height: 1.25, label: 'Bench', rotation: 90 },
+          { type: 'shower-niche', x: 17.5, y: 4.5, width: 0.5, height: 2, label: 'Niche', rotation: 90 },
           // === BACK WALL - Linen closet ===
           { type: 'tall-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Linen Closet', rotation: 0 },
         ]
@@ -62913,8 +62920,8 @@
       'bathroom-half': {
         name: 'Half Bathroom',
         roomType: 'bathroom',
-        width: 6,
-        depth: 5,
+        width: 10,
+        depth: 8,
         elements: [
           // === BACK WALL (y=0) - Vanity ===
           { type: 'base-cabinet', x: 0, y: 0, width: 2.5, height: 1.75, label: 'Vanity', rotation: 0 },
@@ -62924,59 +62931,59 @@
           // === Backsplash behind vanity ===
           { type: 'backsplash', x: 0, y: 0, width: 2.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
           // === RIGHT SIDE - Toilet faces into room (rotation: 0) ===
-          // 15" (1.25') clearance from right wall: x = 6 - 1.5 - 1.25 = 3.25
-          { type: 'toilet', x: 3.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
+          // 15" (1.25') clearance from right wall: x = 10 - 1.5 - 1.25 = 7.25
+          { type: 'toilet', x: 7.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
         ]
       },
       'shower-walkin': {
         name: 'Walk-in Shower',
         roomType: 'shower',
-        width: 6,
-        depth: 5,
+        width: 8,
+        depth: 7,
         elements: [
           // Shower pan
-          { type: 'shower-pan', x: 0, y: 0, width: 6, height: 5, label: 'Shower Pan' },
+          { type: 'shower-pan', x: 0, y: 0, width: 8, height: 7, label: 'Shower Pan' },
           // Shower walls with tile
-          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 5, label: 'Left Wall' },
-          { type: 'shower-wall', x: 0, y: 0, width: 6, height: 0.25, label: 'Back Wall' },
-          { type: 'shower-wall', x: 5.75, y: 0, width: 0.25, height: 5, label: 'Right Wall' },
+          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 7, label: 'Left Wall' },
+          { type: 'shower-wall', x: 0, y: 0, width: 8, height: 0.25, label: 'Back Wall' },
+          { type: 'shower-wall', x: 7.75, y: 0, width: 0.25, height: 7, label: 'Right Wall' },
           // Bench (corner seat)
-          { type: 'shower-curb', x: 0.25, y: 3.5, width: 1.5, height: 1.25, label: 'Bench' },
+          { type: 'shower-curb', x: 0.25, y: 5.5, width: 1.5, height: 1.25, label: 'Bench' },
           // Niches (recessed shelving)
           { type: 'shower-niche', x: 2, y: 0, width: 2, height: 0.5, label: 'Niche 1' },
           { type: 'shower-niche', x: 2, y: 1, width: 2, height: 0.5, label: 'Niche 2' },
           // Glass panel at entry (half-wall)
-          { type: 'shower-wall', x: 3, y: 4.75, width: 3, height: 0.25, label: 'Glass Panel' },
+          { type: 'shower-wall', x: 3, y: 6.75, width: 3, height: 0.25, label: 'Glass Panel' },
         ]
       },
       'closet-walkin': {
         name: 'Walk-in Closet',
         roomType: 'closet',
-        width: 10,
-        depth: 8,
+        width: 14,
+        depth: 12,
         elements: [
           // === LEFT WALL (x=0) - Double hang, faces right into room ===
           { type: 'tall-cabinet', x: 0, y: 0, width: 1.5, height: 3, label: 'Double Hang', rotation: 270 },
           { type: 'tall-cabinet', x: 0, y: 3, width: 1.5, height: 2.5, label: 'Double Hang', rotation: 270 },
           { type: 'tall-cabinet', x: 0, y: 5.5, width: 1.5, height: 2.5, label: 'Double Hang', rotation: 270 },
-          // === FRONT WALL (y=6) - Shelving and drawers, faces back into room ===
-          { type: 'tall-cabinet', x: 2, y: 6, width: 1.5, height: 2, label: 'Shelving', rotation: 180 },
-          { type: 'drawer-base', x: 4, y: 6, width: 1.5, height: 2, label: 'Drawers', rotation: 180 },
-          { type: 'tall-cabinet', x: 6, y: 6, width: 1.5, height: 2, label: 'Shelving', rotation: 180 },
-          // === RIGHT WALL (x=8.5) - Long hang, faces left into room ===
-          // Position: x = roomWidth - cabinetDepth = 10 - 1.5 = 8.5
-          { type: 'tall-cabinet', x: 8.5, y: 0, width: 1.5, height: 4, label: 'Long Hang', rotation: 90 },
-          { type: 'tall-cabinet', x: 8.5, y: 4, width: 1.5, height: 4, label: 'Long Hang', rotation: 90 },
+          // === FRONT WALL (y=10) - Shelving and drawers, faces back into room ===
+          { type: 'tall-cabinet', x: 2, y: 10, width: 1.5, height: 2, label: 'Shelving', rotation: 180 },
+          { type: 'drawer-base', x: 4, y: 10, width: 1.5, height: 2, label: 'Drawers', rotation: 180 },
+          { type: 'tall-cabinet', x: 6, y: 10, width: 1.5, height: 2, label: 'Shelving', rotation: 180 },
+          // === RIGHT WALL (x=12.5) - Long hang, faces left into room ===
+          // Position: x = roomWidth - cabinetDepth = 14 - 1.5 = 12.5
+          { type: 'tall-cabinet', x: 12.5, y: 0, width: 1.5, height: 4, label: 'Long Hang', rotation: 90 },
+          { type: 'tall-cabinet', x: 12.5, y: 4, width: 1.5, height: 4, label: 'Long Hang', rotation: 90 },
           // === CENTER - Island/bench ===
-          { type: 'island', x: 3.5, y: 2.5, width: 3, height: 2, label: 'Island Drawers', rotation: 0 },
-          { type: 'countertop', x: 3.375, y: 2.375, width: 3.25, height: 2.25, color: '#8B4513', label: 'Bench Top', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'island', x: 4.9, y: 3.75, width: 3, height: 2, label: 'Island Drawers', rotation: 0 },
+          { type: 'countertop', x: 4.725, y: 3.563, width: 3.25, height: 2.25, color: '#8B4513', label: 'Bench Top', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
         ]
       },
       'laundry-room': {
         name: 'Laundry Room',
         roomType: 'laundry',
-        width: 10,
-        depth: 8,
+        width: 14,
+        depth: 12,
         elements: [
           // === BACK WALL (y=0) - Washer, dryer, and utility sink ===
           { type: 'washer', x: 0, y: 0, width: 2.3, height: 2.3, label: 'Washer', rotation: 0 },
@@ -62989,18 +62996,18 @@
           { type: 'sink-base', x: 7.5, y: 0, width: 2.5, height: 2, label: 'Sink Base', rotation: 0 },
           { type: 'countertop', x: 5.375, y: -0.04, width: 4.625, height: 2.165, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
           { type: 'sink', x: 7.75, y: 0.25, width: 2, height: 1.5, label: 'Utility Sink', rotation: 0 },
-          // === FRONT WALL (y=6) - Folding counter, faces back into room ===
-          // Position: y = roomDepth - cabinetDepth = 8 - 2 = 6
-          { type: 'base-cabinet', x: 0, y: 6, width: 2, height: 2, label: 'Base', rotation: 180 },
-          { type: 'base-cabinet', x: 2, y: 6, width: 2, height: 2, label: 'Base', rotation: 180 },
-          { type: 'base-cabinet', x: 4, y: 6, width: 2, height: 2, label: 'Base', rotation: 180 },
-          { type: 'countertop', x: -0.125, y: 5.835, width: 6.25, height: 2.165, color: '#708090', label: 'Folding Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // === FRONT WALL (y=10) - Folding counter, faces back into room ===
+          // Position: y = roomDepth - cabinetDepth = 12 - 2 = 10
+          { type: 'base-cabinet', x: 0, y: 10, width: 2, height: 2, label: 'Base', rotation: 180 },
+          { type: 'base-cabinet', x: 2, y: 10, width: 2, height: 2, label: 'Base', rotation: 180 },
+          { type: 'base-cabinet', x: 4, y: 10, width: 2, height: 2, label: 'Base', rotation: 180 },
+          { type: 'countertop', x: -0.125, y: 9.835, width: 6.25, height: 2.165, color: '#708090', label: 'Folding Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           // Wall cabinets
-          { type: 'wall-cabinet', x: 0, y: 7, width: 2, height: 1, label: 'Upper', rotation: 180 },
-          { type: 'wall-cabinet', x: 2, y: 7, width: 2, height: 1, label: 'Upper', rotation: 180 },
-          { type: 'wall-cabinet', x: 4, y: 7, width: 2, height: 1, label: 'Upper', rotation: 180 },
+          { type: 'wall-cabinet', x: 0, y: 11, width: 2, height: 1, label: 'Upper', rotation: 180 },
+          { type: 'wall-cabinet', x: 2, y: 11, width: 2, height: 1, label: 'Upper', rotation: 180 },
+          { type: 'wall-cabinet', x: 4, y: 11, width: 2, height: 1, label: 'Upper', rotation: 180 },
           // Tall storage
-          { type: 'tall-cabinet', x: 8, y: 6, width: 2, height: 2, label: 'Tall Storage', rotation: 180 },
+          { type: 'tall-cabinet', x: 8, y: 10, width: 2, height: 2, label: 'Tall Storage', rotation: 180 },
           // Backsplash above utility sink
           { type: 'backsplash', x: 5.5, y: 0, width: 4.5, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
         ]
@@ -63008,8 +63015,8 @@
       'bathroom-master-full': {
         name: 'Master Bath (Full Luxury)',
         roomType: 'bathroom',
-        width: 14,
-        depth: 12,
+        width: 18,
+        depth: 16,
         elements: [
           // === His/Hers Vanity Wall (y=0) ===
           { type: 'vanity-hishers-108', x: 2.5, y: 0, width: 9, height: 1.75, label: 'Double Vanity 108"', rotation: 0 },
@@ -63021,15 +63028,15 @@
           // === Linen closet (left wall) ===
           { type: 'linen-closet', x: 0, y: 0, width: 1.5, height: 2, label: 'Linen Closet', rotation: 270 },
           // === Toilet alcove (right wall) - 15" clearance from back wall
-          { type: 'toilet', x: 12.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
-          { type: 'toilet-paper', x: 12, y: 3.5, width: 0.5, height: 0.5, label: 'TP Holder', rotation: 90 },
+          { type: 'toilet', x: 16.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          { type: 'toilet-paper', x: 16, y: 3.5, width: 0.5, height: 0.5, label: 'TP Holder', rotation: 90 },
           // === Freestanding tub (center) ===
-          { type: 'bathtub-freestanding', x: 4.25, y: 5, width: 5.5, height: 2.5, label: 'Freestanding Tub', rotation: 0 },
+          { type: 'bathtub-freestanding', x: 5.464, y: 6.667, width: 5.5, height: 2.5, label: 'Freestanding Tub', rotation: 0 },
           // === Walk-in shower (back right) ===
-          { type: 'shower-base-60', x: 9, y: 9, width: 5, height: 3, label: 'Walk-in Shower', rotation: 0 },
-          { type: 'shower-glass', x: 9, y: 9, width: 3, height: 0.15, label: 'Glass Door', rotation: 0 },
-          { type: 'shower-bench', x: 12, y: 10, width: 2, height: 1.5, label: 'Bench', rotation: 90 },
-          { type: 'shower-niche', x: 13.5, y: 9.5, width: 0.5, height: 1.5, label: 'Niche', rotation: 90 },
+          { type: 'shower-base-60', x: 13, y: 13, width: 5, height: 3, label: 'Walk-in Shower', rotation: 0 },
+          { type: 'shower-glass', x: 13, y: 13, width: 3, height: 0.15, label: 'Glass Door', rotation: 0 },
+          { type: 'shower-bench', x: 16, y: 14, width: 2, height: 1.5, label: 'Bench', rotation: 90 },
+          { type: 'shower-niche', x: 17.5, y: 13.5, width: 0.5, height: 1.5, label: 'Niche', rotation: 90 },
           // === Backsplash behind vanity ===
           { type: 'backsplash', x: 2.5, y: 0, width: 9, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 }
         ]
@@ -63037,8 +63044,8 @@
       'bathroom-guest': {
         name: 'Guest Bathroom',
         roomType: 'bathroom',
-        width: 8,
-        depth: 6,
+        width: 12,
+        depth: 10,
         elements: [
           // === Vanity (back wall) ===
           { type: 'vanity-36', x: 0.5, y: 0, width: 3, height: 1.75, label: 'Vanity 36"', rotation: 0 },
@@ -63046,9 +63053,9 @@
           { type: 'sink', x: 1.1, y: 0.2, width: 1.8, height: 1.2, label: 'Sink', rotation: 0 },
           { type: 'mirror', x: 0.75, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
           // === Toilet (right wall) - 15" clearance from back wall
-          { type: 'toilet', x: 6.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          { type: 'toilet', x: 10.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
           // === Alcove tub/shower combo (front wall) ===
-          { type: 'bathtub', x: 1.5, y: 3.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
+          { type: 'bathtub', x: 1.5, y: 7.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
           // === Towel bar ===
           { type: 'towel-bar', x: 5, y: 0, width: 2, height: 0.15, label: 'Towel Bar', rotation: 0 },
           // === Backsplash behind vanity ===
@@ -63058,15 +63065,15 @@
       'bathroom-powder': {
         name: 'Powder Room',
         roomType: 'bathroom',
-        width: 5,
-        depth: 4,
+        width: 8,
+        depth: 6,
         elements: [
           // === Pedestal sink (back wall center) ===
-          { type: 'pedestal-sink', x: 1.75, y: 0, width: 1.5, height: 1.5, label: 'Pedestal Sink', rotation: 0 },
-          { type: 'mirror', x: 1.25, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
+          { type: 'pedestal-sink', x: 2.8, y: 0, width: 1.5, height: 1.5, label: 'Pedestal Sink', rotation: 0 },
+          { type: 'mirror', x: 2, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
           // === Toilet (right wall) - faces into room ===
-          // Position: x = roomWidth - toiletDepth = 5 - 1.5 = 3.5
-          { type: 'toilet', x: 3.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          // Position: x = roomWidth - toiletDepth = 8 - 1.5 = 6.5
+          { type: 'toilet', x: 6.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
           // === Towel ring (left wall) ===
           { type: 'towel-bar', x: 0, y: 1.5, width: 1, height: 0.15, label: 'Towel Ring', rotation: 270 }
         ]
@@ -63074,8 +63081,8 @@
       'bathroom-jack-jill': {
         name: 'Jack-and-Jill Bathroom',
         roomType: 'bathroom',
-        width: 12,
-        depth: 8,
+        width: 16,
+        depth: 12,
         elements: [
           // === Vanity A (left wall) - faces right into room ===
           { type: 'vanity-36', x: 0, y: 0, width: 1.75, height: 3, label: 'Vanity A', rotation: 270 },
@@ -63083,30 +63090,30 @@
           { type: 'sink', x: 0.2, y: 0.75, width: 1.3, height: 1.5, label: 'Sink A', rotation: 270 },
           { type: 'mirror', x: 0, y: 0.25, width: 0.15, height: 2.5, label: 'Mirror A', rotation: 270 },
           // === Vanity B (right wall) - faces left into room ===
-          // Position: x = roomWidth - vanityDepth = 12 - 1.75 = 10.25
-          { type: 'vanity-36', x: 10.25, y: 0, width: 1.75, height: 3, label: 'Vanity B', rotation: 90 },
-          { type: 'countertop', x: 10.165, y: -0.125, width: 1.875, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'sink', x: 10.5, y: 0.75, width: 1.3, height: 1.5, label: 'Sink B', rotation: 90 },
-          { type: 'mirror', x: 11.85, y: 0.25, width: 0.15, height: 2.5, label: 'Mirror B', rotation: 90 },
+          // Position: x = roomWidth - vanityDepth = 16 - 1.75 = 14.25
+          { type: 'vanity-36', x: 14.25, y: 0, width: 1.75, height: 3, label: 'Vanity B', rotation: 90 },
+          { type: 'countertop', x: 14.165, y: -0.125, width: 1.875, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'sink', x: 14.5, y: 0.75, width: 1.3, height: 1.5, label: 'Sink B', rotation: 90 },
+          { type: 'mirror', x: 15.85, y: 0.25, width: 0.15, height: 2.5, label: 'Mirror B', rotation: 90 },
           // === Shared tub/shower (front wall) ===
-          { type: 'bathtub', x: 3.5, y: 5.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
+          { type: 'bathtub', x: 3.5, y: 9.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
           // === Toilet (center back wall) - faces into room ===
           { type: 'toilet', x: 5.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
           // === Backsplash behind vanities ===
           { type: 'backsplash', x: 0, y: 0, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash A', rotation: 0 },
-          { type: 'backsplash', x: 11.92, y: 0, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash B', rotation: 0 },
+          { type: 'backsplash', x: 15.92, y: 0, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash B', rotation: 0 },
           // === Doors (Bedroom A left, Bedroom B right) ===
-          { type: 'door', x: 0, y: 6, width: 0.5, height: 2, label: 'Door A', rotation: 270 },
-          { type: 'door', x: 11.5, y: 6, width: 0.5, height: 2, label: 'Door B', rotation: 90 }
+          { type: 'door', x: 0, y: 10, width: 0.5, height: 2, label: 'Door A', rotation: 270 },
+          { type: 'door', x: 15.5, y: 10, width: 0.5, height: 2, label: 'Door B', rotation: 90 }
         ]
       },
       'concept-modern-kitchen-bath': {
         name: 'Modern Kitchen + Master Bath Concept',
         roomType: 'kitchen',
-        width: 20,
-        depth: 14,
+        width: 24,
+        depth: 18,
         elements: [
-          // === KITCHEN SECTION (left half, 0-10ft) ===
+          // === KITCHEN SECTION (left half, 0-12ft) ===
           // Refrigerator (back left corner)
           { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, rotation: 0 },
           // Base cabinets (back wall)
@@ -63116,20 +63123,20 @@
           { type: 'countertop', x: 3, y: -0.04, width: 8.125, height: 2.165, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
           { type: 'sink', x: 8.5, y: 0.25, width: 2, height: 1.5, rotation: 0 },
           // Island with waterfall
-          { type: 'island', x: 3, y: 5, width: 6, height: 3, rotation: 0 },
-          { type: 'countertop', x: 2.875, y: 4.875, width: 6.25, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
-          // === BATH SECTION (right half, 12-20ft) ===
+          { type: 'island', x: 3.6, y: 6.429, width: 6, height: 3, rotation: 0 },
+          { type: 'countertop', x: 3.475, y: 6.264, width: 6.25, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+          // === BATH SECTION (right half, 15-24ft) ===
           // Double vanity 60" (right back wall)
-          { type: 'vanity-double-60', x: 13, y: 0, width: 5, height: 1.75, rotation: 0 },
-          { type: 'countertop', x: 12.875, y: -0.04, width: 5.25, height: 1.875, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 14, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
-          { type: 'sink', x: 16.5, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          { type: 'vanity-double-60', x: 15.6, y: 0, width: 5, height: 1.75, rotation: 0 },
+          { type: 'countertop', x: 15.45, y: -0.04, width: 5.25, height: 1.875, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 16.8, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          { type: 'sink', x: 19.8, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
           // Toilet
-          { type: 'toilet', x: 18.5, y: 3, width: 1.5, height: 2.3, rotation: 90 },
+          { type: 'toilet', x: 22.5, y: 3, width: 1.5, height: 2.3, rotation: 90 },
           // Freestanding tub
-          { type: 'bathtub-freestanding', x: 13.25, y: 5, width: 5.5, height: 2.5, rotation: 0 },
+          { type: 'bathtub-freestanding', x: 15.9, y: 6.429, width: 5.5, height: 2.5, rotation: 0 },
           // Divider wall between kitchen and bath
-          { type: 'wall', x: 11.75, y: 0, width: 0.5, height: 14, rotation: 0 }
+          { type: 'wall', x: 14.1, y: 0, width: 0.5, height: 18, rotation: 0 }
         ]
       },
 
@@ -63138,8 +63145,8 @@
       'kitchen-compact': {
         name: 'Compact/Studio Kitchen',
         roomType: 'kitchen',
-        width: 8,
-        depth: 8,
+        width: 12,
+        depth: 12,
         elements: [
           // === BACK WALL (y=0) - Small L-shape, no island ===
           // Compact layout for apartments/studios
@@ -63150,26 +63157,26 @@
           { type: 'sink', x: 4.25, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
           { type: 'wall-cabinet', x: 2.5, y: 0, width: 4, height: 1, label: 'Uppers', rotation: 0 },
 
-          // === RIGHT WALL (x=6) - Range and storage ===
-          { type: 'base-cabinet', x: 6, y: 0, width: 2, height: 1.5, label: 'Corner Base', rotation: 90 },
-          { type: 'range', x: 6, y: 1.5, width: 2, height: 2, label: 'Range 24"', rotation: 90 },
-          { type: 'range-hood', x: 6.25, y: 1.75, width: 1.5, height: 1.5, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 6, y: 3.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'countertop', x: 5.835, y: -0.04, width: 2.165, height: 1.665, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 5.835, y: 3.375, width: 2.165, height: 2.25, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'wall-cabinet', x: 7, y: 3.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
+          // === RIGHT WALL (x=10) - Range and storage ===
+          { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 1.5, label: 'Corner Base', rotation: 90 },
+          { type: 'range', x: 10, y: 1.5, width: 2, height: 2, label: 'Range 24"', rotation: 90 },
+          { type: 'range-hood', x: 10.25, y: 1.75, width: 1.5, height: 1.5, label: 'Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 3.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 9.835, y: -0.04, width: 2.165, height: 1.665, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 9.835, y: 3.375, width: 2.165, height: 2.25, label: 'Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 11, y: 3.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
 
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 2.5, y: 0, width: 5.5, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 7.92, y: 0, width: 0.08, height: 5.5, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 2.5, y: 0, width: 4, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 11.92, y: 0, width: 0.08, height: 5.5, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
         ]
       },
 
       'outdoor-kitchen': {
         name: 'Outdoor Kitchen',
         roomType: 'outdoor',
-        width: 12,
-        depth: 6,
+        width: 16,
+        depth: 10,
         elements: [
           // === BACK WALL (y=0) - Linear outdoor cooking station ===
           // Built-in grill centered with prep space on each side
@@ -63181,18 +63188,18 @@
           { type: 'base-cabinet', x: 11, y: 0, width: 1, height: 2, label: 'Storage', rotation: 0 },
           // Continuous countertop (weather-resistant material like granite)
           // Position countertop ABOVE cabinets (y slightly negative for overhang)
-          { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.165, label: 'Granite Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 16.25, height: 2.165, label: 'Granite Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'outdoor-sink', x: 9.25, y: 0.25, width: 1.5, height: 1.5, label: 'Outdoor Sink', rotation: 0 },
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 0, y: 0, width: 12, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 16, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
         ]
       },
 
       'butler-pantry': {
         name: "Butler's Pantry",
         roomType: 'kitchen',
-        width: 10,
-        depth: 5,
+        width: 14,
+        depth: 8,
         elements: [
           // === BACK WALL (y=0) - Pass-through service area ===
           // Wine storage, prep sink, glassware storage
@@ -63216,8 +63223,8 @@
       'wet-bar': {
         name: 'Wet Bar',
         roomType: 'kitchen',
-        width: 6,
-        depth: 3,
+        width: 10,
+        depth: 6,
         elements: [
           // === BACK WALL (y=0) - Compact bar with sink ===
           { type: 'base-cabinet', x: 0, y: 0, width: 1.5, height: 2, label: 'Bar Storage', rotation: 0 },
@@ -63225,22 +63232,22 @@
           { type: 'refrigerator', x: 3.5, y: 0, width: 1.5, height: 2, label: 'Mini Fridge', rotation: 0 },
           { type: 'base-cabinet', x: 5, y: 0, width: 1, height: 2, label: 'Storage', rotation: 0 },
           // Countertop with bar overhang
-          { type: 'countertop', x: -0.125, y: -0.04, width: 6.25, height: 2.165, label: 'Bar Top', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 10.25, height: 2.165, label: 'Bar Top', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'sink', x: 1.75, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
           // Upper cabinets - bottle/glass storage
           { type: 'wall-cabinet', x: 0, y: 0, width: 1.5, height: 1, label: 'Bottles', rotation: 0 },
           { type: 'wall-cabinet', x: 1.5, y: 0, width: 2, height: 1, label: 'Glassware', rotation: 0 },
           { type: 'wall-cabinet', x: 5, y: 0, width: 1, height: 1, label: 'Storage', rotation: 0 },
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 0, y: 0, width: 6, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 10, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
         ]
       },
 
       'bathroom-ada': {
         name: 'ADA Accessible Bathroom',
         roomType: 'bathroom',
-        width: 8,
-        depth: 8,
+        width: 12,
+        depth: 12,
         elements: [
           // === ADA Requirements ===
           // - 60" turning radius (5')
@@ -63266,10 +63273,10 @@
 
           // === RIGHT WALL - Toilet with grab bars ===
           // ADA: 18" (1.5') from side wall to toilet centerline
-          // x = 8 - 0.75 - 1.5 = 5.75 → centerline at 6.5, distance from wall = 1.5ft = 18"
-          { type: 'toilet', x: 5.75, y: 0, width: 1.5, height: 2.5, label: 'ADA Toilet', rotation: 0 },
-          { type: 'shower-niche', x: 7.25, y: 0, width: 0.5, height: 3, label: 'Side Grab Bar', rotation: 0 },
-          { type: 'shower-niche', x: 5.5, y: 0, width: 2, height: 0.3, label: 'Rear Grab Bar', rotation: 0 },
+          // x = 12 - 0.75 - 1.5 = 9.75 → centerline at 10.5, distance from wall = 1.5ft = 18"
+          { type: 'toilet', x: 9.75, y: 0, width: 1.5, height: 2.5, label: 'ADA Toilet', rotation: 0 },
+          { type: 'shower-niche', x: 11.25, y: 0, width: 0.5, height: 3, label: 'Side Grab Bar', rotation: 0 },
+          { type: 'shower-niche', x: 9.5, y: 0, width: 2, height: 0.3, label: 'Rear Grab Bar', rotation: 0 },
 
           // === 60" TURNING RADIUS ===
           // Clear floor space in center of room
@@ -63279,8 +63286,8 @@
       'bathroom-ensuite': {
         name: 'En-Suite Bathroom',
         roomType: 'bathroom',
-        width: 6,
-        depth: 8,
+        width: 10,
+        depth: 12,
         elements: [
           // === BACK WALL (y=0) - Single Vanity ===
           { type: 'base-cabinet', x: 0, y: 0, width: 3, height: 1.75, label: 'Vanity 36"', rotation: 0 },
@@ -63289,16 +63296,16 @@
           { type: 'mirror', x: 0.25, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
 
           // === RIGHT WALL - Toilet ===
-          { type: 'toilet', x: 4.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          { type: 'toilet', x: 8.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
 
-          // === FRONT WALL (y=5) - Walk-in Shower (no tub) ===
-          { type: 'shower-pan', x: 0, y: 5, width: 6, height: 3, label: 'Shower', rotation: 0 },
-          { type: 'shower-wall', x: 0, y: 5, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-wall', x: 5.75, y: 5, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-niche', x: 2, y: 7.5, width: 2, height: 0.5, label: 'Niche', rotation: 0 },
+          // === FRONT WALL (y=9) - Walk-in Shower (no tub) ===
+          { type: 'shower-pan', x: 0, y: 9, width: 6, height: 3, label: 'Shower', rotation: 0 },
+          { type: 'shower-wall', x: 0, y: 9, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
+          { type: 'shower-wall', x: 9.75, y: 9, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
+          { type: 'shower-niche', x: 2, y: 11.5, width: 2, height: 0.5, label: 'Niche', rotation: 0 },
 
           // === LINEN STORAGE ===
-          { type: 'tall-cabinet', x: 4, y: 0, width: 2, height: 1, label: 'Linen', rotation: 0 },
+          { type: 'tall-cabinet', x: 8, y: 0, width: 2, height: 1, label: 'Linen', rotation: 0 },
           // === Backsplash behind vanity ===
           { type: 'backsplash', x: 0, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
         ]
@@ -63309,8 +63316,8 @@
       'coffee-bar': {
         name: 'Coffee Bar / Espresso Station',
         roomType: 'kitchen',
-        width: 8,
-        depth: 4,
+        width: 12,
+        depth: 8,
         elements: [
           // === BACK WALL (y=0) - Compact coffee station ===
           // Built-in espresso, sink for rinsing, storage for cups/beans
@@ -63319,22 +63326,22 @@
           { type: 'sink-base', x: 4, y: 0, width: 2, height: 2, label: 'Rinse Sink', rotation: 0 },
           { type: 'base-cabinet', x: 6, y: 0, width: 2, height: 2, label: 'Bean Storage', rotation: 0 },
           // Countertop
-          { type: 'countertop', x: -0.125, y: -0.04, width: 8.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'sink', x: 4.25, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
           // Upper cabinets - mug display and storage
           { type: 'wall-cabinet', x: 0, y: 0, width: 2, height: 1, label: 'Mug Display', rotation: 0 },
           { type: 'wall-cabinet', x: 4, y: 0, width: 2, height: 1, label: 'Supplies', rotation: 0 },
           { type: 'wall-cabinet', x: 6, y: 0, width: 2, height: 1, label: 'Beans/Filters', rotation: 0 },
           // Backsplash
-          { type: 'backsplash', x: 0, y: 0, width: 8, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 12, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
         ]
       },
 
       'mudroom': {
         name: 'Mudroom / Entry',
         roomType: 'closet',
-        width: 10,
-        depth: 6,
+        width: 14,
+        depth: 10,
         elements: [
           // === BACK WALL (y=0) - Lockers/cubbies with bench ===
           // Storage for coats, bags, shoes with seating
@@ -63350,15 +63357,15 @@
           // Shoe cubbies below
           { type: 'shoe-rack', x: 0, y: 2.5, width: 6, height: 1.5, label: 'Shoe Cubbies', rotation: 0 },
           // Door entry
-          { type: 'door', x: 4, y: 5.5, width: 3, height: 0.5, label: 'Entry Door', rotation: 0 },
+          { type: 'door', x: 4, y: 9.5, width: 3, height: 0.5, label: 'Entry Door', rotation: 0 },
         ]
       },
 
       'pool-house-bar': {
         name: 'Pool House Bar',
         roomType: 'outdoor',
-        width: 14,
-        depth: 6,
+        width: 18,
+        depth: 10,
         elements: [
           // === BACK WALL (y=0) - Full outdoor entertaining setup ===
           // BBQ grill, outdoor fridge, kegerator, sink
@@ -63372,18 +63379,18 @@
           { type: 'outdoor-ice-maker', x: 12, y: 0, width: 1.25, height: 2, label: 'Ice Maker 15"', rotation: 0 },
           { type: 'base-cabinet', x: 13.25, y: 0, width: 0.75, height: 2, label: 'Storage', rotation: 0 },
           // Continuous granite counter - grill hood slides under stone
-          { type: 'countertop', x: -0.125, y: -0.04, width: 14.25, height: 2.915, label: 'Granite Bar Top', rotation: 0, overhangFront: 0.75, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 18.25, height: 2.915, label: 'Granite Bar Top', rotation: 0, overhangFront: 0.75, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'sink', x: 8.375, y: 0.375, width: 1.25, height: 1.25, label: 'Bar Sink 15"', rotation: 0 },
           // Backsplash
-          { type: 'backsplash', x: 0, y: 0, width: 14, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 18, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
         ]
       },
 
       'home-office': {
         name: 'Home Office with Built-ins',
         roomType: 'closet',
-        width: 12,
-        depth: 10,
+        width: 16,
+        depth: 14,
         elements: [
           // === BACK WALL (y=0) - Desk with overhead shelving ===
           { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'File Cabinet', rotation: 0 },
@@ -63395,20 +63402,20 @@
           { type: 'wall-cabinet', x: 0, y: 0, width: 3, height: 1, label: 'Bookshelves', rotation: 0 },
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Display Shelves', rotation: 0 },
           { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Storage', rotation: 0 },
-          // === RIGHT WALL (x=10) - Bookcase wall ===
-          { type: 'tall-cabinet', x: 10, y: 0, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
-          { type: 'tall-cabinet', x: 10, y: 3, width: 2, height: 4, label: 'Bookcase', rotation: 90 },
-          { type: 'tall-cabinet', x: 10, y: 7, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
+          // === RIGHT WALL (x=14) - Bookcase wall ===
+          { type: 'tall-cabinet', x: 14, y: 0, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
+          { type: 'tall-cabinet', x: 14, y: 3, width: 2, height: 4, label: 'Bookcase', rotation: 90 },
+          { type: 'tall-cabinet', x: 14, y: 7, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
           // === Entry ===
-          { type: 'door', x: 0, y: 9.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
+          { type: 'door', x: 0, y: 13.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
         ]
       },
 
       'commercial-prep-kitchen': {
         name: 'Commercial Prep Kitchen',
         roomType: 'kitchen',
-        width: 20,
-        depth: 16,
+        width: 24,
+        depth: 20,
         elements: [
           // === BACK WALL (y=0) - Commercial cooking line ===
           // Walk-in cooler access, prep tables, commercial range
@@ -63428,25 +63435,25 @@
           { type: 'countertop', x: -0.04, y: 3.875, width: 3.165, height: 10.25, color: '#C0C0C0', label: 'Dish Area', rotation: 0, overhangFront: 0, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
 
           // === CENTER - Prep island ===
-          { type: 'island', x: 7, y: 6, width: 6, height: 4, label: 'Prep Island', rotation: 0 },
-          { type: 'countertop', x: 6.875, y: 5.875, width: 6.25, height: 4.25, color: '#C0C0C0', label: 'Stainless Island', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'island', x: 8.4, y: 7.5, width: 6, height: 4, label: 'Prep Island', rotation: 0 },
+          { type: 'countertop', x: 8.25, y: 7.344, width: 6.25, height: 4.25, color: '#C0C0C0', label: 'Stainless Island', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
 
-          // === RIGHT WALL (x=17) - Cold storage and plating ===
-          { type: 'refrigerator', x: 17, y: 4, width: 3, height: 4, label: 'Reach-in Cooler', rotation: 90 },
-          { type: 'base-cabinet', x: 17, y: 8, width: 3, height: 4, label: 'Plating Station', rotation: 90 },
-          { type: 'base-cabinet', x: 17, y: 12, width: 3, height: 4, label: 'Expediting', rotation: 90 },
-          { type: 'countertop', x: 16.835, y: 3.875, width: 3.165, height: 12.125, color: '#C0C0C0', label: 'Plating Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          // === RIGHT WALL (x=21) - Cold storage and plating ===
+          { type: 'refrigerator', x: 21, y: 4, width: 3, height: 4, label: 'Reach-in Cooler', rotation: 90 },
+          { type: 'base-cabinet', x: 21, y: 8, width: 3, height: 4, label: 'Plating Station', rotation: 90 },
+          { type: 'base-cabinet', x: 21, y: 12, width: 3, height: 4, label: 'Expediting', rotation: 90 },
+          { type: 'countertop', x: 20.835, y: 3.875, width: 3.165, height: 12.125, color: '#C0C0C0', label: 'Plating Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
 
-          // === FRONT WALL (y=14) - Pass window / service line ===
-          { type: 'window', x: 6, y: 15.5, width: 8, height: 0.5, label: 'Pass Window', rotation: 0 },
+          // === FRONT WALL (y=18) - Pass window / service line ===
+          { type: 'window', x: 6, y: 19.5, width: 8, height: 0.5, label: 'Pass Window', rotation: 0 },
         ]
       },
 
       'scullery': {
         name: 'Scullery / Prep Kitchen',
         roomType: 'kitchen',
-        width: 8,
-        depth: 8,
+        width: 12,
+        depth: 12,
         elements: [
           // === BACK WALL (y=0) - Secondary sink and prep ===
           // Hidden prep area behind main kitchen
@@ -63464,9 +63471,9 @@
           { type: 'tall-cabinet', x: 0, y: 2, width: 2, height: 3, label: 'Pantry', rotation: 270 },
           { type: 'tall-cabinet', x: 0, y: 5, width: 2, height: 3, label: 'Appliance Garage', rotation: 270 },
 
-          // === FRONT WALL (y=6) - Extra counter ===
-          { type: 'base-cabinet', x: 2.5, y: 6, width: 3, height: 2, label: 'Extra Storage', rotation: 180 },
-          { type: 'countertop', x: 2.375, y: 5.835, width: 3.25, height: 2.165, label: 'Landing', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // === FRONT WALL (y=10) - Extra counter ===
+          { type: 'base-cabinet', x: 2.5, y: 10, width: 3, height: 2, label: 'Extra Storage', rotation: 180 },
+          { type: 'countertop', x: 2.375, y: 9.835, width: 3.25, height: 2.165, label: 'Landing', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
 
           // Backsplash
           { type: 'backsplash', x: 2, y: 0, width: 6, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
@@ -63476,8 +63483,8 @@
       'kitchen-dining-ponywall': {
         name: 'Kitchen + Dining (Pony Wall)',
         roomType: 'kitchen',
-        width: 24,
-        depth: 16,
+        width: 28,
+        depth: 20,
         elements: [
           // =============================================
           // KITCHEN SIDE (y=0 to y=10)
@@ -63507,13 +63514,13 @@
           // Back wall backsplash
           { type: 'backsplash', x: 5, y: 0, width: 13.5, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
 
-          // === RIGHT WALL (x=22) - Short return run ===
-          { type: 'base-cabinet', x: 22, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 22, y: 2, width: 2, height: 3, label: 'Base 36"', rotation: 90 },
-          { type: 'base-cabinet', x: 22, y: 5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'countertop', x: 21.835, y: -0.04, width: 2.165, height: 7.165, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 23, y: 0, width: 1, height: 7, label: 'Upper 84"', rotation: 90 },
-          { type: 'backsplash', x: 23.92, y: 0, width: 0.08, height: 7, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
+          // === RIGHT WALL (x=26) - Short return run ===
+          { type: 'base-cabinet', x: 26, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 26, y: 2, width: 2, height: 3, label: 'Base 36"', rotation: 90 },
+          { type: 'base-cabinet', x: 26, y: 5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 25.835, y: -0.04, width: 2.165, height: 7.165, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 27, y: 0, width: 1, height: 7, label: 'Upper 84"', rotation: 90 },
+          { type: 'backsplash', x: 27.92, y: 0, width: 0.08, height: 7, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
 
           // === PONY WALL (y=10) - 42" high divider between kitchen and dining ===
           // The pony wall runs 12ft across (x=4 to x=16), 6" thick
@@ -63538,26 +63545,26 @@
           { type: 'countertop', x: 3.875, y: 10.25, width: 12.25, height: 1.5, color: '#708090', label: 'Bar Top', rotation: 0, overhangFront: 1.25, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125, overhangSupport: 'corbels', cabinetHeight: 3.5 },
 
           // =============================================
-          // DINING SIDE (y=10 to y=16)
+          // DINING SIDE (y=10 to y=20)
           // Open dining area with table and chairs
           // =============================================
 
           // === DINING TABLE + CHAIRS ===
-          { type: 'dining-table-rect', x: 7, y: 12.5, width: 6, height: 3, label: 'Dining Table 72×36"', rotation: 0 },
-          { type: 'dining-chair', x: 7.5, y: 12, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 9.25, y: 12, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 11, y: 12, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 7.5, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 9.25, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 11, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-table-rect', x: 8.167, y: 15.625, width: 6, height: 3, label: 'Dining Table 72×36"', rotation: 0 },
+          { type: 'dining-chair', x: 8.75, y: 15, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 10.792, y: 15, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 12.833, y: 15, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 8.75, y: 19.375, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 10.792, y: 19.375, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 12.833, y: 19.375, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
         ]
       },
 
       'kitchen-dining-open': {
         name: 'Kitchen + Dining (Open Concept)',
         roomType: 'kitchen',
-        width: 22,
-        depth: 18,
+        width: 26,
+        depth: 22,
         elements: [
           // =============================================
           // U-SHAPED KITCHEN (back + left + right walls)
@@ -63579,49 +63586,49 @@
           { type: 'wall-cabinet', x: 12, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
           { type: 'backsplash', x: 5, y: 0, width: 11, height: 0.08, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
 
-          // === RIGHT WALL (x=20) - Range wall ===
-          { type: 'base-cabinet', x: 20, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 20, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 19.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
-          { type: 'range-hood', x: 21, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 20, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 20, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'countertop', x: 19.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 19.835, y: 6.375, width: 2.165, height: 4.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 21, y: 0, width: 1, height: 4, label: 'Upper', rotation: 90 },
-          { type: 'wall-cabinet', x: 21, y: 6.5, width: 1, height: 4, label: 'Upper', rotation: 90 },
-          { type: 'backsplash', x: 21.92, y: 0, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
+          // === RIGHT WALL (x=24) - Range wall ===
+          { type: 'base-cabinet', x: 24, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 24, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 23.5, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 25, y: 4.25, width: 2.5, height: 1, label: 'Range Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 24, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 24, y: 8.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 23.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 23.835, y: 6.375, width: 2.165, height: 4.25, label: 'Right Counter', rotation: 90, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 25, y: 0, width: 1, height: 4, label: 'Upper', rotation: 90 },
+          { type: 'wall-cabinet', x: 25, y: 6.5, width: 1, height: 4, label: 'Upper', rotation: 90 },
+          { type: 'backsplash', x: 25.92, y: 0, width: 0.08, height: 10.5, verticalHeight: 1.5, label: 'Tile Backsplash', rotation: 0 },
 
           // === LARGE ISLAND (separating kitchen from dining — 45" work aisle) ===
-          { type: 'base-cabinet', x: 5, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'drawer-base', x: 8, y: 6, width: 2, height: 2, label: 'Island Drawers', rotation: 180 },
-          { type: 'base-cabinet', x: 10, y: 6, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
-          { type: 'base-cabinet', x: 13, y: 6, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
-          { type: 'countertop', x: 4.875, y: 5.875, width: 10.25, height: 3, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'base-cabinet', x: 6, y: 7.333, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'drawer-base', x: 9, y: 7.333, width: 2, height: 2, label: 'Island Drawers', rotation: 180 },
+          { type: 'base-cabinet', x: 11, y: 7.333, width: 3, height: 2, label: 'Island Base 36"', rotation: 180 },
+          { type: 'base-cabinet', x: 14, y: 7.333, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'countertop', x: 5.875, y: 7.168, width: 10.25, height: 2.958, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.833, overhangLeft: 0.125, overhangRight: 0.125 },
 
           // =============================================
-          // DINING AREA (y=10 to y=18)
+          // DINING AREA (y=12 to y=22)
           // =============================================
-          { type: 'dining-table-rect', x: 6.5, y: 12, width: 7, height: 3.5, label: 'Dining Table 84×42"', rotation: 0 },
-          { type: 'dining-chair', x: 7, y: 11.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 8.75, y: 11.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 10.5, y: 11.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 12.25, y: 11.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 7, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 8.75, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 10.5, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 12.25, y: 15.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-table-rect', x: 7.682, y: 14.667, width: 7, height: 3.5, label: 'Dining Table 84×42"', rotation: 0 },
+          { type: 'dining-chair', x: 8.273, y: 14.056, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 10.341, y: 14.056, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 12.409, y: 14.056, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 14.477, y: 14.056, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 8.273, y: 18.944, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 10.341, y: 18.944, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 12.409, y: 18.944, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 14.477, y: 18.944, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
           // End chairs
-          { type: 'dining-chair', x: 5.5, y: 13, width: 1.5, height: 1.5, label: 'Chair', rotation: 270 },
-          { type: 'dining-chair', x: 13.5, y: 13, width: 1.5, height: 1.5, label: 'Chair', rotation: 90 },
+          { type: 'dining-chair', x: 6.5, y: 15.889, width: 1.5, height: 1.5, label: 'Chair', rotation: 270 },
+          { type: 'dining-chair', x: 15.955, y: 15.889, width: 1.5, height: 1.5, label: 'Chair', rotation: 90 },
         ]
       },
 
       'dining-room': {
         name: 'Dining Room',
         roomType: 'dining',
-        width: 14,
-        depth: 12,
+        width: 18,
+        depth: 16,
         elements: [
           // =============================================
           // STANDALONE DINING ROOM
@@ -63635,29 +63642,29 @@
           { type: 'backsplash', x: 2, y: 0, width: 8, height: 0.08, verticalHeight: 1.5, label: 'Buffet Backsplash', rotation: 0 },
 
           // === RIGHT WALL - China Cabinet ===
-          { type: 'tall-cabinet', x: 12, y: 2, width: 2, height: 3, label: 'China Cabinet', rotation: 90 },
+          { type: 'tall-cabinet', x: 16, y: 2, width: 2, height: 3, label: 'China Cabinet', rotation: 90 },
 
           // === DINING TABLE + CHAIRS (centered) ===
-          { type: 'dining-table-rect', x: 3, y: 4.5, width: 7, height: 3.5, label: 'Dining Table 84×42"', rotation: 0 },
-          { type: 'dining-chair', x: 3.5, y: 4, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 5.25, y: 4, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 7, y: 4, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 8.75, y: 4, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 3.5, y: 8, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 5.25, y: 8, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 7, y: 8, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 8.75, y: 8, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-table-rect', x: 3.857, y: 6, width: 7, height: 3.5, label: 'Dining Table 84×42"', rotation: 0 },
+          { type: 'dining-chair', x: 4.5, y: 5.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 6.75, y: 5.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 9, y: 5.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 11.25, y: 5.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 4.5, y: 10.667, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 6.75, y: 10.667, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 9, y: 10.667, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 11.25, y: 10.667, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
           // End chairs
-          { type: 'dining-chair', x: 2, y: 5.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 270 },
-          { type: 'dining-chair', x: 10, y: 5.5, width: 1.5, height: 1.5, label: 'Chair', rotation: 90 },
+          { type: 'dining-chair', x: 2.571, y: 7.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 270 },
+          { type: 'dining-chair', x: 12.857, y: 7.333, width: 1.5, height: 1.5, label: 'Chair', rotation: 90 },
         ]
       },
 
       'living-room': {
         name: 'Living Room',
         roomType: 'living',
-        width: 18,
-        depth: 14,
+        width: 22,
+        depth: 18,
         elements: [
           // =============================================
           // LIVING ROOM - Sofa + armchairs around coffee table
@@ -63674,33 +63681,33 @@
 
           // === SEATING AREA ===
           // Sofa facing entertainment center
-          { type: 'sofa-3seat', x: 4, y: 7, width: 7, height: 3, label: 'Sofa', rotation: 0 },
+          { type: 'sofa-3seat', x: 4.889, y: 9, width: 7, height: 3, label: 'Sofa', rotation: 0 },
           // Armchairs flanking
-          { type: 'armchair', x: 1, y: 5.5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 315 },
-          { type: 'armchair', x: 12.5, y: 5.5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 45 },
+          { type: 'armchair', x: 1.222, y: 7.071, width: 2.5, height: 2.5, label: 'Armchair', rotation: 315 },
+          { type: 'armchair', x: 15.278, y: 7.071, width: 2.5, height: 2.5, label: 'Armchair', rotation: 45 },
           // Coffee table centered
-          { type: 'coffee-table-rect', x: 5.5, y: 4.5, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
+          { type: 'coffee-table-rect', x: 6.722, y: 5.786, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
           // Side tables
-          { type: 'side-table', x: 3.25, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
-          { type: 'side-table', x: 11.25, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 3.972, y: 9.643, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 13.75, y: 9.643, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
 
           // === ACCENT PIECES ===
           // Area rug under seating
-          { type: 'area-rug-lg', x: 2.5, y: 3.5, width: 10, height: 8, label: 'Area Rug', rotation: 0 },
+          { type: 'area-rug-lg', x: 3.056, y: 4.5, width: 10, height: 8, label: 'Area Rug', rotation: 0 },
           // Plants in corners
-          { type: 'potted-plant-md', x: 15.5, y: 0.5, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
-          { type: 'potted-plant-sm', x: 16, y: 11.5, width: 1.5, height: 1.5, label: 'Plant', rotation: 0 },
+          { type: 'potted-plant-md', x: 19.5, y: 0.5, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'potted-plant-sm', x: 20, y: 14.786, width: 1.5, height: 1.5, label: 'Plant', rotation: 0 },
           // Floating shelves on side wall
-          { type: 'floating-shelf', x: 16.5, y: 4, width: 1, height: 3, label: 'Wall Shelf', rotation: 90 },
-          { type: 'floating-shelf', x: 16.5, y: 7.5, width: 1, height: 3, label: 'Wall Shelf', rotation: 90 },
+          { type: 'floating-shelf', x: 20.5, y: 4, width: 1, height: 3, label: 'Wall Shelf', rotation: 90 },
+          { type: 'floating-shelf', x: 20.5, y: 7.5, width: 1, height: 3, label: 'Wall Shelf', rotation: 90 },
         ]
       },
 
       'master-bedroom': {
         name: 'Master Bedroom',
         roomType: 'bedroom',
-        width: 16,
-        depth: 14,
+        width: 20,
+        depth: 18,
         elements: [
           // =============================================
           // MASTER BEDROOM - King bed centered on back wall
@@ -63717,26 +63724,26 @@
           { type: 'dresser', x: 0, y: 4, width: 2, height: 5, label: 'Dresser 60"', rotation: 90 },
 
           // === RIGHT WALL - Tall storage ===
-          { type: 'tall-cabinet', x: 13, y: 0.5, width: 2, height: 3, label: 'Armoire', rotation: 90 },
+          { type: 'tall-cabinet', x: 17, y: 0.5, width: 2, height: 3, label: 'Armoire', rotation: 90 },
 
           // === FOOT OF BED - Bench ===
-          { type: 'bench', x: 5, y: 7.5, width: 4.5, height: 1.5, label: 'Bed Bench', rotation: 0 },
+          { type: 'bench', x: 6.25, y: 9.643, width: 4.5, height: 1.5, label: 'Bed Bench', rotation: 0 },
 
           // === SEATING AREA (far end) ===
-          { type: 'armchair', x: 1, y: 10, width: 2.5, height: 2.5, label: 'Reading Chair', rotation: 0 },
-          { type: 'side-table', x: 3.5, y: 10.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
-          { type: 'potted-plant-md', x: 0.5, y: 12, width: 2, height: 2, label: 'Plant', rotation: 0 },
+          { type: 'armchair', x: 1.25, y: 12.857, width: 2.5, height: 2.5, label: 'Reading Chair', rotation: 0 },
+          { type: 'side-table', x: 4.375, y: 13.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'potted-plant-md', x: 0.625, y: 15.429, width: 2, height: 2, label: 'Plant', rotation: 0 },
 
           // === ACCENT PIECES ===
-          { type: 'area-rug-lg', x: 3, y: 5, width: 8.5, height: 6, label: 'Bedroom Rug', rotation: 0 },
+          { type: 'area-rug-lg', x: 3.75, y: 6.429, width: 8.5, height: 6, label: 'Bedroom Rug', rotation: 0 },
         ]
       },
 
       'outdoor-grill-station': {
         name: 'Outdoor Grill Station',
         roomType: 'outdoor',
-        width: 16,
-        depth: 6,
+        width: 20,
+        depth: 10,
         elements: [
           // =============================================
           // OUTDOOR GRILL STATION - Linear outdoor cooking area
@@ -63755,24 +63762,24 @@
           { type: 'outdoor-ice-maker', x: 14, y: 0, width: 1.25, height: 2, label: 'Ice Maker 15"', rotation: 0 },
           { type: 'base-cabinet', x: 15.25, y: 0, width: 0.75, height: 2, label: 'Filler', rotation: 0 },
           // Continuous granite counter - grill hood slides under the stone overhang
-          { type: 'countertop', x: -0.125, y: -0.04, width: 16.25, height: 2.915, label: 'Granite Counter', rotation: 0, overhangFront: 0.75, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 20.25, height: 2.915, label: 'Granite Counter', rotation: 0, overhangFront: 0.75, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'sink', x: 12.375, y: 0.375, width: 1.25, height: 1.25, label: 'Prep Sink 15"', rotation: 0 },
           // Backsplash
-          { type: 'backsplash', x: 0, y: 0, width: 16, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 20, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
           // Bar stools for seating at counter overhang (18"x18" each, spaced 24" apart)
-          { type: 'bar-stool', x: 1.75, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 3.75, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 10, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 12, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 14, y: 3.5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 2.19, y: 5.83, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 4.69, y: 5.83, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 12.5, y: 5.83, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 15, y: 5.83, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 17.5, y: 5.83, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
         ]
       },
 
       'outdoor-bbq-island': {
         name: 'Outdoor BBQ L-Island',
         roomType: 'outdoor',
-        width: 18,
-        depth: 10,
+        width: 22,
+        depth: 14,
         elements: [
           // =============================================
           // OUTDOOR BBQ L-ISLAND - L-shaped outdoor kitchen
@@ -63794,27 +63801,27 @@
           { type: 'sink', x: 12.75, y: 0.25, width: 1.5, height: 1.5, label: 'Outdoor Sink', rotation: 0 },
           { type: 'backsplash', x: 0, y: 0, width: 16, height: 0.08, verticalHeight: 1.5, label: 'Stone Backsplash', rotation: 0 },
 
-          // === RIGHT RETURN (x=16) - Bar seating island ===
-          { type: 'base-cabinet', x: 16, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
-          { type: 'base-cabinet', x: 16, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 16, y: 4, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 16, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          // === RIGHT RETURN (x=20) - Bar seating island ===
+          { type: 'base-cabinet', x: 20, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 20, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 20, y: 4, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 20, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
           // Right return countertop with bar overhang
-          { type: 'countertop', x: 15.835, y: -0.04, width: 2.165, height: 8.29, label: 'Bar Counter', rotation: 90, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'countertop', x: 19.835, y: -0.04, width: 2.165, height: 8.29, label: 'Bar Counter', rotation: 90, overhangFront: 1, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
 
           // === BAR STOOLS along right return ===
-          { type: 'bar-stool', x: 14, y: 1, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 14, y: 3, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 14, y: 5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 14, y: 7, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 18, y: 1, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 18, y: 3, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 18, y: 5, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 18, y: 7, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
         ]
       },
 
       'kitchen-island-only': {
         name: 'Kitchen Island Only',
         roomType: 'kitchen',
-        width: 12,
-        depth: 8,
+        width: 16,
+        depth: 12,
         elements: [
           // =============================================
           // KITCHEN ISLAND ONLY - For quoting standalone islands
@@ -63822,27 +63829,27 @@
           // =============================================
 
           // === CENTER ISLAND ===
-          { type: 'base-cabinet', x: 2, y: 2.5, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
-          { type: 'base-cabinet', x: 4, y: 2.5, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
-          { type: 'sink-base', x: 6, y: 2.5, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
-          { type: 'drawer-base', x: 9, y: 2.5, width: 2, height: 2, label: 'Drawer Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 3.5, y: 3.75, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 5.5, y: 3.75, width: 2, height: 2, label: 'Island Base 24"', rotation: 180 },
+          { type: 'sink-base', x: 7.5, y: 3.75, width: 3, height: 2, label: 'Island Sink Base', rotation: 180 },
+          { type: 'drawer-base', x: 10.5, y: 3.75, width: 2, height: 2, label: 'Drawer Base 24"', rotation: 180 },
           // Island countertop with waterfall sides and seating overhang
-          { type: 'countertop', x: 1.375, y: 2.375, width: 10.25, height: 3.125, label: 'Island Counter', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 1, overhangLeft: 0.625, overhangRight: 0.625 },
-          { type: 'sink', x: 6.5, y: 2.75, width: 2, height: 1.5, label: 'Island Sink', rotation: 0 },
+          { type: 'countertop', x: 2.875, y: 3.585, width: 10.25, height: 3.125, label: 'Island Counter', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 1, overhangLeft: 0.625, overhangRight: 0.625 },
+          { type: 'sink', x: 8, y: 4.125, width: 2, height: 1.5, label: 'Island Sink', rotation: 0 },
 
           // === BAR STOOLS (front of island for seating) ===
-          { type: 'bar-stool', x: 3, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 5, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 7, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
-          { type: 'bar-stool', x: 9, y: 6, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 4, y: 9, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 6.67, y: 9, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 9.33, y: 9, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
+          { type: 'bar-stool', x: 12, y: 9, width: 1.5, height: 1.5, label: 'Stool', rotation: 0 },
         ]
       },
 
       'family-room': {
         name: 'Family Room',
         roomType: 'living',
-        width: 20,
-        depth: 16,
+        width: 24,
+        depth: 20,
         elements: [
           // =============================================
           // FAMILY ROOM - Large furniture room with sectional
@@ -63857,35 +63864,35 @@
           { type: 'countertop', x: 2.875, y: -0.04, width: 6.25, height: 2.165, color: '#5a4a3a', label: 'Media Top', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
 
           // === L-SECTIONAL centered in room ===
-          { type: 'sectional-l', x: 4, y: 6, width: 8, height: 8, label: 'L-Sectional', rotation: 0 },
+          { type: 'sectional-l', x: 4.8, y: 7.5, width: 8, height: 8, label: 'L-Sectional', rotation: 0 },
 
           // === COFFEE TABLE ===
-          { type: 'coffee-table-rect', x: 6, y: 4, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
+          { type: 'coffee-table-rect', x: 7.2, y: 5, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
 
           // === SIDE TABLES ===
-          { type: 'side-table', x: 3, y: 6, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
-          { type: 'side-table', x: 12.5, y: 6, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 3.6, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 15, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
 
           // === RIGHT WALL - Reading nook ===
-          { type: 'armchair', x: 16, y: 2, width: 2.5, height: 2.5, label: 'Reading Chair', rotation: 90 },
-          { type: 'side-table', x: 16.5, y: 4.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
-          { type: 'bookshelf', x: 18.5, y: 1, width: 1, height: 5, label: 'Bookshelf', rotation: 90 },
+          { type: 'armchair', x: 20, y: 2, width: 2.5, height: 2.5, label: 'Reading Chair', rotation: 90 },
+          { type: 'side-table', x: 20.5, y: 4.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'bookshelf', x: 22.5, y: 1, width: 1, height: 5, label: 'Bookshelf', rotation: 90 },
 
           // === ACCENTS ===
-          { type: 'area-rug-lg', x: 3, y: 3, width: 12, height: 10, label: 'Area Rug', rotation: 0 },
-          { type: 'potted-plant-md', x: 0.5, y: 13, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
-          { type: 'potted-plant-md', x: 17, y: 13, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'area-rug-lg', x: 3.6, y: 3.75, width: 12, height: 10, label: 'Area Rug', rotation: 0 },
+          { type: 'potted-plant-md', x: 0.5, y: 16.25, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'potted-plant-md', x: 21, y: 16.25, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
 
           // === ENTRY ===
-          { type: 'door', x: 14, y: 15.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
+          { type: 'door', x: 16.8, y: 19.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
         ]
       },
 
       'game-room': {
         name: 'Game / Media Room',
         roomType: 'living',
-        width: 20,
-        depth: 14,
+        width: 24,
+        depth: 18,
         elements: [
           // =============================================
           // GAME / MEDIA ROOM - Entertainment with bar area
@@ -63912,26 +63919,26 @@
 
           // === RIGHT SIDE - Media/TV area ===
           { type: 'entertainment-center', x: 12, y: 0, width: 6, height: 2, label: 'Media Center', rotation: 0 },
-          { type: 'sofa-3seat', x: 12.5, y: 5, width: 7, height: 3, label: 'Theater Sofa', rotation: 0 },
-          { type: 'recliner', x: 11, y: 5.5, width: 3, height: 3, label: 'Recliner', rotation: 45 },
+          { type: 'sofa-3seat', x: 15, y: 6.43, width: 7, height: 3, label: 'Theater Sofa', rotation: 0 },
+          { type: 'recliner', x: 13.2, y: 7.07, width: 3, height: 3, label: 'Recliner', rotation: 45 },
 
           // === CENTER - Game table ===
-          { type: 'dining-table-square', x: 4, y: 7, width: 4, height: 4, label: 'Game Table', rotation: 0 },
-          { type: 'dining-chair', x: 4.5, y: 6, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 6.5, y: 6, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
-          { type: 'dining-chair', x: 4.5, y: 11, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
-          { type: 'dining-chair', x: 6.5, y: 11, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-table-square', x: 4.8, y: 9, width: 4, height: 4, label: 'Game Table', rotation: 0 },
+          { type: 'dining-chair', x: 5.4, y: 7.71, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 7.8, y: 7.71, width: 1.5, height: 1.5, label: 'Chair', rotation: 0 },
+          { type: 'dining-chair', x: 5.4, y: 14.14, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
+          { type: 'dining-chair', x: 7.8, y: 14.14, width: 1.5, height: 1.5, label: 'Chair', rotation: 180 },
 
           // === ACCENTS ===
-          { type: 'area-rug-lg', x: 3, y: 6, width: 8, height: 7, label: 'Area Rug', rotation: 0 },
+          { type: 'area-rug-lg', x: 3.6, y: 7.71, width: 8, height: 7, label: 'Area Rug', rotation: 0 },
         ]
       },
 
       'fireplace-living': {
         name: 'Living Room w/ Fireplace',
         roomType: 'living',
-        width: 18,
-        depth: 14,
+        width: 22,
+        depth: 18,
         elements: [
           // =============================================
           // LIVING ROOM WITH FIREPLACE - Granite mantle + surround
@@ -63950,18 +63957,18 @@
           { type: 'bookshelf-tall', x: 13, y: 0, width: 3, height: 1.5, label: 'Built-in Right', rotation: 0 },
 
           // === SEATING facing fireplace ===
-          { type: 'sofa-3seat', x: 4, y: 7, width: 7, height: 3, label: 'Sofa', rotation: 0 },
-          { type: 'armchair', x: 1, y: 5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 330 },
-          { type: 'armchair', x: 13, y: 5, width: 2.5, height: 2.5, label: 'Armchair', rotation: 30 },
-          { type: 'coffee-table-rect', x: 5.5, y: 4.5, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
-          { type: 'side-table', x: 3.5, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
-          { type: 'side-table', x: 11.5, y: 7.5, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'sofa-3seat', x: 4.89, y: 9, width: 7, height: 3, label: 'Sofa', rotation: 0 },
+          { type: 'armchair', x: 1.22, y: 6.43, width: 2.5, height: 2.5, label: 'Armchair', rotation: 330 },
+          { type: 'armchair', x: 15.89, y: 6.43, width: 2.5, height: 2.5, label: 'Armchair', rotation: 30 },
+          { type: 'coffee-table-rect', x: 6.72, y: 5.79, width: 4, height: 2, label: 'Coffee Table', rotation: 0 },
+          { type: 'side-table', x: 4.28, y: 9.64, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
+          { type: 'side-table', x: 14.06, y: 9.64, width: 1.5, height: 1.5, label: 'Side Table', rotation: 0 },
 
           // === ACCENTS ===
-          { type: 'area-rug-lg', x: 2.5, y: 3.5, width: 11, height: 8, label: 'Area Rug', rotation: 0 },
-          { type: 'console-table', x: 0, y: 11, width: 4, height: 1.25, label: 'Console Table', rotation: 270 },
-          { type: 'potted-plant-md', x: 0.5, y: 12, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
-          { type: 'potted-plant-sm', x: 15.5, y: 0.5, width: 1.5, height: 1.5, label: 'Plant', rotation: 0 },
+          { type: 'area-rug-lg', x: 3.06, y: 4.5, width: 11, height: 8, label: 'Area Rug', rotation: 0 },
+          { type: 'console-table', x: 0, y: 14.14, width: 4, height: 1.25, label: 'Console Table', rotation: 270 },
+          { type: 'potted-plant-md', x: 0.5, y: 15.43, width: 2, height: 2, label: 'Floor Plant', rotation: 0 },
+          { type: 'potted-plant-sm', x: 19.5, y: 0.5, width: 1.5, height: 1.5, label: 'Plant', rotation: 0 },
         ]
       }
     };
@@ -70211,7 +70218,7 @@
 
     // ============ PAYMENT PROCESSING ============
 
-    const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
+    const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdatW3Hsua7p5EHSwkLa2WLx3YTSACjb9Yv5qoaGNX7pk2TZt5FcjSxRWw1KG1PoEpEkXmuCfr00vbSGkIMu';
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
     let selectedPaymentOption = 'deposit';
     let stripeInstance = null;

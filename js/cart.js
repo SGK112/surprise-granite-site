@@ -29,7 +29,7 @@
       };
 
   // Stripe Configuration
-  const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
+  const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdatW3Hsua7p5EHSwkLa2WLx3YTSACjb9Yv5qoaGNX7pk2TZt5FcjSxRWw1KG1PoEpEkXmuCfr00vbSGkIMu';
   const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
   // Initialize Stripe
