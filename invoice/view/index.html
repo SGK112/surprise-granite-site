@@ -145,8 +145,24 @@
             <div class="total-row" id="paid-row" style="display: none;"><span>Amount Paid</span><span id="amount-paid" style="color: var(--success);">$0.00</span></div>
           </div>
 
+          <div id="deposit-section" style="display: none; background: rgba(249, 203, 0, 0.08); border: 1px solid rgba(249, 203, 0, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-weight: 600; font-size: 15px;">Deposit Requested</div>
+              <div id="deposit-amount" style="font-size: 22px; font-weight: 700; color: var(--gold-primary);">$0.00</div>
+            </div>
+            <div id="deposit-percent-line" style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
+            <div id="deposit-paid-line" style="display: none; font-size: 13px; color: var(--success); margin-bottom: 8px;"></div>
+            <div style="font-size: 13px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+              <span>Remaining Balance</span>
+              <span id="deposit-balance" style="font-weight: 600;">$0.00</span>
+            </div>
+          </div>
+
           <div class="amount-due-box" id="amount-due-box">
-            <div class="amount-due-label">Amount Due</div>
+            <div>
+              <div class="amount-due-label">Amount Due Now</div>
+              <div id="amount-due-note" style="font-size: 12px; color: var(--text-muted); margin-top: 2px; display: none;"></div>
+            </div>
             <div class="amount-due-value" id="amount-due">$0.00</div>
           </div>
 
@@ -317,8 +333,44 @@
         document.getElementById('amount-paid').textContent = '$' + parseFloat(inv.amount_paid).toFixed(2);
       }
 
-      const amountDue = parseFloat(inv.amount_due || inv.total || 0);
-      document.getElementById('amount-due').textContent = '$' + amountDue.toFixed(2);
+      // Deposit handling
+      const totalAmount = parseFloat(inv.total || 0);
+      const depositRequested = parseFloat(inv.deposit_requested || 0);
+      const depositPaid = parseFloat(inv.deposit_paid || 0);
+      const depositPercent = parseFloat(inv.deposit_percent || 0);
+      const balanceDue = parseFloat(inv.balance_due || 0);
+      let amountDueNow = totalAmount;
+
+      if (depositRequested > 0) {
+        document.getElementById('deposit-section').style.display = 'block';
+        document.getElementById('deposit-amount').textContent = '$' + depositRequested.toFixed(2);
+
+        if (depositPercent > 0) {
+          const pctLine = document.getElementById('deposit-percent-line');
+          pctLine.style.display = 'block';
+          pctLine.textContent = depositPercent + '% of $' + totalAmount.toFixed(2) + ' total';
+        }
+
+        if (depositPaid > 0) {
+          const paidLine = document.getElementById('deposit-paid-line');
+          paidLine.style.display = 'block';
+          paidLine.textContent = 'Deposit paid: $' + depositPaid.toFixed(2) + (inv.deposit_paid_at ? ' on ' + new Date(inv.deposit_paid_at).toLocaleDateString() : '');
+          // Deposit already paid — amount due is remaining balance
+          amountDueNow = Math.max(0, totalAmount - depositPaid);
+          document.getElementById('deposit-balance').textContent = '$' + amountDueNow.toFixed(2);
+        } else {
+          // Deposit requested but not yet paid — amount due is just the deposit
+          amountDueNow = depositRequested;
+          const remaining = totalAmount - depositRequested;
+          document.getElementById('deposit-balance').textContent = '$' + remaining.toFixed(2);
+          document.getElementById('amount-due-note').style.display = 'block';
+          document.getElementById('amount-due-note').textContent = 'Deposit required — remaining $' + remaining.toFixed(2) + ' due upon completion';
+        }
+      } else {
+        amountDueNow = parseFloat(inv.amount_due || inv.total || 0);
+      }
+
+      document.getElementById('amount-due').textContent = '$' + amountDueNow.toFixed(2);
 
       // Due date display
       if (dueDate) {
@@ -341,10 +393,11 @@
 
       // Pay button
       const payBtn = document.getElementById('btn-pay');
-      if (inv.status === 'paid' || amountDue <= 0) {
+      if (inv.status === 'paid' || amountDueNow <= 0) {
         document.getElementById('amount-due-box').style.background = 'rgba(34, 197, 94, 0.1)';
         document.getElementById('amount-due-box').style.borderColor = 'rgba(34, 197, 94, 0.3)';
         document.getElementById('amount-due').style.color = 'var(--success)';
+        document.getElementById('amount-due-note').style.display = 'none';
         document.getElementById('action-buttons').innerHTML = `
           <div style="text-align: center; color: var(--success); padding: 20px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -357,14 +410,24 @@
         `;
       } else if (inv.stripe_hosted_url) {
         payBtn.href = inv.stripe_hosted_url;
+        payBtn.textContent = depositRequested > 0 && !depositPaid ? 'Pay Deposit $' + amountDueNow.toFixed(2) : 'Pay Now';
       } else {
         // Build pay link to /pay with pre-filled invoice details
         const payParams = new URLSearchParams();
-        payParams.set('amount', Math.round(amountDue * 100));
+        payParams.set('amount', Math.round(amountDueNow * 100));
         payParams.set('email', inv.customer_email || '');
         payParams.set('invoice', inv.invoice_number || '');
-        payParams.set('memo', inv.project_name || 'Invoice Payment');
+        const memo = depositRequested > 0 && !depositPaid
+          ? 'Deposit for ' + (inv.project_name || inv.invoice_number || 'Invoice')
+          : (inv.project_name || 'Invoice Payment');
+        payParams.set('memo', memo);
         payBtn.href = '/pay/?' + payParams.toString();
+        // Update button text for deposit
+        if (depositRequested > 0 && !depositPaid) {
+          payBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            Pay Deposit — $${amountDueNow.toFixed(2)}`;
+        }
       }
     }
 
