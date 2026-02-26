@@ -1009,7 +1009,7 @@
             await duplicateEstimate(item.id);
             break;
           case 'send':
-            sendEstimateEmail(item.id);
+            await sendEstimateEmail(item.id);
             break;
           case 'delete':
             deleteEstimate(item.id);
@@ -1978,7 +1978,7 @@
     // Send reminder for an event
     async function sendEventReminder(eventId) {
       try {
-        const response = await fetch(API_BASE + '/api/calendar/events/' + eventId + '/reminder', {
+        const response = await fetchWithTimeout(API_BASE + '/api/calendar/events/' + eventId + '/reminder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -1997,7 +1997,7 @@
     // Send invoice receipt
     async function sendInvoiceReceipt(invoiceId) {
       try {
-        const response = await fetch(API_BASE + '/api/invoices/' + invoiceId + '/receipt', {
+        const response = await fetchWithTimeout(API_BASE + '/api/invoices/' + invoiceId + '/receipt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -2136,7 +2136,7 @@
       showToast('Sending daily digest...', 'info');
 
       try {
-        const response = await fetch(API_BASE + '/api/email/daily-digest', {
+        const response = await fetchWithTimeout(API_BASE + '/api/email/daily-digest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4140,7 +4140,7 @@
           if (project?.customer_email) {
             // Send en route notification email
             try {
-              await fetch(`${API_BASE}/api/notifications/en-route`, {
+              await fetchWithTimeout(`${API_BASE}/api/notifications/en-route`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -4342,7 +4342,7 @@
 
         // Send email notification via API
         try {
-          await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -4452,7 +4452,7 @@
       }
 
       try {
-        const response = await fetch(API_BASE + '/api/workflow/notify', {
+        const response = await fetchWithTimeout(API_BASE + '/api/workflow/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -5948,7 +5948,7 @@
       btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Sending...';
 
       try {
-        const response = await fetch(API_BASE + '/api/email/send', {
+        const response = await fetchWithTimeout(API_BASE + '/api/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -7215,10 +7215,12 @@
 
         // Check if we're editing an existing lead
         if (editingLeadId) {
-          // Update existing lead - add updated_at timestamp
+          // Update existing lead - add updated_at timestamp and claim ownership
           leadData.updated_at = new Date().toISOString();
+          leadData.user_id = user.id; // Ensure user_id is set (RLS requires it for updates)
           console.log('[SaveLead] Updating lead:', editingLeadId);
 
+          // Try direct Supabase update first
           const { data: updateData, error: updateError } = await supabaseClient
             .from('leads')
             .update(leadData)
@@ -7227,6 +7229,29 @@
             .single();
           data = updateData;
           error = updateError;
+
+          // If RLS blocks the update (unclaimed lead), fall back to API server (service role)
+          if (error) {
+            console.log('[SaveLead] Direct update failed, trying API fallback:', error.message);
+            try {
+              const resp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/leads/' + editingLeadId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(leadData)
+              });
+              const result = await resp.json();
+              if (result.success && result.lead) {
+                data = result.lead;
+                error = null;
+                console.log('[SaveLead] API fallback update succeeded');
+              } else {
+                error = { message: result.error || 'API update failed' };
+              }
+            } catch (apiErr) {
+              console.error('[SaveLead] API fallback also failed:', apiErr);
+              error = { message: 'Update failed: ' + (updateError?.message || apiErr.message) };
+            }
+          }
           console.log('[SaveLead] Update result:', error ? error.message : 'success');
         } else {
           // Insert new lead - add user_id, created_at and form_name
@@ -7569,7 +7594,7 @@
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
-        const response = await fetch(`${API_BASE}/api/email/lead-welcome`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/email/lead-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
@@ -10331,6 +10356,27 @@
     // VoiceNow CRM API for payments, SMS, and advanced features
     const VOICENOW_API = 'https://voiceflow-crm.onrender.com';
 
+    // Fetch with timeout - prevents hanging when Render API is cold-starting
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+      // If caller already provided a signal (custom AbortController), respect it
+      if (options.signal) {
+        return fetch(url, options);
+      }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        return response;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out — the server may be waking up. Please try again in a moment.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     // Reusable API call helper - auto-includes Supabase JWT auth token
     async function apiCall(endpoint, options = {}) {
       // Skip API calls on static dev server (no backend)
@@ -10341,7 +10387,7 @@
 
       const { data: { session } } = await supabaseClient.auth.getSession();
       const token = session?.access_token;
-      return fetch(`${API_URL}${endpoint}`, {
+      return fetchWithTimeout(`${API_URL}${endpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -11633,7 +11679,7 @@
     // Check QuickBooks connection status
     async function checkQuickBooksStatus() {
       try {
-        const response = await fetch(`${API_BASE}/api/quickbooks/status`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/status`, {
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
         const data = await response.json();
@@ -11656,7 +11702,7 @@
     // Connect to QuickBooks
     async function connectQuickBooks() {
       try {
-        const response = await fetch(`${API_BASE}/api/quickbooks/connect`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/connect`, {
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
         const data = await response.json();
@@ -11676,7 +11722,7 @@
       if (!confirm('Are you sure you want to disconnect QuickBooks?')) return;
 
       try {
-        await fetch(`${API_BASE}/api/quickbooks/disconnect`, {
+        await fetchWithTimeout(`${API_BASE}/api/quickbooks/disconnect`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -11697,7 +11743,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE}/api/quickbooks/sync/invoice/${invoiceId}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/sync/invoice/${invoiceId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -11728,7 +11774,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE}/api/quickbooks/sync/estimate/${estimateId}`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/sync/estimate/${estimateId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -11759,7 +11805,7 @@
       }
 
       try {
-        const response = await fetch(API_BASE + '/api/quickbooks/sync/invoices', {
+        const response = await fetchWithTimeout(API_BASE + '/api/quickbooks/sync/invoices', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -11790,7 +11836,7 @@
       }
 
       try {
-        const response = await fetch(API_BASE + '/api/quickbooks/sync/estimates', {
+        const response = await fetchWithTimeout(API_BASE + '/api/quickbooks/sync/estimates', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
@@ -12388,7 +12434,7 @@
         customerCity: document.getElementById('invoice-city')?.value || '',
         customerState: document.getElementById('invoice-state')?.value || '',
         customerZip: document.getElementById('invoice-zip')?.value || '',
-        dueDays: parseInt(document.getElementById('invoice-due-days').value) || 30,
+        dueDays: (() => { const v = parseInt(document.getElementById('invoice-due-days').value); return isNaN(v) ? 30 : v; })(),
         notes: document.getElementById('invoice-notes')?.value || '',
         selectedTemplate: document.querySelector('input[name="invoice-template"]:checked')?.value || 'classic',
         ccMe: document.getElementById('invoice-cc-me')?.checked ?? true,
@@ -16104,7 +16150,7 @@
         const note = document.getElementById('payment-note').value;
 
         // Create payment link via API
-        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/payment-links', {
+        const response = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/payment-links', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -16121,7 +16167,7 @@
         }
 
         // Send email with payment link
-        const emailResponse = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        const emailResponse = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -16275,7 +16321,7 @@
       btn.innerHTML = '<span class="spinner"></span>';
 
       try {
-        const emailResponse = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        const emailResponse = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -16328,7 +16374,7 @@
 
         try {
           // Send SMS via VoiceNow CRM Surprise Granite endpoint
-          const response = await fetch(`${VOICENOW_API}/api/surprise-granite/send-sms`, {
+          const response = await fetchWithTimeout(`${VOICENOW_API}/api/surprise-granite/send-sms`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -17696,7 +17742,7 @@
           try {
             const emailController = new AbortController();
             const emailTimeout = setTimeout(() => emailController.abort(), 10000); // 10 sec timeout
-            await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               signal: emailController.signal,
@@ -17876,7 +17922,7 @@
 
         const approvalUrl = `${window.location.origin}/estimate/view/?token=${token}`;
 
-        await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -17990,7 +18036,7 @@
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
-          const response = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          const response = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
@@ -18514,7 +18560,7 @@
         const token = session.data.session?.access_token;
         if (!token) return;
 
-        const response = await fetch(`${API_BASE}/api/quickbooks/status`, {
+        const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/status`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -21715,7 +21761,7 @@
       const body = document.getElementById('accept-invite-body');
 
       try {
-        const verifyResp = await fetch(API_BASE + '/api/collaboration/invite/verify/' + encodeURIComponent(token));
+        const verifyResp = await fetchWithTimeout(API_BASE + '/api/collaboration/invite/verify/' + encodeURIComponent(token));
         const verifyData = await verifyResp.json();
 
         if (!verifyResp.ok || !verifyData.success) {
@@ -21831,7 +21877,7 @@
 
       try {
         // Verify the token first
-        const verifyResp = await fetch(API_BASE + '/api/collaboration/network/verify/' + encodeURIComponent(token));
+        const verifyResp = await fetchWithTimeout(API_BASE + '/api/collaboration/network/verify/' + encodeURIComponent(token));
         const verifyData = await verifyResp.json();
 
         if (!verifyResp.ok || !verifyData.success) {
@@ -23268,7 +23314,7 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             const token = session?.access_token;
 
-            const emailResp = await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+            const emailResp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -23375,7 +23421,7 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             const token = session?.access_token;
 
-            await fetch('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -23616,7 +23662,7 @@
         if (channel === 'email' && currentChatCollaborator.email) {
           try {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            await fetch('https://surprise-granite-email-api.onrender.com/api/send-collaborator-message', {
+            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-collaborator-message', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -25012,7 +25058,7 @@
             role: participant.role
           };
 
-          await fetch(`${API_BASE}/api/email/workflow-invite`, {
+          await fetchWithTimeout(`${API_BASE}/api/email/workflow-invite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(emailData)
@@ -25035,7 +25081,7 @@
           const date = new Date(firstEvent.start_time);
           const message = `📅 You've been scheduled for ${events.length} event(s) starting ${date.toLocaleDateString()}. Check your email for details.`;
 
-          await fetch(`${API_BASE}/api/sms/send`, {
+          await fetchWithTimeout(`${API_BASE}/api/sms/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -25380,7 +25426,7 @@
         // Send notification to customer if they have email
         if (choice === 'navigate_notify' && currentProfileData.email) {
           try {
-            await fetch(`${API_BASE}/api/notifications/en-route`, {
+            await fetchWithTimeout(`${API_BASE}/api/notifications/en-route`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -31077,7 +31123,7 @@
         // Check API
         document.getElementById('god-api-status').textContent = 'Checking...';
         try {
-          const apiRes = await fetch(`${API_BASE}/api/stripe-status`);
+          const apiRes = await fetchWithTimeout(`${API_BASE}/api/stripe-status`);
           document.getElementById('god-api-status').textContent = apiRes.ok ? 'Online' : 'Error';
           document.getElementById('god-api-status').style.color = apiRes.ok ? 'var(--success)' : 'var(--error)';
         } catch { document.getElementById('god-api-status').textContent = 'Offline'; document.getElementById('god-api-status').style.color = 'var(--error)'; }
@@ -31094,7 +31140,7 @@
         // Check Stripe via API
         document.getElementById('god-stripe-status').textContent = 'Checking...';
         try {
-          const stripeRes = await fetch(`${API_BASE}/api/stripe-status`);
+          const stripeRes = await fetchWithTimeout(`${API_BASE}/api/stripe-status`);
           const stripeData = await stripeRes.json();
           document.getElementById('god-stripe-status').textContent = stripeData.connected ? 'Connected' : 'Error';
           document.getElementById('god-stripe-status').style.color = stripeData.connected ? 'var(--success)' : 'var(--error)';
@@ -31127,7 +31173,7 @@
     async function godSendTestEmail() {
       if (!isGodMode()) return;
       try {
-        const res = await fetch(`${API_BASE}/api/test-email`, {
+        const res = await fetchWithTimeout(`${API_BASE}/api/test-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ to: currentUser.email, subject: 'GOD MODE Test Email', body: 'This is a test email from GOD MODE.' })
@@ -31141,7 +31187,7 @@
       showToast('Shopify sync initiated...', 'info');
       // This would trigger a backend sync
       try {
-        const res = await fetch(`${API_BASE}/api/shopify/sync`, { method: 'POST' });
+        const res = await fetchWithTimeout(`${API_BASE}/api/shopify/sync`, { method: 'POST' });
         showToast(res.ok ? 'Sync complete' : 'Sync failed', res.ok ? 'success' : 'error');
       } catch { showToast('Sync endpoint not available', 'warning'); }
     }

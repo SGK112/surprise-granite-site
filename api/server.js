@@ -3583,11 +3583,21 @@ app.post('/api/calendar/book', leadRateLimiter, async (req, res) => {
       participant_type: 'attendee', response_status: 'accepted'
     }]);
 
-    // Also save as a lead
+    // Also save as a lead (with dedup — check for any existing lead with same email)
     try {
-      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-      const { data: existing } = await supabase.from('leads').select('id').eq('email', email.toLowerCase().trim()).gte('created_at', twoMinAgo).limit(1);
-      if (!existing || existing.length === 0) {
+      const { data: existing } = await supabase.from('leads').select('id, message').eq('email', email.toLowerCase().trim()).order('created_at', { ascending: false }).limit(1);
+      if (existing && existing.length > 0) {
+        // Update existing lead with booking info instead of creating duplicate
+        await supabase.from('leads').update({
+          full_name: name,
+          phone: phone || undefined,
+          project_type: project_type || undefined,
+          message: (existing[0].message ? existing[0].message + '\n\n---\n' : '') + `Appointment: ${date} at ${time}\n${notes || ''}`,
+          updated_at: new Date().toISOString(),
+          raw_data: { event_id: event.id, event_type, address, duration_minutes: duration }
+        }).eq('id', existing[0].id);
+        logger.info('Existing lead updated with calendar booking info');
+      } else {
         await supabase.from('leads').insert([{
           full_name: name,
           email: email.toLowerCase().trim(),
@@ -3599,7 +3609,7 @@ app.post('/api/calendar/book', leadRateLimiter, async (req, res) => {
           status: 'new',
           raw_data: { event_id: event.id, event_type, address, duration_minutes: duration }
         }]);
-        logger.info('Lead saved from calendar booking');
+        logger.info('New lead saved from calendar booking');
       }
     } catch (leadErr) {
       logger.error('Lead save from calendar booking failed:', leadErr.message);
@@ -6033,6 +6043,37 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', authenticateJWT, async (r
 });
 
 // ============ LEAD MANAGEMENT ============
+
+// Update a lead (uses service role to bypass RLS for unclaimed leads)
+app.patch('/api/leads/:id', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { id } = req.params;
+    const updateData = req.body;
+    if (!id || !updateData) return res.status(400).json({ error: 'Missing lead ID or data' });
+
+    // Remove fields that shouldn't be overwritten
+    delete updateData.id;
+    delete updateData.created_at;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('[PATCH /api/leads] Update error:', error.message);
+      return res.status(400).json({ error: error.message });
+    }
+    res.json({ success: true, lead: data });
+  } catch (err) {
+    logger.error('[PATCH /api/leads] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Submit a new lead (from estimate form or booking calendar)
 app.post('/api/leads', leadRateLimiter, async (req, res) => {

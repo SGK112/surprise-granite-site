@@ -1485,15 +1485,48 @@
               raw_data: appointmentDetails
             };
 
-            var response = await fetch(SUPABASE_URL + '/rest/v1/leads', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_ANON_KEY,
-                'Prefer': 'return=minimal'
-              },
-              body: JSON.stringify(leadData)
+            // Check for existing lead with same email (dedup)
+            var existingResp = await fetch(SUPABASE_URL + '/rest/v1/leads?email=eq.' + encodeURIComponent(leadData.email.toLowerCase().trim()) + '&order=created_at.desc&limit=1', {
+              headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
             });
+            var existingLeads = await existingResp.json();
+            var response;
+
+            if (existingLeads && existingLeads.length > 0) {
+              // Update existing lead — merge booking info
+              response = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + existingLeads[0].id, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                  'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                  full_name: leadData.full_name,
+                  first_name: leadData.first_name,
+                  last_name: leadData.last_name,
+                  phone: leadData.phone || existingLeads[0].phone,
+                  project_type: leadData.project_type || existingLeads[0].project_type,
+                  message: (existingLeads[0].message ? existingLeads[0].message + '\n\n---\n' : '') + leadData.message,
+                  service_address: leadData.service_address || existingLeads[0].service_address,
+                  zip_code: leadData.zip_code || existingLeads[0].zip_code,
+                  updated_at: new Date().toISOString(),
+                  raw_data: appointmentDetails
+                })
+              });
+            } else {
+              // Insert new lead
+              response = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(leadData)
+              });
+            }
 
             if (!response.ok) {
               throw new Error('Failed to submit booking');

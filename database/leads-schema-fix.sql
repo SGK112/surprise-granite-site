@@ -64,17 +64,19 @@ CREATE POLICY "leads_insert_own" ON public.leads
     auth.uid() IS NOT NULL
   );
 
--- Allow authenticated users to UPDATE their own leads
+-- Allow authenticated users to UPDATE their own leads (including unclaimed website leads)
 CREATE POLICY "leads_update_own" ON public.leads
   FOR UPDATE USING (
     user_id = auth.uid()
     OR assigned_to = auth.uid()
+    OR user_id IS NULL  -- Allow claiming/editing unclaimed website form leads
   );
 
--- Allow authenticated users to DELETE their own leads
+-- Allow authenticated users to DELETE their own leads (including unclaimed)
 CREATE POLICY "leads_delete_own" ON public.leads
   FOR DELETE USING (
     user_id = auth.uid()
+    OR user_id IS NULL
   );
 
 -- Allow public form submissions (for website contact forms)
