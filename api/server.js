@@ -7324,9 +7324,48 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
       validUntil
     } = req.body;
 
+    // Generic email mode: Quick Pay, payment requests, etc. send subject + message + email
+    const { name, email, subject, message, source } = req.body;
+    if (subject && message && (email || to)) {
+      const recipientEmail = email || to;
+      if (!isValidEmail(recipientEmail)) {
+        return res.status(400).json({ error: 'Valid email is required' });
+      }
+      if (!SMTP_USER) {
+        return res.status(500).json({ success: false, error: 'SMTP not configured' });
+      }
+      const companyName = COMPANY.name;
+      const wrappedHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+          <div style="background: #1a1a2e; padding: 30px; text-align: center;">
+            <img src="${COMPANY.logo}" alt="${companyName}" style="height: 50px;" />
+          </div>
+          <div style="padding: 30px 40px;">
+            ${message}
+          </div>
+          <div style="background: #f8f9fa; padding: 20px 40px; text-align: center; font-size: 12px; color: #666;">
+            <p>${companyName} &bull; ${COMPANY.phone}</p>
+          </div>
+        </div>
+      `;
+      try {
+        await transporter.sendMail({
+          from: `"${companyName}" <${SMTP_USER}>`,
+          to: recipientEmail,
+          subject: subject,
+          html: wrappedHtml
+        });
+        logger.info(`Generic email sent to ${recipientEmail} (source: ${source || 'unknown'})`);
+        return res.json({ success: true, message: 'Email sent' });
+      } catch (emailErr) {
+        logger.error('Generic email send error:', emailErr.message);
+        return res.status(500).json({ success: false, error: 'Failed to send email' });
+      }
+    }
+
     // Normalize field names (accept both formats)
-    const custName = sanitizeString(customer_name || customerName || 'Valued Customer', 200);
-    const custEmail = customer_email || to;
+    const custName = sanitizeString(customer_name || customerName || name || 'Valued Customer', 200);
+    const custEmail = customer_email || to || email;
     const estNumber = estimate_number || estimateNumber;
     const viewUrl = view_url || approvalUrl;
     const projType = sanitizeString(project_type || projectName, 200);
