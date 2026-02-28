@@ -433,11 +433,40 @@
       console.warn('SgCart.addToCart requires variantId for Shopify checkout');
       return false;
     },
-    getCart: () => cart.getItems(),
+    getCart: function() {
+      // Return items in legacy format (name, id, variant, quantity, price, image)
+      return cart.getItems().map(function(item) {
+        return {
+          id: item.id,
+          variantId: item.variantId,
+          name: item.title,
+          price: item.price,
+          image: item.image || '',
+          quantity: item.quantity,
+          variant: item.variantTitle || ''
+        };
+      });
+    },
     getTotal: () => cart.getTotal(),
     getCount: () => cart.getItemCount(),
+    getCartTotals: function() {
+      return { itemCount: cart.getItemCount(), total: cart.getTotal() };
+    },
+    removeFromCart: async function(lineId) {
+      return cart.removeItem(lineId);
+    },
+    updateQuantity: async function(lineId, variant, qty) {
+      if (qty <= 0) {
+        return cart.removeItem(lineId);
+      }
+      return cart.updateQuantity(lineId, qty);
+    },
+    clearCart: () => cart.clear(),
     clear: () => cart.clear(),
-    checkout: () => cart.checkout()
+    checkout: () => cart.checkout(),
+    showNotification: function(msg, type) {
+      console.log('[SgCart]', type + ':', msg);
+    }
   };
 
 })();

@@ -491,60 +491,65 @@
 
   // Render cart drawer items
   function renderCartDrawer() {
-    const cart = window.SgCart ? window.SgCart.getCart() : [];
-    const itemsContainer = document.getElementById('cartDrawerItems');
-    const totalEl = document.getElementById('cartDrawerTotal');
-    const footerEl = document.getElementById('cartDrawerFooter');
+    var cart = window.SgCart ? window.SgCart.getCart() : [];
+    var itemsContainer = document.getElementById('cartDrawerItems');
+    var totalEl = document.getElementById('cartDrawerTotal');
+    var footerEl = document.getElementById('cartDrawerFooter');
+
+    if (!itemsContainer || !totalEl || !footerEl) return;
 
     if (cart.length === 0) {
-      itemsContainer.innerHTML = `
-        <div class="cart-drawer-empty">
-          <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          <p>Your cart is empty</p>
-          <a href="/shop/" style="color: #f9cb00; font-weight: 600;">Start Shopping</a>
-        </div>
-      `;
+      itemsContainer.innerHTML = '<div class="cart-drawer-empty">' +
+        '<svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>' +
+        '<p>Your cart is empty</p>' +
+        '<a href="/marketplace/sinks/" style="color: #f9cb00; font-weight: 600;">Start Shopping</a>' +
+        '</div>';
       footerEl.style.display = 'none';
       return;
     }
 
     footerEl.style.display = 'block';
 
-    itemsContainer.innerHTML = cart.map(item => `
-      <div class="cart-drawer-item">
-        <img src="${item.image || '/images/placeholder.jpg'}" alt="${item.name}" class="cart-drawer-item-img">
-        <div class="cart-drawer-item-info">
-          <div class="cart-drawer-item-name">${item.name}</div>
-          <div class="cart-drawer-item-price">$${item.price.toFixed(2)}</div>
-          <div class="cart-drawer-item-qty">
-            <button onclick="updateDrawerQty('${item.id}', '${item.variant || ''}', ${item.quantity - 1})">-</button>
-            <span>${item.quantity}</span>
-            <button onclick="updateDrawerQty('${item.id}', '${item.variant || ''}', ${item.quantity + 1})">+</button>
-          </div>
-        </div>
-        <button class="cart-drawer-item-remove" onclick="removeDrawerItem('${item.id}', '${item.variant || ''}')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-        </button>
-      </div>
-    `).join('');
+    // Use .id which is the Shopify line ID for update/remove operations
+    itemsContainer.innerHTML = cart.map(function(item) {
+      var safeId = (item.id || '').replace(/'/g, "\\'");
+      var imgSrc = item.image || '/images/placeholder.jpg';
+      var itemName = item.name || 'Product';
+      var price = (typeof item.price === 'number') ? item.price.toFixed(2) : '0.00';
+      return '<div class="cart-drawer-item">' +
+        '<img src="' + imgSrc + '" alt="' + itemName + '" class="cart-drawer-item-img">' +
+        '<div class="cart-drawer-item-info">' +
+          '<div class="cart-drawer-item-name">' + itemName + '</div>' +
+          '<div class="cart-drawer-item-price">$' + price + '</div>' +
+          '<div class="cart-drawer-item-qty">' +
+            '<button onclick="updateDrawerQty(\'' + safeId + '\', \'\', ' + (item.quantity - 1) + ')">-</button>' +
+            '<span>' + item.quantity + '</span>' +
+            '<button onclick="updateDrawerQty(\'' + safeId + '\', \'\', ' + (item.quantity + 1) + ')">+</button>' +
+          '</div>' +
+        '</div>' +
+        '<button class="cart-drawer-item-remove" onclick="removeDrawerItem(\'' + safeId + '\', \'\')">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
+        '</button>' +
+      '</div>';
+    }).join('');
 
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    var total = cart.reduce(function(sum, item) { return sum + (item.price * item.quantity); }, 0);
     totalEl.textContent = '$' + total.toFixed(2);
   }
 
   // Update quantity from drawer
-  window.updateDrawerQty = function(id, variant, qty) {
+  window.updateDrawerQty = async function(lineId, variant, qty) {
     if (window.SgCart) {
-      window.SgCart.updateQuantity(id, variant, qty);
+      await window.SgCart.updateQuantity(lineId, variant, qty);
       renderCartDrawer();
       updateFloatingCount();
     }
   };
 
   // Remove item from drawer
-  window.removeDrawerItem = function(id, variant) {
+  window.removeDrawerItem = async function(lineId, variant) {
     if (window.SgCart) {
-      window.SgCart.removeFromCart(id, variant);
+      await window.SgCart.removeFromCart(lineId);
       renderCartDrawer();
       updateFloatingCount();
     }
@@ -847,7 +852,7 @@
 
   // Initialize
   function init() {
-    // Wait for cart.js to load
+    // Wait for SgCart shim to be available (set by shopify-cart.js)
     if (!window.SgCart) {
       setTimeout(init, 100);
       return;
@@ -860,6 +865,14 @@
     addCartButtonBars();
     interceptShopifyLinks();
     updateFloatingCount();
+
+    // Listen for Shopify cart changes to update drawer and badge
+    if (window.ShopifyCart && window.ShopifyCart.onChange) {
+      window.ShopifyCart.onChange(function() {
+        renderCartDrawer();
+        updateFloatingCount();
+      });
+    }
 
     // Re-run when new products are loaded (for infinite scroll, etc.)
     const observer = new MutationObserver(() => {
