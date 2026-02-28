@@ -17751,12 +17751,10 @@
     }
 
     // AI Room Scanner - always available
+    // Uses the built-in scanner (below) which calls /api/ai/room-scan with proper scan modes
+    // NOT the legacy designer-pro-features.js showPDFImporter which calls the old /api/ai/blueprint endpoint
     function showAIImporter() {
-      if (typeof window.showPDFImporter === 'function') {
-        window.showPDFImporter();
-      } else {
-        showToast('AI Room Scanner loading...', 'info');
-      }
+      showBuiltInAIScanner();
     }
 
     // Generic coming soon modal for restricted features
@@ -17796,7 +17794,7 @@
     // AI ROOM SCANNER - Universal Image to Quote
     // Analyzes room photos, countertops, sketches, and CAD drawings
     // ============================================
-    window.showPDFImporter = function() {
+    function showBuiltInAIScanner() {
       const existing = document.getElementById('pdfImporterModal');
       if (existing) existing.remove();
 
@@ -18904,8 +18902,20 @@
         }
       }
 
-      // Update the canvas
+      // Update the canvas — fitToScreen adjusts pixelsPerFoot for new room dimensions
       elementListDirty = true;
+      if (result.roomUpdated) {
+        const oldPPF = pixelsPerFoot;
+        fitToScreen();
+        // Rescale element pixel positions if scale changed
+        if (pixelsPerFoot !== oldPPF && oldPPF > 0) {
+          const ratio = pixelsPerFoot / oldPPF;
+          elements.forEach(el => {
+            el.x = (el.x || 0) * ratio;
+            el.y = (el.y || 0) * ratio;
+          });
+        }
+      }
       draw();
       calculateQuote();
       saveUndoState();
@@ -60555,11 +60565,15 @@
         const leftWallMat = createWallMaterial(roomDepth, wallHeight);
         const leftWall = createWallWithOpenings(roomDepth, wallHeight, wallThick, leftOpenings, leftWallMat);
         if (leftOpenings.length > 0) {
-          // Shape is in XY (X=depth along wall, Y=height), extrude along Z
-          // Rotate to align: wall runs along Z axis
+          // ExtrudeGeometry: shape in XY, extruded along +Z by wallThick
+          // After rotation.y = PI/2: shape's X axis -> -Z, extrude Z -> +X
+          // So shape spans Z=0 to Z=-roomDepth (back), and X=-wallThick to X=0
           leftWall.rotation.y = Math.PI / 2;
-          leftWall.position.set(0, 0, 0);
+          leftWall.position.set(-wallThick, 0, roomDepth);
         } else {
+          // BoxGeometry(roomDepth, wallHeight, wallThick) has long dimension along X
+          // Rotate 90° so it runs along Z (depth) instead
+          leftWall.rotation.y = Math.PI / 2;
           leftWall.position.set(-wallThick / 2, wallHeight / 2, roomDepth / 2);
         }
         leftWall.receiveShadow = true;
@@ -60574,9 +60588,15 @@
         const rightWallMat = createWallMaterial(roomDepth, wallHeight);
         const rightWall = createWallWithOpenings(roomDepth, wallHeight, wallThick, rightOpenings, rightWallMat);
         if (rightOpenings.length > 0) {
+          // ExtrudeGeometry: shape in XY, extruded along +Z by wallThick
+          // After rotation.y = -PI/2: shape's X axis -> +Z, extrude Z -> -X
+          // So shape spans Z=0 to Z=roomDepth, and X=roomWidth to X=roomWidth+wallThick
           rightWall.rotation.y = -Math.PI / 2;
-          rightWall.position.set(roomWidth, 0, roomDepth);
+          rightWall.position.set(roomWidth + wallThick, 0, 0);
         } else {
+          // BoxGeometry(roomDepth, wallHeight, wallThick) has long dimension along X
+          // Rotate -90° so it runs along Z (depth) instead
+          rightWall.rotation.y = -Math.PI / 2;
           rightWall.position.set(roomWidth + wallThick / 2, wallHeight / 2, roomDepth / 2);
         }
         rightWall.receiveShadow = true;
@@ -62530,6 +62550,14 @@
       roomWidth = (parseInt(document.getElementById('roomWidth').value) || 240) / 12;
       roomDepth = (parseInt(document.getElementById('roomDepth').value) || 192) / 12;
 
+      // Sync rooms array so sidebar and multi-room 3D view stay current
+      const currentRoomObj = rooms.find(r => r.id === currentRoomId);
+      if (currentRoomObj) {
+        currentRoomObj.width = roomWidth;
+        currentRoomObj.depth = roomDepth;
+      }
+      updateRoomList();
+
       // Auto-reposition elements that were against the right or front walls
       const dw = roomWidth - oldWidth;
       const dd = roomDepth - oldDepth;
@@ -64344,8 +64372,10 @@
         if (!confirmed) return;
       }
 
-      // Clear current elements
+      // Clear current elements and walls
       elements.length = 0;
+      walls = walls.filter(w => w.type === 'area'); // Keep area markers, remove walls
+      currentFloorPlan = 'empty';
       elementListDirty = true;
       selectedElement = null;
 
@@ -64355,6 +64385,15 @@
       document.getElementById('roomWidth').value = Math.round(roomWidth * 12);
       document.getElementById('roomDepth').value = Math.round(roomDepth * 12);
       document.getElementById('roomType').value = template.roomType;
+
+      // Sync rooms array so 3D multi-room view and sidebar use correct dimensions
+      const currentRoomObj = rooms.find(r => r.id === currentRoomId);
+      if (currentRoomObj) {
+        currentRoomObj.width = roomWidth;
+        currentRoomObj.depth = roomDepth;
+        currentRoomObj.name = template.name;
+        currentRoomObj.type = template.roomType;
+      }
 
       // IMPORTANT: Fit to screen BEFORE adding elements
       // This sets pixelsPerFoot correctly for the new room size
@@ -64476,8 +64515,12 @@
       updateProperties();
       updateElementList();
       updateItemPicker();
+      updateRoomList();
+      if (typeof renderFloorPlans === 'function') renderFloorPlans();
       draw();
 
+      // Force full 3D rebuild to clear any cached room structure
+      forceFullRebuild3D = true;
       if (currentView === '3d') {
         init3D();
         render3D();
