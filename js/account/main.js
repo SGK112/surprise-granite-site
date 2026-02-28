@@ -7215,30 +7215,56 @@
 
         // Check if we're editing an existing lead
         if (editingLeadId) {
-          // Update existing lead - add updated_at timestamp and claim ownership
+          // Update existing lead - add updated_at timestamp
           leadData.updated_at = new Date().toISOString();
-          leadData.user_id = user.id; // Ensure user_id is set (RLS requires it for updates)
+          leadData.name = leadData.full_name; // Keep name column in sync
           console.log('[SaveLead] Updating lead:', editingLeadId);
 
-          // Try direct Supabase update first
-          const { data: updateData, error: updateError } = await supabaseClient
+          // First try: update with user_id filter (owned leads - RLS-friendly)
+          let updateError = null;
+          let updateData = null;
+
+          const { data: ownedData, error: ownedError } = await supabaseClient
             .from('leads')
             .update(leadData)
             .eq('id', editingLeadId)
-            .select()
-            .single();
+            .eq('user_id', user.id)
+            .select();
+
+          if (!ownedError && ownedData && ownedData.length > 0) {
+            updateData = ownedData[0];
+            console.log('[SaveLead] Direct update succeeded (owned lead)');
+          } else {
+            // Second try: claim and update unclaimed leads (user_id IS NULL)
+            console.log('[SaveLead] Not owned by user, trying to claim...');
+            leadData.user_id = user.id;
+            const { data: claimData, error: claimError } = await supabaseClient
+              .from('leads')
+              .update(leadData)
+              .eq('id', editingLeadId)
+              .select();
+
+            if (!claimError && claimData && claimData.length > 0) {
+              updateData = claimData[0];
+              console.log('[SaveLead] Claim + update succeeded');
+            } else {
+              updateError = claimError || ownedError;
+              console.log('[SaveLead] Direct update failed:', updateError?.message);
+            }
+          }
+
           data = updateData;
           error = updateError;
 
-          // If RLS blocks the update (unclaimed lead), fall back to API server (service role)
-          if (error) {
-            console.log('[SaveLead] Direct update failed, trying API fallback:', error.message);
+          // Only fall back to API if direct Supabase failed (use short 8s timeout)
+          if (error || !data) {
+            console.log('[SaveLead] Trying API fallback...');
             try {
               const resp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/leads/' + editingLeadId, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
-              });
+              }, 8000);
               const result = await resp.json();
               if (result.success && result.lead) {
                 data = result.lead;
@@ -7249,7 +7275,19 @@
               }
             } catch (apiErr) {
               console.error('[SaveLead] API fallback also failed:', apiErr);
-              error = { message: 'Update failed: ' + (updateError?.message || apiErr.message) };
+              // If API fails but we had partial data, just reload from DB
+              const { data: reloadData } = await supabaseClient
+                .from('leads')
+                .select('*')
+                .eq('id', editingLeadId)
+                .single();
+              if (reloadData) {
+                data = reloadData;
+                error = null;
+                console.log('[SaveLead] Reloaded lead from DB after API failure');
+              } else {
+                error = { message: 'Update failed — please try again' };
+              }
             }
           }
           console.log('[SaveLead] Update result:', error ? error.message : 'success');
@@ -7258,6 +7296,7 @@
           leadData.user_id = user.id;
           leadData.created_at = new Date().toISOString();
           leadData.form_name = 'manual-entry';
+          leadData.name = leadData.full_name; // Keep name column in sync
           console.log('[SaveLead] Inserting new lead');
 
           const { data: insertData, error: insertError } = await supabaseClient
@@ -18874,9 +18913,9 @@
             var isPending = i > currentIndex;
             var bgColor = isCompleted ? stage.color : (isCurrent ? stage.color + '33' : 'var(--dark-tertiary)');
             var textColor = isCompleted ? '#fff' : (isCurrent ? stage.color : 'var(--text-muted)');
-            var canAdvance = i === currentIndex + 1;
+            var canClick = i !== currentIndex;
 
-            return '<div class="workflow-stage" onclick="' + (canAdvance ? 'advanceWorkflowStage(\'' + project.id + '\', \'' + stage.key + '\')' : '') + '" style="flex: 1; min-width: 60px; text-align: center; cursor: ' + (canAdvance ? 'pointer' : 'default') + '; opacity: ' + (isPending && !canAdvance ? '0.5' : '1') + '; transition: all 0.2s;" title="' + (canAdvance ? 'Click to advance to ' + stage.label : stage.label) + '">' +
+            return '<div class="workflow-stage" onclick="' + (canClick ? 'setWorkflowStage(\'' + project.id + '\', \'' + stage.key + '\', ' + i + ', ' + currentIndex + ')' : '') + '" style="flex: 1; min-width: 60px; text-align: center; cursor: ' + (canClick ? 'pointer' : 'default') + '; opacity: ' + (isPending ? '0.8' : '1') + '; transition: all 0.2s;" title="' + (canClick ? 'Click to jump to ' + stage.label : stage.label + ' (current)') + '">' +
               '<div style="width: 32px; height: 32px; border-radius: 50%; background: ' + bgColor + '; color: ' + textColor + '; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-size: 14px; border: 2px solid ' + (isCurrent ? stage.color : 'transparent') + '; transition: all 0.2s;">' +
                 (isCompleted ? '✓' : stage.icon) +
               '</div>' +
@@ -18928,6 +18967,165 @@
       } catch (err) {
         console.error('Error advancing workflow:', err);
         showToast(err.message || 'Failed to advance workflow', 'error');
+      }
+    }
+
+    // --- Phase Template Tasks ---
+    const WORKFLOW_PHASE_TASKS = {
+      appointment: [
+        'Confirm measurement appointment',
+        'Measure all surfaces',
+        'Take photos of workspace',
+        'Note edge profiles and details',
+        'Discuss material preferences with customer'
+      ],
+      materials: [
+        'Confirm material selection with customer',
+        'Place material order',
+        'Get delivery ETA from supplier',
+        'Confirm materials received and inspected',
+        'Schedule fabrication'
+      ],
+      installing: [
+        'Confirm installation date with customer',
+        'Verify materials on-site',
+        'Remove old countertops',
+        'Install new countertops',
+        'Sink and faucet cutouts',
+        'Apply sealer',
+        'Final walkthrough with customer',
+        'Collect final payment'
+      ]
+    };
+
+    async function autoCreatePhaseTasks(projectId, stage, userId) {
+      const templates = WORKFLOW_PHASE_TASKS[stage];
+      if (!templates || templates.length === 0) return;
+
+      try {
+        // Get existing tasks for this project to avoid duplicates
+        const { data: existingTasks } = await supabaseClient
+          .from('project_tasks')
+          .select('title')
+          .eq('project_id', projectId);
+
+        const existingTitles = (existingTasks || []).map(t => (t.title || '').toLowerCase().trim());
+
+        // Get highest sort_order
+        const { data: lastTask } = await supabaseClient
+          .from('project_tasks')
+          .select('sort_order')
+          .eq('project_id', projectId)
+          .order('sort_order', { ascending: false })
+          .limit(1);
+
+        let sortOrder = (lastTask && lastTask.length > 0 && lastTask[0].sort_order) ? lastTask[0].sort_order + 1 : 1;
+
+        const newTasks = [];
+        for (const title of templates) {
+          if (!existingTitles.includes(title.toLowerCase().trim())) {
+            newTasks.push({
+              project_id: projectId,
+              user_id: userId,
+              title: title,
+              status: 'pending',
+              sort_order: sortOrder++,
+              created_at: new Date().toISOString()
+            });
+          }
+        }
+
+        if (newTasks.length > 0) {
+          const { error } = await supabaseClient.from('project_tasks').insert(newTasks);
+          if (error) throw error;
+
+          const stageLabel = stage === 'appointment' ? 'Measurement' : stage.charAt(0).toUpperCase() + stage.slice(1);
+          showToast(newTasks.length + ' ' + stageLabel + ' tasks added', 'success');
+        }
+      } catch (err) {
+        console.warn('Could not auto-create phase tasks:', err.message);
+      }
+    }
+
+    async function autoUpdateLeadToWon(projectId, userId) {
+      try {
+        const { data: project } = await supabaseClient
+          .from('projects')
+          .select('lead_id')
+          .eq('id', projectId)
+          .single();
+
+        if (!project || !project.lead_id) return;
+
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: 'won', updated_at: new Date().toISOString() })
+          .eq('id', project.lead_id)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+        console.log('Auto-updated lead to won for project:', projectId);
+      } catch (err) {
+        console.error('Could not auto-update lead to won:', err.message);
+      }
+    }
+
+    async function setWorkflowStage(projectId, stageKey, newIndex, currentIndex) {
+      const stage = WORKFLOW_STAGES.find(s => s.key === stageKey);
+      if (!stage) return;
+
+      const isBackward = newIndex < currentIndex;
+      const direction = isBackward ? 'Move BACKWARD' : 'Advance';
+      let message = direction + ' to "' + stage.label + '" stage?';
+      if (isBackward) {
+        message += '\n\nWarning: This will move the project to an earlier stage.';
+      }
+
+      if (!confirm(message)) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { error } = await supabaseClient
+          .from('projects')
+          .update({
+            workflow_stage: stageKey,
+            status: stage.status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        const isForward = newIndex > currentIndex;
+
+        // Auto-create calendar event for certain stages
+        if (['appointment', 'scheduled', 'installing'].includes(stageKey)) {
+          await autoCreateWorkflowEvent(projectId, stageKey, user.id);
+        }
+
+        // Auto-create phase tasks when advancing (not going backward)
+        if (isForward && WORKFLOW_PHASE_TASKS[stageKey]) {
+          await autoCreatePhaseTasks(projectId, stageKey, user.id);
+        }
+
+        // Auto-update lead to 'won' when reaching deposit stage or beyond (index 4+)
+        if (isForward && newIndex >= 4) {
+          await autoUpdateLeadToWon(projectId, user.id);
+        }
+
+        showToast((isBackward ? 'Moved back to ' : 'Advanced to ') + stage.label, 'success');
+        await loadProjects();
+
+        if (currentProjectId === projectId) {
+          openProjectDetail(projectId);
+        }
+
+      } catch (err) {
+        console.error('Error setting workflow stage:', err);
+        showToast(err.message || 'Failed to update workflow stage', 'error');
       }
     }
 
@@ -18996,6 +19194,251 @@
 
       } catch (err) {
         console.warn('Could not auto-create workflow event:', err.message);
+      }
+    }
+
+    async function editProjectFinancials(projectId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: project } = await supabaseClient
+          .from('projects')
+          .select('contract_amount, cost, deposit_amount, value')
+          .eq('id', projectId)
+          .single();
+
+        if (!project) throw new Error('Project not found');
+
+        const html = `
+          <div style="padding: 20px;">
+            <h3 style="margin: 0 0 16px; color: var(--text-primary);">Edit Financials</h3>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Contract Amount ($)</label>
+              <input type="number" id="fin-contract-amount" step="0.01" min="0" value="${parseFloat(project.contract_amount) || ''}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);" />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Job Cost ($)</label>
+              <input type="number" id="fin-cost" step="0.01" min="0" value="${parseFloat(project.cost) || ''}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);" />
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Required Deposit ($)</label>
+              <input type="number" id="fin-deposit-amount" step="0.01" min="0" value="${parseFloat(project.deposit_amount) || ''}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);" />
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="document.getElementById('financials-modal-overlay').remove()" class="btn-modern ghost" style="flex: 1;">Cancel</button>
+              <button onclick="saveProjectFinancials('${projectId}')" class="btn-modern primary" id="save-financials-btn" style="flex: 1;">Save</button>
+            </div>
+          </div>`;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'financials-modal-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; display: flex; align-items: center; justify-content: center;';
+        overlay.innerHTML = '<div style="background: var(--dark-surface); border-radius: 16px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--dark-border);">' + html + '</div>';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+      } catch (err) {
+        console.error('Error opening financials editor:', err);
+        showToast('Failed to load financials', 'error');
+      }
+    }
+
+    async function saveProjectFinancials(projectId) {
+      const btn = document.getElementById('save-financials-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const contractAmount = parseFloat(document.getElementById('fin-contract-amount').value) || 0;
+        const cost = parseFloat(document.getElementById('fin-cost').value) || 0;
+        const depositAmount = parseFloat(document.getElementById('fin-deposit-amount').value) || 0;
+
+        // Get current project to calculate balance
+        const { data: project } = await supabaseClient
+          .from('projects')
+          .select('total_paid, deposit_paid')
+          .eq('id', projectId)
+          .single();
+
+        const totalPaid = parseFloat(project?.total_paid) || 0;
+        const balanceDue = contractAmount > 0 ? contractAmount - totalPaid : 0;
+
+        const { error } = await supabaseClient
+          .from('projects')
+          .update({
+            contract_amount: contractAmount,
+            cost: cost,
+            deposit_amount: depositAmount,
+            value: contractAmount || cost, // sync value with contract amount
+            has_deposit: depositAmount > 0,
+            balance_due: balanceDue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        const overlay = document.getElementById('financials-modal-overlay');
+        if (overlay) overlay.remove();
+
+        showToast('Financials updated', 'success');
+        await loadProjects();
+        if (currentProjectId === projectId) {
+          openProjectDetail(projectId);
+        }
+      } catch (err) {
+        console.error('Error saving financials:', err);
+        showToast(err.message || 'Failed to save financials', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Save';
+      }
+    }
+
+    async function recordProjectDeposit(projectId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: project } = await supabaseClient
+          .from('projects')
+          .select('deposit_amount, total_paid, deposit_paid')
+          .eq('id', projectId)
+          .single();
+
+        if (!project) throw new Error('Project not found');
+        if (project.deposit_paid) {
+          showToast('Deposit already recorded', 'info');
+          return;
+        }
+
+        const depositRequired = parseFloat(project.deposit_amount) || 0;
+        const alreadyPaid = parseFloat(project.total_paid) || 0;
+
+        const html = `
+          <div style="padding: 20px;">
+            <h3 style="margin: 0 0 16px; color: var(--text-primary);">Record Deposit Payment</h3>
+            <div style="background: var(--dark-tertiary); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Deposit Required</span>
+                <span style="font-weight: 600; color: #f59e0b;">$${depositRequired.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Already Paid</span>
+                <span style="font-weight: 600; color: #22c55e;">$${alreadyPaid.toLocaleString()}</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Amount Received ($)</label>
+              <input type="number" id="dep-amount" step="0.01" min="0" value="${depositRequired}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);" />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Payment Method</label>
+              <select id="dep-method" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);">
+                <option value="card">Credit/Debit Card</option>
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="transfer">Bank Transfer</option>
+                <option value="venmo">Venmo</option>
+                <option value="zelle">Zelle</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block;">Notes (optional)</label>
+              <input type="text" id="dep-notes" placeholder="e.g. Check #1234" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-tertiary); color: var(--text-primary);" />
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="document.getElementById('deposit-modal-overlay').remove()" class="btn-modern ghost" style="flex: 1;">Cancel</button>
+              <button onclick="saveProjectDepositPayment('${projectId}')" class="btn-modern primary" id="save-deposit-btn" style="flex: 1;">Record Payment</button>
+            </div>
+          </div>`;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'deposit-modal-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; display: flex; align-items: center; justify-content: center;';
+        overlay.innerHTML = '<div style="background: var(--dark-surface); border-radius: 16px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--dark-border);">' + html + '</div>';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+      } catch (err) {
+        console.error('Error opening deposit modal:', err);
+        showToast('Failed to load deposit info', 'error');
+      }
+    }
+
+    async function saveProjectDepositPayment(projectId) {
+      const btn = document.getElementById('save-deposit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Recording...';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const amount = parseFloat(document.getElementById('dep-amount').value);
+        if (!amount || amount <= 0) throw new Error('Enter a valid amount');
+
+        const method = document.getElementById('dep-method').value;
+        const notes = document.getElementById('dep-notes').value.trim();
+
+        // Get current project data
+        const { data: project } = await supabaseClient
+          .from('projects')
+          .select('contract_amount, total_paid, deposit_amount')
+          .eq('id', projectId)
+          .single();
+
+        const currentTotalPaid = parseFloat(project?.total_paid) || 0;
+        const newTotalPaid = currentTotalPaid + amount;
+        const contractAmount = parseFloat(project?.contract_amount) || 0;
+        const newBalance = contractAmount > 0 ? contractAmount - newTotalPaid : 0;
+        const now = new Date().toISOString();
+
+        const { error } = await supabaseClient
+          .from('projects')
+          .update({
+            deposit_paid: true,
+            deposit_paid_at: now,
+            total_paid: newTotalPaid,
+            balance_due: Math.max(0, newBalance),
+            updated_at: now
+          })
+          .eq('id', projectId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Log activity
+        try {
+          await supabaseClient.from('project_activity').insert({
+            project_id: projectId,
+            user_id: user.id,
+            type: 'payment',
+            description: 'Deposit payment of $' + amount.toLocaleString() + ' received via ' + method + (notes ? ' — ' + notes : ''),
+            created_at: now
+          });
+        } catch (actErr) {
+          console.warn('Could not log deposit activity:', actErr.message);
+        }
+
+        // Auto-update linked lead to 'won'
+        await autoUpdateLeadToWon(projectId, user.id);
+
+        const overlay = document.getElementById('deposit-modal-overlay');
+        if (overlay) overlay.remove();
+
+        showToast('Deposit payment of $' + amount.toLocaleString() + ' recorded', 'success');
+        await loadProjects();
+        if (currentProjectId === projectId) {
+          openProjectDetail(projectId);
+        }
+      } catch (err) {
+        console.error('Error recording deposit:', err);
+        showToast(err.message || 'Failed to record deposit', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Record Payment';
       }
     }
 
@@ -19533,6 +19976,8 @@
       document.getElementById('proj-zip').value = project.zip || '';
       document.getElementById('proj-value').value = project.value || '';
       document.getElementById('proj-cost').value = project.cost || '';
+      document.getElementById('proj-contract-amount').value = project.contract_amount || '';
+      document.getElementById('proj-deposit-amount').value = project.deposit_amount || '';
       document.getElementById('proj-start-date').value = project.start_date ? project.start_date.split('T')[0] : '';
       document.getElementById('proj-end-date').value = project.end_date ? project.end_date.split('T')[0] : '';
       document.getElementById('proj-duration').value = project.estimated_duration || '';
@@ -19574,6 +20019,10 @@
         zip: document.getElementById('proj-zip').value.trim() || null,
         value: parseFloat(document.getElementById('proj-value').value) || 0,
         cost: parseFloat(document.getElementById('proj-cost').value) || 0,
+        contract_amount: parseFloat(document.getElementById('proj-contract-amount').value) || 0,
+        deposit_amount: parseFloat(document.getElementById('proj-deposit-amount').value) || 0,
+        has_deposit: (parseFloat(document.getElementById('proj-deposit-amount').value) || 0) > 0,
+        balance_due: Math.max(0, (parseFloat(document.getElementById('proj-contract-amount').value) || 0) - (parseFloat(document.getElementById('proj-value').value) || 0)),
         start_date: document.getElementById('proj-start-date').value || null,
         end_date: document.getElementById('proj-end-date').value || null,
         estimated_duration: parseInt(document.getElementById('proj-duration').value) || null,
@@ -19842,7 +20291,14 @@
               ` : ''}
             </div>
             <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
-              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Financials</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Financials</div>
+                <button onclick="editProjectFinancials('${project.id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;">Edit</button>
+              </div>
+              ${parseFloat(project.contract_amount) ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Contract Amount</span>
+                <span style="font-weight: 600; color: var(--gold-primary);">$${parseFloat(project.contract_amount).toLocaleString()}</span>
+              </div>` : ''}
               <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                 <span style="font-size: 12px; color: var(--text-secondary);">Value</span>
                 <span style="font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>
@@ -19855,6 +20311,29 @@
                 <span style="font-size: 12px; color: var(--text-secondary);">Profit</span>
                 <span style="font-weight: 600; color: ${profit >= 0 ? '#22c55e' : '#ef4444'};">$${profit.toLocaleString()}</span>
               </div>
+              ${parseFloat(project.deposit_amount) ? `
+              <div style="border-top: 1px solid var(--dark-border); padding-top: 4px; margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">Deposit Required</span>
+                  <span style="font-weight: 600; color: #f59e0b;">$${parseFloat(project.deposit_amount).toLocaleString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">Deposit Status</span>
+                  <span style="font-weight: 600; color: ${project.deposit_paid ? '#22c55e' : '#f59e0b'};">${project.deposit_paid ? 'Paid' + (project.deposit_paid_at ? ' (' + new Date(project.deposit_paid_at).toLocaleDateString() + ')' : '') : 'Pending'}</span>
+                </div>
+              </div>` : ''}
+              ${parseFloat(project.total_paid) ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Total Paid</span>
+                <span style="font-weight: 600; color: #22c55e;">$${parseFloat(project.total_paid).toLocaleString()}</span>
+              </div>` : ''}
+              ${parseFloat(project.balance_due) ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Balance Due</span>
+                <span style="font-weight: 600; color: #ef4444;">$${parseFloat(project.balance_due).toLocaleString()}</span>
+              </div>` : ''}
+              ${parseFloat(project.deposit_amount) && !project.deposit_paid ? `
+              <button onclick="recordProjectDeposit('${project.id}')" class="btn-modern primary" style="width: 100%; margin-top: 8px; font-size: 12px; padding: 8px;">
+                💰 Record Deposit Payment
+              </button>` : ''}
             </div>
           </div>
 
