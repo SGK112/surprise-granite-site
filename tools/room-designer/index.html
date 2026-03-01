@@ -43560,7 +43560,10 @@
       const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'sink-base-apron',
                             'corner-cabinet', 'lazy-susan', 'blind-corner', 'filler', 'scribe',
-                            'microwave-cabinet', 'fridge-cabinet'];
+                            'microwave-cabinet', 'fridge-cabinet',
+                            'vanity-24', 'vanity-30', 'vanity-36', 'vanity-48', 'vanity-60', 'vanity-72',
+                            'vanity-double-60', 'vanity-double-72', 'vanity-double-84',
+                            'vanity-hishers-96', 'vanity-hishers-108'];
 
       let bestHeight = STD_BASE_CAB_HEIGHT; // Default fallback
 
@@ -48610,7 +48613,7 @@
 
           // For decorative edges, inset the main body front by the full slab thickness
           // so the edge profile geometry fills the gap exactly (no overlap)
-          const edgeInset = skipEdgeProfile ? 0 : effectiveH;
+          const edgeInset = 0; // Always full-depth body; edge profiles overlay on front face
 
           // Main slab body - full size for flat/square/eased, or front-inset for decorative edges
           // Use polygon shape when shapeModifications exist, ExtrudeGeometry when sinks present
@@ -48684,7 +48687,7 @@
               frontEdge.position.set(
                 frontEdgeLen / 2 + frontEdgePosX,
                 -effectiveH / 2,
-                slabD / 2 - effectiveH + slabOffsetZ
+                slabD / 2 + slabOffsetZ
               );
               frontEdge.castShadow = true;
               group.add(frontEdge);
@@ -48747,7 +48750,7 @@
               backEdgeMesh.position.set(
                 -backEdgeLen / 2 + backEdgePosX,
                 -effectiveH / 2,
-                -slabD / 2 + effectiveH + slabOffsetZ
+                -slabD / 2 + slabOffsetZ
               );
               backEdgeMesh.castShadow = true;
               group.add(backEdgeMesh);
@@ -62919,30 +62922,52 @@
         width: 18,
         depth: 16,
         elements: [
-          // === BACK WALL (y=0) - Extended double vanity with tower ===
-          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 1.75, label: 'Vanity', rotation: 0 },
-          { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 1.75, label: 'Vanity', rotation: 0 },
-          { type: 'tall-cabinet', x: 4, y: 0, width: 1.5, height: 1.75, label: 'Tower', rotation: 0 },
-          { type: 'base-cabinet', x: 5.5, y: 0, width: 2, height: 1.75, label: 'Vanity', rotation: 0 },
-          { type: 'base-cabinet', x: 7.5, y: 0, width: 2, height: 1.75, label: 'Vanity', rotation: 0 },
-          { type: 'countertop', x: -0.08, y: -0.04, width: 4.16, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.08, overhangRight: 0.08 },
-          { type: 'countertop', x: 5.42, y: -0.04, width: 4.16, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.08, overhangRight: 0.08 },
-          { type: 'sink', x: 0.75, y: 0.2, width: 1.5, height: 1.2, label: 'His Sink', rotation: 0 },
-          { type: 'sink', x: 6.25, y: 0.2, width: 1.5, height: 1.2, label: 'Her Sink', rotation: 0 },
-          { type: 'mirror', x: 0.25, y: 0, width: 3.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          { type: 'mirror', x: 5.75, y: 0, width: 3.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          { type: 'backsplash', x: 0, y: 0, width: 9.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
-          // === RIGHT WALL - Toilet (15" min clearance from back wall)
-          { type: 'toilet', x: 16.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+          // === BACK WALL (y=0) - His vanity + tower + Her vanity ===
+          { type: 'vanity-36', x: 0, y: 0, width: 3, height: 1.75, label: 'His Vanity 36"', rotation: 0 },
+          { type: 'tall-cabinet', x: 3, y: 0, width: 1.5, height: 1.75, label: 'Tower', rotation: 0 },
+          { type: 'vanity-36', x: 4.5, y: 0, width: 3, height: 1.75, label: 'Her Vanity 36"', rotation: 0 },
+          // His countertop (over his vanity)
+          { type: 'countertop', x: -0.125, y: -0.04, width: 3.25, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Her countertop (over her vanity)
+          { type: 'countertop', x: 4.375, y: -0.04, width: 3.25, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Sinks centered on each vanity
+          { type: 'sink', x: 0.75, y: 0.25, width: 1.5, height: 1.2, label: 'His Sink', rotation: 0 },
+          { type: 'sink', x: 5.25, y: 0.25, width: 1.5, height: 1.2, label: 'Her Sink', rotation: 0 },
+          // Mirrors centered above each vanity
+          { type: 'mirror', x: 0.25, y: 0, width: 2.5, height: 0.15, label: 'His Mirror', rotation: 0 },
+          { type: 'mirror', x: 4.75, y: 0, width: 2.5, height: 0.15, label: 'Her Mirror', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 7.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+
           // === LEFT WALL - Soaking tub ===
           { type: 'bathtub', x: 0, y: 5, width: 2.7, height: 5, label: 'Soaking Tub', rotation: 270 },
-          // === RIGHT SIDE - Walk-in shower ===
-          { type: 'shower-pan', x: 14, y: 4, width: 4, height: 4, label: 'Walk-in Shower', rotation: 0 },
-          { type: 'shower-wall', x: 14, y: 4, width: 0.25, height: 4, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-curb', x: 16, y: 6.5, width: 2, height: 1.25, label: 'Bench', rotation: 90 },
-          { type: 'shower-niche', x: 17.5, y: 4.5, width: 0.5, height: 2, label: 'Niche', rotation: 90 },
-          // === BACK WALL - Linen closet ===
-          { type: 'tall-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Linen Closet', rotation: 0 },
+
+          // === RIGHT WALL - Toilet (15" clearance from back wall) ===
+          { type: 'toilet', x: 16.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
+
+          // === RIGHT SIDE - 4×4 Walk-in shower enclosure ===
+          // Shower pan (floor)
+          { type: 'shower-pan', x: 14, y: 5, width: 4, height: 4, label: 'Walk-in Shower', rotation: 0 },
+          // Back wall (against room back-right)
+          { type: 'shower-wall', x: 14, y: 5, width: 4, height: 0.25, label: 'Shower Back Wall', rotation: 0 },
+          // Right wall (against room right wall)
+          { type: 'shower-wall', x: 17.75, y: 5, width: 0.25, height: 4, label: 'Shower Right Wall', rotation: 0 },
+          // Left wall (partition)
+          { type: 'shower-wall', x: 14, y: 5, width: 0.25, height: 4, label: 'Shower Left Wall', rotation: 0 },
+          // Glass door at front entry
+          { type: 'shower-door', x: 14.25, y: 8.85, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
+          { type: 'shower-glass', x: 16.75, y: 8.85, width: 1, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          // Curb at entry
+          { type: 'shower-curb', x: 14.25, y: 8.75, width: 3.5, height: 0.35, label: 'Shower Curb', rotation: 0 },
+          // Bench (back-right corner)
+          { type: 'shower-bench', x: 16, y: 5.25, width: 2, height: 1.5, label: 'Bench', rotation: 0 },
+          // Niche (in right wall)
+          { type: 'shower-niche', x: 17.5, y: 7, width: 0.5, height: 1.5, label: 'Niche', rotation: 90 },
+
+          // === Linen closet (back wall, right of vanities) ===
+          { type: 'tall-cabinet', x: 9, y: 0, width: 2, height: 2, label: 'Linen Closet', rotation: 0 },
+
+          // === Entry door ===
+          { type: 'door', x: 8.75, y: 15.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'bathroom-half': {
@@ -62951,16 +62976,19 @@
         width: 10,
         depth: 8,
         elements: [
-          // === BACK WALL (y=0) - Vanity ===
-          { type: 'base-cabinet', x: 0, y: 0, width: 2.5, height: 1.75, label: 'Vanity', rotation: 0 },
-          { type: 'countertop', x: -0.08, y: -0.04, width: 2.66, height: 1.875, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.08, overhangRight: 0.08 },
-          { type: 'sink', x: 0.3, y: 0.2, width: 1.9, height: 1.2, label: 'Sink', rotation: 0 },
-          { type: 'mirror', x: 0.25, y: 0, width: 2, height: 0.15, label: 'Mirror', rotation: 0 },
-          // === Backsplash behind vanity ===
-          { type: 'backsplash', x: 0, y: 0, width: 2.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
-          // === RIGHT SIDE - Toilet faces into room (rotation: 0) ===
-          // 15" (1.25') clearance from right wall: x = 10 - 1.5 - 1.25 = 7.25
+          // === BACK WALL (y=0) - Vanity 30" ===
+          { type: 'vanity-30', x: 0.5, y: 0, width: 2.5, height: 1.75, label: 'Vanity 30"', rotation: 0 },
+          { type: 'countertop', x: 0.375, y: -0.04, width: 2.75, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 1.0, y: 0.25, width: 1.5, height: 1.2, label: 'Sink', rotation: 0 },
+          { type: 'mirror', x: 0.75, y: 0, width: 2, height: 0.15, label: 'Mirror', rotation: 0 },
+          { type: 'backsplash', x: 0.5, y: 0, width: 2.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+
+          // === RIGHT WALL - Toilet (15" clearance from right wall) ===
+          // x = 10 - 1.5 - 1.25 = 7.25
           { type: 'toilet', x: 7.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
+
+          // === Entry door (front wall) ===
+          { type: 'door', x: 4, y: 7.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'shower-walkin': {
@@ -62969,19 +62997,26 @@
         width: 8,
         depth: 7,
         elements: [
-          // Shower pan
-          { type: 'shower-pan', x: 0, y: 0, width: 8, height: 7, label: 'Shower Pan' },
-          // Shower walls with tile
-          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 7, label: 'Left Wall' },
-          { type: 'shower-wall', x: 0, y: 0, width: 8, height: 0.25, label: 'Back Wall' },
-          { type: 'shower-wall', x: 7.75, y: 0, width: 0.25, height: 7, label: 'Right Wall' },
-          // Bench (corner seat)
-          { type: 'shower-curb', x: 0.25, y: 5.5, width: 1.5, height: 1.25, label: 'Bench' },
-          // Niches (recessed shelving)
-          { type: 'shower-niche', x: 2, y: 0, width: 2, height: 0.5, label: 'Niche 1' },
-          { type: 'shower-niche', x: 2, y: 1, width: 2, height: 0.5, label: 'Niche 2' },
-          // Glass panel at entry (half-wall)
-          { type: 'shower-wall', x: 3, y: 6.75, width: 3, height: 0.25, label: 'Glass Panel' },
+          // === Full-room shower pan ===
+          { type: 'shower-pan', x: 0, y: 0, width: 8, height: 7, label: 'Shower Pan', rotation: 0 },
+
+          // === 3 tiled walls (back, left, right) ===
+          { type: 'shower-wall', x: 0, y: 0, width: 8, height: 0.25, label: 'Back Wall', rotation: 0 },
+          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 7, label: 'Left Wall', rotation: 0 },
+          { type: 'shower-wall', x: 7.75, y: 0, width: 0.25, height: 7, label: 'Right Wall', rotation: 0 },
+
+          // === Entry (front) - glass panel + glass door + curb ===
+          { type: 'shower-glass', x: 0.25, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          { type: 'shower-door', x: 2.75, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
+          { type: 'shower-glass', x: 5.25, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          { type: 'shower-curb', x: 0.25, y: 6.65, width: 7.5, height: 0.35, label: 'Shower Curb', rotation: 0 },
+
+          // === Corner bench (back-left) ===
+          { type: 'shower-bench', x: 0.25, y: 0.25, width: 2, height: 1.5, label: 'Bench', rotation: 0 },
+
+          // === Stacked niches (in back wall) ===
+          { type: 'shower-niche', x: 3.5, y: 0, width: 2, height: 0.5, label: 'Upper Niche', rotation: 0 },
+          { type: 'shower-niche', x: 3.5, y: 0.75, width: 2, height: 0.5, label: 'Lower Niche', rotation: 0 },
         ]
       },
       'closet-walkin': {
@@ -63046,27 +63081,48 @@
         width: 18,
         depth: 16,
         elements: [
-          // === His/Hers Vanity Wall (y=0) ===
-          { type: 'vanity-hishers-108', x: 2.5, y: 0, width: 9, height: 1.75, label: 'Double Vanity 108"', rotation: 0 },
-          { type: 'countertop', x: 2.375, y: -0.04, width: 9.25, height: 1.875, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 3.5, y: 0.2, width: 1.5, height: 1.2, label: 'His Sink', rotation: 0 },
-          { type: 'sink', x: 9, y: 0.2, width: 1.5, height: 1.2, label: 'Hers Sink', rotation: 0 },
-          { type: 'mirror', x: 3, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          { type: 'mirror', x: 8.5, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          // === Linen closet (left wall) ===
-          { type: 'linen-closet', x: 0, y: 0, width: 1.5, height: 2, label: 'Linen Closet', rotation: 270 },
-          // === Toilet alcove (right wall) - 15" clearance from back wall
+          // === BACK WALL (y=0) - His/Hers Vanity 108" with table ===
+          { type: 'vanity-hishers-108', x: 2.5, y: 0, width: 9, height: 1.75, label: 'His/Hers Vanity 108"', rotation: 0 },
+          { type: 'countertop', x: 2.375, y: -0.04, width: 9.25, height: 1.915, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Sinks centered on each half of the vanity (vanity is 9ft wide, center at 7ft)
+          { type: 'sink', x: 3.5, y: 0.25, width: 1.5, height: 1.2, label: 'His Sink', rotation: 0 },
+          { type: 'sink', x: 9, y: 0.25, width: 1.5, height: 1.2, label: 'Her Sink', rotation: 0 },
+          // Mirrors centered above each sink
+          { type: 'mirror', x: 3, y: 0, width: 2.5, height: 0.15, label: 'His Mirror', rotation: 0 },
+          { type: 'mirror', x: 8.5, y: 0, width: 2.5, height: 0.15, label: 'Her Mirror', rotation: 0 },
+          { type: 'backsplash', x: 2.5, y: 0, width: 9, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+
+          // === LEFT WALL - Linen closet ===
+          { type: 'tall-cabinet', x: 0, y: 0, width: 1.5, height: 2, label: 'Linen Closet', rotation: 270 },
+
+          // === RIGHT WALL - Toilet (15" clearance) ===
           { type: 'toilet', x: 16.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
           { type: 'toilet-paper', x: 16, y: 3.5, width: 0.5, height: 0.5, label: 'TP Holder', rotation: 90 },
-          // === Freestanding tub (center) ===
-          { type: 'bathtub-freestanding', x: 5.464, y: 6.667, width: 5.5, height: 2.5, label: 'Freestanding Tub', rotation: 0 },
-          // === Walk-in shower (back right) ===
-          { type: 'shower-base-60', x: 13, y: 13, width: 5, height: 3, label: 'Walk-in Shower', rotation: 0 },
-          { type: 'shower-glass', x: 13, y: 13, width: 3, height: 0.15, label: 'Glass Door', rotation: 0 },
-          { type: 'shower-bench', x: 16, y: 14, width: 2, height: 1.5, label: 'Bench', rotation: 90 },
+
+          // === CENTER - Freestanding tub ===
+          { type: 'bathtub-freestanding', x: 6.25, y: 6.75, width: 5.5, height: 2.5, label: 'Freestanding Tub', rotation: 0 },
+
+          // === BACK-RIGHT - 5×3 Walk-in shower enclosure ===
+          // Shower pan
+          { type: 'shower-pan', x: 13, y: 12.75, width: 5, height: 3.25, label: 'Walk-in Shower', rotation: 0 },
+          // Back wall (against room back wall at y=16)
+          { type: 'shower-wall', x: 13, y: 15.75, width: 5, height: 0.25, label: 'Shower Back Wall', rotation: 0 },
+          // Right wall (against room right wall)
+          { type: 'shower-wall', x: 17.75, y: 12.75, width: 0.25, height: 3.25, label: 'Shower Right Wall', rotation: 0 },
+          // Left wall (partition)
+          { type: 'shower-wall', x: 13, y: 12.75, width: 0.25, height: 3.25, label: 'Shower Left Wall', rotation: 0 },
+          // Glass door at entry (front of shower)
+          { type: 'shower-door', x: 13.25, y: 12.75, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
+          { type: 'shower-glass', x: 15.75, y: 12.75, width: 2, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          // Curb at entry
+          { type: 'shower-curb', x: 13.25, y: 12.6, width: 4.5, height: 0.35, label: 'Shower Curb', rotation: 0 },
+          // Bench (back-right corner)
+          { type: 'shower-bench', x: 16, y: 14, width: 1.75, height: 1.5, label: 'Bench', rotation: 0 },
+          // Niche (in right wall)
           { type: 'shower-niche', x: 17.5, y: 13.5, width: 0.5, height: 1.5, label: 'Niche', rotation: 90 },
-          // === Backsplash behind vanity ===
-          { type: 'backsplash', x: 2.5, y: 0, width: 9, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 }
+
+          // === Entry door ===
+          { type: 'door', x: 8.75, y: 15.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'bathroom-guest': {
@@ -63075,19 +63131,24 @@
         width: 12,
         depth: 10,
         elements: [
-          // === Vanity (back wall) ===
+          // === BACK WALL (y=0) - Vanity 36" ===
           { type: 'vanity-36', x: 0.5, y: 0, width: 3, height: 1.75, label: 'Vanity 36"', rotation: 0 },
-          { type: 'countertop', x: 0.375, y: -0.04, width: 3.25, height: 1.875, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 1.1, y: 0.2, width: 1.8, height: 1.2, label: 'Sink', rotation: 0 },
+          { type: 'countertop', x: 0.375, y: -0.04, width: 3.25, height: 1.915, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 1.25, y: 0.25, width: 1.5, height: 1.2, label: 'Sink', rotation: 0 },
           { type: 'mirror', x: 0.75, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          // === Toilet (right wall) - 15" clearance from back wall
+          { type: 'backsplash', x: 0.5, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+
+          // === RIGHT WALL - Toilet (15" clearance) ===
           { type: 'toilet', x: 10.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
-          // === Alcove tub/shower combo (front wall) ===
+
+          // === FRONT WALL - Alcove tub/shower combo ===
           { type: 'bathtub', x: 1.5, y: 7.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
-          // === Towel bar ===
+
+          // === Towel bar (back wall, right of vanity) ===
           { type: 'towel-bar', x: 5, y: 0, width: 2, height: 0.15, label: 'Towel Bar', rotation: 0 },
-          // === Backsplash behind vanity ===
-          { type: 'backsplash', x: 0.5, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 }
+
+          // === Entry door ===
+          { type: 'door', x: 5.5, y: 9.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'bathroom-powder': {
@@ -63096,14 +63157,18 @@
         width: 8,
         depth: 6,
         elements: [
-          // === Pedestal sink (back wall center) ===
-          { type: 'pedestal-sink', x: 2.8, y: 0, width: 1.5, height: 1.5, label: 'Pedestal Sink', rotation: 0 },
-          { type: 'mirror', x: 2, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
-          // === Toilet (right wall) - faces into room ===
-          // Position: x = roomWidth - toiletDepth = 8 - 1.5 = 6.5
+          // === BACK WALL (y=0) - Pedestal sink centered ===
+          { type: 'pedestal-sink', x: 3.25, y: 0, width: 1.5, height: 1.5, label: 'Pedestal Sink', rotation: 0 },
+          { type: 'mirror', x: 2.75, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
+
+          // === RIGHT WALL - Toilet (15" clearance from right wall) ===
           { type: 'toilet', x: 6.5, y: 1.5, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
-          // === Towel ring (left wall) ===
-          { type: 'towel-bar', x: 0, y: 1.5, width: 1, height: 0.15, label: 'Towel Ring', rotation: 270 }
+
+          // === LEFT WALL - Towel ring ===
+          { type: 'towel-bar', x: 0, y: 1.5, width: 1, height: 0.15, label: 'Towel Ring', rotation: 270 },
+
+          // === Entry door ===
+          { type: 'door', x: 3.5, y: 5.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'bathroom-jack-jill': {
@@ -63112,27 +63177,29 @@
         width: 16,
         depth: 12,
         elements: [
-          // === Vanity A (left wall) - faces right into room ===
-          { type: 'vanity-36', x: 0, y: 0, width: 1.75, height: 3, label: 'Vanity A', rotation: 270 },
-          { type: 'countertop', x: -0.04, y: -0.125, width: 1.875, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
-          { type: 'sink', x: 0.2, y: 0.75, width: 1.3, height: 1.5, label: 'Sink A', rotation: 270 },
-          { type: 'mirror', x: 0, y: 0.25, width: 0.15, height: 2.5, label: 'Mirror A', rotation: 270 },
-          // === Vanity B (right wall) - faces left into room ===
-          // Position: x = roomWidth - vanityDepth = 16 - 1.75 = 14.25
-          { type: 'vanity-36', x: 14.25, y: 0, width: 1.75, height: 3, label: 'Vanity B', rotation: 90 },
-          { type: 'countertop', x: 14.165, y: -0.125, width: 1.875, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'sink', x: 14.5, y: 0.75, width: 1.3, height: 1.5, label: 'Sink B', rotation: 90 },
-          { type: 'mirror', x: 15.85, y: 0.25, width: 0.15, height: 2.5, label: 'Mirror B', rotation: 90 },
-          // === Shared tub/shower (front wall) ===
-          { type: 'bathtub', x: 3.5, y: 9.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
-          // === Toilet (center back wall) - faces into room ===
-          { type: 'toilet', x: 5.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
-          // === Backsplash behind vanities ===
-          { type: 'backsplash', x: 0, y: 0, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash A', rotation: 0 },
-          { type: 'backsplash', x: 15.92, y: 0, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash B', rotation: 0 },
-          // === Doors (Bedroom A left, Bedroom B right) ===
-          { type: 'door', x: 0, y: 10, width: 0.5, height: 2, label: 'Door A', rotation: 270 },
-          { type: 'door', x: 15.5, y: 10, width: 0.5, height: 2, label: 'Door B', rotation: 90 }
+          // === LEFT WALL - Vanity A (faces right into room) ===
+          { type: 'vanity-36', x: 0, y: 1, width: 1.75, height: 3, label: 'Vanity A 36"', rotation: 270 },
+          { type: 'countertop', x: -0.04, y: 0.875, width: 1.915, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          { type: 'sink', x: 0.2, y: 1.75, width: 1.3, height: 1.5, label: 'Sink A', rotation: 270 },
+          { type: 'mirror', x: 0, y: 1.25, width: 0.15, height: 2.5, label: 'Mirror A', rotation: 270 },
+          { type: 'backsplash', x: 0, y: 1, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash A', rotation: 0 },
+
+          // === RIGHT WALL - Vanity B (faces left into room) ===
+          { type: 'vanity-36', x: 14.25, y: 1, width: 1.75, height: 3, label: 'Vanity B 36"', rotation: 90 },
+          { type: 'countertop', x: 14.125, y: 0.875, width: 1.915, height: 3.25, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'sink', x: 14.5, y: 1.75, width: 1.3, height: 1.5, label: 'Sink B', rotation: 90 },
+          { type: 'mirror', x: 15.85, y: 1.25, width: 0.15, height: 2.5, label: 'Mirror B', rotation: 90 },
+          { type: 'backsplash', x: 15.92, y: 1, width: 0.08, height: 3, verticalHeight: 1.5, label: 'Backsplash B', rotation: 0 },
+
+          // === FRONT WALL - Shared tub/shower ===
+          { type: 'bathtub', x: 5.5, y: 9.3, width: 5, height: 2.7, label: 'Tub/Shower', rotation: 0 },
+
+          // === BACK WALL - Toilet (centered, faces into room) ===
+          { type: 'toilet', x: 7.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
+
+          // === Entry doors (one from each bedroom) ===
+          { type: 'door', x: 0, y: 8, width: 0.5, height: 2.5, label: 'Door A', rotation: 270 },
+          { type: 'door', x: 15.5, y: 8, width: 0.5, height: 2.5, label: 'Door B', rotation: 90 },
         ]
       },
       'concept-modern-kitchen-bath': {
@@ -63278,36 +63345,46 @@
         depth: 12,
         elements: [
           // === ADA Requirements ===
-          // - 60" turning radius (5')
-          // - 18" toilet height, 18" from side wall center
+          // - 60" turning radius (5') clear floor space
+          // - 18" from side wall to toilet centerline
           // - 34" max counter height, knee clearance below
-          // - Roll-in shower with bench, grab bars
+          // - Roll-in shower (no curb), bench, grab bars
           // - 36" min door width
 
-          // === BACK WALL (y=0) - ADA Vanity ===
-          // Open underneath for wheelchair access
-          { type: 'base-cabinet', x: 0, y: 0, width: 3.5, height: 1.75, label: 'ADA Vanity', rotation: 0 },
-          { type: 'countertop', x: -0.08, y: -0.04, width: 3.66, height: 1.875, color: '#708090', label: 'Counter (34" H)', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.08, overhangRight: 0.08 },
-          { type: 'sink', x: 0.5, y: 0.2, width: 2.5, height: 1.3, label: 'ADA Sink', rotation: 0 },
-          { type: 'mirror', x: 0.25, y: 0, width: 3, height: 0.15, label: 'Tilted Mirror', rotation: 0 },
-          { type: 'backsplash', x: 0, y: 0, width: 3.5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+          // === BACK WALL (y=0) - ADA Vanity (open underneath) ===
+          { type: 'vanity-36', x: 0.5, y: 0, width: 3, height: 1.75, label: 'ADA Vanity 36"', rotation: 0 },
+          { type: 'countertop', x: 0.375, y: -0.04, width: 3.25, height: 1.915, color: '#708090', label: 'Counter (34"H)', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 1.0, y: 0.25, width: 2, height: 1.2, label: 'ADA Sink', rotation: 0 },
+          { type: 'mirror', x: 0.75, y: 0, width: 2.5, height: 0.15, label: 'Tilted Mirror', rotation: 0 },
+          { type: 'backsplash', x: 0.5, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
 
-          // === LEFT WALL (x=0) - Roll-in Shower ===
-          // 36" x 60" minimum for roll-in, bench inside
-          { type: 'shower-pan', x: 0, y: 3, width: 3, height: 5, label: 'Roll-in Shower', rotation: 0 },
-          { type: 'shower-curb', x: 0.25, y: 6.5, width: 1.5, height: 1.25, label: 'Shower Bench', rotation: 0 },
-          { type: 'shower-niche', x: 0, y: 4, width: 0.5, height: 1.5, label: 'Grab Bar', rotation: 0 },
-          { type: 'shower-niche', x: 2.5, y: 3, width: 0.5, height: 2, label: 'Grab Bar', rotation: 0 },
+          // === LEFT WALL - 4×5 Roll-in shower (no curb for wheelchair access) ===
+          // Shower pan
+          { type: 'shower-pan', x: 0, y: 4, width: 4, height: 5, label: 'Roll-in Shower', rotation: 0 },
+          // Back wall (against room left wall)
+          { type: 'shower-wall', x: 0, y: 4, width: 0.25, height: 5, label: 'Shower Left Wall', rotation: 0 },
+          // Top wall (partition from vanity area)
+          { type: 'shower-wall', x: 0, y: 4, width: 4, height: 0.25, label: 'Shower Top Wall', rotation: 0 },
+          // Bottom wall (partial, with opening for roll-in entry)
+          { type: 'shower-wall', x: 0, y: 8.75, width: 4, height: 0.25, label: 'Shower Bottom Wall', rotation: 0 },
+          // Right wall (partition)
+          { type: 'shower-wall', x: 3.75, y: 4, width: 0.25, height: 5, label: 'Shower Right Wall', rotation: 0 },
+          // Fold-down bench
+          { type: 'shower-bench', x: 0.25, y: 7, width: 1.5, height: 1.5, label: 'Fold-down Bench', rotation: 0 },
+          // Grab bars
+          { type: 'grab-bar-36', x: 0, y: 5, width: 0.3, height: 3, label: 'Vertical Grab Bar', rotation: 270 },
+          { type: 'grab-bar-36', x: 1.5, y: 8.75, width: 2, height: 0.3, label: 'Horizontal Grab Bar', rotation: 0 },
+          // Niche
+          { type: 'shower-niche', x: 0, y: 5, width: 0.5, height: 1.5, label: 'Niche', rotation: 270 },
 
-          // === RIGHT WALL - Toilet with grab bars ===
-          // ADA: 18" (1.5') from side wall to toilet centerline
-          // x = 12 - 0.75 - 1.5 = 9.75 → centerline at 10.5, distance from wall = 1.5ft = 18"
-          { type: 'toilet', x: 9.75, y: 0, width: 1.5, height: 2.5, label: 'ADA Toilet', rotation: 0 },
-          { type: 'shower-niche', x: 11.25, y: 0, width: 0.5, height: 3, label: 'Side Grab Bar', rotation: 0 },
-          { type: 'shower-niche', x: 9.5, y: 0, width: 2, height: 0.3, label: 'Rear Grab Bar', rotation: 0 },
+          // === RIGHT WALL - ADA Toilet with grab bars ===
+          // 18" (1.5') from side wall to toilet centerline
+          { type: 'toilet', x: 10.5, y: 1.25, width: 1.5, height: 2.5, label: 'ADA Toilet', rotation: 90 },
+          { type: 'grab-bar-36', x: 11.7, y: 1, width: 0.3, height: 3, label: 'Side Grab Bar', rotation: 90 },
+          { type: 'grab-bar-24', x: 10.25, y: 0, width: 2, height: 0.3, label: 'Rear Grab Bar', rotation: 0 },
 
-          // === 60" TURNING RADIUS ===
-          // Clear floor space in center of room
+          // === Entry door (36" wide for ADA) ===
+          { type: 'door', x: 5, y: 11.5, width: 0.5, height: 3, label: 'ADA Door 36"', rotation: 180 },
         ]
       },
 
@@ -63317,25 +63394,38 @@
         width: 10,
         depth: 12,
         elements: [
-          // === BACK WALL (y=0) - Single Vanity ===
-          { type: 'base-cabinet', x: 0, y: 0, width: 3, height: 1.75, label: 'Vanity 36"', rotation: 0 },
-          { type: 'countertop', x: -0.08, y: -0.04, width: 3.16, height: 1.875, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.08, overhangRight: 0.08 },
-          { type: 'sink', x: 0.5, y: 0.2, width: 2, height: 1.2, label: 'Sink', rotation: 0 },
-          { type: 'mirror', x: 0.25, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
+          // === BACK WALL (y=0) - Vanity 36" ===
+          { type: 'vanity-36', x: 0.5, y: 0, width: 3, height: 1.75, label: 'Vanity 36"', rotation: 0 },
+          { type: 'countertop', x: 0.375, y: -0.04, width: 3.25, height: 1.915, color: '#d4a574', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 1.25, y: 0.25, width: 1.5, height: 1.2, label: 'Sink', rotation: 0 },
+          { type: 'mirror', x: 0.75, y: 0, width: 2.5, height: 0.15, label: 'Mirror', rotation: 0 },
+          { type: 'backsplash', x: 0.5, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
 
-          // === RIGHT WALL - Toilet ===
+          // === RIGHT WALL - Toilet (15" clearance) ===
           { type: 'toilet', x: 8.5, y: 1.25, width: 1.5, height: 2.3, label: 'Toilet', rotation: 90 },
 
-          // === FRONT WALL (y=9) - Walk-in Shower (no tub) ===
-          { type: 'shower-pan', x: 0, y: 9, width: 6, height: 3, label: 'Shower', rotation: 0 },
-          { type: 'shower-wall', x: 0, y: 9, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-wall', x: 9.75, y: 9, width: 0.25, height: 3, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-niche', x: 2, y: 11.5, width: 2, height: 0.5, label: 'Niche', rotation: 0 },
+          // === FRONT-LEFT - 4×3 Walk-in shower enclosure ===
+          // Shower pan
+          { type: 'shower-pan', x: 0, y: 9, width: 4, height: 3, label: 'Walk-in Shower', rotation: 0 },
+          // Back wall (against room front wall at y=12)
+          { type: 'shower-wall', x: 0, y: 11.75, width: 4, height: 0.25, label: 'Shower Back Wall', rotation: 0 },
+          // Left wall (against room left wall)
+          { type: 'shower-wall', x: 0, y: 9, width: 0.25, height: 3, label: 'Shower Left Wall', rotation: 0 },
+          // Right wall (partition)
+          { type: 'shower-wall', x: 3.75, y: 9, width: 0.25, height: 3, label: 'Shower Right Wall', rotation: 0 },
+          // Glass door at entry (top of shower)
+          { type: 'shower-door', x: 0.25, y: 9, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
+          { type: 'shower-glass', x: 2.75, y: 9, width: 1, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          // Curb at entry
+          { type: 'shower-curb', x: 0.25, y: 9, width: 3.5, height: 0.35, label: 'Shower Curb', rotation: 0 },
+          // Niche (in back wall)
+          { type: 'shower-niche', x: 1, y: 11.5, width: 2, height: 0.5, label: 'Niche', rotation: 0 },
 
-          // === LINEN STORAGE ===
-          { type: 'tall-cabinet', x: 8, y: 0, width: 2, height: 1, label: 'Linen', rotation: 0 },
-          // === Backsplash behind vanity ===
-          { type: 'backsplash', x: 0, y: 0, width: 3, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+          // === LINEN STORAGE (back wall, right side) ===
+          { type: 'tall-cabinet', x: 5, y: 0, width: 2, height: 1.5, label: 'Linen Closet', rotation: 0 },
+
+          // === Entry door ===
+          { type: 'door', x: 5, y: 11.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
 
