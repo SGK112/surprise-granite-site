@@ -13815,19 +13815,25 @@
             </div>
             <div class="input-group">
               <label class="input-label">Width</label>
-              <input type="text" class="input-field" id="roomWidth" value='240"' placeholder='e.g. 240" or 20&apos;' onchange="updateRoom()">
+              <input type="text" class="input-field" id="roomWidth" value='240"' placeholder='e.g. 240" or 20&apos;' onchange="updateRoom()" style="width:55%">
+              <span class="dimension-display" id="roomWidthDisplay" style="font-size:11px;color:#aaa;margin-left:4px">20'-0"</span>
             </div>
             <div class="input-group">
               <label class="input-label">Depth</label>
-              <input type="text" class="input-field" id="roomDepth" value='192"' placeholder='e.g. 192" or 16&apos;' onchange="updateRoom()">
+              <input type="text" class="input-field" id="roomDepth" value='192"' placeholder='e.g. 192" or 16&apos;' onchange="updateRoom()" style="width:55%">
+              <span class="dimension-display" id="roomDepthDisplay" style="font-size:11px;color:#aaa;margin-left:4px">16'-0"</span>
             </div>
             <div class="input-group">
-              <label class="input-label">Ceiling (in)</label>
+              <label class="input-label">Area</label>
+              <span id="roomAreaDisplay" style="font-size:12px;color:#ddd;padding:4px 0">320 sq ft</span>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Ceiling</label>
               <select class="input-field" id="roomHeight" onchange="updateRoomHeight()">
-                <option value="8" selected>96" Standard</option>
-                <option value="9">108" Raised</option>
-                <option value="10">120" High</option>
-                <option value="12">144" Vaulted</option>
+                <option value="8" selected>8' (96")</option>
+                <option value="9">9' (108")</option>
+                <option value="10">10' (120")</option>
+                <option value="12">12' (144")</option>
               </select>
             </div>
             <div class="input-group">
@@ -13901,7 +13907,11 @@
           </div>
           <div class="panel-content">
           <div class="room-templates-grid">
-            <button class="template-btn" onclick="loadRoomTemplate('kitchen-l')" title="L-shaped kitchen 16x14 with island">
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-10x10')" title="NKBA industry standard 10x10 L-kitchen" style="border:1px solid var(--gold)">
+              <span class="template-icon">⭐</span>
+              <span class="template-name">10×10 Standard</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-l')" title="L-shaped kitchen 20x18 with island">
               <span class="template-icon">🍳</span>
               <span class="template-name">L-Kitchen</span>
             </button>
@@ -15328,6 +15338,9 @@
       <div class="modal-body" style="padding: 20px;">
         <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 16px;">Select a template to load a preset room layout</p>
         <div class="room-templates-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-10x10'); closeModal('templateModal');" title="NKBA 10x10 standard" style="border:1px solid var(--gold)">
+            <span class="template-icon">⭐</span><span class="template-name">10×10 Standard</span>
+          </button>
           <button class="template-btn" onclick="loadRoomTemplate('kitchen-l'); closeModal('templateModal');" title="L-shaped kitchen">
             <span class="template-icon">🍳</span><span class="template-name">L-Kitchen</span>
           </button>
@@ -22079,12 +22092,14 @@
     }
 
     // ===== MEASUREMENT FORMATTING =====
-    // Format feet (decimal) to inches-fractions string
-    // Supports 1/16" precision - displays everything in inches
+    // Format feet (decimal) to readable dimension string
+    // Shows feet'-inches" for values >= 12", just inches" for smaller
     function formatDimension(feet, showFractions = true) {
-      const totalInches = feet * 12;
-      const wholeInches = Math.floor(totalInches);
-      const fractionalInches = totalInches - wholeInches;
+      const totalInches = Math.round(feet * 12 * 16) / 16; // round to 1/16"
+      const wholeFeet = Math.floor(totalInches / 12);
+      const remainingInches = totalInches - (wholeFeet * 12);
+      const wholeRemaining = Math.floor(remainingInches);
+      const fractionalInches = remainingInches - wholeRemaining;
 
       // Convert to 16ths for fraction display
       const sixteenths = Math.round(fractionalInches * 16);
@@ -22093,7 +22108,6 @@
       let fractionStr = '';
       if (sixteenths > 0 && showFractions) {
         if (sixteenths === 16) {
-          // Round up to next inch
           return formatDimension(feet + (1/192), showFractions);
         } else if (sixteenths === 8) {
           fractionStr = '½';
@@ -22102,16 +22116,18 @@
         } else if (sixteenths === 12) {
           fractionStr = '¾';
         } else if (sixteenths % 2 === 0) {
-          // Can simplify to eighths
           fractionStr = `${sixteenths/2}/8`;
         } else {
           fractionStr = `${sixteenths}/16`;
         }
       }
 
-      // Build output string - always in inches
-      if (wholeInches > 0 || fractionStr) {
-        return `${wholeInches}${fractionStr}"`;
+      // Build output: feet'-inches" for >= 12", just inches" for smaller
+      if (wholeFeet > 0) {
+        const inchPart = wholeRemaining > 0 || fractionStr ? `${wholeRemaining}${fractionStr}"` : '0"';
+        return `${wholeFeet}'-${inchPart}`;
+      } else if (wholeRemaining > 0 || fractionStr) {
+        return `${wholeRemaining}${fractionStr}"`;
       } else {
         return '0"';
       }
@@ -26684,6 +26700,14 @@
       setupEventListeners();
       setupDragDrop();
       fitToScreen();
+
+      // Initialize room dimension displays
+      const rwInit = document.getElementById('roomWidthDisplay');
+      const rdInit = document.getElementById('roomDepthDisplay');
+      const raInit = document.getElementById('roomAreaDisplay');
+      if (rwInit) rwInit.textContent = formatDimension(roomWidth);
+      if (rdInit) rdInit.textContent = formatDimension(roomDepth);
+      if (raInit) raInit.textContent = (roomWidth * roomDepth).toFixed(0) + ' sq ft';
 
       // Check for special URL parameters (share links, approval links)
       const urlParams = new URLSearchParams(window.location.search);
@@ -62565,9 +62589,15 @@
       // Clamp to reasonable range (8ft - 100ft)
       roomWidth = Math.max(8, Math.min(100, roomWidth));
       roomDepth = Math.max(8, Math.min(100, roomDepth));
-      // Update input display with " mark
+      // Update input display with " mark and feet'-inches" display
       document.getElementById('roomWidth').value = Math.round(roomWidth * 12) + '"';
       document.getElementById('roomDepth').value = Math.round(roomDepth * 12) + '"';
+      const rwDisp = document.getElementById('roomWidthDisplay');
+      const rdDisp = document.getElementById('roomDepthDisplay');
+      const raDisp = document.getElementById('roomAreaDisplay');
+      if (rwDisp) rwDisp.textContent = formatDimension(roomWidth);
+      if (rdDisp) rdDisp.textContent = formatDimension(roomDepth);
+      if (raDisp) raDisp.textContent = (roomWidth * roomDepth).toFixed(0) + ' sq ft';
 
       // Sync rooms array so sidebar and multi-room 3D view stay current
       const currentRoomObj = rooms.find(r => r.id === currentRoomId);
@@ -63311,6 +63341,50 @@
       },
 
       // ========== NEW TEMPLATES ==========
+
+      'kitchen-10x10': {
+        name: '10×10 Standard Kitchen (NKBA)',
+        roomType: 'kitchen',
+        width: 10,     // 120" — industry standard for cabinet pricing
+        depth: 10,     // 120" — L-shaped layout
+        elements: [
+          // =====================================================
+          //  NKBA INDUSTRY STANDARD 10×10 L-SHAPED KITCHEN
+          //  Used by Home Depot, Lowe's, and all cabinet mfrs
+          //  for pricing comparison. ~100 sq ft.
+          // =====================================================
+
+          // === BACK WALL (y=0) — Blind corner + base cabs + sink base ===
+          { type: 'blind-corner', x: 0, y: 0, width: 2, height: 2, label: 'Blind Corner 42"', rotation: 0 },
+          { type: 'base-cabinet', x: 2, y: 0, width: 1.5, height: 2, label: 'Base 18"', rotation: 0 },
+          { type: 'sink-base', x: 3.5, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 6.5, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 8.5, y: 0, width: 2, height: 2, label: 'Dishwasher 24"', rotation: 0 },
+          // Back wall countertop
+          { type: 'countertop', x: -0.125, y: -0.04, width: 10.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 3.75, y: 0.12, width: 2.5, height: 1.75, label: 'Sink 30"', rotation: 0 },
+          // Back wall uppers
+          { type: 'wall-cabinet', x: 2, y: 0, width: 1.5, height: 1, label: 'Upper 18"', rotation: 0 },
+          { type: 'wall-cabinet', x: 3.5, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 6.5, y: 0, width: 2, height: 1, label: 'Upper 24"', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 10, height: 0.08, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+
+          // === LEFT WALL (x=0) — Fridge + range + base ===
+          { type: 'refrigerator', x: 0, y: 2, width: 2.5, height: 3, label: 'Fridge 36"', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 5, width: 2, height: 1.5, label: 'Base 18"', rotation: 270 },
+          { type: 'range', x: 0, y: 6.5, width: 2, height: 2.5, label: 'Range 30"', rotation: 270 },
+          { type: 'range-hood', x: 0, y: 6.75, width: 1.5, height: 2, label: 'Hood 30"', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 9, width: 2, height: 1, label: 'Base 12"', rotation: 270 },
+          // Left wall countertop (beside fridge down to range, and past range)
+          { type: 'countertop', x: -0.04, y: 4.875, width: 2.165, height: 1.25, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          { type: 'countertop', x: -0.04, y: 8.875, width: 2.165, height: 1.25, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          // Left wall uppers
+          { type: 'wall-cabinet', x: 0, y: 5, width: 1, height: 1.5, label: 'Upper 18"', rotation: 270 },
+          { type: 'wall-cabinet', x: 0, y: 9, width: 1, height: 1, label: 'Upper 12"', rotation: 270 },
+          { type: 'wall-cabinet', x: 0, y: 2, width: 1, height: 3, label: 'Above Fridge', rotation: 270 },
+          { type: 'backsplash', x: 0, y: 5, width: 0.08, height: 5, verticalHeight: 1.5, label: 'Backsplash', rotation: 0 },
+        ]
+      },
 
       'kitchen-compact': {
         name: 'Compact/Studio Kitchen',
@@ -64549,6 +64623,13 @@
       roomDepth = template.depth;
       document.getElementById('roomWidth').value = Math.round(roomWidth * 12) + '"';
       document.getElementById('roomDepth').value = Math.round(roomDepth * 12) + '"';
+      // Update feet/area displays
+      const rwD = document.getElementById('roomWidthDisplay');
+      const rdD = document.getElementById('roomDepthDisplay');
+      const raD = document.getElementById('roomAreaDisplay');
+      if (rwD) rwD.textContent = formatDimension(roomWidth);
+      if (rdD) rdD.textContent = formatDimension(roomDepth);
+      if (raD) raD.textContent = (roomWidth * roomDepth).toFixed(0) + ' sq ft';
       document.getElementById('roomType').value = template.roomType;
 
       // Sync rooms array so 3D multi-room view and sidebar use correct dimensions
@@ -64986,25 +65067,24 @@
 
         document.getElementById('propType').textContent = selectedElement.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         document.getElementById('propLabel').value = selectedElement.label || '';
-        // Show inches value in input — display with " mark so user knows it's inches
-        const fmtInches = (ft) => {
-          const inches = ft * 12;
-          const rounded = Math.round(inches * 100) / 100;
+        // Show dimension in input field as total inches (what parseDimension expects)
+        const fmtInputInches = (ft) => {
+          const totalInches = ft * 12;
+          const rounded = Math.round(totalInches * 16) / 16; // 1/16" precision
           const str = rounded.toFixed(2).replace(/\.?0+$/, '');
           return str + '"';
         };
-        document.getElementById('propWidth').value = fmtInches(selectedElement.width);
+        document.getElementById('propWidth').value = fmtInputInches(selectedElement.width);
         // Depth (2D height / 3D depth)
         const depthInput = document.getElementById('propDepth');
-        if (depthInput) depthInput.value = fmtInches(selectedElement.height);
+        if (depthInput) depthInput.value = fmtInputInches(selectedElement.height);
         // 3D Height (vertical dimension)
         const height3DInput = document.getElementById('prop3DHeight');
         if (height3DInput) {
-          // Use custom actualHeight if set, otherwise get default from type
           const current3DHeight = selectedElement.actualHeight || get3DHeight(selectedElement);
-          height3DInput.value = fmtInches(current3DHeight);
+          height3DInput.value = fmtInputInches(current3DHeight);
         }
-        // Show formatted inches display (with fractions)
+        // Show formatted feet'-inches" display beside each input
         const widthDisplay = document.getElementById('propWidthDisplay');
         const depthDisplay = document.getElementById('propDepthDisplay');
         const height3DDisplay = document.getElementById('prop3DHeightDisplay');
