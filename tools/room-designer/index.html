@@ -62992,31 +62992,41 @@
         ]
       },
       'shower-walkin': {
-        name: 'Walk-in Shower',
+        name: 'Tile Shower Room',
         roomType: 'shower',
-        width: 8,
-        depth: 7,
+        width: 5,     // 60" wide (standard) — resize to 3ft, 4ft, 6ft, 8ft etc.
+        depth: 4,     // 48" deep (standard) — resize to 3ft, 4ft, 5ft, 6ft etc.
         elements: [
-          // === Full-room shower pan ===
-          { type: 'shower-pan', x: 0, y: 0, width: 8, height: 7, label: 'Shower Pan', rotation: 0 },
+          // =====================================================
+          //  TILE SHOWER ROOM — Standard 60"×48" (5ft × 4ft)
+          //  Customize: resize room, swap/delete elements below
+          //  Common pan sizes: 36×36, 48×36, 48×48, 60×36, 60×48
+          // =====================================================
 
-          // === 3 tiled walls (back, left, right) ===
-          { type: 'shower-wall', x: 0, y: 0, width: 8, height: 0.25, label: 'Back Wall', rotation: 0 },
-          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 7, label: 'Left Wall', rotation: 0 },
-          { type: 'shower-wall', x: 7.75, y: 0, width: 0.25, height: 7, label: 'Right Wall', rotation: 0 },
+          // --- PAN (floor) — covers full room ---
+          { type: 'shower-pan', x: 0, y: 0, width: 5, height: 4, label: 'Shower Pan 60×48', rotation: 0 },
 
-          // === Entry (front) - glass panel + glass door + curb ===
-          { type: 'shower-glass', x: 0.25, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-door', x: 2.75, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
-          { type: 'shower-glass', x: 5.25, y: 6.85, width: 2.5, height: 0.15, label: 'Glass Panel', rotation: 0 },
-          { type: 'shower-curb', x: 0.25, y: 6.65, width: 7.5, height: 0.35, label: 'Shower Curb', rotation: 0 },
+          // --- TILE/STONE WALLS (3 sides) ---
+          // Back wall (tile or stone slab — change color/label to match material)
+          { type: 'shower-wall', x: 0, y: 0, width: 5, height: 0.25, label: 'Back Wall (Tile)', rotation: 0 },
+          // Left wall
+          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 4, label: 'Left Wall (Tile)', rotation: 0 },
+          // Right wall
+          { type: 'shower-wall', x: 4.75, y: 0, width: 0.25, height: 4, label: 'Right Wall (Tile)', rotation: 0 },
 
-          // === Corner bench (back-left) ===
-          { type: 'shower-bench', x: 0.25, y: 0.25, width: 2, height: 1.5, label: 'Bench', rotation: 0 },
+          // --- ENTRY (front) — glass + door + curb ---
+          // Glass panel (fixed)
+          { type: 'shower-glass', x: 0.25, y: 3.85, width: 1.75, height: 0.15, label: 'Glass Panel', rotation: 0 },
+          // Glass door (swings open)
+          { type: 'shower-door', x: 2, y: 3.85, width: 2.5, height: 0.15, label: 'Glass Door', rotation: 0 },
+          // Curb at threshold (delete for curbless/zero-entry)
+          { type: 'shower-curb', x: 0.25, y: 3.65, width: 4.5, height: 0.35, label: 'Curb', rotation: 0 },
 
-          // === Stacked niches (in back wall) ===
-          { type: 'shower-niche', x: 3.5, y: 0, width: 2, height: 0.5, label: 'Upper Niche', rotation: 0 },
-          { type: 'shower-niche', x: 3.5, y: 0.75, width: 2, height: 0.5, label: 'Lower Niche', rotation: 0 },
+          // --- CORNER BENCH (back-right) — delete or move as needed ---
+          { type: 'shower-bench', x: 3.25, y: 0.25, width: 1.5, height: 1.5, label: 'Corner Bench', rotation: 0 },
+
+          // --- NICHES (in back wall) — add/remove/reposition ---
+          { type: 'shower-niche', x: 1, y: 0, width: 1.5, height: 0.5, label: 'Niche', rotation: 0 },
         ]
       },
       'closet-walkin': {
