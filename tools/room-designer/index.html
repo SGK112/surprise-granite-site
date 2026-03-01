@@ -13937,9 +13937,13 @@
               <span class="template-icon">🚽</span>
               <span class="template-name">Half Bath</span>
             </button>
-            <button class="template-btn" onclick="loadRoomTemplate('shower-walkin')" title="Walk-in shower with bench">
+            <button class="template-btn" onclick="loadRoomTemplate('shower-walkin')" title="Tile shower room — customize size and elements">
               <span class="template-icon">🚿</span>
-              <span class="template-name">Walk-in Shower</span>
+              <span class="template-name">Tile Shower</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('bathroom-compact-shower')" title="Compact inline bath: shower + toilet + double vanity">
+              <span class="template-icon">🛁</span>
+              <span class="template-name">Compact Bath</span>
             </button>
             <button class="template-btn" onclick="loadRoomTemplate('closet-walkin')" title="Walk-in closet with shelving">
               <span class="template-icon">👔</span>
@@ -15351,8 +15355,11 @@
           <button class="template-btn" onclick="loadRoomTemplate('bathroom-half'); closeModal('templateModal');" title="Half bathroom">
             <span class="template-icon">🚽</span><span class="template-name">Half Bath</span>
           </button>
-          <button class="template-btn" onclick="loadRoomTemplate('shower-walkin'); closeModal('templateModal');" title="Walk-in shower">
-            <span class="template-icon">🚿</span><span class="template-name">Walk-in Shower</span>
+          <button class="template-btn" onclick="loadRoomTemplate('shower-walkin'); closeModal('templateModal');" title="Tile shower room">
+            <span class="template-icon">🚿</span><span class="template-name">Tile Shower</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-compact-shower'); closeModal('templateModal');" title="Compact bath: shower + toilet + double vanity">
+            <span class="template-icon">🚿</span><span class="template-name">Compact Bath</span>
           </button>
           <button class="template-btn" onclick="loadRoomTemplate('closet-walkin'); closeModal('templateModal');" title="Walk-in closet">
             <span class="template-icon">👔</span><span class="template-name">Walk-in Closet</span>
@@ -63036,6 +63043,55 @@
 
           // --- NICHES (in back wall) — add/remove/reposition ---
           { type: 'shower-niche', x: 1, y: 0, width: 1.5, height: 0.5, label: 'Niche', rotation: 0 },
+        ]
+      },
+      'bathroom-compact-shower': {
+        name: 'Compact Bath w/ Shower',
+        roomType: 'bathroom',
+        width: 12,    // 144" (12ft) — narrow inline layout
+        depth: 6,     // 72" (6ft) — shallow room
+        elements: [
+          // =============================================================
+          //  COMPACT INLINE BATHROOM — 12ft × 6ft
+          //  Back wall (left→right): Shower | Toilet | Double Vanity
+          //  Shower entry: pony wall (36"H) + glass on top + glass door
+          //  Delete/move any element to customize
+          // =============================================================
+
+          // --- SHOWER (back-left corner, 3ft × 4ft = 36"×48") ---
+          // Shower pan
+          { type: 'shower-pan', x: 0, y: 0, width: 3, height: 4, label: 'Shower Pan 36×48', rotation: 0 },
+          // Back wall (tile — against room back wall)
+          { type: 'shower-wall', x: 0, y: 0, width: 3, height: 0.25, label: 'Back Wall (Tile)', rotation: 0 },
+          // Left wall (tile — against room left wall)
+          { type: 'shower-wall', x: 0, y: 0, width: 0.25, height: 4, label: 'Left Wall (Tile)', rotation: 0 },
+          // Right partition wall (tile — separates shower from toilet)
+          { type: 'shower-wall', x: 2.75, y: 0, width: 0.25, height: 4, label: 'Right Wall (Tile)', rotation: 0 },
+          // Pony wall at entry (36"H half wall — glass sits on top)
+          { type: 'pony-wall', x: 0.25, y: 3.75, width: 1.25, height: 0.5, label: 'Pony Wall 36"H', rotation: 0, wallHeight: 3 },
+          // Glass panel on top of pony wall
+          { type: 'shower-glass', x: 0.25, y: 3.75, width: 1.25, height: 0.15, label: 'Glass on Pony Wall', rotation: 0 },
+          // Glass door (opens into bathroom)
+          { type: 'shower-door', x: 1.5, y: 3.75, width: 2, height: 0.15, label: 'Glass Door', rotation: 0 },
+          // Curb at entry (delete for curbless)
+          { type: 'shower-curb', x: 0.25, y: 3.6, width: 2.5, height: 0.35, label: 'Curb', rotation: 0 },
+          // Niche (in back wall)
+          { type: 'shower-niche', x: 0.75, y: 0, width: 1.5, height: 0.5, label: 'Niche', rotation: 0 },
+
+          // --- TOILET (center, right of shower, 15" clearance from partition) ---
+          { type: 'toilet', x: 4.25, y: 0, width: 1.5, height: 2.3, label: 'Toilet', rotation: 0 },
+
+          // --- DOUBLE VANITY 60" (back-right, against back wall) ---
+          { type: 'vanity-double-60', x: 7, y: 0, width: 5, height: 1.75, label: 'Double Vanity 60"', rotation: 0 },
+          { type: 'countertop', x: 6.875, y: -0.04, width: 5.25, height: 1.915, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 7.75, y: 0.25, width: 1.5, height: 1.2, label: 'Sink 1', rotation: 0 },
+          { type: 'sink', x: 10.25, y: 0.25, width: 1.5, height: 1.2, label: 'Sink 2', rotation: 0 },
+          { type: 'mirror', x: 7.5, y: 0, width: 2, height: 0.15, label: 'Mirror 1', rotation: 0 },
+          { type: 'mirror', x: 10, y: 0, width: 2, height: 0.15, label: 'Mirror 2', rotation: 0 },
+          { type: 'backsplash', x: 7, y: 0, width: 5, height: 0.08, verticalHeight: 1.5, label: 'Vanity Backsplash', rotation: 0 },
+
+          // --- ENTRY DOOR ---
+          { type: 'door', x: 5, y: 5.5, width: 0.5, height: 2.5, label: 'Entry Door', rotation: 180 },
         ]
       },
       'closet-walkin': {
