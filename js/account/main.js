@@ -7186,29 +7186,33 @@
         const userMessage = document.getElementById('new-lead-message').value.trim() || '';
         const fullMessage = userMessage + appointmentInfo;
 
+        const zipVal = document.getElementById('new-lead-zip').value.trim() || null;
+
+        // Core lead data — only columns guaranteed in base leads table
         const leadData = {
+          name: fullName,
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
           email: email,
           phone: phone,
           project_type: projectType,
-          zip_code: document.getElementById('new-lead-zip').value.trim() || null,
+          zip: zipVal,
           message: fullMessage || null,
           source: document.getElementById('new-lead-source').value,
           status: document.getElementById('new-lead-status').value,
-          // Address fields
-          billing_address: billingAddress,
-          service_address: serviceAddress,
-          address_same: addressSame,
-          // Appointment data in raw_data
           raw_data: hasAppointment ? {
-            appointment: {
-              date: apptDate,
-              time: apptTime,
-              type: apptType
-            }
-          } : null
+            appointment: { date: apptDate, time: apptTime, type: apptType },
+            billing_address: billingAddress,
+            service_address: serviceAddress,
+            address_same: addressSame,
+            zip_code: zipVal
+          } : {
+            billing_address: billingAddress,
+            service_address: serviceAddress,
+            address_same: addressSame,
+            zip_code: zipVal
+          }
         };
 
         let data, error;
@@ -7217,7 +7221,6 @@
         if (editingLeadId) {
           // Update existing lead - add updated_at timestamp
           leadData.updated_at = new Date().toISOString();
-          leadData.name = leadData.full_name; // Keep name column in sync
           console.log('[SaveLead] Updating lead:', editingLeadId);
 
           // First try: update with user_id filter (owned leads - RLS-friendly)
@@ -7296,7 +7299,6 @@
           leadData.user_id = user.id;
           leadData.created_at = new Date().toISOString();
           leadData.form_name = 'manual-entry';
-          leadData.name = leadData.full_name; // Keep name column in sync
           console.log('[SaveLead] Inserting new lead');
 
           const { data: insertData, error: insertError } = await supabaseClient
@@ -26866,10 +26868,12 @@
       document.getElementById('new-lead-email').value = lead.email || '';
       document.getElementById('new-lead-phone').value = lead.phone || '';
       document.getElementById('new-lead-project-type').value = lead.project_type || '';
-      document.getElementById('new-lead-zip').value = lead.zip_code || '';
+      // Read zip from base column, fall back to raw_data or legacy zip_code column
+      const rawData = lead.raw_data || {};
+      document.getElementById('new-lead-zip').value = lead.zip || rawData.zip_code || lead.zip_code || '';
 
-      // Populate billing address
-      const billing = lead.billing_address || {};
+      // Populate billing address — check raw_data first (new format), then legacy top-level columns
+      const billing = (rawData.billing_address) || lead.billing_address || {};
       if (typeof billing === 'object') {
         document.getElementById('new-lead-billing-street').value = billing.street || '';
         document.getElementById('new-lead-billing-street2').value = billing.street2 || '';
@@ -26879,12 +26883,13 @@
       }
 
       // Handle service address
-      const addressSame = lead.address_same !== false;
+      const addressSame = rawData.address_same !== undefined ? rawData.address_same !== false : lead.address_same !== false;
       document.getElementById('new-lead-address-same').checked = addressSame;
       toggleNewLeadServiceAddress();
 
-      if (!addressSame && lead.service_address) {
-        const service = lead.service_address;
+      const serviceAddr = (rawData.service_address) || lead.service_address || null;
+      if (!addressSame && serviceAddr) {
+        const service = serviceAddr;
         if (typeof service === 'object') {
           document.getElementById('new-lead-service-street').value = service.street || '';
           document.getElementById('new-lead-service-street2').value = service.street2 || '';

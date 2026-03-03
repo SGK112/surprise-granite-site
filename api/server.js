@@ -6057,9 +6057,25 @@ app.patch('/api/leads/:id', async (req, res) => {
     delete updateData.created_at;
     updateData.updated_at = new Date().toISOString();
 
+    // Only pass columns that exist in the base leads table to prevent schema cache errors
+    const SAFE_LEAD_COLUMNS = [
+      'name', 'full_name', 'first_name', 'last_name', 'homeowner_name',
+      'email', 'homeowner_email', 'phone', 'homeowner_phone',
+      'address', 'project_address', 'city', 'state', 'zip', 'project_zip',
+      'project_type', 'project_budget', 'project_timeline', 'project_details',
+      'description', 'message', 'source', 'source_details', 'form_name',
+      'appointment_date', 'appointment_time', 'appointment_status',
+      'assigned_to', 'claimed_at', 'status', 'lead_price',
+      'notes', 'raw_data', 'expires_at', 'updated_at', 'user_id'
+    ];
+    const safeData = {};
+    for (const key of SAFE_LEAD_COLUMNS) {
+      if (updateData[key] !== undefined) safeData[key] = updateData[key];
+    }
+
     const { data, error } = await supabase
       .from('leads')
-      .update(updateData)
+      .update(safeData)
       .eq('id', id)
       .select()
       .single();
