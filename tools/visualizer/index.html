@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>AI Room Visualizer | See Our Materials In Your Space | Surprise Granite</title>
-  <meta name="description" content="Upload a photo of your kitchen or bathroom and see Surprise Granite countertops, tile, and flooring in your space. AI-powered visualization tool.">
+  <meta name="description" content="Upload a photo of your kitchen or bathroom and see Surprise Granite countertops, tile, and flooring in your space. AI-powered multi-surface visualization tool.">
   <link rel="canonical" href="https://surprisegranite.com/tools/visualizer/">
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
 
@@ -31,11 +31,7 @@
       --gradient-gold: linear-gradient(135deg, #f9cb00 0%, #ffdf4a 50%, #e5b800 100%);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -45,7 +41,7 @@
       min-height: 100vh;
     }
 
-    /* Hero Header */
+    /* Hero */
     .visualizer-hero {
       position: relative;
       padding: 120px 20px 50px;
@@ -53,562 +49,249 @@
       background: linear-gradient(180deg, var(--sg-dark) 0%, var(--sg-darker) 100%);
       border-bottom: 1px solid var(--border);
     }
-
-    .hero-content {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
+    .hero-content { max-width: 800px; margin: 0 auto; }
     .hero-logo {
-      width: 60px;
-      height: 60px;
-      background: var(--gradient-gold);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 28px;
+      width: 60px; height: 60px; background: var(--gradient-gold);
+      border-radius: 16px; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-size: 28px;
     }
-
     .hero-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(28px, 5vw, 42px);
-      font-weight: 700;
-      margin-bottom: 12px;
+      font-size: clamp(28px, 5vw, 42px); font-weight: 700; margin-bottom: 12px;
+    }
+    .hero-title .gold { color: var(--sg-gold); }
+    .hero-subtitle { font-size: 16px; color: var(--text-secondary); max-width: 550px; margin: 0 auto; }
+
+    /* Main */
+    .visualizer-main { max-width: 1200px; margin: 0 auto; padding: 40px 20px 100px; }
+
+    /* Steps */
+    .steps-indicator { display: flex; justify-content: center; gap: 8px; margin-bottom: 40px; flex-wrap: wrap; }
+    .step-pill {
+      display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+      background: var(--sg-surface); border-radius: 30px; font-size: 13px; font-weight: 600;
+      color: var(--text-muted); border: 1px solid var(--border); transition: all 0.3s;
+    }
+    .step-pill.active { background: rgba(249, 203, 0, 0.15); border-color: var(--sg-gold); color: var(--sg-gold); }
+    .step-pill.completed { background: rgba(34, 197, 94, 0.15); border-color: #22c55e; color: #22c55e; }
+    .step-num {
+      width: 24px; height: 24px; background: currentColor; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 12px; color: #000;
     }
 
-    .hero-title .gold {
-      color: var(--sg-gold);
+    /* Section card */
+    .section-card {
+      background: var(--sg-surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 24px;
     }
-
-    .hero-subtitle {
-      font-size: 16px;
-      color: var(--text-secondary);
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    /* Main Container */
-    .visualizer-main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px 100px;
-    }
-
-    /* Step Indicator */
-    .steps-indicator {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 40px;
-    }
-
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      background: var(--sg-surface);
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
-
-    .step.active {
-      background: rgba(249, 203, 0, 0.15);
-      border-color: var(--sg-gold);
-      color: var(--sg-gold);
-    }
-
-    .step.completed {
-      background: rgba(34, 197, 94, 0.15);
-      border-color: #22c55e;
-      color: #22c55e;
-    }
-
-    .step-number {
-      width: 24px;
-      height: 24px;
-      background: currentColor;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #000;
-    }
-
-    /* Upload Section */
-    .upload-section {
-      margin-bottom: 40px;
-    }
-
     .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      font-size: 18px; font-weight: 700; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
     }
-
     .section-title .icon {
-      width: 32px;
-      height: 32px;
-      background: var(--gradient-gold);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
+      width: 32px; height: 32px; background: var(--gradient-gold); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
     }
 
+    /* Upload */
     .upload-area {
-      border: 2px dashed var(--border);
-      border-radius: 16px;
-      padding: 50px 30px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: var(--sg-surface);
+      border: 2px dashed var(--border); border-radius: 16px; padding: 50px 30px;
+      text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(255,255,255,0.02);
     }
-
-    .upload-area:hover,
-    .upload-area.dragover {
-      border-color: var(--sg-gold);
-      background: rgba(249, 203, 0, 0.05);
-    }
-
-    .upload-area.has-image {
-      padding: 20px;
-      border-style: solid;
-      border-color: var(--sg-gold);
-    }
-
-    .upload-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-
-    .upload-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .upload-subtitle {
-      color: var(--text-muted);
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-
+    .upload-area:hover, .upload-area.dragover { border-color: var(--sg-gold); background: rgba(249, 203, 0, 0.05); }
+    .upload-area.has-image { padding: 20px; border-style: solid; border-color: var(--sg-gold); }
+    .upload-icon { font-size: 48px; margin-bottom: 16px; }
+    .upload-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .upload-subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
     .upload-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--gradient-gold);
-      color: #000;
-      padding: 12px 28px;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 14px;
-      border: none;
-      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--gradient-gold); color: #000; padding: 12px 28px;
+      border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer;
     }
-
+    .camera-btn {
+      display: none; margin-left: 8px;
+      background: var(--sg-surface); color: var(--text-primary); padding: 12px 20px;
+      border-radius: 10px; font-weight: 600; font-size: 14px; border: 1px solid var(--border); cursor: pointer;
+    }
+    @media (max-width: 768px) { .camera-btn { display: inline-flex; } }
     .upload-input { display: none; }
-
-    .upload-preview {
-      display: none;
-      max-width: 100%;
-      max-height: 400px;
-      border-radius: 12px;
-    }
-
+    .upload-preview { display: none; max-width: 100%; max-height: 400px; border-radius: 12px; }
     .upload-area.has-image .upload-preview { display: block; margin: 0 auto; }
     .upload-area.has-image .upload-placeholder { display: none; }
-
     .change-photo-btn {
-      display: none;
-      margin-top: 16px;
-      background: var(--sg-surface);
-      color: var(--text-primary);
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      border: 1px solid var(--border);
-      cursor: pointer;
+      display: none; margin-top: 16px; background: var(--sg-surface); color: var(--text-primary);
+      padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px;
+      border: 1px solid var(--border); cursor: pointer;
     }
-
     .upload-area.has-image .change-photo-btn { display: inline-flex; }
 
-    /* Material Selection */
-    .material-section {
-      margin-bottom: 40px;
-    }
-
-    .category-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-    }
-
-    .category-tab {
-      flex-shrink: 0;
-      padding: 10px 24px;
-      background: var(--sg-surface);
-      border: 1px solid var(--border);
-      border-radius: 25px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .category-tab:hover {
-      border-color: var(--sg-gold);
-      color: var(--text-primary);
-    }
-
-    .category-tab.active {
-      background: var(--sg-gold);
-      border-color: var(--sg-gold);
-      color: #000;
-    }
-
-    /* Product Grid */
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-      max-height: 400px;
-      overflow-y: auto;
-      padding: 4px;
-    }
-
-    .product-card {
-      background: var(--sg-surface);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .product-card:hover {
-      border-color: rgba(249, 203, 0, 0.5);
-      transform: translateY(-2px);
-    }
-
-    .product-card.selected {
-      border-color: var(--sg-gold);
-      box-shadow: 0 0 20px rgba(249, 203, 0, 0.3);
-    }
-
-    .product-image {
-      width: 100%;
-      height: 100px;
-      object-fit: cover;
-      background: #2a2a3a;
-    }
-
-    .product-info {
-      padding: 10px;
-    }
-
-    .product-name {
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .product-type {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    /* Room Type Selection */
-    .room-section {
-      margin-bottom: 40px;
-    }
-
-    .room-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px;
-    }
-
+    /* Room grid */
+    .room-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
     .room-card {
-      background: var(--sg-surface);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      background: var(--sg-surface); border: 2px solid var(--border); border-radius: 12px;
+      padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.2s;
+    }
+    .room-card:hover { border-color: rgba(249, 203, 0, 0.5); }
+    .room-card.selected { border-color: var(--sg-gold); background: rgba(249, 203, 0, 0.1); }
+    .room-icon { font-size: 28px; margin-bottom: 6px; }
+    .room-name { font-size: 12px; font-weight: 600; }
+
+    /* Two column layout for steps 2-4 */
+    .two-col { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 768px) { .two-col { grid-template-columns: 3fr 2fr; } }
+
+    /* Surface cards */
+    .surface-card {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; margin-bottom: 10px;
+    }
+    .surface-card:hover { border-color: var(--sg-gold); }
+    .surface-card.swapped { border-color: #22c55e; background: rgba(34, 197, 94, 0.06); }
+    .surface-label { font-size: 14px; font-weight: 600; }
+    .surface-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .surface-action {
+      padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .surface-action.select { background: rgba(249, 203, 0, 0.15); color: var(--sg-gold); }
+    .surface-action.change { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+
+    /* Material modal */
+    .material-modal {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+      align-items: flex-end; justify-content: center;
+    }
+    .material-modal.active { display: flex; }
+    @media (min-width: 640px) { .material-modal.active { align-items: center; } }
+    .material-panel {
+      background: var(--sg-surface); border: 1px solid var(--border);
+      width: 100%; max-width: 640px; max-height: 85vh; display: flex; flex-direction: column;
+      border-radius: 16px 16px 0 0;
+    }
+    @media (min-width: 640px) { .material-panel { border-radius: 16px; } }
+    .material-header { padding: 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .material-body { padding: 16px; overflow-y: auto; flex: 1; }
+    .material-footer { padding: 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+    /* Search + filter */
+    .search-input {
+      width: 100%; padding: 10px 12px 10px 36px; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 14px; outline: none; transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--sg-gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .filter-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; margin-top: 12px; }
+    .filter-chip {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: rgba(255,255,255,0.3); }
+    .filter-chip.active { background: rgba(249, 203, 0, 0.15); border-color: var(--sg-gold); color: var(--sg-gold); }
+    .color-dot {
+      display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2); vertical-align: middle; margin-right: 4px;
     }
 
-    .room-card:hover {
-      border-color: rgba(249, 203, 0, 0.5);
+    /* Product grid */
+    .product-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px; max-height: none;
     }
-
-    .room-card.selected {
-      border-color: var(--sg-gold);
-      background: rgba(249, 203, 0, 0.1);
+    .product-card {
+      background: rgba(255,255,255,0.04); border: 2px solid var(--border);
+      border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s;
     }
+    .product-card:hover { border-color: rgba(249, 203, 0, 0.5); transform: translateY(-2px); }
+    .product-card.selected { border-color: var(--sg-gold); box-shadow: 0 0 20px rgba(249, 203, 0, 0.2); }
+    .product-card img { width: 100%; height: 100px; object-fit: cover; background: #2a2a3a; }
+    .product-info { padding: 10px; }
+    .product-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .product-type { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .no-results { text-align: center; color: var(--text-muted); padding: 30px; font-size: 14px; }
 
-    .room-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
+    /* Spinner */
+    .spinner {
+      width: 48px; height: 48px; border: 3px solid var(--sg-surface);
+      border-top-color: var(--sg-gold); border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
     }
-
-    .room-name {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    /* Generate Button */
-    .generate-section {
-      text-align: center;
-      padding: 30px 0;
-    }
-
-    .generate-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--gradient-gold);
-      color: #000;
-      padding: 16px 40px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 16px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .generate-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(249, 203, 0, 0.3);
-    }
-
-    .generate-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Loading Overlay */
-    .loading-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-
-    .loading-overlay.active { display: flex; }
-
-    .loading-content {
-      text-align: center;
-    }
-
-    .loading-spinner {
-      width: 60px;
-      height: 60px;
-      border: 3px solid var(--sg-surface);
-      border-top-color: var(--sg-gold);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 24px;
-    }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .loading-text {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    /* Comparison slider */
+    .comparison-wrap { position: relative; border-radius: 12px; overflow: hidden; user-select: none; touch-action: none; }
+    .comparison-wrap img { display: block; width: 100%; height: auto; }
+    .comparison-after { position: absolute; inset: 0; overflow: hidden; }
+    .comparison-after img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .slider-bar {
+      position: absolute; top: 0; bottom: 0; width: 4px; background: white;
+      cursor: ew-resize; z-index: 10; box-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
-
-    .loading-subtext {
-      color: var(--text-muted);
-      font-size: 14px;
+    .slider-bar::after {
+      content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 36px; height: 36px; border-radius: 50%; background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
+    .comparison-label {
+      position: absolute; top: 12px; padding: 4px 12px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: white; z-index: 5;
+    }
+    .comparison-label.before { left: 12px; }
+    .comparison-label.after { right: 12px; }
 
+    /* Gold button */
+    .btn-gold {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--gradient-gold); color: #000; padding: 14px 32px;
+      border-radius: 12px; font-weight: 700; font-size: 15px; border: none;
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(249, 203, 0, 0.3); }
+    .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--sg-surface); color: var(--text-primary); padding: 12px 24px;
+      border-radius: 10px; font-weight: 600; font-size: 14px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-1px); }
+
+    /* Loading overlay */
+    .loading-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+      z-index: 10001; align-items: center; justify-content: center; flex-direction: column;
+    }
+    .loading-overlay.active { display: flex; }
+    .loading-text { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .loading-subtext { color: var(--text-muted); font-size: 14px; }
     .loading-tips {
-      margin-top: 30px;
-      padding: 20px;
-      background: var(--sg-surface);
-      border-radius: 12px;
-      max-width: 400px;
+      margin-top: 30px; padding: 20px; background: var(--sg-surface);
+      border-radius: 12px; max-width: 400px; text-align: center;
     }
-
-    .loading-tips h4 {
-      color: var(--sg-gold);
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
-
-    .loading-tips p {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    /* Result Section */
-    .result-section {
-      display: none;
-      margin-top: 40px;
-      padding-top: 40px;
-      border-top: 1px solid var(--border);
-    }
-
-    .result-section.active { display: block; }
-
-    .result-header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .result-header h2 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .result-header p {
-      color: var(--text-secondary);
-    }
-
-    .result-image-container {
-      max-width: 800px;
-      margin: 0 auto 30px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    }
-
-    .result-image {
-      width: 100%;
-      display: block;
-    }
-
-    .result-product-info {
-      background: var(--sg-surface);
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .result-product-thumb {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-    }
-
-    .result-product-details h4 {
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
-
-    .result-product-details p {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .result-actions {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    .action-btn.primary {
-      background: var(--gradient-gold);
-      color: #000;
-    }
-
-    .action-btn.secondary {
-      background: var(--sg-surface);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-    }
-
-    .action-btn:hover {
-      transform: translateY(-2px);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .steps-indicator {
-        flex-wrap: wrap;
-      }
-
-      .step {
-        font-size: 11px;
-        padding: 8px 14px;
-      }
-
-      .product-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      .result-actions {
-        flex-direction: column;
-      }
-
-      .action-btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
+    .loading-tips h4 { color: var(--sg-gold); font-size: 13px; margin-bottom: 10px; }
+    .loading-tips p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
 
     /* Footer */
     .visualizer-footer {
-      background: var(--sg-dark);
-      padding: 30px 20px;
-      text-align: center;
+      background: var(--sg-dark); padding: 30px 20px; text-align: center;
       border-top: 1px solid var(--border);
     }
+    .visualizer-footer p { color: var(--text-muted); font-size: 13px; }
+    .visualizer-footer a { color: var(--sg-gold); text-decoration: none; }
 
-    .visualizer-footer p {
-      color: var(--text-muted);
-      font-size: 13px;
-    }
+    /* Fade in */
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    .visualizer-footer a {
-      color: var(--sg-gold);
-      text-decoration: none;
+    /* Hidden utility */
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .step-pill { font-size: 11px; padding: 8px 12px; }
+      .product-grid { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -617,153 +300,201 @@
   <section class="visualizer-hero">
     <div class="hero-content">
       <div class="hero-logo">🏠</div>
-      <h1 class="hero-title">
-        See Our Materials <span class="gold">In Your Space</span>
-      </h1>
-      <p class="hero-subtitle">
-        Upload a photo and visualize real Surprise Granite countertops, tile, and flooring in your kitchen or bathroom.
-      </p>
+      <h1 class="hero-title">See Our Materials <span class="gold">In Your Space</span></h1>
+      <p class="hero-subtitle">Upload a photo, and our AI will detect your countertops, backsplash, and floors — then swap them with real Surprise Granite materials.</p>
     </div>
   </section>
 
   <!-- MAIN -->
   <main class="visualizer-main">
     <!-- Steps -->
-    <div class="steps-indicator">
-      <div class="step active" data-step="1">
-        <span class="step-number">1</span>
-        Upload Photo
-      </div>
-      <div class="step" data-step="2">
-        <span class="step-number">2</span>
-        Select Material
-      </div>
-      <div class="step" data-step="3">
-        <span class="step-number">3</span>
-        Visualize
-      </div>
+    <div class="steps-indicator" id="stepsBar">
+      <div class="step-pill active" data-step="1"><span class="step-num">1</span> Upload</div>
+      <div class="step-pill" data-step="2"><span class="step-num">2</span> Detect</div>
+      <div class="step-pill" data-step="3"><span class="step-num">3</span> Material</div>
+      <div class="step-pill" data-step="4"><span class="step-num">4</span> Preview</div>
+      <div class="step-pill" data-step="5"><span class="step-num">5</span> Save</div>
     </div>
 
-    <!-- Upload Section -->
-    <section class="upload-section">
-      <h3 class="section-title">
-        <span class="icon">📷</span>
-        Upload Your Space
-      </h3>
-      <div class="upload-area" id="uploadArea">
-        <div class="upload-placeholder">
-          <div class="upload-icon">📸</div>
-          <h4 class="upload-title">Drop your photo here</h4>
-          <p class="upload-subtitle">or click to browse (JPG, PNG up to 10MB)</p>
-          <button class="upload-btn" type="button">Choose Photo</button>
+    <!-- ===== STEP 1: Upload ===== -->
+    <section id="step1" class="fade-in">
+      <div class="section-card" style="max-width:700px; margin:0 auto;">
+        <h3 class="section-title"><span class="icon">📷</span> Upload Your Space</h3>
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-placeholder">
+            <div class="upload-icon">📸</div>
+            <h4 class="upload-title">Drop your photo here</h4>
+            <p class="upload-subtitle">or click to browse — JPEG, PNG up to 20MB</p>
+            <button class="upload-btn" type="button">Choose Photo</button>
+            <button class="camera-btn" type="button" id="cameraBtn">📱 Camera</button>
+          </div>
+          <img class="upload-preview" id="uploadPreview" alt="Your space">
+          <button class="change-photo-btn" type="button">Change Photo</button>
+          <input type="file" class="upload-input" id="uploadInput" accept="image/*">
+          <input type="file" class="upload-input" id="cameraInput" accept="image/*" capture="environment">
         </div>
-        <img class="upload-preview" id="uploadPreview" alt="Your space">
-        <button class="change-photo-btn" type="button">Change Photo</button>
-        <input type="file" class="upload-input" id="uploadInput" accept="image/*">
-      </div>
-    </section>
 
-    <!-- Room Type -->
-    <section class="room-section">
-      <h3 class="section-title">
-        <span class="icon">🏡</span>
-        What type of room is this?
-      </h3>
-      <div class="room-grid" id="roomGrid">
-        <div class="room-card selected" data-room="kitchen">
-          <div class="room-icon">🍳</div>
-          <div class="room-name">Kitchen</div>
-        </div>
-        <div class="room-card" data-room="bathroom">
-          <div class="room-icon">🛁</div>
-          <div class="room-name">Bathroom</div>
-        </div>
-        <div class="room-card" data-room="living">
-          <div class="room-icon">🛋️</div>
-          <div class="room-name">Living Room</div>
-        </div>
-        <div class="room-card" data-room="bedroom">
-          <div class="room-icon">🛏️</div>
-          <div class="room-name">Bedroom</div>
-        </div>
-        <div class="room-card" data-room="laundry">
-          <div class="room-icon">🧺</div>
-          <div class="room-name">Laundry</div>
-        </div>
-        <div class="room-card" data-room="outdoor">
-          <div class="room-icon">🌿</div>
-          <div class="room-name">Outdoor</div>
+        <h3 class="section-title" style="margin-top:24px;"><span class="icon">🏡</span> Room Type</h3>
+        <div class="room-grid" id="roomGrid">
+          <div class="room-card selected" data-room="kitchen"><div class="room-icon">🍳</div><div class="room-name">Kitchen</div></div>
+          <div class="room-card" data-room="bathroom"><div class="room-icon">🛁</div><div class="room-name">Bathroom</div></div>
+          <div class="room-card" data-room="living"><div class="room-icon">🛋️</div><div class="room-name">Living</div></div>
+          <div class="room-card" data-room="laundry"><div class="room-icon">🧺</div><div class="room-name">Laundry</div></div>
+          <div class="room-card" data-room="outdoor"><div class="room-icon">🌿</div><div class="room-name">Outdoor</div></div>
         </div>
       </div>
     </section>
 
-    <!-- Material Selection -->
-    <section class="material-section">
-      <h3 class="section-title">
-        <span class="icon">🪨</span>
-        Choose a Material
-      </h3>
+    <!-- ===== STEP 2: Surface Detection ===== -->
+    <section id="step2" class="hidden fade-in">
+      <div class="two-col">
+        <div class="section-card" style="padding:16px;">
+          <img id="photoPreview" class="upload-preview" style="display:block; max-height:500px; width:100%; object-fit:contain; border-radius:12px;" alt="Your uploaded photo">
+        </div>
+        <div class="section-card">
+          <h3 class="section-title"><span class="icon">🔍</span> Detected Surfaces</h3>
+          <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Click a surface to change its material</p>
 
-      <div class="category-tabs" id="categoryTabs">
-        <button class="category-tab active" data-category="countertops">Countertops</button>
-        <button class="category-tab" data-category="flooring">Flooring</button>
-        <button class="category-tab" data-category="tile">Tile</button>
-      </div>
+          <div id="detectLoading" class="text-center" style="padding:40px 0; text-align:center;">
+            <div class="spinner"></div>
+            <p style="color:var(--text-secondary); font-size:14px;">Analyzing your photo...</p>
+            <p style="color:var(--text-muted); font-size:12px; margin-top:4px;">This takes 3-5 seconds</p>
+          </div>
 
-      <div class="product-grid" id="productGrid">
-        <!-- Products loaded via JS -->
+          <div id="surfaceList" class="hidden"></div>
+
+          <div id="detectError" class="hidden" style="text-align:center; padding:30px 0;">
+            <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+            <p style="color:var(--text-muted); font-size:14px; margin-bottom:12px;">Could not detect surfaces</p>
+            <button class="btn-secondary" onclick="detectSurfaces()">Try Again</button>
+          </div>
+
+          <div id="layoutDesc" class="hidden" style="margin-top:14px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.04); color:var(--text-muted); font-size:12px;"></div>
+
+          <button class="btn-secondary" style="width:100%; margin-top:16px;" onclick="startOver()">↻ Upload Different Photo</button>
+        </div>
       </div>
     </section>
 
-    <!-- Generate -->
-    <section class="generate-section">
-      <button class="generate-btn" id="generateBtn" disabled>
-        ✨ Generate Visualization
-      </button>
-      <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">
-        AI will transform your space with the selected material
-      </p>
-    </section>
+    <!-- ===== STEP 4: Comparison + Assignment ===== -->
+    <section id="step4" class="hidden fade-in">
+      <div class="two-col">
+        <div class="section-card" style="padding:16px;">
+          <!-- Generating state -->
+          <div id="generating" style="text-align:center; padding:60px 0;">
+            <div class="spinner"></div>
+            <p style="font-size:16px; font-weight:600; margin-bottom:4px;">Generating visualization...</p>
+            <p style="color:var(--text-muted); font-size:13px;">This may take 10-20 seconds</p>
+          </div>
 
-    <!-- Result Section -->
-    <section class="result-section" id="resultSection">
-      <div class="result-header">
-        <h2>Your Transformed Space</h2>
-        <p>Here's how your room could look with the selected material</p>
-      </div>
+          <!-- Comparison slider -->
+          <div id="comparisonView" class="hidden">
+            <div class="comparison-wrap" id="comparisonWrap">
+              <img id="beforeImg" src="" alt="Before">
+              <div class="comparison-after" id="afterClip">
+                <img id="afterImg" src="" alt="After">
+              </div>
+              <div class="slider-bar" id="sliderBar"></div>
+              <span class="comparison-label before">Before</span>
+              <span class="comparison-label after">After</span>
+            </div>
+          </div>
 
-      <div class="result-image-container">
-        <img class="result-image" id="resultImage" alt="AI Generated Result">
-        <div class="result-product-info">
-          <img class="result-product-thumb" id="resultProductThumb" alt="Selected countertop material">
-          <div class="result-product-details">
-            <h4 id="resultProductName">-</h4>
-            <p id="resultProductType">-</p>
+          <div id="swapError" class="hidden" style="text-align:center; padding:40px 0;">
+            <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+            <p id="swapErrorMsg" style="color:var(--text-muted); font-size:14px; margin-bottom:12px;">Failed to generate</p>
+            <button class="btn-secondary" onclick="retrySwap()">Try Again</button>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3 class="section-title"><span class="icon">🎨</span> Surface Assignments</h3>
+          <div id="assignmentList"></div>
+          <div style="margin-top:20px; display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-secondary" onclick="resetAll()">↻ Reset to Original</button>
+            <button class="btn-gold" style="width:100%; justify-content:center;" onclick="goToStep(5)">✓ Done — Save & Share</button>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="result-actions">
-        <a href="/get-a-free-estimate" class="action-btn primary">
-          Get Free Estimate
-        </a>
-        <button class="action-btn secondary" id="tryAgainBtn">
-          Try Different Material
-        </button>
-        <a href="javascript:void(0)" class="action-btn secondary" id="downloadBtn" download="sg-visualization.jpg">
-          Download Image
-        </a>
+    <!-- ===== STEP 5: Save & Share ===== -->
+    <section id="step5" class="hidden fade-in">
+      <div class="section-card" style="max-width:700px; margin:0 auto; text-align:center;">
+        <div style="font-size:48px; margin-bottom:16px;">✅</div>
+        <h2 style="font-family:'Space Grotesk',sans-serif; font-size:28px; margin-bottom:8px;">Your Visualization is Ready!</h2>
+        <p style="color:var(--text-secondary); margin-bottom:24px;">Here's a summary of the materials you selected</p>
+
+        <div id="summaryList" style="text-align:left; margin-bottom:24px;"></div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
+          <button class="btn-gold" onclick="downloadImage()">⬇ Download Image</button>
+          <a href="/get-a-free-estimate" id="estimateLink" class="btn-gold" style="background:linear-gradient(135deg,#22c55e,#16a34a); text-decoration:none;">📋 Get Free Estimate</a>
+        </div>
+
+        <button class="btn-secondary" style="margin-top:24px;" onclick="startOver()">↻ Start Over</button>
       </div>
     </section>
   </main>
 
-  <!-- Loading -->
+  <!-- Material Selection Modal -->
+  <div class="material-modal" id="materialModal">
+    <div class="material-panel">
+      <div class="material-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="font-size:18px; font-weight:700;">Choose Material</h3>
+          <button onclick="closeMaterialModal()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; padding:4px;">✕</button>
+        </div>
+        <p id="modalSurfaceLabel" style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">for Countertops</p>
+
+        <!-- Search -->
+        <div style="position:relative; margin-bottom:10px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="materialSearch" placeholder="Search materials..." oninput="renderMaterials()">
+        </div>
+
+        <!-- Color filter -->
+        <div class="filter-row" id="colorFilters">
+          <span class="filter-chip active" data-color="" onclick="setColorFilter(this)">All</span>
+          <span class="filter-chip" data-color="White" onclick="setColorFilter(this)"><span class="color-dot" style="background:#f5f5f5"></span>White</span>
+          <span class="filter-chip" data-color="Black" onclick="setColorFilter(this)"><span class="color-dot" style="background:#1a1a1a"></span>Black</span>
+          <span class="filter-chip" data-color="Gray" onclick="setColorFilter(this)"><span class="color-dot" style="background:#7a7a7a"></span>Gray</span>
+          <span class="filter-chip" data-color="Cream" onclick="setColorFilter(this)"><span class="color-dot" style="background:#e8dcc8"></span>Cream</span>
+          <span class="filter-chip" data-color="Brown" onclick="setColorFilter(this)"><span class="color-dot" style="background:#7a5a32"></span>Brown</span>
+          <span class="filter-chip" data-color="Gold" onclick="setColorFilter(this)"><span class="color-dot" style="background:#c9a855"></span>Gold</span>
+          <span class="filter-chip" data-color="Blue" onclick="setColorFilter(this)"><span class="color-dot" style="background:#4a7a8c"></span>Blue</span>
+          <span class="filter-chip" data-color="Multi" onclick="setColorFilter(this)"><span class="color-dot" style="background:linear-gradient(135deg,#e8c,#8ce,#ce8)"></span>Multi</span>
+        </div>
+
+        <!-- Type filter -->
+        <div class="filter-row" id="typeFilters" style="margin-top:8px;">
+          <span class="filter-chip active" data-type="" onclick="setTypeFilter(this)">All Types</span>
+          <span class="filter-chip" data-type="Quartz" onclick="setTypeFilter(this)">Quartz</span>
+          <span class="filter-chip" data-type="Granite" onclick="setTypeFilter(this)">Granite</span>
+          <span class="filter-chip" data-type="Marble" onclick="setTypeFilter(this)">Marble</span>
+          <span class="filter-chip" data-type="Quartzite" onclick="setTypeFilter(this)">Quartzite</span>
+          <span class="filter-chip" data-type="Porcelain" onclick="setTypeFilter(this)">Porcelain</span>
+          <span class="filter-chip" data-type="Luxury Vinyl" onclick="setTypeFilter(this)">LVT</span>
+        </div>
+      </div>
+
+      <div class="material-body">
+        <div class="product-grid" id="materialGrid"></div>
+        <p id="noMaterialsMsg" class="no-results hidden">No materials match your filters</p>
+      </div>
+
+      <div class="material-footer">
+        <button class="btn-gold" id="confirmMaterialBtn" style="width:100%; justify-content:center;" disabled onclick="confirmMaterial()">Select Material</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
   <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
+    <div style="text-align:center;">
+      <div class="spinner"></div>
       <div class="loading-text">Creating Your Vision...</div>
       <div class="loading-subtext">Our AI is transforming your space</div>
-
       <div class="loading-tips">
         <h4>Did you know?</h4>
         <p>Surprise Granite has been serving Arizona homeowners for over 15 years with premium countertops, tile, and flooring installation.</p>
@@ -774,283 +505,511 @@
   <!-- Footer -->
   <footer class="visualizer-footer">
     <p>&copy; 2026 Surprise Granite. All rights reserved.</p>
-    <p style="margin-top: 8px;">
+    <p style="margin-top:8px;">
       <a href="/tools/">Back to Tools</a> &bull;
       <a href="/">Home</a> &bull;
       <a href="/get-a-free-estimate">Get Estimate</a>
     </p>
   </footer>
 
-  <script>
-    // Product Data
-    let products = {
-      countertops: [],
-      flooring: [],
-      tile: []
-    };
-
-    // State
-    let selectedCategory = 'countertops';
-    let selectedProduct = null;
-    let selectedRoom = 'kitchen';
-    let uploadedImage = null;
-    let uploadedImageBase64 = null;
-
-    // DOM Elements
-    const uploadArea = document.getElementById('uploadArea');
-    const uploadInput = document.getElementById('uploadInput');
-    const uploadPreview = document.getElementById('uploadPreview');
-    const categoryTabs = document.getElementById('categoryTabs');
-    const productGrid = document.getElementById('productGrid');
-    const roomGrid = document.getElementById('roomGrid');
-    const generateBtn = document.getElementById('generateBtn');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const resultSection = document.getElementById('resultSection');
-    const resultImage = document.getElementById('resultImage');
-    const resultProductThumb = document.getElementById('resultProductThumb');
-    const resultProductName = document.getElementById('resultProductName');
-    const resultProductType = document.getElementById('resultProductType');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const tryAgainBtn = document.getElementById('tryAgainBtn');
-
-    // Load product data
-    async function loadProducts() {
-      try {
-        const [countertopsRes, flooringRes, tileRes] = await Promise.all([
-          fetch('/data/countertops.json'),
-          fetch('/data/flooring.json'),
-          fetch('/data/tile.json')
-        ]);
-
-        const countertopsData = await countertopsRes.json();
-        const flooringData = await flooringRes.json();
-        const tileData = await tileRes.json();
-
-        products.countertops = countertopsData.countertops || [];
-        products.flooring = flooringData.flooring || [];
-        products.tile = tileData.tile || [];
-
-        renderProducts();
-      } catch (error) {
-        console.error('Error loading products:', error);
-        // Use fallback data
-        products.countertops = [
-          { name: 'Calacatta Abezzo', type: 'Quartz', primaryImage: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg' },
-          { name: 'Calacatta Miraggio Gold', type: 'Quartz', primaryImage: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.jpeg' }
-        ];
-        renderProducts();
-      }
-    }
-
-    // Render products grid
-    function renderProducts() {
-      const items = products[selectedCategory] || [];
-      const filtered = items.filter(p => p.primaryImage);
-
-      if (filtered.length === 0) {
-        productGrid.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">No products available in this category.</p>';
-        return;
-      }
-
-      productGrid.innerHTML = filtered.slice(0, 30).map((product, index) => `
-        <div class="product-card ${index === 0 ? 'selected' : ''}" data-index="${index}">
-          <img class="product-image" src="${product.primaryImage}" alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
-          <div class="product-info">
-            <div class="product-name">${product.name}</div>
-            <div class="product-type">${product.type || selectedCategory}</div>
-          </div>
-        </div>
-      `).join('');
-
-      // Auto-select first product
-      if (filtered.length > 0) {
-        selectedProduct = filtered[0];
-        updateGenerateButton();
-      }
-    }
-
-    // Upload handlers
-    uploadArea.addEventListener('click', (e) => {
-      if (e.target.classList.contains('change-photo-btn')) {
-        uploadInput.click();
-      } else if (!uploadArea.classList.contains('has-image')) {
-        uploadInput.click();
-      }
-    });
-
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) {
-        handleFile(e.dataTransfer.files[0]);
-      }
-    });
-
-    uploadInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
-      }
-    });
-
-    function handleFile(file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file');
-        return;
-      }
-
-      uploadedImage = file;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        uploadedImageBase64 = e.target.result;
-        uploadPreview.src = e.target.result;
-        uploadArea.classList.add('has-image');
-        updateStep(1, 'completed');
-        updateStep(2, 'active');
-        updateGenerateButton();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Category tabs
-    categoryTabs.addEventListener('click', (e) => {
-      if (e.target.classList.contains('category-tab')) {
-        categoryTabs.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        selectedCategory = e.target.dataset.category;
-        selectedProduct = null;
-        renderProducts();
-      }
-    });
-
-    // Product selection
-    productGrid.addEventListener('click', (e) => {
-      const card = e.target.closest('.product-card');
-      if (card) {
-        productGrid.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        const index = parseInt(card.dataset.index);
-        const items = products[selectedCategory].filter(p => p.primaryImage);
-        selectedProduct = items[index];
-        updateGenerateButton();
-      }
-    });
-
-    // Room selection
-    roomGrid.addEventListener('click', (e) => {
-      const card = e.target.closest('.room-card');
-      if (card) {
-        roomGrid.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedRoom = card.dataset.room;
-      }
-    });
-
-    // Update generate button
-    function updateGenerateButton() {
-      generateBtn.disabled = !(uploadedImage && selectedProduct);
-    }
-
-    // Update step indicator
-    function updateStep(stepNum, status) {
-      const step = document.querySelector(`.step[data-step="${stepNum}"]`);
-      if (step) {
-        step.classList.remove('active', 'completed');
-        step.classList.add(status);
-      }
-    }
-
-    // Generate visualization
-    generateBtn.addEventListener('click', async () => {
-      if (!uploadedImage || !selectedProduct) return;
-
-      showLoading();
-
-      try {
-        const prompt = `Transform this ${selectedRoom} photo to show ${selectedProduct.name} ${selectedProduct.type || selectedCategory}. Keep the same layout and perspective. Professional interior design photography, realistic lighting, high quality.`;
-
-        const response = await fetch('/api/visualize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: uploadedImageBase64,
-            prompt: prompt,
-            style: selectedRoom,
-            material: selectedProduct.name
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.error) throw new Error(data.error);
-
-        showResult(data.output || data.imageUrl);
-
-      } catch (error) {
-        console.error('Generation error:', error);
-        // Demo mode - show the product image as result
-        showDemoResult();
-      }
-    });
-
-    function showLoading() {
-      loadingOverlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function hideLoading() {
-      loadingOverlay.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-
-    function showResult(imageUrl) {
-      hideLoading();
-      resultImage.src = imageUrl;
-      resultProductThumb.src = selectedProduct.primaryImage;
-      resultProductName.textContent = selectedProduct.name;
-      resultProductType.textContent = selectedProduct.type || selectedCategory;
-      downloadBtn.href = imageUrl;
-      resultSection.classList.add('active');
-      resultSection.scrollIntoView({ behavior: 'smooth' });
-      updateStep(3, 'completed');
-    }
-
-    function showDemoResult() {
-      // For demo, use a kitchen image from Unsplash
-      const demoImages = {
-        kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
-        bathroom: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
-        living: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-        bedroom: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
-        laundry: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&q=80',
-        outdoor: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'
-      };
-
-      showResult(demoImages[selectedRoom] || demoImages.kitchen);
-    }
-
-    // Try again
-    tryAgainBtn.addEventListener('click', () => {
-      resultSection.classList.remove('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Init
-    loadProducts();
-  </script>
-
   <!-- Rate Limiter -->
   <script src="/js/rate-limiter.js"></script>
 
+  <script>
+  /* ═══════════════ STATE ═══════════════ */
+  let S = {
+    step: 1,
+    roomType: 'kitchen',
+    originalBase64: null,
+    currentBase64: null,
+    surfaces: [],
+    layoutDescription: '',
+    selectedSurfaceId: null,
+    selectedMaterial: null,
+    swaps: {},  // surfaceId -> { material, imageBase64 }
+    products: { countertops: [], tile: [], flooring: [] },
+    productsLoaded: false
+  };
+
+  /* ═══════════════ STEP NAV ═══════════════ */
+  function goToStep(n) {
+    S.step = n;
+    ['step1','step2','step4','step5'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+
+    if (n === 1) document.getElementById('step1').classList.remove('hidden');
+    else if (n === 2) document.getElementById('step2').classList.remove('hidden');
+    else if (n === 4) document.getElementById('step4').classList.remove('hidden');
+    else if (n === 5) { buildSummary(); document.getElementById('step5').classList.remove('hidden'); }
+
+    document.querySelectorAll('.step-pill').forEach(pill => {
+      const s = parseInt(pill.dataset.step);
+      pill.classList.remove('active', 'completed');
+      if (s < n) pill.classList.add('completed');
+      else if (s === n) pill.classList.add('active');
+    });
+  }
+
+  /* ═══════════════ STEP 1: UPLOAD ═══════════════ */
+  const uploadArea = document.getElementById('uploadArea');
+  const uploadInput = document.getElementById('uploadInput');
+  const cameraInput = document.getElementById('cameraInput');
+
+  uploadArea.addEventListener('click', e => {
+    if (e.target.classList.contains('change-photo-btn')) uploadInput.click();
+    else if (!uploadArea.classList.contains('has-image')) uploadInput.click();
+  });
+  document.getElementById('cameraBtn').addEventListener('click', e => { e.stopPropagation(); cameraInput.click(); });
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+  uploadInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+  cameraInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+
+  document.getElementById('roomGrid').addEventListener('click', e => {
+    const card = e.target.closest('.room-card');
+    if (card) {
+      document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      S.roomType = card.dataset.room;
+    }
+  });
+
+  async function processFile(file) {
+    if (!file.type.startsWith('image/')) return alert('Please upload an image file.');
+    if (file.size > 20 * 1024 * 1024) return alert('File is too large. Please use an image under 20MB.');
+    const base64 = await resizeImage(file, 1536, 0.85);
+    S.originalBase64 = base64;
+    S.currentBase64 = base64;
+    S.swaps = {};
+
+    document.getElementById('uploadPreview').src = 'data:image/jpeg;base64,' + base64;
+    uploadArea.classList.add('has-image');
+    document.getElementById('photoPreview').src = 'data:image/jpeg;base64,' + base64;
+
+    goToStep(2);
+    detectSurfaces();
+  }
+
+  function resizeImage(file, maxDim, quality) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            const ratio = Math.min(maxDim / width, maxDim / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ═══════════════ STEP 2: SURFACE DETECTION ═══════════════ */
+  async function detectSurfaces() {
+    document.getElementById('detectLoading').classList.remove('hidden');
+    document.getElementById('surfaceList').classList.add('hidden');
+    document.getElementById('detectError').classList.add('hidden');
+
+    // Client rate limit check
+    if (window.RemodelyRateLimiter) {
+      const check = window.RemodelyRateLimiter.checkLimit('ai_visualizer');
+      if (!check.allowed) {
+        window.RemodelyRateLimiter.showLimitWarning(check, 'ai_visualizer');
+        document.getElementById('detectLoading').classList.add('hidden');
+        document.getElementById('detectError').classList.remove('hidden');
+        return;
+      }
+    }
+
+    try {
+      const resp = await fetch('/api/ai/surface-detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: 'data:image/jpeg;base64,' + S.originalBase64, roomType: S.roomType })
+      });
+
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error || err.message || 'Detection failed'); }
+
+      if (window.RemodelyRateLimiter) window.RemodelyRateLimiter.recordUsage('ai_visualizer');
+
+      const data = await resp.json();
+      S.surfaces = data.surfaces || [];
+      S.layoutDescription = data.layoutDescription || '';
+      renderSurfaces();
+    } catch (err) {
+      console.error('Surface detection error:', err);
+      document.getElementById('detectLoading').classList.add('hidden');
+      document.getElementById('detectError').classList.remove('hidden');
+    }
+  }
+
+  function renderSurfaces() {
+    document.getElementById('detectLoading').classList.add('hidden');
+    const list = document.getElementById('surfaceList');
+    list.innerHTML = '';
+    list.classList.remove('hidden');
+
+    S.surfaces.forEach(surface => {
+      const swap = S.swaps[surface.id];
+      const card = document.createElement('div');
+      card.className = 'surface-card' + (swap ? ' swapped' : '');
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="min-width:0; flex:1;">
+            <div class="surface-label">${surface.label}</div>
+            <div class="surface-desc">${swap ? swap.material.name : surface.description}</div>
+          </div>
+          <button class="surface-action ${swap ? 'change' : 'select'}" onclick="openMaterialModal('${surface.id}')">
+            ${swap ? '✓ Change' : 'Select Material'}
+          </button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    if (S.layoutDescription) {
+      const d = document.getElementById('layoutDesc');
+      d.textContent = S.layoutDescription;
+      d.classList.remove('hidden');
+    }
+  }
+
+  /* ═══════════════ STEP 3: MATERIAL BROWSER ═══════════════ */
+  async function loadProducts() {
+    if (S.productsLoaded) return;
+    try {
+      const [ctRes, tlRes, flRes] = await Promise.all([
+        fetch('/data/countertops.json').then(r => r.json()),
+        fetch('/data/tile.json').then(r => r.json()),
+        fetch('/data/flooring.json').then(r => r.json())
+      ]);
+      // countertops.json has { countertops: [...] }, tile is array, flooring has { flooring: [...] }
+      S.products.countertops = ctRes.countertops || ctRes || [];
+      S.products.tile = Array.isArray(tlRes) ? tlRes : (tlRes.tile || []);
+      S.products.flooring = flRes.flooring || flRes || [];
+      S.productsLoaded = true;
+    } catch (err) {
+      console.error('Failed to load products:', err);
+    }
+  }
+
+  async function openMaterialModal(surfaceId) {
+    S.selectedSurfaceId = surfaceId;
+    S.selectedMaterial = null;
+    document.getElementById('confirmMaterialBtn').disabled = true;
+
+    const surface = S.surfaces.find(s => s.id === surfaceId);
+    document.getElementById('modalSurfaceLabel').textContent = 'for ' + (surface ? surface.label : surfaceId);
+
+    // Reset filters
+    document.querySelectorAll('#colorFilters .filter-chip').forEach(c => c.classList.toggle('active', !c.dataset.color));
+    document.querySelectorAll('#typeFilters .filter-chip').forEach(c => c.classList.toggle('active', !c.dataset.type));
+    document.getElementById('materialSearch').value = '';
+
+    await loadProducts();
+    renderMaterials();
+
+    document.getElementById('materialModal').classList.add('active');
+  }
+
+  function closeMaterialModal() {
+    document.getElementById('materialModal').classList.remove('active');
+  }
+
+  function getMaterialsForSurface(surfaceId) {
+    const surface = S.surfaces.find(s => s.id === surfaceId);
+    if (!surface) return S.products.countertops;
+    const cats = surface.swappableWith || ['countertops'];
+    let items = [];
+    cats.forEach(cat => {
+      const list = S.products[cat] || [];
+      items = items.concat(list.map(m => ({ ...m, _category: cat })));
+    });
+    return items;
+  }
+
+  function getFilteredMaterials() {
+    let items = getMaterialsForSurface(S.selectedSurfaceId);
+    const search = document.getElementById('materialSearch').value.toLowerCase().trim();
+    const activeColor = document.querySelector('#colorFilters .filter-chip.active')?.dataset.color || '';
+    const activeType = document.querySelector('#typeFilters .filter-chip.active')?.dataset.type || '';
+
+    if (search) {
+      items = items.filter(m =>
+        (m.name || '').toLowerCase().includes(search) ||
+        (m.title || '').toLowerCase().includes(search) ||
+        (m.type || '').toLowerCase().includes(search) ||
+        (m.primaryColor || '').toLowerCase().includes(search) ||
+        (m.brand || m.vendor || '').toLowerCase().includes(search)
+      );
+    }
+    if (activeColor) {
+      items = items.filter(m => (m.primaryColor || m.color || '').toLowerCase() === activeColor.toLowerCase());
+    }
+    if (activeType) {
+      items = items.filter(m => {
+        const t = (m.type || m.productType || '').toLowerCase();
+        return t.includes(activeType.toLowerCase());
+      });
+    }
+
+    // Only items with images
+    items = items.filter(m => m.primaryImage || (m.images && m.images[0]));
+    return items.slice(0, 60);
+  }
+
+  function renderMaterials() {
+    const items = getFilteredMaterials();
+    const grid = document.getElementById('materialGrid');
+    const noMsg = document.getElementById('noMaterialsMsg');
+
+    if (items.length === 0) {
+      grid.innerHTML = '';
+      noMsg.classList.remove('hidden');
+      return;
+    }
+    noMsg.classList.add('hidden');
+
+    grid.innerHTML = items.map((m, i) => {
+      const img = m.primaryImage || (m.images && m.images[0]) || '';
+      const name = m.name || m.title || 'Unknown';
+      const type = m.type || m.productType || m._category;
+      const sel = S.selectedMaterial && (S.selectedMaterial.name || S.selectedMaterial.title) === name;
+      return `
+        <div class="product-card ${sel ? 'selected' : ''}" data-idx="${i}" onclick="pickMaterial(${i})">
+          <img src="${img}" alt="${name}" loading="lazy" onerror="this.style.display='none'">
+          <div class="product-info">
+            <div class="product-name">${name}</div>
+            <div class="product-type">${type}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function pickMaterial(idx) {
+    const items = getFilteredMaterials();
+    S.selectedMaterial = items[idx];
+    document.getElementById('confirmMaterialBtn').disabled = false;
+    renderMaterials();
+  }
+
+  function setColorFilter(chip) {
+    document.querySelectorAll('#colorFilters .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    renderMaterials();
+  }
+
+  function setTypeFilter(chip) {
+    document.querySelectorAll('#typeFilters .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    renderMaterials();
+  }
+
+  function confirmMaterial() {
+    if (!S.selectedMaterial) return;
+    closeMaterialModal();
+    performSwap(S.selectedSurfaceId, S.selectedMaterial);
+  }
+
+  /* ═══════════════ STEP 4: SURFACE SWAP ═══════════════ */
+  async function performSwap(surfaceId, material) {
+    goToStep(4);
+    document.getElementById('generating').classList.remove('hidden');
+    document.getElementById('comparisonView').classList.add('hidden');
+    document.getElementById('swapError').classList.add('hidden');
+    renderAssignments();
+
+    // Rate limit check
+    if (window.RemodelyRateLimiter) {
+      const check = window.RemodelyRateLimiter.checkLimit('ai_visualizer');
+      if (!check.allowed) {
+        window.RemodelyRateLimiter.showLimitWarning(check, 'ai_visualizer');
+        document.getElementById('generating').classList.add('hidden');
+        document.getElementById('swapError').classList.remove('hidden');
+        document.getElementById('swapErrorMsg').textContent = 'Rate limit reached. Try again later.';
+        return;
+      }
+    }
+
+    const name = material.name || material.title || 'Unknown';
+    const type = material.type || material.productType || '';
+    const color = material.primaryColor || material.color || '';
+    const style = material.style || '';
+
+    try {
+      const resp = await fetch('/api/ai/surface-swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: 'data:image/jpeg;base64,' + S.currentBase64,
+          surface: surfaceId,
+          material: { name, type, color, style },
+          roomType: S.roomType,
+          layoutDescription: S.layoutDescription
+        })
+      });
+
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error || 'Swap failed'); }
+
+      if (window.RemodelyRateLimiter) window.RemodelyRateLimiter.recordUsage('ai_visualizer');
+
+      const data = await resp.json();
+      S.swaps[surfaceId] = { material, imageBase64: data.image };
+      S.currentBase64 = data.image;
+
+      showComparison();
+      renderAssignments();
+    } catch (err) {
+      console.error('Surface swap error:', err);
+      document.getElementById('generating').classList.add('hidden');
+      document.getElementById('swapError').classList.remove('hidden');
+      document.getElementById('swapErrorMsg').textContent = err.message || 'Failed to generate visualization';
+    }
+  }
+
+  function retrySwap() {
+    if (S.selectedSurfaceId && S.selectedMaterial) performSwap(S.selectedSurfaceId, S.selectedMaterial);
+  }
+
+  function showComparison() {
+    document.getElementById('generating').classList.add('hidden');
+    document.getElementById('comparisonView').classList.remove('hidden');
+    document.getElementById('beforeImg').src = 'data:image/jpeg;base64,' + S.originalBase64;
+    document.getElementById('afterImg').src = 'data:image/jpeg;base64,' + S.currentBase64;
+    initSlider();
+  }
+
+  /* ═══════════════ COMPARISON SLIDER ═══════════════ */
+  function initSlider() {
+    const wrap = document.getElementById('comparisonWrap');
+    const bar = document.getElementById('sliderBar');
+    const clip = document.getElementById('afterClip');
+    let dragging = false;
+
+    function setPos(x) {
+      const rect = wrap.getBoundingClientRect();
+      let pct = ((x - rect.left) / rect.width) * 100;
+      pct = Math.max(0, Math.min(100, pct));
+      bar.style.left = pct + '%';
+      clip.style.clipPath = `inset(0 0 0 ${pct}%)`;
+    }
+
+    setTimeout(() => {
+      const rect = wrap.getBoundingClientRect();
+      setPos(rect.left + rect.width / 2);
+    }, 100);
+
+    bar.onmousedown = () => dragging = true;
+    bar.ontouchstart = () => dragging = true;
+    document.addEventListener('mousemove', e => { if (dragging) setPos(e.clientX); });
+    document.addEventListener('touchmove', e => { if (dragging) setPos(e.touches[0].clientX); }, { passive: true });
+    document.addEventListener('mouseup', () => dragging = false);
+    document.addEventListener('touchend', () => dragging = false);
+    wrap.addEventListener('click', e => { if (e.target !== bar) setPos(e.clientX); });
+  }
+
+  /* ═══════════════ ASSIGNMENT PANEL ═══════════════ */
+  function renderAssignments() {
+    const list = document.getElementById('assignmentList');
+    list.innerHTML = '';
+    S.surfaces.forEach(surface => {
+      const swap = S.swaps[surface.id];
+      const name = swap ? (swap.material.name || swap.material.title) : null;
+      const card = document.createElement('div');
+      card.className = 'surface-card' + (swap ? ' swapped' : '');
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="min-width:0; flex:1;">
+            <div class="surface-label">${surface.label}</div>
+            <div class="surface-desc">${swap ? name + ' (' + (swap.material.type || swap.material.productType || '') + ')' : 'Original — ' + surface.description}</div>
+          </div>
+          <button class="surface-action ${swap ? 'change' : 'select'}" onclick="openMaterialModal('${surface.id}')">
+            ${swap ? 'Change' : 'Swap'}
+          </button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  /* ═══════════════ STEP 5: SAVE ═══════════════ */
+  function buildSummary() {
+    const list = document.getElementById('summaryList');
+    list.innerHTML = '';
+    const entries = Object.entries(S.swaps);
+    if (entries.length === 0) {
+      list.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No surfaces were changed</p>';
+      return;
+    }
+    entries.forEach(([surfaceId, swap]) => {
+      const surface = S.surfaces.find(s => s.id === surfaceId);
+      const name = swap.material.name || swap.material.title;
+      const type = swap.material.type || swap.material.productType || '';
+      const img = swap.material.primaryImage || (swap.material.images && swap.material.images[0]) || '';
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.04); margin-bottom:8px;';
+      div.innerHTML = `
+        ${img ? `<img src="${img}" style="width:48px; height:48px; border-radius:8px; object-fit:cover;" alt="${name}">` : ''}
+        <div style="min-width:0; flex:1;">
+          <div style="font-weight:600; font-size:14px;">${surface ? surface.label : surfaceId}</div>
+          <div style="color:var(--text-muted); font-size:12px;">${name} — ${type}</div>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+
+    const materialNames = entries.map(([, s]) => s.material.name || s.material.title).join(', ');
+    document.getElementById('estimateLink').href = `/get-a-free-estimate?materials=${encodeURIComponent(materialNames)}&source=visualizer`;
+
+    try {
+      localStorage.setItem('visualizer_session', JSON.stringify({
+        date: new Date().toISOString(), roomType: S.roomType,
+        swaps: entries.map(([id, s]) => ({ surface: id, material: s.material.name || s.material.title, type: s.material.type || '' }))
+      }));
+    } catch (e) {}
+  }
+
+  function downloadImage() {
+    if (!S.currentBase64) return;
+    const a = document.createElement('a');
+    a.download = `surprise-granite-visualizer-${Date.now()}.jpg`;
+    a.href = 'data:image/jpeg;base64,' + S.currentBase64;
+    a.click();
+  }
+
+  /* ═══════════════ RESET ═══════════════ */
+  function resetAll() {
+    S.currentBase64 = S.originalBase64;
+    S.swaps = {};
+    renderAssignments();
+    showComparison();
+  }
+
+  function startOver() {
+    S = { ...S, step: 1, originalBase64: null, currentBase64: null, surfaces: [], layoutDescription: '',
+      selectedSurfaceId: null, selectedMaterial: null, swaps: {} };
+    uploadArea.classList.remove('has-image');
+    uploadInput.value = '';
+    cameraInput.value = '';
+    goToStep(1);
+  }
+
+  /* ═══════════════ INIT ═══════════════ */
+  goToStep(1);
+  </script>
+
   <!-- Remodely Tools Hub -->
-<script defer src="/js/remodely-hub.js?v=20260118"></script>
+  <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>

@@ -4509,8 +4509,8 @@
     }
   };
 
-  // === 3. PDF IMPORT PARSER ===
-  window.showPDFImporter = function() {
+  // === 3. PDF IMPORT PARSER (legacy - superseded by built-in AI Room Scanner in index.html) ===
+  window.showPDFImporterLegacy = function() {
     const existing = document.getElementById('pdfImporterModal');
     if (existing) existing.remove();
 
@@ -7159,14 +7159,23 @@
       addElement('countertop', p.x - OVERHANG, p.y - OVERHANG, p.w + OVERHANG * 2, p.d + OVERHANG * 2, 0, 'peninsula', null, true);
     }
 
-    // 4. Redraw — updateRoom() syncs local roomWidth/roomDepth from inputs, resizes canvas, calls draw()
+    // 4. Redraw — fitToScreen recalculates pixelsPerFoot, so we must rescale element positions
     try {
-      if (typeof window.updateRoom === 'function') {
-        window.updateRoom();
-      } else {
-        if (typeof window.fitToScreen === 'function') window.fitToScreen();
-        if (typeof window.draw === 'function') window.draw();
+      // First fit to screen to get the correct pixelsPerFoot for the new room dimensions
+      if (typeof window.fitToScreen === 'function') window.fitToScreen();
+
+      // Now rescale all element positions from old ppf to new ppf
+      const newPPF = window.pixelsPerFoot || 40;
+      if (newPPF !== ppf && ppf > 0) {
+        const ratio = newPPF / ppf;
+        console.log('[AI Import] Rescaling positions: old PPF=' + ppf + ', new PPF=' + newPPF + ', ratio=' + ratio.toFixed(3));
+        (window.elements || []).forEach(el => {
+          el.x = (el.x || 0) * ratio;
+          el.y = (el.y || 0) * ratio;
+        });
       }
+
+      if (typeof window.draw === 'function') window.draw();
     } catch (drawErr) {
       console.error('[AI Import] Canvas redraw error:', drawErr);
       if (typeof showToast === 'function') showToast('Elements imported but canvas failed to redraw — try zooming', 'warning');
@@ -7454,12 +7463,15 @@
       // ============================================
 
       // Helper to create element
+      // x, y are in FEET — store as xFt/yFt for proper deserialization by switchToRoom
       function createElement(cab, x, y, width, depth, rotation, wall) {
         newRoom.elements.push({
           id: Date.now() + Math.random(),
           type: cab._type,
-          x: x,
-          y: y,
+          x: x * 40,   // Pixel position for room's default pixelsPerFoot=40
+          y: y * 40,
+          xFt: x,       // Feet-based position for accurate deserialization
+          yFt: y,
           width: width,
           height: depth,
           rotation: rotation,
@@ -7468,6 +7480,7 @@
           actualHeight: cab._heightIn / 12,
           mountHeight: cab._type === 'wall-cabinet' ? 4.5 : 0, // 54" mount height for wall cabs
           wall: wall,
+          category: cab._type.includes('cabinet') || cab._type === 'sink-base' || cab._type === 'drawer-base' ? 'cabinets' : 'appliances',
           locked: false
         });
       }
@@ -7555,11 +7568,15 @@
       // ============================================
       function addCountertop(startX, startY, width, depth, rotation, wall) {
         const overhang = COUNTER_OVERHANG;
+        const cx = startX - overhang;
+        const cy = startY - (wall === 'top' ? 0 : overhang);
         newRoom.elements.push({
           id: Date.now() + Math.random(),
           type: 'countertop',
-          x: startX - overhang,
-          y: startY - (wall === 'top' ? 0 : overhang),
+          x: cx * 40,
+          y: cy * 40,
+          xFt: cx,
+          yFt: cy,
           width: width + overhang * 2,
           height: depth + overhang,
           rotation: rotation,
@@ -7568,6 +7585,7 @@
           material: 'granite',
           mountHeight: 3, // 36" counter height
           actualHeight: 0.125, // 1.5" thick
+          category: 'surfaces',
           wall: wall,
           locked: false
         });
@@ -7612,18 +7630,23 @@
       appliances.forEach(app => {
         const appWidth = (app.width || 30) / 12;
         const appDepth = 2; // Standard appliance depth
+        const ax = roomWidth / 2 - appWidth / 2;
+        const ay = WALL_INSET;
 
         // Find a spot on the appropriate wall (default to top)
         newRoom.elements.push({
           id: Date.now() + Math.random(),
-          type: app.type || 'appliance',
-          x: roomWidth / 2 - appWidth / 2,
-          y: WALL_INSET,
+          type: app.type || 'range',
+          x: ax * 40,
+          y: ay * 40,
+          xFt: ax,
+          yFt: ay,
           width: appWidth,
           height: appDepth,
           rotation: 0,
           label: app.type || 'Appliance',
           color: '#718096',
+          category: 'appliances',
           wall: 'top',
           locked: false
         });
@@ -8082,10 +8105,11 @@
       e.preventDefault();
       window.showCommercialProjectManager();
     }
-    // Shift+I = PDF importer
+    // Shift+I = AI Room Scanner
     if (e.key === 'I' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
-      window.showPDFImporter();
+      if (typeof showAIImporter === 'function') showAIImporter();
+      else if (typeof window.showPDFImporterLegacy === 'function') window.showPDFImporterLegacy();
     }
   });
 

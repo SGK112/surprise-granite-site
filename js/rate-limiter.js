@@ -17,21 +17,24 @@
             ai_voice: { perDay: 3, perHour: 2 },
             ai_vision: { perDay: 5, perHour: 3 },
             ai_transform: { perDay: 3, perHour: 2 },
-            ai_estimate: { perDay: 10, perHour: 5 }
+            ai_estimate: { perDay: 10, perHour: 5 },
+            ai_visualizer: { perDay: 10, perHour: 5 }
         },
         pro: {
             ai_chat: { perDay: 100, perHour: 30 },
             ai_voice: { perDay: 50, perHour: 20 },
             ai_vision: { perDay: 50, perHour: 20 },
             ai_transform: { perDay: 30, perHour: 15 },
-            ai_estimate: { perDay: 100, perHour: 50 }
+            ai_estimate: { perDay: 100, perHour: 50 },
+            ai_visualizer: { perDay: 75, perHour: 25 }
         },
         enterprise: {
             ai_chat: { perDay: -1, perHour: -1 }, // -1 = unlimited
             ai_voice: { perDay: -1, perHour: -1 },
             ai_vision: { perDay: -1, perHour: -1 },
             ai_transform: { perDay: -1, perHour: -1 },
-            ai_estimate: { perDay: -1, perHour: -1 }
+            ai_estimate: { perDay: -1, perHour: -1 },
+            ai_visualizer: { perDay: -1, perHour: -1 }
         }
     };
 

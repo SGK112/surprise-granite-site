@@ -1700,4 +1700,229 @@ function getDemoImage(style) {
   return demoImages[style] || demoImages.modern;
 }
 
+// ============ MULTI-SURFACE VISUALIZER ============
+
+/**
+ * Surface Detection - GPT-4o Vision
+ * POST /api/ai/surface-detect
+ * Analyzes a room photo and identifies swappable surfaces
+ */
+router.post('/surface-detect', aiRateLimiter('ai_visualizer'), async (req, res) => {
+  try {
+    const { image, roomType = 'kitchen' } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: 'Image (base64) is required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      logger.info('OpenAI API not configured, returning demo surface detection');
+      return res.json({
+        surfaces: [
+          { id: 'countertop', label: 'Countertops', description: 'Current countertop surface', currentColor: 'unknown', swappableWith: ['countertops'] },
+          { id: 'backsplash', label: 'Backsplash', description: 'Current backsplash', currentColor: 'unknown', swappableWith: ['tile'] },
+          { id: 'floor', label: 'Floor', description: 'Current flooring', currentColor: 'unknown', swappableWith: ['flooring', 'tile'] }
+        ],
+        layoutDescription: 'Demo mode — configure OPENAI_API_KEY for real surface detection',
+        demo: true
+      });
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert interior design analyst for Surprise Granite, a countertop and stone company. Analyze room photos and identify all swappable surfaces.
+
+For each surface found, provide:
+- id: lowercase identifier (countertop, backsplash, floor, wall, island, bar_top, vanity)
+- label: human-readable name
+- description: brief description of current material/appearance
+- currentColor: primary color of current surface
+- swappableWith: array of material categories this surface can be swapped with. Categories: "countertops" (granite, quartz, marble, quartzite), "tile" (backsplash tile, wall tile, floor tile), "flooring" (LVT, vinyl, hardwood)
+
+Also provide a layoutDescription summarizing the room layout, cabinet style, appliances, and overall design.
+
+Respond ONLY in valid JSON with keys: surfaces (array), layoutDescription (string).`
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: `Analyze this ${roomType} photo and identify all surfaces that could be swapped with new materials:` },
+              { type: 'image_url', image_url: { url: image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}` } }
+            ]
+          }
+        ],
+        max_tokens: 800,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      logger.error('OpenAI surface-detect error:', data.error);
+      return res.status(500).json({ error: data.error.message || 'Surface detection failed' });
+    }
+
+    const result = JSON.parse(data.choices[0].message.content);
+    logger.info(`[Surface Detect] Found ${result.surfaces?.length || 0} surfaces in ${roomType}`);
+    res.json(result);
+
+  } catch (error) {
+    logger.error('Surface detect error:', error);
+    return handleApiError(res, error, 'Surface Detect');
+  }
+});
+
+/**
+ * Surface Swap - OpenAI gpt-image-1
+ * POST /api/ai/surface-swap
+ * Replaces a specific surface in the photo with a new material
+ */
+router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) => {
+  try {
+    const { image, surface, material, roomType = 'kitchen', layoutDescription = '' } = req.body;
+
+    if (!image || !surface || !material) {
+      return res.status(400).json({ error: 'image, surface, and material are required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(503).json({ error: 'AI service not configured. Add OPENAI_API_KEY.' });
+    }
+
+    const materialDesc = [
+      material.name,
+      material.type ? `(${material.type})` : '',
+      material.color ? `- ${material.color}` : '',
+      material.style ? `with ${material.style} pattern` : ''
+    ].filter(Boolean).join(' ');
+
+    const prompt = `In this ${roomType} photo, replace ONLY the ${surface} surfaces with ${materialDesc}. The new material should have a polished, realistic finish. Keep everything else EXACTLY the same — cabinets, appliances, other surfaces, lighting, perspective, wall color. ${layoutDescription ? `Room context: ${layoutDescription}.` : ''} Realistic interior design photography, photorealistic material texture.`;
+
+    // Strip data URI prefix if present for raw base64
+    const rawBase64 = image.replace(/^data:image\/\w+;base64,/, '');
+
+    // Try gpt-image-1 edit first
+    try {
+      const imageBuffer = Buffer.from(rawBase64, 'base64');
+      const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append('model', 'gpt-image-1');
+      formData.append('image', blob, 'photo.jpg');
+      formData.append('prompt', prompt);
+      formData.append('size', '1024x1024');
+      formData.append('quality', 'high');
+
+      const editResponse = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+        body: formData
+      });
+
+      const editData = await editResponse.json();
+
+      if (editData.data && editData.data[0]) {
+        const outputBase64 = editData.data[0].b64_json || null;
+        const outputUrl = editData.data[0].url || null;
+
+        if (outputBase64) {
+          logger.info(`[Surface Swap] gpt-image-1 edit success for ${surface}`);
+          return res.json({ image: outputBase64, method: 'gpt-image-1' });
+        } else if (outputUrl) {
+          // Fetch the URL and convert to base64
+          const imgResp = await fetch(outputUrl);
+          const imgBuf = Buffer.from(await imgResp.arrayBuffer());
+          logger.info(`[Surface Swap] gpt-image-1 edit success (url) for ${surface}`);
+          return res.json({ image: imgBuf.toString('base64'), method: 'gpt-image-1' });
+        }
+      }
+
+      // If we got an error, throw to fall through
+      if (editData.error) throw new Error(editData.error.message);
+      throw new Error('No output from gpt-image-1 edit');
+
+    } catch (editError) {
+      logger.warn(`gpt-image-1 edit failed for ${surface}, trying generate fallback:`, editError.message);
+    }
+
+    // Fallback: gpt-image-1 generate
+    try {
+      const genResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-image-1',
+          prompt: `Photorealistic interior ${roomType} photo. ${prompt}`,
+          n: 1,
+          size: '1024x1024',
+          quality: 'high',
+          response_format: 'b64_json'
+        })
+      });
+
+      const genData = await genResponse.json();
+
+      if (genData.data && genData.data[0]?.b64_json) {
+        logger.info(`[Surface Swap] gpt-image-1 generate fallback success for ${surface}`);
+        return res.json({ image: genData.data[0].b64_json, method: 'gpt-image-1-generate' });
+      }
+
+      if (genData.error) throw new Error(genData.error.message);
+      throw new Error('No output from gpt-image-1 generate');
+
+    } catch (genError) {
+      logger.warn(`gpt-image-1 generate failed for ${surface}, trying dall-e-3:`, genError.message);
+    }
+
+    // Final fallback: dall-e-3
+    const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: `Photorealistic interior ${roomType} photo showing ${materialDesc} on the ${surface}. ${layoutDescription}. Professional interior design photography.`,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        response_format: 'b64_json'
+      })
+    });
+
+    const dalleData = await dalleResponse.json();
+
+    if (dalleData.data && dalleData.data[0]?.b64_json) {
+      logger.info(`[Surface Swap] dall-e-3 fallback success for ${surface}`);
+      return res.json({ image: dalleData.data[0].b64_json, method: 'dall-e-3-fallback' });
+    }
+
+    if (dalleData.error) {
+      return res.status(500).json({ error: dalleData.error.message || 'Image generation failed' });
+    }
+
+    return res.status(500).json({ error: 'All image generation methods failed' });
+
+  } catch (error) {
+    logger.error('Surface swap error:', error);
+    return handleApiError(res, error, 'Surface Swap');
+  }
+});
+
 module.exports = router;

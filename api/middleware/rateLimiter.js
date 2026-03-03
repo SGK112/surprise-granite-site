@@ -14,17 +14,20 @@ const RATE_LIMITS = {
   free: {
     ai_blueprint: { perHour: 3, perDay: 5 },
     ai_chat: { perHour: 5, perDay: 10 },
-    ai_vision: { perHour: 3, perDay: 5 }
+    ai_vision: { perHour: 3, perDay: 5 },
+    ai_visualizer: { perHour: 5, perDay: 10 }
   },
   pro: {
     ai_blueprint: { perHour: 20, perDay: 50 },
     ai_chat: { perHour: 30, perDay: 100 },
-    ai_vision: { perHour: 20, perDay: 50 }
+    ai_vision: { perHour: 20, perDay: 50 },
+    ai_visualizer: { perHour: 25, perDay: 75 }
   },
   enterprise: {
     ai_blueprint: { perHour: -1, perDay: -1 }, // unlimited
     ai_chat: { perHour: -1, perDay: -1 },
-    ai_vision: { perHour: -1, perDay: -1 }
+    ai_vision: { perHour: -1, perDay: -1 },
+    ai_visualizer: { perHour: -1, perDay: -1 }
   }
 };
 
