@@ -6057,16 +6057,18 @@ app.patch('/api/leads/:id', async (req, res) => {
     delete updateData.created_at;
     updateData.updated_at = new Date().toISOString();
 
-    // Only pass columns that exist in the base leads table to prevent schema cache errors
+    // Only pass columns that actually exist in the live Supabase leads table
     const SAFE_LEAD_COLUMNS = [
-      'name', 'full_name', 'first_name', 'last_name', 'homeowner_name',
-      'email', 'homeowner_email', 'phone', 'homeowner_phone',
-      'address', 'project_address', 'city', 'state', 'zip', 'project_zip',
-      'project_type', 'project_budget', 'project_timeline', 'project_details',
-      'description', 'message', 'source', 'source_details', 'form_name',
+      'full_name', 'first_name', 'last_name',
+      'email', 'phone', 'zip_code',
+      'project_type', 'project_details', 'message',
+      'source', 'form_name', 'page_url', 'image_urls', 'images',
+      'billing_address', 'service_address', 'address_same',
       'appointment_date', 'appointment_time', 'appointment_status',
-      'assigned_to', 'claimed_at', 'status', 'lead_price',
-      'notes', 'raw_data', 'expires_at', 'updated_at', 'user_id'
+      'assigned_to', 'customer_id', 'status', 'budget', 'timeline',
+      'notes', 'raw_data', 'updated_at', 'user_id',
+      'pay_link_id', 'pay_link_url', 'pay_link_amount', 'pay_link_created_at',
+      'quick_quote_amount', 'contacted_at'
     ];
     const safeData = {};
     for (const key of SAFE_LEAD_COLUMNS) {
