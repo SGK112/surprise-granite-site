@@ -200,7 +200,8 @@ function csrfOriginCheck(allowedOrigins = []) {
     'http://localhost:5500',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3333',
-    'http://127.0.0.1:5500'
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:8080'
   ];
 
   const origins = new Set([...defaultOrigins, ...allowedOrigins]);
