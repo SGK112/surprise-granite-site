@@ -5,9 +5,31 @@
 
 const express = require('express');
 const router = express.Router();
+const sharp = require('sharp');
 const logger = require('../utils/logger');
 const { handleApiError } = require('../utils/security');
 const { aiRateLimiter } = require('../middleware/rateLimiter');
+
+/**
+ * Convert a base64 data URL to JPEG if it's an unsupported format for OpenAI Vision.
+ * OpenAI supports: jpeg, png, gif, webp. Everything else (heic, tiff, bmp) gets converted.
+ */
+async function ensureJpegDataUrl(dataUrl) {
+  const supportedMatch = dataUrl.match(/^data:image\/(jpeg|png|gif|webp)[;,]/);
+  if (supportedMatch) return dataUrl; // already supported
+
+  const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+  if (!base64Match) return dataUrl; // not a data URL, pass through
+
+  try {
+    const buffer = Buffer.from(base64Match[1], 'base64');
+    const jpegBuffer = await sharp(buffer).jpeg({ quality: 90 }).toBuffer();
+    return `data:image/jpeg;base64,${jpegBuffer.toString('base64')}`;
+  } catch (err) {
+    logger.error('[Image Convert] Failed to convert image to JPEG:', err.message);
+    return dataUrl; // return original, let OpenAI give a clear error
+  }
+}
 
 // Import blueprint analyzer
 const { analyzeBlueprint, parseBluebeamBAX } = require('../lib/takeoff/blueprint-analyzer');
@@ -339,6 +361,9 @@ router.post('/room-scan', async (req, res) => {
       return res.status(400).json({ error: 'Image is required' });
     }
 
+    // Convert HEIC/unsupported formats to JPEG for OpenAI Vision
+    const convertedImage = await ensureJpegDataUrl(image);
+
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
     if (!OPENAI_API_KEY) {
@@ -527,7 +552,7 @@ Be thorough but realistic. If you can't determine something, use standard dimens
               {
                 type: 'image_url',
                 image_url: {
-                  url: image,
+                  url: convertedImage,
                   detail: 'high'
                 }
               }
@@ -657,11 +682,16 @@ ALL dimensions in INCHES. Room dimensions in FEET.
 }`;
 
     // Build the content array: text prompt + all images
+    // Convert any unsupported image formats (HEIC etc.) to JPEG
+    const convertedImages = await Promise.all(
+      images.map(async img => ({ ...img, data: await ensureJpegDataUrl(img.data || img) }))
+    );
+
     const contentArray = [
       { type: 'text', text: userPrompt }
     ];
 
-    images.forEach((img, idx) => {
+    convertedImages.forEach((img, idx) => {
       contentArray.push({
         type: 'image_url',
         image_url: {
@@ -996,6 +1026,9 @@ router.post('/design-from-reference', async (req, res) => {
       return res.status(400).json({ error: 'Reference image is required' });
     }
 
+    // Convert HEIC/unsupported formats to JPEG for OpenAI Vision
+    const convertedImage = await ensureJpegDataUrl(image);
+
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_API_KEY) {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
@@ -1052,7 +1085,7 @@ RETURN THIS EXACT JSON STRUCTURE:
             role: 'user',
             content: [
               { type: 'text', text: analyzePrompt },
-              { type: 'image_url', image_url: { url: image, detail: 'high' } }
+              { type: 'image_url', image_url: { url: convertedImage, detail: 'high' } }
             ]
           }
         ],
