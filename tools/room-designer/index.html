@@ -18129,7 +18129,7 @@
         document.body.appendChild(input);
         input.onchange = (e) => {
           const file = e.target.files[0];
-          if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
+          if (file) {
             handleMultiFile(file);
           }
           input.remove();
@@ -18144,7 +18144,10 @@
       dropZone.ondrop = (e) => {
         e.preventDefault();
         dropZone.style.borderColor = '';
-        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+        const files = Array.from(e.dataTransfer.files).filter(f =>
+          f.type.startsWith('image/') || f.type === 'application/pdf' ||
+          /\.(heic|heif|jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(f.name)
+        );
         files.slice(0, 4 - uploadedMultiImages.length).forEach(f => handleMultiFile(f));
       };
 
@@ -18158,50 +18161,38 @@
         analyzeBtn.style.opacity = '0.5';
       };
 
-      // Convert unsupported image formats (HEIC, TIFF, BMP) to JPEG via canvas
-      function convertImageToJpeg(file) {
+      // Convert a base64 data URL to JPEG via canvas (for formats OpenAI doesn't support)
+      function convertDataUrlToJpeg(dataUrl) {
         return new Promise((resolve) => {
-          // Supported by OpenAI Vision: jpeg, png, gif, webp
-          const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-          if (supported.includes(file.type)) {
-            resolve(file);
+          // Already a supported format? Pass through.
+          if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) {
+            resolve(dataUrl);
             return;
           }
           const img = new Image();
-          const url = URL.createObjectURL(file);
           img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             canvas.getContext('2d').drawImage(img, 0, 0);
-            URL.revokeObjectURL(url);
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
-              } else {
-                resolve(file); // fallback to original if conversion fails
-              }
-            }, 'image/jpeg', 0.92);
+            const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
+            resolve(jpegUrl);
           };
           img.onerror = () => {
-            URL.revokeObjectURL(url);
-            showToast('Could not decode image — try converting to JPEG first', 'error');
-            resolve(null);
+            // Browser can't decode this format — return original, server will get a clear error
+            resolve(dataUrl);
           };
-          img.src = url;
+          img.src = dataUrl;
         });
       }
 
-      async function handleMultiFile(file) {
-        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
+      function handleMultiFile(file) {
+        // Accept image/* (including HEIC with empty type) and PDFs
+        const isImage = file.type.startsWith('image/') || /\.(heic|heif|jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(file.name);
+        if (!isImage && file.type !== 'application/pdf') return;
         if (uploadedMultiImages.length >= 4) {
           showToast('Maximum 4 images allowed', 'error');
           return;
-        }
-        // Convert HEIC/unsupported formats to JPEG before reading
-        if (file.type.startsWith('image/') && file.type !== 'application/pdf') {
-          file = await convertImageToJpeg(file);
-          if (!file) return; // conversion failed
         }
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -18357,18 +18348,22 @@
 
           let data;
 
-          // Resolve the image to send — multi-image array takes priority
-          const imageToSend = uploadedMultiImages.length > 0
+          // Resolve the image to send — convert unsupported formats (HEIC etc.) to JPEG
+          const rawImage = uploadedMultiImages.length > 0
             ? uploadedMultiImages[0].data
             : uploadedImageData;
+          const imageToSend = await convertDataUrlToJpeg(rawImage);
 
           if (uploadedMultiImages.length >= 2) {
             // Multi-image mode - parallel analysis + merge
+            const convertedImages = await Promise.all(
+              uploadedMultiImages.map(async img => ({ data: await convertDataUrlToJpeg(img.data), label: img.label || '' }))
+            );
             const response = await fetch(`${AI_API_BASE}/api/ai/room-scan-multi`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                images: uploadedMultiImages.map(img => ({ data: img.data, label: img.label || '' })),
+                images: convertedImages,
                 projectType: document.getElementById('blueprintProjectType').value,
                 userContext: userContext
               })
