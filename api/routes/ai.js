@@ -5,30 +5,26 @@
 
 const express = require('express');
 const router = express.Router();
-const sharp = require('sharp');
 const logger = require('../utils/logger');
 const { handleApiError } = require('../utils/security');
 const { aiRateLimiter } = require('../middleware/rateLimiter');
 
 /**
- * Convert a base64 data URL to JPEG if it's an unsupported format for OpenAI Vision.
- * OpenAI supports: jpeg, png, gif, webp. Everything else (heic, tiff, bmp) gets converted.
+ * Validate image data URL format for OpenAI Vision API.
+ * Returns the data URL if supported, or throws with a helpful error for unsupported formats.
  */
-async function ensureJpegDataUrl(dataUrl) {
-  const supportedMatch = dataUrl.match(/^data:image\/(jpeg|png|gif|webp)[;,]/);
-  if (supportedMatch) return dataUrl; // already supported
+function validateImageFormat(dataUrl) {
+  if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) return dataUrl;
 
-  const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
-  if (!base64Match) return dataUrl; // not a data URL, pass through
+  const mimeMatch = dataUrl.match(/^data:([^;,]+)/);
+  const mime = mimeMatch ? mimeMatch[1] : 'unknown';
 
-  try {
-    const buffer = Buffer.from(base64Match[1], 'base64');
-    const jpegBuffer = await sharp(buffer).jpeg({ quality: 90 }).toBuffer();
-    return `data:image/jpeg;base64,${jpegBuffer.toString('base64')}`;
-  } catch (err) {
-    logger.error('[Image Convert] Failed to convert image to JPEG:', err.message);
-    return dataUrl; // return original, let OpenAI give a clear error
+  if (/heic|heif/i.test(mime)) {
+    throw new Error('HEIC/HEIF format is not supported by the AI vision system. Please convert to JPEG or PNG first, or use Safari which can auto-convert HEIC images.');
   }
+
+  // For other unknown formats, let it through — OpenAI will give its own error
+  return dataUrl;
 }
 
 // Import blueprint analyzer
@@ -361,8 +357,8 @@ router.post('/room-scan', async (req, res) => {
       return res.status(400).json({ error: 'Image is required' });
     }
 
-    // Convert HEIC/unsupported formats to JPEG for OpenAI Vision
-    const convertedImage = await ensureJpegDataUrl(image);
+    // Validate image format — HEIC not supported by OpenAI Vision
+    const convertedImage = validateImageFormat(image);
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -682,10 +678,8 @@ ALL dimensions in INCHES. Room dimensions in FEET.
 }`;
 
     // Build the content array: text prompt + all images
-    // Convert any unsupported image formats (HEIC etc.) to JPEG
-    const convertedImages = await Promise.all(
-      images.map(async img => ({ ...img, data: await ensureJpegDataUrl(img.data || img) }))
-    );
+    // Validate image formats — HEIC not supported by OpenAI Vision
+    const convertedImages = images.map(img => ({ ...img, data: validateImageFormat(img.data || img) }));
 
     const contentArray = [
       { type: 'text', text: userPrompt }
@@ -1026,8 +1020,8 @@ router.post('/design-from-reference', async (req, res) => {
       return res.status(400).json({ error: 'Reference image is required' });
     }
 
-    // Convert HEIC/unsupported formats to JPEG for OpenAI Vision
-    const convertedImage = await ensureJpegDataUrl(image);
+    // Validate image format — HEIC not supported by OpenAI Vision
+    const convertedImage = validateImageFormat(image);
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_API_KEY) {

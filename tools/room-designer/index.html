@@ -18162,13 +18162,15 @@
       };
 
       // Convert a base64 data URL to JPEG via canvas (for formats OpenAI doesn't support)
+      // Safari can decode HEIC natively; Chrome/Firefox cannot.
       function convertDataUrlToJpeg(dataUrl) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           // Already a supported format? Pass through.
           if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) {
             resolve(dataUrl);
             return;
           }
+          const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -18179,8 +18181,11 @@
             resolve(jpegUrl);
           };
           img.onerror = () => {
-            // Browser can't decode this format — return original, server will get a clear error
-            resolve(dataUrl);
+            if (isHeic) {
+              reject(new Error('Your browser cannot process HEIC images. Please use Safari, or convert the image to JPEG/PNG first (e.g. open in Preview → File → Export as JPEG).'));
+            } else {
+              reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
+            }
           };
           img.src = dataUrl;
         });
