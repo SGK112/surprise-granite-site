@@ -1293,8 +1293,6 @@
           state = lead.billing_address.state || 'AZ';
           zip = lead.billing_address.zip || lead.billing_address.zip_code || '';
         }
-      } else if (lead.project_address) {
-        address = lead.project_address;
       }
 
       // Create new customer (with bidirectional lead_id reference)
@@ -3965,13 +3963,13 @@
           // Check if lead exists with this email
           const { data: existingLead } = await supabaseClient
             .from('leads')
-            .select('id, name')
+            .select('id, full_name')
             .eq('email', customerEmail)
             .single();
 
           if (existingLead) {
             leadId = existingLead.id;
-            customerName = existingLead.name;
+            customerName = existingLead.full_name;
           }
         }
 
@@ -6625,7 +6623,8 @@
 
       const parsedDate = lead._parsedDate || '';
       const parsedTime = lead._parsedTime || '';
-      const parsedAddress = lead._parsedAddress || lead.project_address || lead.address || '';
+      const addrData = lead.service_address || lead.billing_address;
+      const parsedAddress = lead._parsedAddress || (addrData && typeof addrData === 'object' ? [addrData.street, addrData.city, addrData.state, addrData.zip].filter(Boolean).join(', ') : '');
 
       if (!parsedDate) {
         showToast('Could not parse date from message', 'error');
@@ -6717,7 +6716,6 @@
             appointment_date: isoDate,
             appointment_time: formattedTime,
             appointment_status: 'confirmed',
-            project_address: parsedAddress || lead.project_address,
             updated_at: new Date().toISOString()
           })
           .eq('id', leadId);
@@ -6726,7 +6724,7 @@
         lead.appointment_date = isoDate;
         lead.appointment_time = formattedTime;
         lead.appointment_status = 'confirmed';
-        if (parsedAddress) lead.project_address = parsedAddress;
+        // Address stored in service_address JSONB, not project_address
 
         showToast('Calendar event created for ' + startTime.toLocaleDateString() + ' at ' + formattedTime, 'success');
         viewLead(leadId);
@@ -6872,7 +6870,6 @@
             appointment_date: isoDate,
             appointment_time: parsedTime,
             appointment_status: 'confirmed',
-            project_address: parsedAddr || lead.project_address,
             updated_at: new Date().toISOString()
           })
           .eq('id', leadId);
@@ -7004,7 +7001,7 @@
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const leadEmail = selectedLead.email;
-        const leadName = selectedLead.full_name || selectedLead.name || '';
+        const leadName = selectedLead.full_name || '';
         const channel = leadEmail ? 'email' : 'portal';
 
         // Save to database
@@ -7838,7 +7835,7 @@
           zip = structuredAddr.zip || selectedLead.zip_code || null;
         } else {
           // Fall back to parsing address string
-          const addressParts = (selectedLead.project_address || selectedLead.address || '').split(',').map(s => s.trim());
+          const addressParts = ('').split(',').map(s => s.trim());
           address = addressParts[0] || null;
           city = addressParts[1] || null;
           state = addressParts[2] || 'AZ';
@@ -8037,7 +8034,7 @@
         document.getElementById('proj-customer-email').value = lead.email || '';
         document.getElementById('proj-customer-phone').value = lead.phone || '';
         // Parse address
-        var addr = lead.project_address || lead.service_address || '';
+        var addr = lead.service_address || lead.billing_address || '';
         if (typeof addr === 'object' && addr !== null) {
           document.getElementById('proj-address').value = addr.street || '';
           document.getElementById('proj-city').value = addr.city || '';
@@ -8066,7 +8063,7 @@
         full_name: selectedLead.full_name || '',
         email: selectedLead.email || '',
         phone: selectedLead.phone || '',
-        address: selectedLead.project_address || selectedLead.address || '',
+        address: (() => { const a = selectedLead.service_address || selectedLead.billing_address; return a && typeof a === 'object' ? [a.street, a.city, a.state, a.zip].filter(Boolean).join(', ') : ''; })(),
         project_type: selectedLead.project_type || '',
         message: selectedLead.message || selectedLead.project_details || ''
       };
@@ -11727,7 +11724,7 @@
       setTimeout(() => {
         openInvoiceModal({
           email: lead.email,
-          name: lead.full_name || lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
+          name: lead.full_name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
           phone: lead.phone,
           lead_id: lead.id
         });
@@ -15782,7 +15779,7 @@
 
         const isLead = currentNotification.source === 'lead' || currentNotification.lead;
         const recipientEmail = currentNotification.customer?.email || currentNotification.lead?.email;
-        const recipientName = currentNotification.customer?.name || currentNotification.lead?.full_name || currentNotification.lead?.name || '';
+        const recipientName = currentNotification.customer?.name || currentNotification.lead?.full_name || '';
         const effectiveChannel = (channel === 'email' && recipientEmail) ? 'email' : channel;
 
         const { data: insertedMsg, error: msgErr } = await supabaseClient.from('customer_messages').insert({
@@ -24591,14 +24588,14 @@
 
       switch (entityType) {
         case 'lead':
-          suggestedTitle = `Appointment - ${entityData.full_name || entityData.name || entityData.email || 'Lead'}`;
+          suggestedTitle = `Appointment - ${entityData.full_name || entityData.email || 'Lead'}`;
           prefillData = {
             title: suggestedTitle,
             type: 'appointment',
-            contactName: entityData.full_name || entityData.name || '',
+            contactName: entityData.full_name || '',
             contactEmail: entityData.email || '',
             contactPhone: entityData.phone || '',
-            location: entityData.address || '',
+            location: formatAddressFromData(entityData),
             leadId: entityData.id
           };
           break;
@@ -25635,7 +25632,7 @@
       workflowSelectedContractors = [];
 
       // Populate customer info
-      const name = workflowLeadData.full_name || workflowLeadData.name || 'Customer';
+      const name = workflowLeadData.full_name || 'Customer';
       const email = workflowLeadData.email || '';
       const phone = workflowLeadData.phone || '';
       const address = formatAddressFromData(workflowLeadData);
@@ -25805,7 +25802,7 @@
         // Get participant info
         const participants = [];
         const homeownerEmail = workflowLeadData.email;
-        const homeownerName = workflowLeadData.full_name || workflowLeadData.name || 'Customer';
+        const homeownerName = workflowLeadData.full_name || 'Customer';
         const homeownerPhone = workflowLeadData.phone || '';
 
         if (document.getElementById('workflow-invite-homeowner')?.checked && homeownerEmail) {
@@ -25832,7 +25829,7 @@
         });
 
         const notes = document.getElementById('workflow-notes')?.value || '';
-        const address = workflowLeadData.address || workflowLeadData.project_address || '';
+        const address = formatAddressFromData(workflowLeadData);
         const sendEmail = document.getElementById('workflow-send-email')?.checked;
         const sendSms = document.getElementById('workflow-send-sms')?.checked;
 
@@ -26012,10 +26009,7 @@
     function formatAddressFromData(data) {
       if (!data) return '';
 
-      // Check for string addresses first (most common in older leads)
-      if (data.project_address && typeof data.project_address === 'string' && data.project_address.trim()) {
-        return data.project_address.trim();
-      }
+      // Check for string address (customers have flat address field)
       if (data.address && typeof data.address === 'string' && data.address.trim()) {
         return data.address.trim();
       }
@@ -27271,7 +27265,7 @@
       if (modalTitle) modalTitle.textContent = 'Edit Lead';
 
       // Parse name into first/last
-      const fullName = lead.full_name || lead.name || '';
+      const fullName = lead.full_name || '';
       const nameParts = fullName.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -27889,7 +27883,7 @@
       } else if (source === 'lead' && allLeads) {
         allLeads.forEach(l => {
           if (l.email) {
-            preset.innerHTML += `<option value="${l.id}" data-name="${escapeHtml(l.name || '')}" data-email="${escapeHtml(l.email)}" data-phone="${escapeHtml(l.phone || '')}">${escapeHtml(l.name || l.email)}</option>`;
+            preset.innerHTML += `<option value="${l.id}" data-name="${escapeHtml(l.full_name || '')}" data-email="${escapeHtml(l.email)}" data-phone="${escapeHtml(l.phone || '')}">${escapeHtml(l.full_name || l.email)}</option>`;
           }
         });
       } else if (source === 'collaborator') {
@@ -28414,14 +28408,17 @@
         if (event.lead_id && (!fullAddress || fullAddress.length < 10)) {
           const { data: lead } = await supabaseClient
             .from('leads')
-            .select('address, city, state, zip, full_name')
+            .select('service_address, billing_address, zip_code, full_name')
             .eq('id', event.lead_id)
             .single();
           if (lead) {
-            const parts = [lead.address, lead.city, lead.state, lead.zip].filter(Boolean);
-            if (parts.length > 1) {
-              fullAddress = parts.join(', ');
-              addressForMap = fullAddress;
+            const addr = lead.service_address || lead.billing_address;
+            if (addr && typeof addr === 'object') {
+              const parts = [addr.street, addr.city, addr.state, addr.zip].filter(Boolean);
+              if (parts.length > 1) {
+                fullAddress = parts.join(', ');
+                addressForMap = fullAddress;
+              }
             }
           }
         }
@@ -32400,7 +32397,7 @@
           return `
             <tr style="border-bottom: 1px solid var(--border-subtle);">
               <td style="padding: 12px 16px;">
-                <div style="font-weight: 500;">${escapeHtml(l.name || 'Unknown')}</div>
+                <div style="font-weight: 500;">${escapeHtml(l.full_name || 'Unknown')}</div>
                 <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(l.email || '')}</div>
               </td>
               <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(l.phone || '-')}</td>
