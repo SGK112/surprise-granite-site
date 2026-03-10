@@ -10956,11 +10956,12 @@
         if (!user) throw new Error('Not logged in');
 
         // Get current invoice
-        const { data: invoice } = await supabaseClient
+        const { data: invoice, error: fetchErr } = await supabaseClient
           .from('invoices')
           .select('*')
           .eq('id', invoiceId)
           .single();
+        if (fetchErr || !invoice) throw fetchErr || new Error('Invoice not found');
 
         const previousPaid = invoice.amount_paid || 0;
         const newAmountPaid = previousPaid + paymentAmount;
@@ -10982,7 +10983,7 @@
         if (updateError) throw updateError;
 
         // Record payment in payments table
-        await supabaseClient.from('payments').insert({
+        const { error: payErr } = await supabaseClient.from('payments').insert({
           user_id: user.id,
           invoice_id: invoiceId,
           customer_id: invoice.customer_id,
@@ -10992,6 +10993,7 @@
           status: 'completed',
           notes: notes || (isFullyPaid ? 'Final payment' : 'Partial payment')
         });
+        if (payErr) throw payErr;
 
         closeRecordPaymentModal();
         showToast(`Payment of $${paymentAmount.toFixed(2)} recorded!${isFullyPaid ? ' Invoice paid in full!' : ''}`, 'success');
@@ -13568,7 +13570,8 @@
         if (response.ok) {
           showToast('Invoice sent!');
           // Update status
-          await supabaseClient.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
+          const { error: sentErr } = await supabaseClient.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
+          if (sentErr) console.error('[Invoice] Status update error:', sentErr);
           await loadInvoices();
 
           // Send SMS notification (email already sent by API)
@@ -14102,11 +14105,12 @@
         if (!user) throw new Error('Not logged in');
 
         // Get current invoice
-        const { data: invoice } = await supabaseClient
+        const { data: invoice, error: fetchErr } = await supabaseClient
           .from('invoices')
           .select('*')
           .eq('id', invoiceId)
           .single();
+        if (fetchErr || !invoice) throw fetchErr || new Error('Invoice not found');
 
         const previousDeposit = invoice.deposit_paid || 0;
         const totalDepositPaid = previousDeposit + depositAmount;
@@ -15757,7 +15761,7 @@
         const recipientName = currentNotification.customer?.name || currentNotification.lead?.full_name || currentNotification.lead?.name || '';
         const effectiveChannel = (channel === 'email' && recipientEmail) ? 'email' : channel;
 
-        const { data: insertedMsg } = await supabaseClient.from('customer_messages').insert({
+        const { data: insertedMsg, error: msgErr } = await supabaseClient.from('customer_messages').insert({
           ...(isLead ? { lead_id: currentNotification.id } : { customer_id: currentNotification.id }),
           sender_id: user.data.user.id,
           direction: 'outbound',
@@ -15767,6 +15771,7 @@
           sent_to: recipientEmail || currentNotification.customer?.phone || null,
           status: 'sent'
         }).select('id');
+        if (msgErr) throw msgErr;
 
         if (inputEl) inputEl.value = '';
         await loadThreadMessages(currentNotification.id);
@@ -18282,20 +18287,22 @@
         }
 
         // Update status to sent
-        await supabaseClient
+        const { error: sentErr } = await supabaseClient
           .from('estimates')
           .update({ status: 'sent', sent_at: new Date().toISOString() })
           .eq('id', estimateId);
+        if (sentErr) throw sentErr;
 
         // Generate token
         const token = crypto.randomUUID();
-        await supabaseClient
+        const { error: tokenErr } = await supabaseClient
           .from('estimate_tokens')
           .insert([{
             estimate_id: estimateId,
             token: token,
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           }]);
+        if (tokenErr) throw tokenErr;
 
         const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
 
@@ -18864,10 +18871,11 @@
         }
 
         // Update estimate status
-        await supabaseClient
+        const { error: convertErr } = await supabaseClient
           .from('estimates')
           .update({ status: 'converted', converted_to_invoice_id: invoice.id })
           .eq('id', estimateId);
+        if (convertErr) throw convertErr;
 
         // Optionally create Stripe invoice for payment processing (non-blocking)
         try {
