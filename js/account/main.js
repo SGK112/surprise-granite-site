@@ -11531,8 +11531,8 @@
 
       // Filter and render leads
       const filteredLeads = (allLeads || []).filter(lead => {
-        if (!lead.email && !lead.name) return false;
-        const searchStr = `${lead.name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
+        if (!lead.email && !lead.full_name) return false;
+        const searchStr = `${lead.full_name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
         return !filterLower || searchStr.includes(filterLower);
       });
 
@@ -11552,7 +11552,7 @@
                  onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
               <span style="background: #3b82f6; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">LEAD</span>
               <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.name || 'No Name'}</div>
+                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.full_name || 'No Name'}</div>
                 <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lead.email || ''} ${lead.phone ? '· ' + lead.phone : ''}</div>
               </div>
             </div>`;
@@ -11631,9 +11631,12 @@
       }
 
       if (contact) {
+        // Get display name (leads use full_name, customers use name)
+        const displayName = contact.full_name || contact.name || '';
+
         // Update search input to show selection
         const searchInput = document.getElementById('invoice-contact-search');
-        if (searchInput) searchInput.value = contact.name || contact.email || '';
+        if (searchInput) searchInput.value = displayName || contact.email || '';
 
         // Update hidden select
         const hiddenSelect = document.getElementById('invoice-contact-select');
@@ -11650,7 +11653,7 @@
 
         // Auto-populate form fields
         document.getElementById('invoice-email').value = contact.email || '';
-        document.getElementById('invoice-name').value = contact.name || '';
+        document.getElementById('invoice-name').value = displayName;
         document.getElementById('invoice-phone').value = contact.phone || '';
 
         const addrField = document.getElementById('invoice-address');
@@ -11658,16 +11661,32 @@
         const stateField = document.getElementById('invoice-state');
         const zipField = document.getElementById('invoice-zip');
 
-        if (addrField) addrField.value = contact.address || '';
-        if (cityField) cityField.value = contact.city || '';
-        if (stateField) stateField.value = contact.state || '';
-        if (zipField) zipField.value = contact.zip || '';
+        // Leads use service_address JSONB, customers use flat fields
+        if (type === 'lead') {
+          const addr = contact.service_address || contact.billing_address;
+          if (addr && typeof addr === 'object') {
+            if (addrField) addrField.value = addr.street || '';
+            if (cityField) cityField.value = addr.city || '';
+            if (stateField) stateField.value = addr.state || '';
+            if (zipField) zipField.value = addr.zip || contact.zip_code || '';
+          } else {
+            if (addrField) addrField.value = '';
+            if (cityField) cityField.value = '';
+            if (stateField) stateField.value = '';
+            if (zipField) zipField.value = contact.zip_code || '';
+          }
+        } else {
+          if (addrField) addrField.value = contact.address || '';
+          if (cityField) cityField.value = contact.city || '';
+          if (stateField) stateField.value = contact.state || '';
+          if (zipField) zipField.value = contact.zip || '';
+        }
 
         // Hide the list
         const listEl = document.getElementById('invoice-contact-list');
         if (listEl) listEl.style.display = 'none';
 
-        showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
+        showToast(`Loaded ${type}: ${displayName || contact.email}`, 'success');
       }
     }
 
@@ -13132,27 +13151,32 @@
           balanceDue = total - depositAmount;
         }
 
-        // Only include columns that definitely exist in the invoices table
-        // Minimal set: user_id, invoice_number, customer_name, customer_email, total, status
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
           customer_name: customerName || 'Customer',
           customer_email: customerEmail,
           customer_phone: customerPhone || null,
+          customer_address: customerAddress || null,
+          customer_city: customerCity || null,
+          customer_state: customerState || null,
+          customer_zip: customerZip || null,
+          subtotal: total,
           total: total,
           amount_paid: amountPaid,
+          amount_due: total - amountPaid,
           status: invoiceStatus,
+          due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           notes: notes || null
         };
-
-        // Add additional columns that likely exist from migrations
-        invoiceData.subtotal = total;
-        invoiceData.due_date = new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         if (customerId) {
           invoiceData.customer_id = customerId;
           console.log('[Invoices] Linking invoice to customer:', customerId);
+        }
+        if (leadId) {
+          invoiceData.lead_id = leadId;
+          console.log('[Invoices] Linking invoice to lead:', leadId);
         }
 
         // Deposit fields (from invoice-deposits-migration.sql)
@@ -17028,8 +17052,8 @@
       let html = '';
 
       const filteredLeads = (allLeads || []).filter(lead => {
-        if (!lead.email && !lead.name) return false;
-        const searchStr = `${lead.name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
+        if (!lead.email && !lead.full_name) return false;
+        const searchStr = `${lead.full_name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase();
         return !filterLower || searchStr.includes(filterLower);
       });
 
@@ -17048,7 +17072,7 @@
                  onmouseover="this.style.background='var(--dark-surface)'" onmouseout="this.style.background='transparent'">
               <span style="background: #3b82f6; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">LEAD</span>
               <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 500;">${lead.name || 'No Name'}</div>
+                <div style="font-weight: 500;">${lead.full_name || 'No Name'}</div>
                 <div style="font-size: 12px; color: var(--text-muted);">${lead.email || ''} ${lead.phone ? '· ' + lead.phone : ''}</div>
               </div>
             </div>`;
@@ -17122,8 +17146,9 @@
       }
 
       if (contact) {
+        const displayName = contact.full_name || contact.name || '';
         const searchInput = document.getElementById('estimate-contact-search');
-        if (searchInput) searchInput.value = contact.name || contact.email || '';
+        if (searchInput) searchInput.value = displayName || contact.email || '';
 
         const badge = document.getElementById('estimate-contact-badge');
         if (badge) {
@@ -17134,20 +17159,38 @@
         }
 
         // Auto-populate form fields
-        document.getElementById('estimate-customer-name').value = contact.name || '';
+        document.getElementById('estimate-customer-name').value = displayName;
         document.getElementById('estimate-customer-email').value = contact.email || '';
         document.getElementById('estimate-customer-phone').value = contact.phone || '';
-        document.getElementById('estimate-customer-address').value = contact.address || '';
-        document.getElementById('estimate-customer-city').value = contact.city || '';
-        document.getElementById('estimate-customer-state').value = contact.state || 'AZ';
 
-        const zipField = document.getElementById('estimate-customer-zip');
-        if (zipField) zipField.value = contact.zip || '';
+        // Leads use service_address JSONB, customers use flat fields
+        if (type === 'lead') {
+          const addr = contact.service_address || contact.billing_address;
+          if (addr && typeof addr === 'object') {
+            document.getElementById('estimate-customer-address').value = addr.street || '';
+            document.getElementById('estimate-customer-city').value = addr.city || '';
+            document.getElementById('estimate-customer-state').value = addr.state || 'AZ';
+            const zipField = document.getElementById('estimate-customer-zip');
+            if (zipField) zipField.value = addr.zip || contact.zip_code || '';
+          } else {
+            document.getElementById('estimate-customer-address').value = '';
+            document.getElementById('estimate-customer-city').value = '';
+            document.getElementById('estimate-customer-state').value = 'AZ';
+            const zipField = document.getElementById('estimate-customer-zip');
+            if (zipField) zipField.value = contact.zip_code || '';
+          }
+        } else {
+          document.getElementById('estimate-customer-address').value = contact.address || '';
+          document.getElementById('estimate-customer-city').value = contact.city || '';
+          document.getElementById('estimate-customer-state').value = contact.state || 'AZ';
+          const zipField = document.getElementById('estimate-customer-zip');
+          if (zipField) zipField.value = contact.zip || '';
+        }
 
         const listEl = document.getElementById('estimate-contact-list');
         if (listEl) listEl.style.display = 'none';
 
-        showToast(`Loaded ${type}: ${contact.name || contact.email}`, 'success');
+        showToast(`Loaded ${type}: ${displayName || contact.email}`, 'success');
       }
     }
 
@@ -20190,7 +20233,7 @@
         return;
       }
       const filtered = projectLeadsCache.filter(lead =>
-        (lead.name && lead.name.toLowerCase().includes(q)) ||
+        (lead.full_name && lead.full_name.toLowerCase().includes(q)) ||
         (lead.email && lead.email.toLowerCase().includes(q)) ||
         (lead.phone && lead.phone.includes(q))
       );
@@ -20207,19 +20250,21 @@
       if (!lead) return;
 
       // Populate form from lead
+      const leadName = lead.full_name || '';
       document.getElementById('proj-lead-id').value = leadId;
-      document.getElementById('lead-search-input').value = lead.name;
+      document.getElementById('lead-search-input').value = leadName;
       document.getElementById('lead-dropdown').style.display = 'none';
 
       // Auto-fill project fields
-      document.getElementById('proj-name').value = (lead.service_type ? lead.service_type + ' - ' : '') + lead.name;
-      document.getElementById('proj-customer-name').value = lead.name || '';
+      document.getElementById('proj-name').value = (lead.project_type ? lead.project_type + ' - ' : '') + leadName;
+      document.getElementById('proj-customer-name').value = leadName;
       document.getElementById('proj-customer-email').value = lead.email || '';
       document.getElementById('proj-customer-phone').value = lead.phone || '';
-      document.getElementById('proj-address').value = lead.address || '';
-      document.getElementById('proj-city').value = lead.city || '';
-      document.getElementById('proj-state').value = lead.state || '';
-      document.getElementById('proj-zip').value = lead.zip || '';
+      const addr = lead.service_address || lead.billing_address;
+      document.getElementById('proj-address').value = addr && typeof addr === 'object' ? (addr.street || '') : '';
+      document.getElementById('proj-city').value = addr && typeof addr === 'object' ? (addr.city || '') : '';
+      document.getElementById('proj-state').value = addr && typeof addr === 'object' ? (addr.state || '') : '';
+      document.getElementById('proj-zip').value = lead.zip_code || (addr && addr.zip) || '';
       if (lead.notes) {
         document.getElementById('proj-notes').value = 'From lead: ' + lead.notes;
       }
