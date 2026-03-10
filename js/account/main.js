@@ -14134,7 +14134,7 @@
         if (updateError) throw updateError;
 
         // Record payment
-        await supabaseClient.from('payments').insert({
+        const { error: payErr } = await supabaseClient.from('payments').insert({
           user_id: user.id,
           invoice_id: invoiceId,
           customer_id: invoice.customer_id,
@@ -14144,6 +14144,7 @@
           status: 'completed',
           notes: notes || 'Deposit payment'
         });
+        if (payErr) throw payErr;
 
         closeRecordDepositModal();
         showToast(`Deposit of $${depositAmount.toFixed(2)} recorded!`, 'success');
@@ -14269,11 +14270,12 @@
         if (!user) throw new Error('Not logged in');
 
         // Get current estimate
-        const { data: estimate } = await supabaseClient
+        const { data: estimate, error: fetchErr } = await supabaseClient
           .from('estimates')
           .select('*')
           .eq('id', estimateId)
           .single();
+        if (fetchErr || !estimate) throw fetchErr || new Error('Estimate not found');
 
         const previousDeposit = estimate.deposit_paid || 0;
         const totalDepositPaid = previousDeposit + depositAmount;
@@ -14293,7 +14295,7 @@
         if (updateError) throw updateError;
 
         // Record payment
-        await supabaseClient.from('payments').insert({
+        const { error: payErr } = await supabaseClient.from('payments').insert({
           user_id: user.id,
           estimate_id: estimateId,
           amount: depositAmount,
@@ -14302,6 +14304,7 @@
           status: 'completed',
           notes: notes || 'Estimate deposit payment'
         });
+        if (payErr) throw payErr;
 
         closeRecordEstimateDepositModal();
         showToast(`Deposit of $${depositAmount.toFixed(2)} recorded!`, 'success');
@@ -14319,24 +14322,12 @@
       }
     }
 
-    // Update showPage to load invoices and wallet
+    // Update showPage to load wallet (invoices/jobs/collaborators/calendar already loaded in original showPage)
     const _originalShowPage = showPage;
     showPage = async function(page) {
       await _originalShowPage(page);
-      if (page === 'invoices' && isAdmin) {
-        await loadInvoices();
-      }
-      if (page === 'wallet' && isAdmin) {
+      if (page === 'wallet') {
         await loadWalletData();
-      }
-      if (page === 'calendar') {
-        initCalendar();
-      }
-      if (page === 'jobs') {
-        await loadJobs();
-      }
-      if (page === 'collaborators') {
-        await loadCollaborators();
       }
     };
 
@@ -14358,13 +14349,17 @@
 
         const data = await response.json();
 
-        document.getElementById('available-balance').textContent = `$${data.total_available.toFixed(2)}`;
-        document.getElementById('pending-balance').textContent = `$${data.total_pending.toFixed(2)}`;
+        const availEl = document.getElementById('available-balance');
+        const pendEl = document.getElementById('pending-balance');
+        if (availEl) availEl.textContent = `$${data.total_available.toFixed(2)}`;
+        if (pendEl) pendEl.textContent = `$${data.total_pending.toFixed(2)}`;
 
       } catch (err) {
         console.error('Balance error:', err);
-        document.getElementById('available-balance').textContent = '$--.--';
-        document.getElementById('pending-balance').textContent = '$--.--';
+        const availEl = document.getElementById('available-balance');
+        const pendEl = document.getElementById('pending-balance');
+        if (availEl) availEl.textContent = '$--.--';
+        if (pendEl) pendEl.textContent = '$--.--';
       }
     }
 
@@ -14378,7 +14373,8 @@
 
         const data = await response.json();
 
-        if (data.transactions.length === 0) {
+        const transactions = data.transactions || [];
+        if (transactions.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <p>No transactions yet</p>
@@ -14388,13 +14384,14 @@
         }
 
         // Calculate total revenue from charges
-        totalRevenue = data.transactions
+        totalRevenue = transactions
           .filter(t => t.type === 'charge' && t.amount > 0)
           .reduce((sum, t) => sum + t.amount, 0);
 
-        document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+        const revenueEl = document.getElementById('total-revenue');
+        if (revenueEl) revenueEl.textContent = `$${totalRevenue.toFixed(2)}`;
 
-        container.innerHTML = data.transactions.map(t => {
+        container.innerHTML = transactions.map(t => {
           const isPositive = t.amount > 0 && t.type !== 'payout' && t.type !== 'stripe_fee';
           const iconClass = t.type === 'payout' ? 'payout' : (t.type === 'stripe_fee' ? 'fee' : 'income');
           const icon = t.type === 'payout'
