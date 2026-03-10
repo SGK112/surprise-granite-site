@@ -967,7 +967,7 @@
         }
       },
 
-      handleCustomerAction(action, item) {
+      async handleCustomerAction(action, item) {
         switch (action) {
           case 'view':
             selectCustomer(item.id);
@@ -989,7 +989,7 @@
             }
             break;
           case 'delete':
-            deleteCustomer(item.id);
+            await deleteCustomer(item.id);
             break;
         }
       },
@@ -1341,7 +1341,7 @@
         allCustomers.push(newCustomer);
 
         // Refresh leads list
-        loadLeads();
+        await loadLeads();
 
         return newCustomer;
       }
@@ -5237,7 +5237,8 @@
         if (page === 'calendar') {
           renderCalendar(); // Show empty grid immediately
           // Load job events first (clears array), then custom events (merges)
-          loadCalendarEvents().then(() => loadAllCalendarEvents());
+          await loadCalendarEvents();
+          loadAllCalendarEvents();
         }
 
         // Load customers when that page is shown
@@ -5971,7 +5972,7 @@
               .from('leads')
               .update({ status: 'contacted', updated_at: new Date().toISOString() })
               .eq('id', leadId);
-            loadLeads();
+            await loadLeads();
           }
         } else {
           throw new Error(result.error || 'Failed to send email');
@@ -10993,7 +10994,7 @@
 
         closeRecordPaymentModal();
         showToast(`Payment of $${paymentAmount.toFixed(2)} recorded!${isFullyPaid ? ' Invoice paid in full!' : ''}`, 'success');
-        loadInvoices();
+        await loadInvoices();
 
       } catch (err) {
         console.error('Save payment error:', err);
@@ -11285,7 +11286,7 @@
           if (error) throw error;
         }
 
-        loadInvoices();
+        await loadInvoices();
         showToast('Invoice voided');
       } catch (err) {
         console.error('Void invoice error:', err);
@@ -11789,7 +11790,7 @@
         const data = await response.json();
         if (data.success) {
           showToast('Invoice synced to QuickBooks', 'success');
-          loadInvoices(); // Refresh to show sync status
+          await loadInvoices(); // Refresh to show sync status
         } else {
           throw new Error(data.error || 'Sync failed');
         }
@@ -11820,7 +11821,7 @@
         const data = await response.json();
         if (data.success) {
           showToast('Estimate synced to QuickBooks', 'success');
-          loadEstimates(); // Refresh to show sync status
+          await loadEstimates(); // Refresh to show sync status
         } else {
           throw new Error(data.error || 'Sync failed');
         }
@@ -11851,7 +11852,7 @@
         const data = await response.json();
         if (data.success) {
           showToast(data.message, 'success');
-          loadInvoices();
+          await loadInvoices();
         } else {
           throw new Error(data.error);
         }
@@ -11882,7 +11883,7 @@
         const data = await response.json();
         if (data.success) {
           showToast(data.message, 'success');
-          loadEstimates();
+          await loadEstimates();
         } else {
           throw new Error(data.error);
         }
@@ -12586,7 +12587,7 @@
 
         window._editingInvoiceId = null;
         closeInvoiceModal();
-        loadInvoices();
+        await loadInvoices();
         showToast(isEditingInvoice ? 'Invoice updated!' : `Invoice #${invoiceNumber} saved as draft`, 'success');
       } catch (err) {
         showToast('Error saving draft: ' + err.message, 'error');
@@ -12887,7 +12888,7 @@
           showToast('Invoice sent successfully!', 'success');
           previewModal.classList.remove('active');
           closeInvoiceModal();
-          loadInvoices();
+          await loadInvoices();
 
           window._pendingInvoiceId = null;
           window._pendingInvoiceToken = null;
@@ -13205,7 +13206,7 @@
         }
         console.log('[Invoices] Invoice created successfully:', invoiceNumber);
         showToast(`Invoice #${invoiceNumber} created! Sending email...`, 'success');
-        loadInvoices();
+        await loadInvoices();
 
         // Step 3: Create Stripe invoice via surprise-granite-email-api (has correct Stripe keys)
         (async () => {
@@ -13249,7 +13250,7 @@
 
                 console.log('[Invoices] Stripe invoice created:', result.invoice.id);
                 showToast(`Invoice emailed to ${customerEmail}!`, 'success');
-                loadInvoices();
+                await loadInvoices();
               } else {
                 console.error('[Invoices] Missing invoice ID:', result);
                 showToast('Invoice saved but email may not have sent', 'warning');
@@ -13567,7 +13568,7 @@
           showToast('Invoice sent!');
           // Update status
           await supabaseClient.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
-          loadInvoices();
+          await loadInvoices();
 
           // Send SMS notification (email already sent by API)
           sendNotification('invoice', 'sent', invoice, {
@@ -13598,7 +13599,7 @@
         await supabaseClient.from('invoices').delete().eq('id', invoiceId);
 
         showToast('Invoice deleted');
-        loadInvoices();
+        await loadInvoices();
       } catch (err) {
         console.error('Delete invoice error:', err);
         alert('Error deleting invoice');
@@ -13986,8 +13987,8 @@
         });
 
         showToast('Invoice marked as paid! Job created.');
-        loadInvoices();
-        loadJobs();
+        await loadInvoices();
+        await loadJobs();
       } catch (err) {
         console.error('Mark paid error:', err);
         alert('Error marking invoice as paid: ' + err.message);
@@ -14141,7 +14142,7 @@
 
         closeRecordDepositModal();
         showToast(`Deposit of $${depositAmount.toFixed(2)} recorded!`, 'success');
-        loadInvoices();
+        await loadInvoices();
 
       } catch (err) {
         console.error('Save deposit error:', err);
@@ -14304,7 +14305,7 @@
         if (convertToInvoice) {
           await createInvoiceFromEstimate(estimateId);
         } else {
-          loadEstimates();
+          await loadEstimates();
         }
 
       } catch (err) {
@@ -14330,7 +14331,7 @@
         await loadJobs();
       }
       if (page === 'collaborators') {
-        loadCollaborators();
+        await loadCollaborators();
       }
     };
 
@@ -16733,7 +16734,7 @@
         showToast(`Estimate → ${newStatus}`, 'success');
 
         // Refresh to update button visibility (e.g., Convert to Invoice)
-        loadEstimates();
+        await loadEstimates();
       } catch (err) {
         console.error('Error updating estimate status:', err);
         showToast('Failed to update status', 'error');
@@ -17539,7 +17540,7 @@
           showToast('Estimate sent successfully!', 'success');
           previewModal.classList.remove('active');
           closeCreateEstimateModal();
-          loadEstimates();
+          await loadEstimates();
 
           window._pendingEstimateId = null;
           window._pendingEstimateToken = null;
@@ -18024,7 +18025,7 @@
 
         // Close modal and refresh list
         closeCreateEstimateModal();
-        loadEstimates();
+        await loadEstimates();
 
         if (isEditing) {
           showToast('Estimate updated successfully!', 'success');
@@ -18211,7 +18212,7 @@
         }
 
         closeCreateEstimateModal();
-        loadEstimates();
+        await loadEstimates();
         showToast(isEditing ? 'Estimate updated!' : 'Draft saved successfully!');
 
       } catch (err) {
@@ -18381,7 +18382,7 @@
           showToast('Email client opened with estimate link');
         }
 
-        loadEstimates();
+        await loadEstimates();
       } catch (err) {
         console.error('Send estimate error:', err);
         alert('Error sending estimate: ' + err.message);
@@ -18549,7 +18550,7 @@
 
       try {
         await supabaseClient.from('estimates').delete().eq('id', estimateId);
-        loadEstimates();
+        await loadEstimates();
         showToast('Estimate deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
@@ -18565,7 +18566,7 @@
           .eq('id', estimateId);
 
         if (error) throw error;
-        loadEstimates();
+        await loadEstimates();
         showToast('Estimate archived');
       } catch (err) {
         console.error('Archive estimate error:', err);
@@ -18581,7 +18582,7 @@
           .eq('id', estimateId);
 
         if (error) throw error;
-        loadEstimates();
+        await loadEstimates();
         showToast('Estimate restored');
       } catch (err) {
         console.error('Unarchive estimate error:', err);
@@ -18597,7 +18598,7 @@
         await supabaseClient.from('estimate_items').delete().eq('estimate_id', estimateId);
         // Delete the estimate
         await supabaseClient.from('estimates').delete().eq('id', estimateId);
-        loadEstimates();
+        await loadEstimates();
         showToast('Estimate permanently deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
@@ -18669,7 +18670,7 @@
           await supabaseClient.from('estimate_items').insert(items);
         }
 
-        loadEstimates();
+        await loadEstimates();
         showToast('Estimate duplicated!');
       } catch (err) {
         console.error('Duplicate estimate error:', err);
@@ -18922,7 +18923,7 @@
 
         showToast('Invoice created successfully!');
         showPage('invoices');
-        loadInvoices();
+        await loadInvoices();
       } catch (err) {
         console.error('Convert to invoice error:', err);
         alert('Error converting to invoice: ' + err.message);
@@ -22070,7 +22071,7 @@
 
         closeNewJobModal();
         showToast('Job created successfully!');
-        loadJobs();
+        await loadJobs();
       } catch (err) {
         console.error('Create job error:', err);
         alert('Error creating job: ' + err.message);
@@ -22171,9 +22172,9 @@
         if (error) throw error;
 
         showToast('Status updated');
-        loadJobs();
+        await loadJobs();
         // Refresh calendar if it's been loaded
-        if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
       } catch (err) {
         console.error('Update status error:', err);
         alert('Error updating status: ' + err.message);
@@ -22209,8 +22210,8 @@
         }
 
         showToast(`Job status updated to ${newStatus.replace('_', ' ')}`);
-        loadJobs();
-        if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        await loadJobs();
+        if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
       } catch (err) {
         console.error('Update job status error:', err);
         showToast('Error updating status: ' + err.message, 'error');
@@ -22232,7 +22233,7 @@
         if (error) throw error;
 
         showToast('Job archived');
-        loadJobs();
+        await loadJobs();
       } catch (err) {
         console.error('Archive job error:', err);
         showToast('Error archiving job: ' + err.message, 'error');
@@ -22260,7 +22261,7 @@
         if (error) throw error;
 
         showToast('Job deleted');
-        loadJobs();
+        await loadJobs();
         closeJobDetailModal();
       } catch (err) {
         console.error('Delete job error:', err);
@@ -22295,9 +22296,9 @@
         if (error) throw error;
 
         showToast('Schedule updated');
-        loadJobs();
+        await loadJobs();
         // Refresh calendar to show the new event
-        if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
+        if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
       } catch (err) {
         console.error('Update schedule error:', err);
         alert('Error updating schedule: ' + err.message);
@@ -25850,7 +25851,7 @@
 
         // Refresh calendar if visible
         if (typeof loadCalendarEvents === 'function') {
-          loadCalendarEvents();
+          await loadCalendarEvents();
         }
 
       } catch (err) {
@@ -27513,7 +27514,7 @@
 
       // Refresh calendar if visible
       if (typeof loadCalendarEvents === 'function') {
-        loadCalendarEvents();
+        await loadCalendarEvents();
       }
     }
 
@@ -27983,7 +27984,7 @@
 
         showToast(eventId ? 'Event updated!' : 'Event created!', 'success');
         closeCalendarEventModal();
-        loadCalendarEvents();
+        await loadCalendarEvents();
         loadFullCalendarEvents(); // Load the new calendar events
 
       } catch (err) {
@@ -29842,7 +29843,7 @@
 
         closeNewCollaboratorModal();
         showToast('Contractor added!');
-        loadCollaborators();
+        await loadCollaborators();
       } catch (err) {
         console.error('Create contractor error:', err);
         alert('Error adding contractor: ' + err.message);
@@ -30000,8 +30001,8 @@
 
         closeAssignCollaboratorModal();
         showToast('Contractor assigned!');
-        loadJobs();
-        loadCollaborators(); // Refresh collaborators list too
+        await loadJobs();
+        await loadCollaborators(); // Refresh collaborators list too
         if (currentJobId) {
           const job = allJobs.find(j => j.id === currentJobId);
           if (job) openJobDetail(currentJobId);
@@ -30033,19 +30034,19 @@
       // Ensure jobs and customers are loaded for scheduling
       if (allJobs.length === 0) await loadJobs();
       if (allCustomers.length === 0) await loadCustomers();
-      loadCalendarEvents();
+      await loadCalendarEvents();
     }
 
-    function changeCalendarMonth(delta) {
+    async function changeCalendarMonth(delta) {
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
       renderCalendar();
-      loadCalendarEvents();
+      await loadCalendarEvents();
     }
 
-    function goToToday() {
+    async function goToToday() {
       currentCalendarDate = new Date();
       renderCalendar();
-      loadCalendarEvents();
+      await loadCalendarEvents();
     }
 
     // Calendar Scheduling Variables
@@ -30209,7 +30210,7 @@
         showToast('Event scheduled successfully!');
         closeQuickScheduleModal();
         closeDayEventsModal();
-        loadCalendarEvents();
+        await loadCalendarEvents();
         renderCalendar();
 
       } catch (err) {
