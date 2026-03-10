@@ -27,7 +27,7 @@
 
     // Initialize Places Autocomplete on an input element
     function initLocationAutocomplete(inputElement) {
-      if (!googleMapsReady || !google?.maps?.places) {
+      if (!googleMapsReady || googleMapsError || !google?.maps?.places) {
         return;
       }
 
@@ -6442,7 +6442,10 @@
         const leadName = lead.full_name || 'Customer';
         const leadEmail = lead.email || '';
         const leadPhone = lead.phone || '';
-        const leadAddress = lead.project_address || lead.address || '';
+        const addrObj = lead.service_address || lead.billing_address;
+        const leadAddress = addrObj && typeof addrObj === 'object'
+          ? [addrObj.street, addrObj.city, addrObj.state, addrObj.zip].filter(Boolean).join(', ')
+          : '';
 
         // Create calendar event
         const { data: calEvent, error: calError } = await supabaseClient
@@ -24997,16 +25000,16 @@
 
       document.getElementById('calendar-event-modal').classList.add('active');
 
-      // Initialize Google Places autocomplete on location input
-      if (googleMapsReady && !locationAutocomplete) {
+      // Always hide map preview first — it can show broken tiles if Google Maps fails
+      hideLocationMapPreview();
+
+      // Initialize Google Places autocomplete on location input (only if API is fully ready)
+      if (googleMapsReady && !googleMapsError && !locationAutocomplete) {
         const locationInput = document.getElementById('cal-event-location');
         if (locationInput) {
           initLocationAutocomplete(locationInput);
         }
       }
-
-      // Hide map preview when opening modal (will show when address selected)
-      hideLocationMapPreview();
     }
 
     // ============================================
@@ -25025,11 +25028,14 @@
         // Load leads (RLS handles user filtering)
         const { data: leads } = await supabaseClient
           .from('leads')
-          .select('id, full_name, email, phone, address, city, state')
+          .select('id, full_name, email, phone, service_address, billing_address, zip_code')
           .limit(200);
 
         (leads || []).forEach(l => {
-          const address = [l.address, l.city, l.state].filter(Boolean).join(', ');
+          const addr = l.service_address || l.billing_address;
+          const address = addr && typeof addr === 'object'
+            ? [addr.street, addr.city, addr.state, addr.zip].filter(Boolean).join(', ')
+            : '';
           calEventContactsCache.push({
             id: l.id,
             type: 'lead',
@@ -25190,8 +25196,8 @@
         // Check the "use contact address" checkbox
         const useContactCheckbox = document.getElementById('use-contact-address');
         if (useContactCheckbox) useContactCheckbox.checked = true;
-        // Show map preview for the address
-        if (googleMapsReady) {
+        // Show map preview for the address (only if Google Maps is fully working)
+        if (googleMapsReady && !googleMapsError) {
           geocodeAndShowMapPreview(address);
         }
       }
@@ -25264,8 +25270,8 @@
         if (locationField) {
           locationField.value = selectedContactData.address;
         }
-        // Show map preview for the address
-        if (googleMapsReady) {
+        // Show map preview for the address (only if Google Maps is fully working)
+        if (googleMapsReady && !googleMapsError) {
           geocodeAndShowMapPreview(selectedContactData.address);
         }
       } else {
