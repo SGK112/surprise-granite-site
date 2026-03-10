@@ -3904,8 +3904,8 @@
       try {
         const { data: leads, error } = await supabaseClient
           .from('leads')
-          .select('id, name, email, phone, status')
-          .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+          .select('id, full_name, email, phone, status')
+          .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
           .limit(10);
 
         if (error) throw error;
@@ -3916,9 +3916,9 @@
         }
 
         resultsEl.innerHTML = leads.map(lead => `
-          <div class="lead-search-item" onclick="selectLeadForDesign('${lead.id}', '${escapeHtml(lead.name || '')}', '${escapeHtml(lead.email || '')}')"
+          <div class="lead-search-item" onclick="selectLeadForDesign('${lead.id}', '${escapeHtml(lead.full_name || '')}', '${escapeHtml(lead.email || '')}')"
                style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;">
-            <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(lead.name || 'Unknown')}</div>
+            <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(lead.full_name || 'Unknown')}</div>
             <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(lead.email || 'No email')}</div>
             <div style="font-size: 11px; color: var(--gold-primary); margin-top: 4px;">${lead.status || 'Lead'}</div>
           </div>
@@ -5585,9 +5585,9 @@
 
       if (searchTerm) {
         filtered = filtered.filter(l =>
-          (l.full_name || l.homeowner_name || l.name || '').toLowerCase().includes(searchTerm) ||
-          (l.email || l.homeowner_email || '').toLowerCase().includes(searchTerm) ||
-          (l.phone || l.homeowner_phone || '').toLowerCase().includes(searchTerm)
+          (l.full_name || '').toLowerCase().includes(searchTerm) ||
+          (l.email || '').toLowerCase().includes(searchTerm) ||
+          (l.phone || '').toLowerCase().includes(searchTerm)
         );
       }
 
@@ -5625,9 +5625,9 @@
       document.getElementById('leads-table').innerHTML = `
         <div class="leads-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;">
           ${filtered.map(lead => {
-            const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
-            const leadEmail = lead.email || lead.homeowner_email || '';
-            const leadPhone = lead.phone || lead.homeowner_phone || '';
+            const leadName = lead.full_name || 'Unknown';
+            const leadEmail = lead.email || '';
+            const leadPhone = lead.phone || '';
             const hasAppointment = lead.appointment_date && lead.appointment_time;
             const statusColor = getStatusColor(lead.status);
             return `
@@ -5698,9 +5698,9 @@
             <span>Actions</span>
           </div>
           ${filtered.map(lead => {
-            const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
-            const leadEmail = lead.email || lead.homeowner_email || '';
-            const leadPhone = lead.phone || lead.homeowner_phone || '';
+            const leadName = lead.full_name || 'Unknown';
+            const leadEmail = lead.email || '';
+            const leadPhone = lead.phone || '';
             const statusColor = getStatusColor(lead.status);
             return `
             <div class="lead-list-row" onclick="viewLead('${lead.id}')"
@@ -5754,9 +5754,9 @@
               </div>
               <div style="display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto;">
                 ${leads.length === 0 ? `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">No leads</div>` : leads.map(lead => {
-                  const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
-                  const leadEmail = lead.email || lead.homeowner_email || '';
-                  const leadPhone = lead.phone || lead.homeowner_phone || '';
+                  const leadName = lead.full_name || 'Unknown';
+                  const leadEmail = lead.email || '';
+                  const leadPhone = lead.phone || '';
                   return `
                   <div onclick="viewLead('${lead.id}')" style="background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='${statusColor}'" onmouseout="this.style.borderColor='var(--border-subtle)'">
                     <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 6px; font-size: 14px;">${escapeHtml(leadName)}</div>
@@ -5837,8 +5837,8 @@
         return;
       }
 
-      const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Customer';
-      const leadEmail = lead.email || lead.homeowner_email || '';
+      const leadName = lead.full_name || 'Customer';
+      const leadEmail = lead.email || '';
       const firstName = leadName.split(' ')[0];
 
       if (!leadEmail) {
@@ -5935,7 +5935,7 @@
       const lead = allLeads.find(l => l.id === leadId);
       if (!lead) return;
 
-      const leadEmail = lead.email || lead.homeowner_email || '';
+      const leadEmail = lead.email || '';
       const subject = document.getElementById('lead-email-subject').value;
       const body = document.getElementById('lead-email-body').value;
 
@@ -6072,7 +6072,7 @@
         return;
       }
 
-      const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
+      const leadName = lead.full_name || 'Unknown';
 
       if (!confirm(`Convert "${leadName}" to a project?`)) return;
 
@@ -6085,9 +6085,9 @@
           user_id: user.id,
           name: `${leadName} - ${lead.project_type || 'Project'}`,
           customer_name: leadName,
-          customer_email: lead.email || lead.homeowner_email || null,
-          customer_phone: lead.phone || lead.homeowner_phone || null,
-          address: lead.project_address || lead.address || null,
+          customer_email: lead.email || null,
+          customer_phone: lead.phone || null,
+          address: lead.service_address && typeof lead.service_address === 'object' ? [lead.service_address.street, lead.service_address.city, lead.service_address.state, lead.service_address.zip].filter(Boolean).join(', ') : null,
           description: lead.message || lead.project_details || null,
           status: 'lead',
           priority: 'medium',
@@ -6141,11 +6141,12 @@
       container.innerHTML = '';
 
       // Get values safely
-      var name = String(selectedLead.full_name || selectedLead.homeowner_name || selectedLead.name || 'Unknown');
-      var email = String(selectedLead.email || selectedLead.homeowner_email || '');
-      var phone = String(selectedLead.phone || selectedLead.homeowner_phone || '');
-      var address = String(selectedLead.project_address || selectedLead.address || '');
-      var zip = String(selectedLead.project_zip || '');
+      var name = String(selectedLead.full_name || 'Unknown');
+      var email = String(selectedLead.email || '');
+      var phone = String(selectedLead.phone || '');
+      var structAddr = selectedLead.service_address || selectedLead.billing_address;
+      var address = structAddr && typeof structAddr === 'object' ? [structAddr.street, structAddr.city, structAddr.state, structAddr.zip].filter(Boolean).join(', ') : '';
+      var zip = String(selectedLead.zip_code || (structAddr && structAddr.zip) || '');
       var project = String(selectedLead.project_type || 'Not specified');
       var msg = String(selectedLead.message || selectedLead.project_details || '');
       var source = String(selectedLead.source || 'Website');
@@ -6438,9 +6439,9 @@
         const startTime = new Date(dateStr + 'T' + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0') + ':00');
         const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour
 
-        const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Customer';
-        const leadEmail = lead.email || lead.homeowner_email || '';
-        const leadPhone = lead.phone || lead.homeowner_phone || '';
+        const leadName = lead.full_name || 'Customer';
+        const leadEmail = lead.email || '';
+        const leadPhone = lead.phone || '';
         const leadAddress = lead.project_address || lead.address || '';
 
         // Create calendar event
@@ -6663,9 +6664,9 @@
         }
 
         const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-        const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Customer';
-        const leadEmail = lead.email || lead.homeowner_email || '';
-        const leadPhone = lead.phone || lead.homeowner_phone || '';
+        const leadName = lead.full_name || 'Customer';
+        const leadEmail = lead.email || '';
+        const leadPhone = lead.phone || '';
 
         // Create calendar event
         const { data: calEvent, error: calError } = await supabaseClient
@@ -7956,7 +7957,7 @@
       showPage('estimates');
 
       // Small delay to ensure page is rendered
-      setTimeout(() => {
+      setTimeout(async () => {
         // Set modal state with proper customer linkage
         estimateModalState = {
           customerId: customer.id,
@@ -7977,7 +7978,7 @@
         if (projectDescField) projectDescField.value = lead.message || lead.project_details || '';
 
         // Update lead status to "quoted"
-        supabaseClient
+        await supabaseClient
           .from('leads')
           .update({ status: 'quoted', updated_at: new Date().toISOString() })
           .eq('id', lead.id);
@@ -11701,9 +11702,9 @@
       showPage('invoices');
       setTimeout(() => {
         openInvoiceModal({
-          email: lead.email || lead.homeowner_email,
+          email: lead.email,
           name: lead.full_name || lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
-          phone: lead.phone || lead.homeowner_phone,
+          phone: lead.phone,
           lead_id: lead.id
         });
       }, 300);
@@ -12852,12 +12853,12 @@
       document.body.appendChild(previewModal);
 
       // Attach button handlers
-      document.getElementById('preview-edit-btn').onclick = () => {
+      document.getElementById('preview-edit-btn').onclick = async () => {
         previewModal.classList.remove('active');
         // Delete the draft invoice since user wants to edit
         if (window._pendingInvoiceId) {
-          supabaseClient.from('invoices').delete().eq('id', window._pendingInvoiceId);
-          supabaseClient.from('invoice_tokens').delete().eq('invoice_id', window._pendingInvoiceId);
+          await supabaseClient.from('invoices').delete().eq('id', window._pendingInvoiceId);
+          await supabaseClient.from('invoice_tokens').delete().eq('invoice_id', window._pendingInvoiceId);
           window._pendingInvoiceId = null;
           window._pendingInvoiceToken = null;
         }
@@ -13194,7 +13195,7 @@
           }));
 
           const { error: itemsError } = await supabaseClient.from('invoice_items').insert(invoiceItems);
-          if (itemsError) console.warn('[Invoices] Items insert error:', itemsError);
+          if (itemsError) { console.error('[Invoices] Items insert error:', itemsError); throw itemsError; }
         }
 
         // Close modal and show success IMMEDIATELY - don't wait for Stripe
@@ -13869,13 +13870,13 @@
                 .from('customers')
                 .insert({
                   user_id: user.id,
-                  name: lead.full_name || lead.homeowner_name || lead.name || 'Customer',
-                  email: lead.email || lead.homeowner_email,
-                  phone: lead.phone || lead.homeowner_phone,
-                  address: lead.address || lead.homeowner_address,
-                  city: lead.city,
-                  state: lead.state,
-                  zip: lead.zip,
+                  name: lead.full_name || 'Customer',
+                  email: lead.email,
+                  phone: lead.phone,
+                  address: lead.service_address && typeof lead.service_address === 'object' ? lead.service_address.street : null,
+                  city: lead.service_address && typeof lead.service_address === 'object' ? lead.service_address.city : null,
+                  state: lead.service_address && typeof lead.service_address === 'object' ? lead.service_address.state : null,
+                  zip: lead.zip_code || (lead.service_address && lead.service_address.zip) || null,
                   source: 'converted_lead',
                   lead_id: lead.id,
                   notes: `Converted from lead on ${new Date().toLocaleDateString()}`
@@ -16461,9 +16462,9 @@
 
     function openQuickPayFromProfile() {
       if (!currentProfileData) return;
-      const name = currentProfileData.full_name || currentProfileData.name || currentProfileData.homeowner_name || '';
-      const email = currentProfileData.email || currentProfileData.homeowner_email || '';
-      const phone = currentProfileData.phone || currentProfileData.homeowner_phone || '';
+      const name = currentProfileData.full_name || currentProfileData.name || '';
+      const email = currentProfileData.email || '';
+      const phone = currentProfileData.phone || '';
       openQuickPayModal({ name, email, phone });
     }
 
@@ -17504,12 +17505,12 @@
       document.body.appendChild(previewModal);
 
       // Attach button handlers
-      document.getElementById('estimate-preview-edit-btn').onclick = () => {
+      document.getElementById('estimate-preview-edit-btn').onclick = async () => {
         previewModal.classList.remove('active');
         // Delete the draft estimate since user wants to edit
         if (window._pendingEstimateId) {
-          supabaseClient.from('estimates').delete().eq('id', window._pendingEstimateId);
-          supabaseClient.from('estimate_tokens').delete().eq('estimate_id', window._pendingEstimateId);
+          await supabaseClient.from('estimates').delete().eq('id', window._pendingEstimateId);
+          await supabaseClient.from('estimate_tokens').delete().eq('estimate_id', window._pendingEstimateId);
           window._pendingEstimateId = null;
           window._pendingEstimateToken = null;
         }
@@ -20141,7 +20142,7 @@
 
         const { data: leads, error } = await supabaseClient
           .from('leads')
-          .select('id, name, email, phone, address, city, state, zip, status, service_type, notes')
+          .select('id, full_name, email, phone, zip_code, status, project_type, service_address, notes')
           .eq('user_id', user.id)
           .not('status', 'eq', 'converted')
           .order('created_at', { ascending: false })
@@ -20167,11 +20168,11 @@
       dropdown.innerHTML = leads.map(lead => {
         const statusColor = lead.status === 'new' ? '#10b981' : lead.status === 'contacted' ? '#3b82f6' : '#f59e0b';
         return '<div class="dropdown-item" onclick="selectLeadForProject(\'' + lead.id + '\')" style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
-          '<div style="font-weight: 600; color: var(--text-primary);">' + escapeHtml(lead.name) + '</div>' +
+          '<div style="font-weight: 600; color: var(--text-primary);">' + escapeHtml(lead.full_name || 'Unknown') + '</div>' +
           '<div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">' + escapeHtml(lead.email || 'No email') + (lead.phone ? ' • ' + escapeHtml(lead.phone) : '') + '</div>' +
           '<div style="display: flex; gap: 8px; margin-top: 4px;">' +
             '<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: ' + statusColor + '22; color: ' + statusColor + '; text-transform: uppercase;">' + lead.status + '</span>' +
-            (lead.service_type ? '<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--dark-tertiary); color: var(--text-secondary);">' + escapeHtml(lead.service_type) + '</span>' : '') +
+            (lead.project_type ? '<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--dark-tertiary); color: var(--text-secondary);">' + escapeHtml(lead.project_type) + '</span>' : '') +
           '</div>' +
         '</div>';
       }).join('');
@@ -25490,16 +25491,17 @@
         return;
       }
 
-      const leadName = lead.full_name || lead.homeowner_name || lead.name || lead.email || 'Lead';
-      const leadEmail = lead.email || lead.homeowner_email || '';
-      const leadPhone = lead.phone || lead.homeowner_phone || '';
-      // Build full address from available fields
-      const addressParts = [
-        lead.address || lead.project_address,
-        lead.city,
-        lead.state,
-        lead.zip
-      ].filter(Boolean);
+      const leadName = lead.full_name || lead.email || 'Lead';
+      const leadEmail = lead.email || '';
+      const leadPhone = lead.phone || '';
+      // Build full address from structured JSONB fields
+      const structAddr = lead.service_address || lead.billing_address;
+      const addressParts = structAddr && typeof structAddr === 'object' ? [
+        structAddr.street,
+        structAddr.city,
+        structAddr.state,
+        structAddr.zip
+      ].filter(Boolean) : [];
       const leadAddress = addressParts.join(', ');
 
       openCalendarEventModal(null, null, {
@@ -25527,9 +25529,9 @@
       closeLeadModal();
 
       // Get lead name from various possible field names
-      const leadName = selectedLead.full_name || selectedLead.homeowner_name || selectedLead.name || selectedLead.email || 'Lead';
-      const leadEmail = selectedLead.email || selectedLead.homeowner_email || '';
-      const leadPhone = selectedLead.phone || selectedLead.homeowner_phone || '';
+      const leadName = selectedLead.full_name || selectedLead.email || 'Lead';
+      const leadEmail = selectedLead.email || '';
+      const leadPhone = selectedLead.phone || '';
       const leadAddress = formatAddressFromData(selectedLead);
 
       // Open modal with pre-filled data
@@ -25576,9 +25578,9 @@
       workflowSelectedContractors = [];
 
       // Populate customer info
-      const name = workflowLeadData.full_name || workflowLeadData.name || workflowLeadData.homeowner_name || 'Customer';
-      const email = workflowLeadData.email || workflowLeadData.homeowner_email || '';
-      const phone = workflowLeadData.phone || workflowLeadData.homeowner_phone || '';
+      const name = workflowLeadData.full_name || workflowLeadData.name || 'Customer';
+      const email = workflowLeadData.email || '';
+      const phone = workflowLeadData.phone || '';
       const address = formatAddressFromData(workflowLeadData);
 
       document.getElementById('workflow-customer-avatar').textContent = name.charAt(0).toUpperCase();
@@ -25745,9 +25747,9 @@
 
         // Get participant info
         const participants = [];
-        const homeownerEmail = workflowLeadData.email || workflowLeadData.homeowner_email;
-        const homeownerName = workflowLeadData.full_name || workflowLeadData.name || workflowLeadData.homeowner_name || 'Customer';
-        const homeownerPhone = workflowLeadData.phone || workflowLeadData.homeowner_phone || '';
+        const homeownerEmail = workflowLeadData.email;
+        const homeownerName = workflowLeadData.full_name || workflowLeadData.name || 'Customer';
+        const homeownerPhone = workflowLeadData.phone || '';
 
         if (document.getElementById('workflow-invite-homeowner')?.checked && homeownerEmail) {
           participants.push({
@@ -26007,9 +26009,9 @@
       currentProfileData = data;
       currentProfileType = type;
 
-      const name = data.full_name || data.name || data.homeowner_name || 'Unknown';
-      const email = data.email || data.homeowner_email || '';
-      const phone = data.phone || data.homeowner_phone || '';
+      const name = data.full_name || data.name || 'Unknown';
+      const email = data.email || '';
+      const phone = data.phone || '';
       const address = formatAddressFromData(data);
       const status = data.status || 'new';
       const source = data.source || data.lead_source || '';
@@ -26231,7 +26233,7 @@
         return;
       }
 
-      const name = currentProfileData.full_name || currentProfileData.name || currentProfileData.homeowner_name || 'Customer';
+      const name = currentProfileData.full_name || currentProfileData.name || 'Customer';
       const address = window.currentProfileAddress;
 
       // Simple version for leads - just navigate and optionally notify
@@ -26317,7 +26319,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
 
       try {
-        const email = lead.email || lead.homeowner_email || '';
+        const email = lead.email || '';
         const leadId = lead.id;
 
         // Query by lead_id or customer_email
@@ -26381,7 +26383,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
 
       try {
-        const email = lead.email || lead.homeowner_email || '';
+        const email = lead.email || '';
         const leadId = lead.id;
 
         // Query by lead_id or customer_email
@@ -26704,10 +26706,9 @@
 
       // Capture data before closing panel (in case it gets cleared)
       const invoiceData = {
-        email: currentProfileData.email || currentProfileData.homeowner_email,
+        email: currentProfileData.email,
         name: currentProfileData.full_name || currentProfileData.name,
-        phone: currentProfileData.phone || currentProfileData.homeowner_phone
-      };
+        phone: currentProfileData.phone      };
 
       // Include lead_id for traceability if this is a lead
       if (currentProfileType === 'lead' && currentProfileData.id) {
@@ -26726,7 +26727,7 @@
     // Load estimate counts for badge
     async function loadProfileEstimateCounts(lead) {
       try {
-        const email = lead.email || lead.homeowner_email || '';
+        const email = lead.email || '';
         const leadId = lead.id;
 
         // Use GET with count instead of HEAD to avoid CORS issues with some CDN/proxy configs
@@ -26755,7 +26756,7 @@
     // Load invoice counts for badge
     async function loadProfileInvoiceCounts(lead) {
       try {
-        const email = lead.email || lead.homeowner_email || '';
+        const email = lead.email || '';
         const leadId = lead.id;
 
         // Use GET with count instead of HEAD to avoid CORS issues with some CDN/proxy configs
@@ -27040,7 +27041,7 @@
         return;
       }
 
-      const email = currentProfileData.email || currentProfileData.homeowner_email;
+      const email = currentProfileData.email;
       if (!email) {
         showToast('No email address available', 'warning');
         return;
@@ -27157,7 +27158,7 @@
       const lead = allLeads.find(l => l.id === leadId);
       if (!lead) return;
 
-      const leadName = lead.full_name || lead.homeowner_name || lead.name || 'this lead';
+      const leadName = lead.full_name || 'this lead';
 
       // Show confirmation dialog
       if (!confirm(`Are you sure you want to permanently delete "${leadName}"?\n\nThis action cannot be undone.`)) {
@@ -27292,10 +27293,10 @@
       jobPhases = JSON.parse(JSON.stringify(DEFAULT_JOB_PHASES));
       schedulerContractors = [];
 
-      const name = data.full_name || data.name || data.homeowner_name || 'Customer';
+      const name = data.full_name || data.name || 'Customer';
       const address = formatAddressFromData(data);
-      const phone = data.phone || data.homeowner_phone || '';
-      const email = data.email || data.homeowner_email || '';
+      const phone = data.phone || '';
+      const email = data.email || '';
 
       // Set avatar initials
       const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
@@ -27459,9 +27460,9 @@
         return;
       }
 
-      const name = schedulerData.full_name || schedulerData.name || schedulerData.homeowner_name || 'Customer';
-      const email = schedulerData.email || schedulerData.homeowner_email || '';
-      const phone = schedulerData.phone || schedulerData.homeowner_phone || '';
+      const name = schedulerData.full_name || schedulerData.name || 'Customer';
+      const email = schedulerData.email || '';
+      const phone = schedulerData.phone || '';
       const address = formatAddressFromData(schedulerData);
 
       const createdEvents = [];
@@ -28540,7 +28541,7 @@
 
         showToast('Event deleted', 'success');
         closeCalendarEventDetailModal();
-        loadAllCalendarEvents();
+        await loadAllCalendarEvents();
       } catch (err) {
         console.error('Error deleting event:', err);
         showToast('Failed to delete event', 'error');
