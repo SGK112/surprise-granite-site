@@ -11394,6 +11394,9 @@
                   <button class="btn-modern ghost" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); viewSupabaseInvoice('${inv.id}')" title="View & Print">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
                   </button>
+                  ${inv.source !== 'stripe' ? `<button class="btn-modern ghost" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); editInvoice('${inv.id}')" title="Edit Invoice">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>` : ''}
                   <button class="btn-modern ghost" style="padding: 4px 8px; font-size: 10px;" onclick="event.stopPropagation(); shareDocument('invoice', '${inv.id}')" title="Share Invoice">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                   </button>
@@ -11406,6 +11409,7 @@
     }
 
     function openInvoiceModal(customer = null) {
+      window._editingInvoiceId = null; // Clear editing state for new invoices
       document.getElementById('invoice-modal').classList.add('active');
       document.getElementById('invoice-form').reset();
 
@@ -12507,28 +12511,65 @@
           invoice_number: invoiceNumber,
           customer_email: formData.customerEmail,
           customer_name: formData.customerName,
-          customer_phone: formData.customerPhone,
+          customer_phone: formData.customerPhone || null,
+          customer_address: formData.customerAddress || null,
+          customer_city: formData.customerCity || null,
+          customer_state: formData.customerState || null,
+          customer_zip: formData.customerZip || null,
           subtotal: total,
           total: total,
           amount_due: total,
           amount_paid: 0,
           due_date: new Date(Date.now() + formData.dueDays * 24 * 60 * 60 * 1000).toISOString(),
-          notes: formData.notes,
+          notes: formData.notes || null,
           status: 'draft'
         };
+
+        // Handle deposits
+        if (formData.depositEnabled && formData.depositAmount > 0) {
+          draftData.deposit_requested = formData.depositAmount;
+          draftData.deposit_percent = formData.depositPercent || null;
+        }
+        if (formData.depositAlreadyReceived && formData.depositReceivedAmount > 0) {
+          draftData.deposit_paid = formData.depositReceivedAmount;
+          draftData.deposit_paid_at = new Date().toISOString();
+          draftData.amount_paid = formData.depositReceivedAmount;
+        }
 
         // Include lead_id if creating from a lead
         if (formData.leadId) {
           draftData.lead_id = formData.leadId;
         }
 
-        const { data: invoice, error } = await supabaseClient
-          .from('invoices')
-          .insert(draftData)
-          .select()
-          .single();
+        const isEditingInvoice = window._editingInvoiceId;
+        let invoice;
 
-        if (error) throw error;
+        if (isEditingInvoice) {
+          // UPDATE existing invoice
+          draftData.updated_at = new Date().toISOString();
+          delete draftData.user_id;
+          delete draftData.invoice_number;
+          const { data: updated, error } = await supabaseClient
+            .from('invoices')
+            .update(draftData)
+            .eq('id', isEditingInvoice)
+            .select()
+            .single();
+          if (error) throw error;
+          invoice = updated;
+
+          // Replace line items
+          await supabaseClient.from('invoice_items').delete().eq('invoice_id', isEditingInvoice);
+        } else {
+          // INSERT new invoice
+          const { data: inserted, error } = await supabaseClient
+            .from('invoices')
+            .insert(draftData)
+            .select()
+            .single();
+          if (error) throw error;
+          invoice = inserted;
+        }
 
         // Save items
         if (formData.items.length > 0) {
@@ -12543,9 +12584,10 @@
           await supabaseClient.from('invoice_items').insert(invoiceItems);
         }
 
+        window._editingInvoiceId = null;
         closeInvoiceModal();
         loadInvoices();
-        showToast(`Invoice #${invoiceNumber} saved as draft`, 'success');
+        showToast(isEditingInvoice ? 'Invoice updated!' : `Invoice #${invoiceNumber} saved as draft`, 'success');
       } catch (err) {
         showToast('Error saving draft: ' + err.message, 'error');
       } finally {
@@ -12610,6 +12652,10 @@
           customer_name: formData.customerName || 'Customer',
           customer_email: formData.customerEmail,
           customer_phone: formData.customerPhone || null,
+          customer_address: formData.customerAddress || null,
+          customer_city: formData.customerCity || null,
+          customer_state: formData.customerState || null,
+          customer_zip: formData.customerZip || null,
           total: total,
           subtotal: total,
           amount_paid: 0,
@@ -12619,6 +12665,7 @@
         };
 
         if (formData.customerId) invoiceData.customer_id = formData.customerId;
+        if (formData.leadId) invoiceData.lead_id = formData.leadId;
 
         // Handle deposits - only add deposit columns if deposit is enabled
         if (formData.depositEnabled && formData.depositAmount > 0) {
@@ -12631,16 +12678,50 @@
           invoiceData.amount_paid = formData.depositReceivedAmount;
         }
 
-        console.log('[Invoices] Step 2: Inserting invoice...', invoiceData);
-        const { data: invoice, error } = await supabaseClient
-          .from('invoices')
-          .insert(invoiceData)
-          .select()
-          .single();
+        const isEditingInvoice = window._editingInvoiceId;
+        let invoice;
 
-        if (error) {
-          console.error('[Invoices] Step 2 FAILED:', error);
-          throw error;
+        if (isEditingInvoice) {
+          // UPDATE existing invoice
+          console.log('[Invoices] Step 2: Updating invoice...', isEditingInvoice);
+          invoiceData.updated_at = new Date().toISOString();
+          delete invoiceData.user_id; // Don't change owner
+          delete invoiceData.invoice_number; // Keep original number
+          const updatePromise = supabaseClient
+            .from('invoices')
+            .update(invoiceData)
+            .eq('id', isEditingInvoice)
+            .select()
+            .single();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice update timed out after 15s')), 15000));
+          const { data: updated, error: updateErr } = await Promise.race([updatePromise, timeoutPromise]);
+          if (updateErr) {
+            console.error('[Invoices] Step 2 UPDATE FAILED:', updateErr);
+            throw updateErr;
+          }
+          invoice = updated;
+
+          // Replace line items
+          await supabaseClient.from('invoice_items').delete().eq('invoice_id', isEditingInvoice);
+        } else {
+          // INSERT new invoice
+          console.log('[Invoices] Step 2: Inserting invoice...', invoiceData);
+          const insertPromise = supabaseClient
+            .from('invoices')
+            .insert(invoiceData)
+            .select()
+            .single();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice insert timed out after 15s - please try again')), 15000));
+          const { data: inserted, error: insertErr } = await Promise.race([insertPromise, timeoutPromise]);
+          if (insertErr) {
+            console.error('[Invoices] Step 2 INSERT FAILED:', insertErr);
+            throw insertErr;
+          }
+          invoice = inserted;
+        }
+
+        if (!invoice) {
+          throw new Error('Invoice was not returned after save - possible RLS policy issue');
         }
         console.log('[Invoices] Step 2 done, invoice:', invoice.id);
 
@@ -12660,24 +12741,41 @@
           else console.log('[Invoices] Step 3 done');
         }
 
-        // Generate token for preview
-        const token = crypto.randomUUID();
-        console.log('[Invoices] Step 4: Inserting token...');
-        const { error: tokenErr } = await supabaseClient.from('invoice_tokens').insert([{
-          invoice_id: invoice.id,
-          token: token,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          created_by: user.id
-        }]);
-        if (tokenErr) {
-          console.error('[Invoices] Step 4 token error:', tokenErr);
-          throw tokenErr;
+        // Get or create token for preview
+        let token;
+        if (isEditingInvoice) {
+          // Try to reuse existing token
+          const { data: existingToken } = await supabaseClient
+            .from('invoice_tokens')
+            .select('token')
+            .eq('invoice_id', invoice.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          if (existingToken) {
+            token = existingToken.token;
+          }
         }
-        console.log('[Invoices] Step 4 done');
+        if (!token) {
+          token = crypto.randomUUID();
+          console.log('[Invoices] Step 4: Inserting token...');
+          const { error: tokenErr } = await supabaseClient.from('invoice_tokens').insert([{
+            invoice_id: invoice.id,
+            token: token,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            created_by: user.id
+          }]);
+          if (tokenErr) {
+            console.error('[Invoices] Step 4 token error:', tokenErr);
+            throw tokenErr;
+          }
+          console.log('[Invoices] Step 4 done');
+        }
 
-        // Store invoice ID for sending later
+        // Store invoice ID for sending later and clear editing state
         window._pendingInvoiceId = invoice.id;
         window._pendingInvoiceToken = token;
+        window._editingInvoiceId = null;
 
         // Show preview modal with iframe
         console.log('[Invoices] Step 5: Showing preview...');
@@ -13212,6 +13310,115 @@
     });
 
     // ============ SUPABASE INVOICE FUNCTIONS ============
+    // Edit an existing invoice by loading it into the invoice modal
+    async function editInvoice(invoiceId) {
+      try {
+        const { data: invoice, error } = await supabaseClient
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('id', invoiceId)
+          .single();
+
+        if (error || !invoice) {
+          showToast('Could not load invoice for editing', 'error');
+          return;
+        }
+
+        // Open the invoice modal
+        openInvoiceModal();
+
+        // Store editing state
+        window._editingInvoiceId = invoiceId;
+
+        // Populate form fields
+        const fill = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+        fill('invoice-name', invoice.customer_name);
+        fill('invoice-email', invoice.customer_email);
+        fill('invoice-phone', invoice.customer_phone);
+        fill('invoice-address', invoice.customer_address);
+        fill('invoice-city', invoice.customer_city);
+        fill('invoice-state', invoice.customer_state);
+        fill('invoice-zip', invoice.customer_zip);
+        fill('invoice-notes', invoice.notes);
+
+        // Set customer/lead IDs
+        if (invoice.customer_id) {
+          const custIdEl = document.getElementById('invoice-customer-id');
+          if (custIdEl) custIdEl.value = invoice.customer_id;
+        }
+        if (invoice.lead_id) {
+          const leadIdEl = document.getElementById('invoice-lead-id');
+          if (leadIdEl) leadIdEl.value = invoice.lead_id;
+        }
+
+        // Calculate due days from due_date
+        if (invoice.due_date) {
+          const dueDate = new Date(invoice.due_date);
+          const createdDate = new Date(invoice.created_at);
+          const diffDays = Math.round((dueDate - createdDate) / (1000 * 60 * 60 * 24));
+          fill('invoice-due-days', diffDays > 0 ? diffDays : 30);
+        }
+
+        // Deposit settings
+        if (invoice.deposit_requested > 0) {
+          const depositCheckbox = document.getElementById('invoice-require-deposit');
+          if (depositCheckbox) {
+            depositCheckbox.checked = true;
+            const depositOptions = document.getElementById('invoice-deposit-options');
+            if (depositOptions) depositOptions.style.display = 'block';
+          }
+          if (invoice.deposit_percent) {
+            fill('invoice-deposit-type', 'percent');
+            fill('invoice-deposit-value', invoice.deposit_percent);
+          } else {
+            fill('invoice-deposit-type', 'amount');
+            fill('invoice-deposit-value', invoice.deposit_requested);
+          }
+        }
+
+        // Populate line items
+        const items = invoice.invoice_items || [];
+        const itemsContainer = document.getElementById('invoice-items');
+        itemsContainer.innerHTML = '';
+
+        if (items.length > 0) {
+          items.forEach((item, i) => {
+            const itemHtml = `
+              <div class="invoice-item" data-index="${i}">
+                <div class="form-row" style="align-items: flex-end;">
+                  <div class="form-group" style="flex: 3;">
+                    <label>Description *</label>
+                    <input type="text" class="item-description" required value="${(item.description || item.name || '').replace(/"/g, '&quot;')}" placeholder="e.g., Kitchen Countertop Installation"/>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label>Qty</label>
+                    <input type="number" class="item-qty" value="${item.quantity || 1}" min="1" onchange="updateInvoiceTotal()"/>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label>Amount ($) *</label>
+                    <input type="number" class="item-amount" required min="0" step="0.01" value="${item.unit_price || 0}" onchange="updateInvoiceTotal()"/>
+                  </div>
+                  <button type="button" class="btn-modern secondary" style="margin-bottom: 20px; padding: 10px;" onclick="removeInvoiceItem(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </div>`;
+            itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+          });
+          invoiceItemCount = items.length;
+        } else {
+          // Add one empty item
+          addInvoiceItem();
+        }
+
+        updateInvoiceTotal();
+        showToast('Editing invoice ' + (invoice.invoice_number || ''), 'info');
+      } catch (err) {
+        console.error('[Invoices] Edit error:', err);
+        showToast('Error loading invoice: ' + err.message, 'error');
+      }
+    }
+
     async function viewSupabaseInvoice(invoiceId) {
       try {
         // First check if this is a Stripe-only invoice (starts with 'in_')
@@ -16648,6 +16855,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 View
               </button>
+              <button class="btn-modern secondary small" onclick="editEstimate('${estimate.id}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
               <button class="btn-modern secondary small" onclick="event.stopPropagation(); printEstimate('${estimate.id}')" title="Print Estimate">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
                 Print
@@ -17152,14 +17363,14 @@
           customer_name: customerName || 'Customer',
           customer_email: customerEmail,
           customer_phone: customerPhone || null,
-          customer_address: [customerAddress, customerCity].filter(Boolean).join(', ') || null,
-          title: projectName || 'Project Estimate',
-          description: notes || null,
-          line_items: lineItems,
+          customer_address: customerAddress || null,
+          customer_city: customerCity || null,
+          project_name: projectName || 'Project Estimate',
+          project_description: notes || null,
           subtotal: subtotal,
           tax_rate: taxRate,
           tax_amount: taxAmount,
-          discount: discount,
+          discount_amount: discount,
           total: total,
           status: 'draft',
           valid_until: new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString(),
@@ -17177,22 +17388,43 @@
           estimateData.customer_id = modal.dataset.customerId;
         }
 
+        console.log('[Estimates] Inserting estimate...', estimateData);
         const { data: estimate, error } = await supabaseClient
           .from('estimates')
           .insert(estimateData)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('[Estimates] Insert FAILED:', error);
+          throw error;
+        }
+        console.log('[Estimates] Insert OK, id:', estimate.id);
 
-        // Generate token for preview
+        // Save line items to estimate_items table
+        if (lineItems.length > 0) {
+          const itemsToInsert = lineItems.map(item => ({
+            estimate_id: estimate.id,
+            name: item.name,
+            description: item.description,
+            unit_type: item.unit,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.quantity * item.unit_price,
+            category: item.category
+          }));
+          const { error: itemsErr } = await supabaseClient.from('estimate_items').insert(itemsToInsert);
+          if (itemsErr) console.warn('[Estimates] Items insert error (non-fatal):', itemsErr);
+        }
+
+        // Generate token for preview (estimate_tokens has no created_by column)
         const token = crypto.randomUUID();
-        await supabaseClient.from('estimate_tokens').insert([{
+        const { error: tokenErr } = await supabaseClient.from('estimate_tokens').insert([{
           estimate_id: estimate.id,
           token: token,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          created_by: user.id
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         }]);
+        if (tokenErr) console.warn('[Estimates] Token insert error:', tokenErr);
 
         // Store estimate ID for sending later
         window._pendingEstimateId = estimate.id;
@@ -17682,7 +17914,7 @@
           customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
           customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
           project_name: document.getElementById('estimate-project-name').value.trim() || null,
-          description: document.getElementById('estimate-project-desc').value.trim() || null,
+          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
           project_type: projectType,
           valid_until: document.getElementById('estimate-valid-until')?.value || null,
           subtotal: subtotal,
@@ -17705,20 +17937,44 @@
           status: 'sent'
         };
 
-        console.log('[Estimate] Inserting estimate with data:', JSON.stringify(estimateData, null, 2));
-        const { data: estimate, error: estimateError } = await withTimeout(
-          supabaseClient.from('estimates').insert([estimateData]).select().single(),
-          15000,
-          'Database insert timed out - please try again'
-        );
+        // Check if we're editing an existing estimate
+        const isEditing = estimateModalState.editingEstimateId;
+        let estimate;
 
-        if (estimateError) {
-          console.error('[Estimate] Insert error:', estimateError);
-          console.error('[Estimate] Error details:', JSON.stringify(estimateError, null, 2));
-          console.error('[Estimate] Data sent:', JSON.stringify(estimateData, null, 2));
-          throw new Error(estimateError.message || estimateError.details || 'Failed to create estimate');
+        if (isEditing) {
+          // UPDATE existing estimate
+          console.log('[Estimate] Updating estimate:', isEditing);
+          estimateData.updated_at = new Date().toISOString();
+          delete estimateData.user_id; // Don't update user_id
+          const { data: updated, error: updateError } = await withTimeout(
+            supabaseClient.from('estimates').update(estimateData).eq('id', isEditing).select().single(),
+            15000,
+            'Database update timed out - please try again'
+          );
+          if (updateError) {
+            console.error('[Estimate] Update error:', updateError);
+            throw new Error(updateError.message || 'Failed to update estimate');
+          }
+          estimate = updated;
+
+          // Replace line items: delete old, insert new
+          await supabaseClient.from('estimate_items').delete().eq('estimate_id', isEditing);
+        } else {
+          // INSERT new estimate
+          console.log('[Estimate] Inserting estimate with data:', JSON.stringify(estimateData, null, 2));
+          const { data: inserted, error: estimateError } = await withTimeout(
+            supabaseClient.from('estimates').insert([estimateData]).select().single(),
+            15000,
+            'Database insert timed out - please try again'
+          );
+
+          if (estimateError) {
+            console.error('[Estimate] Insert error:', estimateError);
+            throw new Error(estimateError.message || estimateError.details || 'Failed to create estimate');
+          }
+          estimate = inserted;
         }
-        console.log('[Estimate] Created:', estimate.id);
+        console.log('[Estimate] Saved:', estimate.id);
 
         // Insert line items with category
         const itemsToInsert = lineItems.map(item => ({
@@ -17743,85 +17999,84 @@
           throw itemsError;
         }
 
-        // Generate approval token
-        const token = crypto.randomUUID();
-        try {
-          const { error: tokenError } = await withTimeout(
-            supabaseClient.from('estimate_tokens').insert([{
-              estimate_id: estimate.id,
-              token: token,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            }]),
-            10000,
-            'Token creation timed out'
-          );
+        // Generate approval token (only for new estimates)
+        let token = null;
+        if (!isEditing) {
+          token = crypto.randomUUID();
+          try {
+            const { error: tokenError } = await withTimeout(
+              supabaseClient.from('estimate_tokens').insert([{
+                estimate_id: estimate.id,
+                token: token,
+                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              }]),
+              10000,
+              'Token creation timed out'
+            );
 
-          if (tokenError) {
-            console.error('[Estimate] Token error:', tokenError);
+            if (tokenError) {
+              console.error('[Estimate] Token error:', tokenError);
+            }
+          } catch (tokenErr) {
+            console.error('[Estimate] Token creation failed:', tokenErr.message);
           }
-        } catch (tokenErr) {
-          console.error('[Estimate] Token creation failed:', tokenErr.message);
-          // Don't throw - estimate is already created
         }
 
-        // Open preview with option to send
+        // Close modal and refresh list
         closeCreateEstimateModal();
         loadEstimates();
 
-        const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
-
-        // Try to send email via API, but don't fail if it doesn't work
-        // (customerEmail was already defined earlier in this function)
-        if (customerEmail) {
-          try {
-            const emailController = new AbortController();
-            const emailTimeout = setTimeout(() => emailController.abort(), 10000); // 10 sec timeout
-            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: emailController.signal,
-              body: JSON.stringify({
-                to: customerEmail,
-                customerName: estimateData.customer_name,
-                estimateNumber: estimate.estimate_number,
-                projectName: estimateData.project_name,
-                total: estimateData.total,
-                approvalUrl: viewLink
-              })
-            });
-            clearTimeout(emailTimeout);
-            showToast('Estimate created and email sent!');
-          } catch (emailErr) {
-            console.log('Email API unavailable:', emailErr.message);
-            // Fallback: offer to copy link or open email client
-            const sendManually = confirm(
-              `Estimate created successfully!\n\n` +
-              `The email server is temporarily unavailable (starting up). Would you like to:\n\n` +
-              `• Click OK to open your email client with the estimate link\n` +
-              `• Click Cancel to just copy the link\n\n` +
-              `(The email will be sent automatically on future attempts)`
-            );
-
-            if (sendManually) {
-              const subject = encodeURIComponent(`Your Estimate from ${businessSettings?.company_name || 'Surprise Granite'}`);
-              const body = encodeURIComponent(
-                `Hi ${estimateData.customer_name},\n\n` +
-                `Please review your estimate at the link below:\n\n${viewLink}\n\n` +
-                `Thank you,\n${businessSettings?.company_name || 'Surprise Granite'}`
-              );
-              window.open(`mailto:${customerEmail}?subject=${subject}&body=${body}`);
-            } else {
-              navigator.clipboard.writeText(viewLink);
-              showToast('Estimate link copied to clipboard!');
-            }
-          }
+        if (isEditing) {
+          showToast('Estimate updated successfully!', 'success');
         } else {
-          showToast('Estimate created! Add customer email to send.');
-        }
+          const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
 
-        // Offer to preview
-        if (confirm('Would you like to preview the estimate?')) {
-          window.open(viewLink, '_blank');
+          // Try to send email via API
+          if (customerEmail) {
+            try {
+              const emailController = new AbortController();
+              const emailTimeout = setTimeout(() => emailController.abort(), 10000);
+              await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: emailController.signal,
+                body: JSON.stringify({
+                  to: customerEmail,
+                  customerName: estimateData.customer_name,
+                  estimateNumber: estimate.estimate_number,
+                  projectName: estimateData.project_name,
+                  total: estimateData.total,
+                  approvalUrl: viewLink
+                })
+              });
+              clearTimeout(emailTimeout);
+              showToast('Estimate created and email sent!');
+            } catch (emailErr) {
+              console.log('Email API unavailable:', emailErr.message);
+              const sendManually = confirm(
+                `Estimate created successfully!\n\n` +
+                `The email server is temporarily unavailable. Would you like to:\n\n` +
+                `Click OK to open your email client\nClick Cancel to copy the link`
+              );
+
+              if (sendManually) {
+                const subject = encodeURIComponent(`Your Estimate from ${businessSettings?.company_name || 'Surprise Granite'}`);
+                const body = encodeURIComponent(
+                  `Hi ${estimateData.customer_name},\n\nPlease review your estimate:\n\n${viewLink}\n\nThank you,\n${businessSettings?.company_name || 'Surprise Granite'}`
+                );
+                window.open(`mailto:${customerEmail}?subject=${subject}&body=${body}`);
+              } else {
+                navigator.clipboard.writeText(viewLink);
+                showToast('Estimate link copied to clipboard!');
+              }
+            }
+          } else {
+            showToast('Estimate created! Add customer email to send.');
+          }
+
+          if (confirm('Would you like to preview the estimate?')) {
+            window.open(viewLink, '_blank');
+          }
         }
 
       } catch (err) {
@@ -17893,7 +18148,7 @@
           customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
           customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
           project_name: document.getElementById('estimate-project-name').value.trim() || null,
-          description: document.getElementById('estimate-project-desc').value.trim() || null,
+          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
           valid_until: document.getElementById('estimate-valid-until').value || null,
           subtotal: subtotal,
           tax_rate: parseFloat(document.getElementById('estimate-tax-rate').value) || 0,
@@ -17911,13 +18166,34 @@
           status: 'draft'
         };
 
-        const { data: estimate, error } = await supabaseClient
-          .from('estimates')
-          .insert([estimateData])
-          .select()
-          .single();
+        const isEditing = estimateModalState.editingEstimateId;
+        let estimate;
 
-        if (error) throw error;
+        if (isEditing) {
+          // UPDATE existing estimate
+          estimateData.updated_at = new Date().toISOString();
+          delete estimateData.user_id;
+          const { data: updated, error } = await supabaseClient
+            .from('estimates')
+            .update(estimateData)
+            .eq('id', isEditing)
+            .select()
+            .single();
+          if (error) throw error;
+          estimate = updated;
+
+          // Replace line items
+          await supabaseClient.from('estimate_items').delete().eq('estimate_id', isEditing);
+        } else {
+          // INSERT new estimate
+          const { data: inserted, error } = await supabaseClient
+            .from('estimates')
+            .insert([estimateData])
+            .select()
+            .single();
+          if (error) throw error;
+          estimate = inserted;
+        }
 
         // Insert line items if any
         if (lineItems.length > 0) {
@@ -17936,7 +18212,7 @@
 
         closeCreateEstimateModal();
         loadEstimates();
-        showToast('Draft saved successfully!');
+        showToast(isEditing ? 'Estimate updated!' : 'Draft saved successfully!');
 
       } catch (err) {
         console.error('Save draft error:', err);
@@ -18115,6 +18391,92 @@
           btn.disabled = false;
           btn.innerHTML = originalText || 'Send';
         }
+      }
+    }
+
+    async function editEstimate(estimateId) {
+      try {
+        const { data: estimate, error } = await supabaseClient
+          .from('estimates')
+          .select('*, estimate_items(*)')
+          .eq('id', estimateId)
+          .single();
+
+        if (error || !estimate) {
+          showToast('Could not load estimate for editing', 'error');
+          return;
+        }
+
+        // Set editing state
+        estimateModalState = {
+          customerId: estimate.customer_id || null,
+          leadId: estimate.lead_id || null,
+          editingEstimateId: estimateId
+        };
+
+        // Open modal with preserveState to keep our editing state
+        await openCreateEstimateModal(true);
+
+        // Populate form fields
+        const fill = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+        fill('estimate-customer-name', estimate.customer_name);
+        fill('estimate-customer-email', estimate.customer_email);
+        fill('estimate-customer-phone', estimate.customer_phone);
+        fill('estimate-customer-address', estimate.customer_address);
+        fill('estimate-customer-city', estimate.customer_city);
+        fill('estimate-customer-state', estimate.customer_state);
+        fill('estimate-customer-zip', estimate.customer_zip);
+        fill('estimate-project-name', estimate.project_name);
+        fill('estimate-project-desc', estimate.project_description || '');
+        fill('estimate-project-type', estimate.project_type);
+        fill('estimate-tax-rate', estimate.tax_rate);
+        fill('estimate-discount-value', estimate.discount_value);
+        fill('estimate-discount-type', estimate.discount_type);
+        fill('estimate-deposit-percent', estimate.deposit_percent);
+        fill('estimate-notes', estimate.notes);
+        fill('estimate-internal-notes', estimate.internal_notes);
+        fill('estimate-terms', estimate.terms_conditions);
+        fill('estimate-warranty', estimate.warranty_terms);
+        fill('estimate-valid-until', estimate.valid_until ? estimate.valid_until.split('T')[0] : '');
+
+        const numDisplay = document.getElementById('estimate-number-display');
+        if (numDisplay) numDisplay.textContent = estimate.estimate_number || 'Draft';
+
+        // Payment schedule
+        const scheduleEl = document.getElementById('payment-schedule-type');
+        if (scheduleEl && estimate.payment_schedule_type) scheduleEl.value = estimate.payment_schedule_type;
+
+        // Inclusions/Exclusions
+        fill('estimate-inclusions', estimate.inclusions);
+        fill('estimate-exclusions', estimate.exclusions);
+        fill('estimate-timeline', estimate.estimated_timeline);
+
+        // Populate line items
+        const container = document.getElementById('estimate-line-items');
+        container.innerHTML = '';
+        const items = estimate.estimate_items || [];
+        if (items.length > 0) {
+          items.forEach(item => {
+            addEstimateLineItem(item.category || 'material', {
+              name: item.name,
+              description: item.description,
+              unit: item.unit_type,
+              quantity: item.quantity,
+              price: item.unit_price,
+              category: item.category
+            });
+          });
+        } else {
+          addEstimateLineItem('material');
+        }
+
+        // Recalculate totals
+        calculateEstimateTotals();
+
+        showToast('Editing estimate ' + (estimate.estimate_number || ''), 'info');
+      } catch (err) {
+        console.error('[Estimates] Edit error:', err);
+        showToast('Error loading estimate: ' + err.message, 'error');
       }
     }
 
@@ -18490,7 +18852,7 @@
             invoice_id: invoice.id,
             name: item.name,
             description: item.description,
-            unit_type: item.unit,
+            unit_type: item.unit_type,
             quantity: item.quantity,
             unit_price: item.unit_price,
             total: item.total
@@ -21102,7 +21464,7 @@
       if (!listEl) return;
 
       try {
-        const response = await apiCall(`${API_BASE}/api/projects/${projectId}/attachments`);
+        const response = await apiCall(`/api/projects/${projectId}/attachments`);
         const attachments = response.attachments || [];
 
         if (countEl) countEl.textContent = attachments.length;
@@ -21218,7 +21580,7 @@
             if (file.type.startsWith('image/')) category = 'project_photo';
             else if (file.type === 'application/pdf') category = 'contract';
 
-            await apiCall(`${API_BASE}/api/projects/${projectId}/attachments`, {
+            await apiCall(`/api/projects/${projectId}/attachments`, {
               method: 'POST',
               body: JSON.stringify({
                 file_name: file.name,
@@ -21249,7 +21611,7 @@
       if (!confirm('Delete this file? This cannot be undone.')) return;
 
       try {
-        await apiCall(`${API_BASE}/api/attachments/${attachmentId}`, { method: 'DELETE' });
+        await apiCall(`/api/attachments/${attachmentId}`, { method: 'DELETE' });
         showToast('File deleted', 'success');
         loadProjectDocuments(projectId);
       } catch (err) {
@@ -26094,11 +26456,11 @@
         // Determine which endpoint to use
         let endpoint;
         if (entityType === 'lead') {
-          endpoint = `${API_BASE}/api/leads/${entityId}/attachments`;
+          endpoint = `/api/leads/${entityId}/attachments`;
         } else if (entityType === 'customer') {
-          endpoint = `${API_BASE}/api/customers/${entityId}/attachments`;
+          endpoint = `/api/customers/${entityId}/attachments`;
         } else {
-          endpoint = `${API_BASE}/api/projects/${entityId}/attachments`;
+          endpoint = `/api/projects/${entityId}/attachments`;
         }
 
         const response = await apiCall(endpoint);
@@ -26259,10 +26621,10 @@
 
             // Create attachment record via API
             const endpoint = currentProfileType === 'lead'
-              ? `${API_BASE}/api/leads/${currentProfileData.id}/attachments`
+              ? `/api/leads/${currentProfileData.id}/attachments`
               : currentProfileType === 'customer'
-                ? `${API_BASE}/api/customers/${currentProfileData.id}/attachments`
-                : `${API_BASE}/api/projects/${currentProfileData.id}/attachments`;
+                ? `/api/customers/${currentProfileData.id}/attachments`
+                : `/api/projects/${currentProfileData.id}/attachments`;
 
             await apiCall(endpoint, {
               method: 'POST',
@@ -26292,7 +26654,7 @@
     // Toggle attachment visibility to customer
     async function toggleAttachmentVisibility(attachmentId, newVisibility) {
       try {
-        await apiCall(`${API_BASE}/api/attachments/${attachmentId}/visibility`, {
+        await apiCall(`/api/attachments/${attachmentId}/visibility`, {
           method: 'PATCH',
           body: JSON.stringify({ visible_to_customer: newVisibility })
         });
@@ -26310,7 +26672,7 @@
       if (!confirm('Delete this file? This cannot be undone.')) return;
 
       try {
-        await apiCall(`${API_BASE}/api/attachments/${attachmentId}`, {
+        await apiCall(`/api/attachments/${attachmentId}`, {
           method: 'DELETE'
         });
 
