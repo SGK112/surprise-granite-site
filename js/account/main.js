@@ -20370,31 +20370,32 @@
       const leadId = document.getElementById('proj-lead-id').value.trim() || null;
       const customerId = document.getElementById('proj-customer-id').value.trim() || null;
 
+      const g = id => document.getElementById(id);
       const projectData = {
-        name: document.getElementById('proj-name').value.trim(),
-        description: document.getElementById('proj-description').value.trim() || null,
-        status: document.getElementById('proj-status').value,
-        priority: document.getElementById('proj-priority').value,
+        name: g('proj-name')?.value?.trim() || '',
+        description: g('proj-description')?.value?.trim() || null,
+        status: g('proj-status')?.value || 'lead',
+        priority: g('proj-priority')?.value || 'medium',
         lead_id: leadId,
         customer_id: customerId,
-        customer_name: document.getElementById('proj-customer-name').value.trim(),
-        customer_email: document.getElementById('proj-customer-email').value.trim() || null,
-        customer_phone: document.getElementById('proj-customer-phone').value.trim() || null,
-        address: document.getElementById('proj-address').value.trim() || null,
-        city: document.getElementById('proj-city').value.trim() || null,
-        state: document.getElementById('proj-state').value.trim() || null,
-        zip: document.getElementById('proj-zip').value.trim() || null,
-        value: parseFloat(document.getElementById('proj-value').value) || 0,
-        cost: parseFloat(document.getElementById('proj-cost').value) || 0,
-        contract_amount: parseFloat(document.getElementById('proj-contract-amount').value) || 0,
-        deposit_amount: parseFloat(document.getElementById('proj-deposit-amount').value) || 0,
-        has_deposit: (parseFloat(document.getElementById('proj-deposit-amount').value) || 0) > 0,
-        balance_due: Math.max(0, (parseFloat(document.getElementById('proj-contract-amount').value) || 0) - (parseFloat(document.getElementById('proj-value').value) || 0)),
-        start_date: document.getElementById('proj-start-date').value || null,
-        end_date: document.getElementById('proj-end-date').value || null,
-        estimated_duration: parseInt(document.getElementById('proj-duration').value) || null,
-        notes: document.getElementById('proj-notes').value.trim() || null,
-        customer_notes: document.getElementById('proj-customer-notes').value.trim() || null
+        customer_name: g('proj-customer-name')?.value?.trim() || '',
+        customer_email: g('proj-customer-email')?.value?.trim() || null,
+        customer_phone: g('proj-customer-phone')?.value?.trim() || null,
+        address: g('proj-address')?.value?.trim() || null,
+        city: g('proj-city')?.value?.trim() || null,
+        state: g('proj-state')?.value?.trim() || null,
+        zip: g('proj-zip')?.value?.trim() || null,
+        value: parseFloat(g('proj-value')?.value) || 0,
+        cost: parseFloat(g('proj-cost')?.value) || 0,
+        contract_amount: parseFloat(g('proj-contract-amount')?.value) || 0,
+        deposit_amount: parseFloat(g('proj-deposit-amount')?.value) || 0,
+        has_deposit: (parseFloat(g('proj-deposit-amount')?.value) || 0) > 0,
+        balance_due: Math.max(0, (parseFloat(g('proj-contract-amount')?.value) || 0) - (parseFloat(g('proj-value')?.value) || 0)),
+        start_date: g('proj-start-date')?.value || null,
+        end_date: g('proj-end-date')?.value || null,
+        estimated_duration: parseInt(g('proj-duration')?.value) || null,
+        notes: g('proj-notes')?.value?.trim() || null,
+        customer_notes: g('proj-customer-notes')?.value?.trim() || null
       };
 
       const btn = document.getElementById('save-project-btn');
@@ -22256,10 +22257,10 @@
       if (!confirm('Delete this job? This action cannot be undone.')) return;
 
       try {
-        // First delete related records
-        await supabaseClient.from('project_contractors').delete().eq('project_id', jobId);
-        await supabaseClient.from('project_files').delete().eq('project_id', jobId);
-        await supabaseClient.from('project_activity').delete().eq('project_id', jobId);
+        // First delete related records (ignore errors — some tables may not have rows)
+        await supabaseClient.from('project_contractors').delete().eq('project_id', jobId).then(() => {});
+        await supabaseClient.from('project_files').delete().eq('project_id', jobId).then(() => {});
+        await supabaseClient.from('project_activity').delete().eq('project_id', jobId).then(() => {});
 
         // Then delete the job
         const { error } = await supabaseClient
@@ -28177,14 +28178,16 @@
             if (participantRecords.length > 0) {
               // Clear existing participants first if updating
               if (eventId) {
-                await supabaseClient
+                const { error: delErr } = await supabaseClient
                   .from('calendar_event_participants')
                   .delete()
                   .eq('event_id', savedEvent.id);
+                if (delErr) console.warn('Participant delete error:', delErr);
               }
-              await supabaseClient
+              const { error: insertErr } = await supabaseClient
                 .from('calendar_event_participants')
                 .insert(participantRecords);
+              if (insertErr) console.warn('Participant insert error:', insertErr);
             }
           }
         }
