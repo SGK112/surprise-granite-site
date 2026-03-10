@@ -5238,7 +5238,7 @@
           renderCalendar(); // Show empty grid immediately
           // Load job events first (clears array), then custom events (merges)
           await loadCalendarEvents();
-          loadAllCalendarEvents();
+          await loadAllCalendarEvents();
         }
 
         // Load customers when that page is shown
@@ -5255,8 +5255,8 @@
         if (page === 'collaborations') {
           await loadCollaborations();
           // Also load network count and invitations count for badges
-          loadMyNetwork();
-          loadReceivedInvitations();
+          await loadMyNetwork();
+          await loadReceivedInvitations();
         }
       } catch (err) {
         console.error('[showPage] Error loading data for', page, err);
