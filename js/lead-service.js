@@ -32,12 +32,18 @@
       raw_data: leadData
     };
 
-    // Add address if provided
+    // Add address if provided (uses JSONB billing_address column)
     if (leadData.address || leadData.street) {
-      lead.address = leadData.address || leadData.street;
-      lead.city = leadData.city || '';
-      lead.state = leadData.state || 'AZ';
-      lead.zip = leadData.zip || leadData.zipcode || '';
+      lead.billing_address = {
+        street: leadData.address || leadData.street || '',
+        city: leadData.city || '',
+        state: leadData.state || 'AZ',
+        zip: leadData.zip || leadData.zipcode || ''
+      };
+    }
+    // Add zip_code (top-level column)
+    if (leadData.zip || leadData.zipcode || leadData.zip_code) {
+      lead.zip_code = leadData.zip || leadData.zipcode || leadData.zip_code || '';
     }
 
     try {

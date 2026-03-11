@@ -8,6 +8,24 @@
     let currentUser = null;
     let userProfile = null;
     let isAdmin = false;
+
+    // Helper: get current user via getSession() (auto-refreshes token) instead of getUser() (server call that fails on expired JWT)
+    async function getAuthUser() {
+      if (!supabaseClient) return null;
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (error || !session) {
+          // Session expired — try explicit refresh
+          const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
+          if (refreshError || !refreshData?.session) return null;
+          return refreshData.session.user;
+        }
+        return session.user;
+      } catch (e) {
+        console.warn('[Auth] getAuthUser failed:', e.message);
+        return null;
+      }
+    }
     let isSuperAdmin = false;
     let userRole = 'customer'; // customer, contractor, vendor, admin
 
@@ -1126,7 +1144,7 @@
     // Duplicate calendar event helper
     async function duplicateCalendarEvent(eventId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Fetch original event
@@ -1231,7 +1249,7 @@
         return null;
       }
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const user = await getAuthUser();
       if (!user) {
         console.error('[findOrCreateCustomerFromLead] No user logged in');
         return null;
@@ -1349,7 +1367,7 @@
 
     // Create customer from estimate form data
     async function createCustomerFromEstimateForm(formData) {
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const user = await getAuthUser();
       if (!user) return null;
 
       // Check if customer exists with this email
@@ -1414,7 +1432,7 @@
       const fallbackTimer = setTimeout(() => {
         console.warn('Init timeout - forcing display');
         // Check if we have a cached session indicator
-        const hasSession = localStorage.getItem('sb-ypeypgwsycxcagncgdur-auth-token');
+        const hasSession = localStorage.getItem('sg-auth-token') || localStorage.getItem('sb-ypeypgwsycxcagncgdur-auth-token');
         if (hasSession) {
           showDashboard();
         } else {
@@ -3614,7 +3632,7 @@
       gridEl.style.display = 'none';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) {
           loadingEl.style.display = 'none';
           emptyEl.style.display = 'block';
@@ -4095,7 +4113,7 @@
       if (!choice) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Update project status to show en route
@@ -4220,7 +4238,7 @@
     // Mark as arrived at location
     async function markArrivedAtProject(projectId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         await supabaseClient
@@ -6075,7 +6093,7 @@
       if (!confirm(`Convert "${leadName}" to a project?`)) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Create project from lead data
@@ -6999,7 +7017,7 @@
       if (!message) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         const leadEmail = selectedLead.email;
         const leadName = selectedLead.full_name || '';
         const channel = leadEmail ? 'email' : 'portal';
@@ -7126,7 +7144,7 @@
 
       try {
         // Get current user for lead ownership
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in to add leads');
 
         const firstName = document.getElementById('new-lead-first-name').value.trim();
@@ -7312,7 +7330,7 @@
         let portalUrl = null;
         if (!editingLeadId) {
           try {
-            const { data: { user } } = await supabaseClient.auth.getUser();
+            const user = await getAuthUser();
             const { data: token, error: tokenError } = await supabaseClient
               .from('portal_tokens')
               .insert([{
@@ -7420,7 +7438,7 @@
         }
 
         // Get current user for lead ownership
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in to add leads');
 
         const fullName = `${firstName} ${lastName}`.trim();
@@ -7528,7 +7546,7 @@
         }
 
         // Get current user for lead ownership
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in to add leads');
 
         const fullName = `${firstName} ${lastName}`.trim();
@@ -7798,7 +7816,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Check if customer already exists with this email
@@ -8126,7 +8144,7 @@
       const paginationEl = document.getElementById('customers-pagination');
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
 
         // Step 1: Consolidate sg_users and shopify_customers into unified customers table
         await consolidateCustomerSources(user);
@@ -8560,7 +8578,7 @@
         }
 
         // Insert into customers table (for imported clients)
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (user) {
           const toInsert = customers.map(c => ({ ...c, user_id: user.id }));
           const { error } = await supabaseClient.from('customers').insert(toInsert);
@@ -8718,7 +8736,7 @@
       if (!selectedCustomer) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         if (tab === 'jobs') {
@@ -9081,7 +9099,7 @@
       btn.innerHTML = '<span class="spinner"></span> Saving...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         const customerData = {
@@ -10454,7 +10472,7 @@
           return;
         }
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         console.log('[Invoices] User:', user?.id);
 
         // Load from both Supabase (source of truth) and Stripe (supplementary) in parallel
@@ -10780,7 +10798,7 @@
     // Open payment history modal
     async function openPaymentHistoryModal() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Fetch all payments
@@ -10851,7 +10869,7 @@
     // Record a general payment on an invoice
     async function recordPayment(invoiceId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get invoice details
@@ -10952,7 +10970,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get current invoice
@@ -11026,7 +11044,7 @@
           throw new Error('API URL not configured');
         }
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
         console.log('[Sync] User authenticated:', user.id);
 
@@ -12520,7 +12538,7 @@
 
       try {
         const formData = getInvoiceFormData();
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const total = formData.items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
@@ -13858,7 +13876,7 @@
       if (!confirm('Mark this invoice as paid?')) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get invoice details
@@ -14026,7 +14044,7 @@
     // Record deposit payment on an invoice
     async function recordDeposit(invoiceId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get invoice details
@@ -14125,7 +14143,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get current invoice
@@ -14183,7 +14201,7 @@
     // Record deposit payment on an estimate
     async function recordEstimateDeposit(estimateId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get estimate details
@@ -14290,7 +14308,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         // Get current estimate
@@ -14647,7 +14665,7 @@
 
       try {
         // Get current user
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) {
           alert('Please log in to upload images');
           return;
@@ -14880,8 +14898,8 @@
     }
 
     async function checkListingLimit() {
-      const user = await supabaseClient.auth.getUser();
-      if (!user.data.user) return { allowed: false, remaining: 0 };
+      const user = await getAuthUser();
+      if (!user) return { allowed: false, remaining: 0 };
 
       // Check if super admin by email
       const userEmail = (user.data.user.email || '').toLowerCase();
@@ -14925,8 +14943,8 @@
       submitBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Creating...';
 
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) {
+        const user = await getAuthUser();
+        if (!user) {
           throw new Error('Please sign in to create a listing');
         }
 
@@ -15001,8 +15019,8 @@
       loadMyInquiries().catch(err => console.error('Inquiries load error:', err));
 
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) {
+        const user = await getAuthUser();
+        if (!user) {
           if (loadingEl) loadingEl.innerHTML = '<p style="color: var(--text-muted);">Please sign in to view your listings</p>';
           return;
         }
@@ -15098,8 +15116,8 @@
       const badgeEl = document.getElementById('inquiries-badge');
 
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) {
+        const user = await getAuthUser();
+        if (!user) {
           if (loadingEl) loadingEl.style.display = 'none';
           if (emptyEl) emptyEl.style.display = 'block';
           return;
@@ -15203,8 +15221,8 @@
           listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Database not ready. Please refresh.</div>';
           return;
         }
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) {
+        const user = await getAuthUser();
+        if (!user) {
           listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Please sign in to view messages</div>';
           return;
         }
@@ -15729,9 +15747,9 @@
       const notif = messageItems.find(n => n.id === id);
       if (!notif) return;
       try {
-        const user = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         await supabaseClient.from('leads').insert({
-          user_id: user.data.user.id,
+          user_id: user.id,
           full_name: notif.sender?.name || '',
           email: notif.sender?.email || '',
           phone: notif.sender?.phone || '',
@@ -15774,8 +15792,8 @@
       }
 
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) throw new Error('Not authenticated');
+        const user = await getAuthUser();
+        if (!user) throw new Error('Not authenticated');
 
         const isLead = currentNotification.source === 'lead' || currentNotification.lead;
         const recipientEmail = currentNotification.customer?.email || currentNotification.lead?.email;
@@ -16070,8 +16088,8 @@
 
     async function loadAllContacts() {
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) return;
+        const user = await getAuthUser();
+        if (!user) return;
 
         allContacts = [];
 
@@ -16311,8 +16329,8 @@
       }
 
       try {
-        const user = await supabaseClient.auth.getUser();
-        if (!user.data.user) throw new Error('Not authenticated');
+        const user = await getAuthUser();
+        if (!user) throw new Error('Not authenticated');
 
         // For email channel, send via API
         if (channel === 'email' && composeRecipient.email) {
@@ -16783,7 +16801,7 @@
           listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><p>Database connection not ready. Please refresh.</p></div>';
           return;
         }
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         console.log('[Estimates] User:', user?.id);
         if (!user) {
           listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><p>Please log in to view estimates</p></div>';
@@ -17000,7 +17018,7 @@
 
       // Get next estimate number
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (user) {
           const { data } = await supabaseClient.rpc('get_next_estimate_number', { p_user_id: user.id });
           document.getElementById('estimate-number-display').textContent = data || '0001';
@@ -17609,7 +17627,7 @@
 
     async function loadBusinessDefaults() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: settings } = await supabaseClient
@@ -17864,12 +17882,9 @@
       console.log('[Estimate] Button disabled, getting user...');
 
       try {
-        const { data: { user }, error: userError } = await withTimeout(
-          supabaseClient.auth.getUser(),
-          10000,
-          'Getting user timed out'
-        );
+        const user = await getAuthUser();
         console.log('[Estimate] Got user response');
+        const userError = !user ? { message: 'Not authenticated' } : null;
         if (userError) {
           console.error('[Estimate] User error:', userError);
           throw userError;
@@ -18137,7 +18152,7 @@
 
     async function saveEstimateDraft() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         // Collect line items
@@ -18664,7 +18679,7 @@
 
         if (!original) throw new Error('Estimate not found');
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
 
         // Create copy
         const newEstimate = {
@@ -18856,7 +18871,7 @@
           return;
         }
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
 
         // Generate invoice number
         const invoicePrefix = businessSettings?.invoice_prefix || 'INV-';
@@ -19038,7 +19053,7 @@
 
     async function loadBusinessSettings() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: settings } = await supabaseClient
@@ -19105,7 +19120,7 @@
       if (event) event.preventDefault();
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         const settingsData = {
@@ -19168,7 +19183,7 @@
       const logoUrlInput = document.getElementById('biz-logo-url');
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         // Show loading state
@@ -19342,7 +19357,7 @@
       if (!confirmed) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Update project with new workflow stage and status
@@ -19491,7 +19506,7 @@
       if (!confirm(message)) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const { error } = await supabaseClient
@@ -19606,7 +19621,7 @@
 
     async function editProjectFinancials(projectId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const { data: project } = await supabaseClient
@@ -19656,7 +19671,7 @@
       btn.textContent = 'Saving...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const contractAmount = parseFloat(document.getElementById('fin-contract-amount').value) || 0;
@@ -19707,7 +19722,7 @@
 
     async function recordProjectDeposit(projectId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const { data: project } = await supabaseClient
@@ -19781,7 +19796,7 @@
       btn.textContent = 'Recording...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const amount = parseFloat(document.getElementById('dep-amount').value);
@@ -19854,7 +19869,7 @@
       if (!listEl) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         listEl.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
@@ -20185,7 +20200,7 @@
 
     async function loadLeadsForProjectSelect() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: leads, error } = await supabaseClient
@@ -20274,7 +20289,7 @@
 
     async function loadCustomersForProjectSelect() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: customers, error } = await supabaseClient
@@ -20445,7 +20460,7 @@
       btn.innerHTML = '<div class="spinner" style="width: 18px; height: 18px; margin: 0 auto;"></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         let result;
@@ -20597,7 +20612,7 @@
       body.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const { data: project, error } = await supabaseClient
@@ -21230,7 +21245,7 @@
       input.disabled = true;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Get user's display name
@@ -21285,7 +21300,7 @@
       listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading network...</div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Load collaborators and already-assigned team members
@@ -21388,7 +21403,7 @@
       btn.textContent = 'Assigning...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Insert into project_contractors
@@ -21683,7 +21698,7 @@
 
     async function quickUpdateProjectStatus(id, status) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { error } = await supabaseClient
@@ -21711,7 +21726,7 @@
       if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { error } = await supabaseClient
@@ -21747,7 +21762,7 @@
       if (!jobsList) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         jobsList.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
@@ -22009,7 +22024,7 @@
       if (!select) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: customers } = await supabaseClient
@@ -22035,7 +22050,7 @@
       event.preventDefault();
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         let customerId = document.getElementById('job-customer-select').value;
@@ -22407,7 +22422,7 @@
       if (!files || files.length === 0) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         showToast('Uploading files...', 'info');
@@ -22858,7 +22873,7 @@
       select.innerHTML = '<option value="">Loading projects...</option>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         let projects = [];
@@ -22931,8 +22946,7 @@
       btn.textContent = 'Creating...';
 
       try {
-        const userData = await supabaseClient.auth.getUser();
-        const user = userData.data && userData.data.user;
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         const result = await supabaseClient.from('projects').insert({
@@ -23142,7 +23156,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Load project collaborations from Supabase
@@ -23336,7 +23350,7 @@
       listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading network...</div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Load general collaborators from Supabase directly
@@ -23457,7 +23471,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         // Load project contractors
@@ -23546,7 +23560,7 @@
       if (!container) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         // Get recent activity from projects user is involved in
@@ -23694,7 +23708,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Query project collaborators where user is invited (by email)
@@ -23805,7 +23819,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Load collaborators directly from Supabase
@@ -23947,7 +23961,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Query invitations sent to the current user's email that are still pending
@@ -24050,7 +24064,7 @@
 
     async function respondToInvitation(invitationId, response, isNetwork) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Update invitation status directly in Supabase
@@ -24158,7 +24172,7 @@
       btn.innerHTML = '<span class="spinner-small"></span> Adding...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Check if collaborator already exists
@@ -24249,7 +24263,7 @@
       if (!confirm('Remove this contact from your network?')) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Delete from Supabase directly
@@ -24271,7 +24285,7 @@
 
     async function resendNetworkInvite(collaboratorId) {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Get the existing collaborator record
@@ -24355,7 +24369,7 @@
 
       try {
         // Load owned projects
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: projects } = await supabaseClient
@@ -24402,7 +24416,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Get the collaborator details
@@ -24471,7 +24485,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 20px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Load messages between current user and collaborator
@@ -24528,7 +24542,7 @@
       const channel = document.querySelector('input[name="collab-msg-channel"]:checked')?.value || 'in_app';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Insert message
@@ -25017,7 +25031,7 @@
 
     async function loadCalEventContacts() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return [];
 
         calEventContactsCache = [];
@@ -25796,7 +25810,7 @@
           return;
         }
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Get participant info
@@ -26292,7 +26306,7 @@
       if (!choice) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not authenticated');
 
         // Log activity for the lead
@@ -27027,7 +27041,7 @@
 
       try {
         // Get current user
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         const authorName = user?.email || 'Staff';
 
         // Get existing notes or create new array
@@ -27505,7 +27519,7 @@
         return;
       }
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const user = await getAuthUser();
       if (!user) {
         showToast('Not authenticated', 'error');
         return;
@@ -27772,7 +27786,7 @@
     // Load contractors from database
     async function loadContractors() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         // Load from general_collaborators table
@@ -28056,7 +28070,7 @@
       btn.textContent = 'Saving...';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please sign in to create events');
 
         const title = document.getElementById('cal-event-title').value.trim();
@@ -28273,7 +28287,7 @@
 
     async function loadAllCalendarEvents() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         // Use global isAdmin variable set by loadUserProfile()
@@ -28987,7 +29001,7 @@
       const select = document.getElementById('handoff-project-select');
       select.innerHTML = '<option value="">Loading projects...</option>';
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) { select.innerHTML = '<option value="">Not authenticated</option>'; return; }
         const { data: projects } = await supabaseClient
           .from('projects')
@@ -29532,7 +29546,7 @@
       if (!container) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         container.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
@@ -29753,7 +29767,7 @@
       copyBtn.innerHTML = '<span>Generating...</span>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in first');
 
         // Generate a unique invite token
@@ -29827,7 +29841,7 @@
       btn.innerHTML = '<span>Sending...</span>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         const email = document.getElementById('invite-contractor-email').value.trim();
@@ -29876,7 +29890,7 @@
       event.preventDefault();
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         const contractorData = {
@@ -29965,7 +29979,7 @@
       `;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: collaborators } = await supabaseClient
@@ -29992,7 +30006,7 @@
       if (!currentJobId) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         let contractorId = document.getElementById('assign-contractor-select').value;
@@ -30186,7 +30200,7 @@
       const notes = document.getElementById('schedule-notes').value;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
         let targetJobId = jobId;
@@ -30743,7 +30757,7 @@
 
     async function loadCalendarEvents() {
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         // Get projects with dates
@@ -31117,7 +31131,7 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         console.log('[SaveCustomer] User:', user?.id);
         if (!user) {
           showToast('Please log in first', 'error');
@@ -31227,7 +31241,7 @@
       if (!container) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         container.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
@@ -31642,7 +31656,7 @@
       const documentType = docTypeMap[docType.toLowerCase()] || 'other';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         // Upload file to storage
@@ -31720,7 +31734,7 @@
       container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>';
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: items, error } = await supabaseClient
@@ -31809,7 +31823,7 @@
       if (event) event.preventDefault();
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) throw new Error('Please log in');
 
         const itemData = {
@@ -31888,7 +31902,7 @@
       if (!container) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getAuthUser();
         if (!user) return;
 
         const { data: items } = await supabaseClient
