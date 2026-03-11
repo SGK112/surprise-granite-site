@@ -7312,13 +7312,20 @@
           leadData.user_id = user.id;
           leadData.created_at = new Date().toISOString();
           leadData.form_name = 'manual-entry';
-          console.log('[SaveLead] Inserting new lead');
+          console.log('[SaveLead] Inserting new lead, data:', JSON.stringify(leadData).substring(0, 200));
 
-          const { data: insertData, error: insertError } = await supabaseClient
+          // Wrap insert in a timeout to prevent infinite hang
+          const insertPromise = supabaseClient
             .from('leads')
             .insert([leadData])
             .select()
             .single();
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Lead insert timed out after 15s — check your connection')), 15000)
+          );
+
+          const { data: insertData, error: insertError } = await Promise.race([insertPromise, timeoutPromise]);
           data = insertData;
           error = insertError;
           console.log('[SaveLead] Insert result:', error ? error.message : 'success, id=' + data?.id);
@@ -7326,41 +7333,44 @@
 
         if (error) throw error;
 
-        // Create portal token for new leads only (not edits)
+        // Create portal token for new leads only (not edits) — fire-and-forget, don't block save
         let portalUrl = null;
-        if (!editingLeadId) {
-          try {
-            const user = await getAuthUser();
-            const { data: token, error: tokenError } = await supabaseClient
-              .from('portal_tokens')
-              .insert([{
-                lead_id: data.id,
-                owner_id: user.id,
-                email: email,
-                phone: phone,
-                permissions: {
-                  view_project: true,
-                  view_estimates: true,
-                  approve_estimates: true,
-                  view_invoices: true,
-                  pay_invoices: true,
-                  upload_photos: true,
-                  send_messages: true,
-                  view_appointments: true
-                }
-              }])
-              .select()
-              .single();
+        if (!editingLeadId && data?.id) {
+          // Don't await — let it run in background so save isn't blocked
+          (async () => {
+            try {
+              const tokenUser = await getAuthUser();
+              if (!tokenUser) return;
+              const { data: token, error: tokenError } = await supabaseClient
+                .from('portal_tokens')
+                .insert([{
+                  lead_id: data.id,
+                  owner_id: tokenUser.id,
+                  email: email,
+                  phone: phone,
+                  permissions: {
+                    view_project: true,
+                    view_estimates: true,
+                    approve_estimates: true,
+                    view_invoices: true,
+                    pay_invoices: true,
+                    upload_photos: true,
+                    send_messages: true,
+                    view_appointments: true
+                  }
+                }])
+                .select()
+                .single();
 
-            if (token && !tokenError) {
-              portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
-              console.log('Portal token created:', token.id);
-            } else if (tokenError) {
-              console.warn('Portal token error:', tokenError.message);
+              if (token && !tokenError) {
+                console.log('Portal token created:', token.id);
+              } else if (tokenError) {
+                console.warn('Portal token error:', tokenError.message);
+              }
+            } catch (tokenErr) {
+              console.warn('Portal token creation error (non-blocking):', tokenErr);
             }
-          } catch (tokenErr) {
-            console.warn('Portal token creation error:', tokenErr);
-          }
+          })();
         }
 
         // Send welcome email if checkbox is checked (new leads only)
