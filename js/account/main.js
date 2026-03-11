@@ -9,22 +9,10 @@
     let userProfile = null;
     let isAdmin = false;
 
-    // Helper: get current user via getSession() (auto-refreshes token) instead of getUser() (server call that fails on expired JWT)
-    async function getAuthUser() {
-      if (!supabaseClient) return null;
-      try {
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        if (error || !session) {
-          // Session expired — try explicit refresh
-          const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
-          if (refreshError || !refreshData?.session) return null;
-          return refreshData.session.user;
-        }
-        return session.user;
-      } catch (e) {
-        console.warn('[Auth] getAuthUser failed:', e.message);
-        return null;
-      }
+    // Helper: get current user — NO Supabase auth calls (they deadlock with auto-refresh lock)
+    // Uses the in-memory currentUser which is set on page load and updated by onAuthStateChange
+    function getAuthUser() {
+      return currentUser;
     }
     let isSuperAdmin = false;
     let userRole = 'customer'; // customer, contractor, vendor, admin
