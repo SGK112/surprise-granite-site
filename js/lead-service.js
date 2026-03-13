@@ -74,6 +74,15 @@
 
       console.log('[LeadService] Lead submitted successfully:', result[0]?.id);
 
+      // Push to VoiceNow CRM (fire-and-forget)
+      try {
+        fetch('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(result[0] || lead)
+        }).catch(() => {});
+      } catch (e) { /* silent */ }
+
       // Send admin notification (fire-and-forget)
       if (window.SG_notifyNewLead) {
         window.SG_notifyNewLead({

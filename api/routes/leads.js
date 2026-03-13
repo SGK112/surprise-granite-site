@@ -131,6 +131,19 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
       } else {
         savedLead = lead;
 
+        // Push to VoiceNow CRM (fire-and-forget)
+        const crmWebhookUrl = process.env.VOICENOW_CRM_URL || 'https://voiceflow-crm.onrender.com';
+        fetch(`${crmWebhookUrl}/api/surprise-granite/webhook/new-lead`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(lead)
+        }).then(r => {
+          if (r.ok) logger.info('Lead pushed to VoiceNow CRM', { leadId: lead.id });
+          else logger.warn('VoiceNow CRM webhook failed', { status: r.status, leadId: lead.id });
+        }).catch(err => {
+          logger.warn('VoiceNow CRM webhook error', { error: err.message, leadId: lead.id });
+        });
+
         // Auto-generate portal token for the lead
         try {
           const { data: token, error: tokenError } = await supabase
