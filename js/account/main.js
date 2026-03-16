@@ -5172,6 +5172,19 @@
       // Update FAB visibility based on current page
       updateFabVisibility(page);
 
+      // Reset stale state from previous page to prevent cross-tab bugs
+      window._editingInvoiceId = null;
+      window._pendingInvoiceId = null;
+      window._pendingInvoiceToken = null;
+      editingLeadId = null;
+      selectedLead = null;
+      selectedEstimate = null;
+      selectedCustomer = null;
+      isPreviewingInvoice = false;
+      isLoadingLeads = false;
+      estimateModalState = { customerId: null, leadId: null, editingEstimateId: null };
+      workflowState.reset();
+
       // Wait for auth to be ready before loading any data
       if (!authReady || !supabaseClient) {
         console.log('[showPage] Waiting for auth, authReady:', authReady, 'supabaseClient:', !!supabaseClient);
@@ -7310,7 +7323,7 @@
             .single();
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Lead insert timed out after 15s — check your connection')), 15000)
+            setTimeout(() => reject(new Error('Lead insert timed out after 30s — check your connection')), 30000)
           );
 
           const { data: insertData, error: insertError } = await Promise.race([insertPromise, timeoutPromise]);
@@ -7320,6 +7333,11 @@
         }
 
         if (error) throw error;
+
+        // Sync to VoiceNow CRM (fire-and-forget)
+        if (!editingLeadId && data?.id) {
+          syncLeadToCRM(data);
+        }
 
         // Create portal token for new leads only (not edits) — fire-and-forget, don't block save
         let portalUrl = null;
@@ -7501,6 +7519,9 @@
 
         if (error) throw error;
 
+        // Sync to VoiceNow CRM (fire-and-forget)
+        syncLeadToCRM(lead);
+
         // Add to local array
         allLeads.unshift(lead);
         updateStats();
@@ -7588,6 +7609,9 @@
           .single();
 
         if (error) throw error;
+
+        // Sync to VoiceNow CRM (fire-and-forget)
+        syncLeadToCRM(lead);
 
         // Add to local array
         allLeads.unshift(lead);
@@ -10408,6 +10432,49 @@
     // VoiceNow CRM API for payments, SMS, and advanced features
     const VOICENOW_API = 'https://voiceflow-crm.onrender.com';
 
+    // Fire-and-forget sync to VoiceNow CRM
+    function syncLeadToCRM(lead) {
+      if (!lead?.id) return;
+      fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      }).then(r => {
+        if (r.ok) console.log('[CRM] Lead synced to VoiceNow:', lead.id);
+        else console.warn('[CRM] VoiceNow webhook failed:', r.status);
+      }).catch(err => {
+        console.warn('[CRM] VoiceNow sync error:', err.message);
+      });
+    }
+
+    function syncEstimateToCRM(estimate) {
+      if (!estimate?.id) return;
+      fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-estimate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(estimate)
+      }).then(r => {
+        if (r.ok) console.log('[CRM] Estimate synced to VoiceNow:', estimate.id);
+        else console.warn('[CRM] VoiceNow estimate webhook failed:', r.status);
+      }).catch(err => {
+        console.warn('[CRM] VoiceNow estimate sync error:', err.message);
+      });
+    }
+
+    function syncInvoiceToCRM(invoice) {
+      if (!invoice?.id) return;
+      fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoice)
+      }).then(r => {
+        if (r.ok) console.log('[CRM] Invoice synced to VoiceNow:', invoice.id);
+        else console.warn('[CRM] VoiceNow invoice webhook failed:', r.status);
+      }).catch(err => {
+        console.warn('[CRM] VoiceNow invoice sync error:', err.message);
+      });
+    }
+
     // Fetch with timeout - prevents hanging when Render API is cold-starting
     async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
       // If caller already provided a signal (custom AbortController), respect it
@@ -11518,6 +11585,10 @@
 
     function closeInvoiceModal() {
       document.getElementById('invoice-modal').classList.remove('active');
+      window._editingInvoiceId = null;
+      window._pendingInvoiceId = null;
+      window._pendingInvoiceToken = null;
+      isPreviewingInvoice = false;
     }
 
     // Populate the searchable contact list in invoice modal
@@ -12623,6 +12694,11 @@
           await supabaseClient.from('invoice_items').insert(invoiceItems);
         }
 
+        // Sync to VoiceNow CRM (fire-and-forget)
+        if (!isEditingInvoice) {
+          syncInvoiceToCRM(invoice);
+        }
+
         window._editingInvoiceId = null;
         closeInvoiceModal();
         await loadInvoices();
@@ -12631,7 +12707,7 @@
         showToast('Error saving draft: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save Draft';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save Draft';
       }
     }
 
@@ -12697,6 +12773,7 @@
           customer_zip: formData.customerZip || null,
           total: total,
           subtotal: total,
+          amount_due: total,
           amount_paid: 0,
           status: 'draft',
           notes: formData.notes || null,
@@ -12732,7 +12809,7 @@
             .eq('id', isEditingInvoice)
             .select()
             .single();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice update timed out after 15s')), 15000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice update timed out after 30s')), 30000));
           const { data: updated, error: updateErr } = await Promise.race([updatePromise, timeoutPromise]);
           if (updateErr) {
             console.error('[Invoices] Step 2 UPDATE FAILED:', updateErr);
@@ -12750,7 +12827,7 @@
             .insert(invoiceData)
             .select()
             .single();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice insert timed out after 15s - please try again')), 15000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Invoice insert timed out after 30s - please try again')), 30000));
           const { data: inserted, error: insertErr } = await Promise.race([insertPromise, timeoutPromise]);
           if (insertErr) {
             console.error('[Invoices] Step 2 INSERT FAILED:', insertErr);
@@ -12763,6 +12840,11 @@
           throw new Error('Invoice was not returned after save - possible RLS policy issue');
         }
         console.log('[Invoices] Step 2 done, invoice:', invoice.id);
+
+        // Sync to VoiceNow CRM (fire-and-forget)
+        if (!isEditingInvoice) {
+          syncInvoiceToCRM(invoice);
+        }
 
         // Save line items
         if (formData.items.length > 0) {
@@ -17621,6 +17703,8 @@
       modal.classList.remove('active');
       // Clear any linked customer ID
       if (modal) delete modal.dataset.customerId;
+      // Reset estimate modal state to prevent stale edits
+      estimateModalState = { customerId: null, leadId: null, editingEstimateId: null };
     }
 
     async function loadBusinessDefaults() {
@@ -18082,6 +18166,11 @@
           }
         }
 
+        // Sync to VoiceNow CRM (fire-and-forget)
+        if (!isEditing) {
+          syncEstimateToCRM(estimate);
+        }
+
         // Close modal and refresh list
         closeCreateEstimateModal();
         await loadEstimates();
@@ -18268,6 +18357,11 @@
           }));
 
           await supabaseClient.from('estimate_items').insert(itemsToInsert);
+        }
+
+        // Sync to VoiceNow CRM (fire-and-forget)
+        if (!isEditing) {
+          syncEstimateToCRM(estimate);
         }
 
         closeCreateEstimateModal();
