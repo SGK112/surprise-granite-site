@@ -841,7 +841,7 @@
     async function loadDistributor() {
       let { data: profile } = await supabaseClient
         .from('distributor_profiles')
-        .select('*')
+        .select('*, verification_status, is_active')
         .eq('user_id', currentUser.id)
         .single();
 
@@ -849,6 +849,13 @@
         window.location.href = '/distributor/signup/';
         return;
       }
+
+      // Verification gate — block unverified/inactive distributors
+      if (profile && (profile.verification_status !== 'verified' || !profile.is_active)) {
+        window.location.href = '/distributor/dashboard/';
+        return;
+      }
+
       if (!profile && isAdmin) {
         const urlParams = new URLSearchParams(window.location.search);
         const viewDistributorId = urlParams.get('distributor');

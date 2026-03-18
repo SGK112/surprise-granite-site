@@ -1064,6 +1064,23 @@
           window.location.href = '/distributor/signup/';
           return;
         }
+
+        // Verification gate — check distributor profile verification status
+        if (distributors && distributors.length > 0) {
+          const supabaseCheck = window._sgSupabaseClient;
+          if (supabaseCheck) {
+            const { data: vProfile } = await supabaseCheck
+              .from('distributor_profiles')
+              .select('verification_status, is_active')
+              .eq('id', distributors[0].distributor_id)
+              .single();
+            if (vProfile && (vProfile.verification_status !== 'verified' || !vProfile.is_active)) {
+              window.location.href = '/distributor/dashboard/';
+              return;
+            }
+          }
+        }
+
         if ((!distributors || distributors.length === 0) && isAdmin) {
           const urlParams = new URLSearchParams(window.location.search);
           const viewDistributorId = urlParams.get('distributor');

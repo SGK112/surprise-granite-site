@@ -645,6 +645,18 @@
           return;
         }
         currentUser = user;
+
+        // Verification gate — block unverified/inactive distributors
+        const { data: _vProfile } = await supabaseClient
+          .from('distributor_profiles')
+          .select('id, verification_status, is_active')
+          .eq('user_id', user.id)
+          .single();
+        if (_vProfile && (_vProfile.verification_status !== 'verified' || !_vProfile.is_active)) {
+          window.location.href = '/distributor/dashboard/';
+          return;
+        }
+
         loadIntegrations();
       } catch (error) {
         console.error('Auth error:', error);

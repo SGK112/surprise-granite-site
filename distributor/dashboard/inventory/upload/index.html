@@ -697,7 +697,7 @@
         let profile = null;
         const { data: profileData } = await supabaseClient
           .from('distributor_profiles')
-          .select('id, company_name, logo_url')
+          .select('id, company_name, logo_url, verification_status, is_active')
           .eq('user_id', session.user.id)
           .single();
         profile = profileData;
@@ -706,6 +706,13 @@
           window.location.href = '/distributor/signup/';
           return null;
         }
+
+        // Verification gate — block unverified/inactive distributors
+        if (profile && (profile.verification_status !== 'verified' || !profile.is_active)) {
+          window.location.href = '/distributor/dashboard/';
+          return null;
+        }
+
         if (!profile && isAdmin) {
           const urlParams = new URLSearchParams(window.location.search);
           const viewDistributorId = urlParams.get('distributor');

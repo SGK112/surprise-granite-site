@@ -8012,6 +8012,69 @@ app.patch('/api/distributor/profile', authenticateJWT, async (req, res) => {
   }
 });
 
+// Admin: Verify/approve a distributor
+app.patch('/api/admin/distributor/:id/verify', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { verification_status, is_active } = req.body;
+
+    const validStatuses = ['pending', 'in_review', 'verified', 'rejected'];
+    if (verification_status && !validStatuses.includes(verification_status)) {
+      return res.status(400).json({ error: 'Invalid verification_status' });
+    }
+
+    const updates = { updated_at: new Date().toISOString() };
+    if (verification_status) updates.verification_status = verification_status;
+    if (typeof is_active === 'boolean') updates.is_active = is_active;
+
+    const { data: profile, error } = await supabase
+      .from('distributor_profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info(`Admin ${userId} updated distributor ${id}: ${JSON.stringify(updates)}`);
+    res.json({ profile });
+  } catch (error) {
+    logger.error('Admin verify distributor error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Admin: List all distributors (for admin management)
+app.get('/api/admin/distributors', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { data: distributors, error } = await supabase
+      .from('distributor_profiles')
+      .select('id, company_name, company_type, primary_contact_name, primary_contact_email, is_active, is_stone_yard_partner, verification_status, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ distributors });
+  } catch (error) {
+    logger.error('Admin list distributors error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // ============ SLAB INVENTORY API ============
 
 // Get all slabs for a distributor

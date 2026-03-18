@@ -772,7 +772,21 @@
 
       currentUser = session.user;
       accessToken = session.access_token;
-      isAdmin = SUPER_ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+
+      // Verify admin status server-side (don't trust client-side email list alone)
+      isAdmin = false;
+      if (SUPER_ADMIN_EMAILS.includes((session.user.email || '').toLowerCase())) {
+        try {
+          const adminCheck = await fetch(`${API_BASE}/api/admin/distributors`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` }
+          });
+          isAdmin = adminCheck.ok;
+        } catch (e) {
+          isAdmin = false;
+        }
+      }
+
       await loadDashboard();
     }
 
@@ -802,14 +816,19 @@
       document.getElementById('userEmail').textContent = currentUser.email;
       document.getElementById('userAvatar').textContent = '⚡';
 
-      // Fetch all distributors
-      const { data: distributors, error } = await supabaseClient
-        .from('distributor_profiles')
-        .select('id, company_name, company_type, is_stone_yard_partner, verification_status, created_at')
-        .order('company_name');
-
-      if (error) {
-        console.error('Error loading distributors:', error);
+      // Fetch all distributors via admin API (server-side verified)
+      let distributors = [];
+      try {
+        const resp = await fetch(`${API_BASE}/api/admin/distributors`, { headers: getAuthHeaders() });
+        if (!resp.ok) {
+          console.error('Admin access denied');
+          window.location.href = '/distributor/signup/';
+          return;
+        }
+        const data = await resp.json();
+        distributors = data.distributors || [];
+      } catch (err) {
+        console.error('Error loading distributors:', err);
         return;
       }
 
@@ -894,6 +913,14 @@
 
         distributorProfile = profile;
 
+        // Verification gate — block unverified/inactive distributors (admins viewing others bypass this)
+        if (!isAdmin && profile.user_id === currentUser.id) {
+          if (profile.verification_status !== 'verified' || !profile.is_active) {
+            showPendingVerification(profile);
+            return;
+          }
+        }
+
         // Update sidebar branding
         const sidebarLogo = document.querySelector('.sidebar-logo span');
         if (sidebarLogo && profile.company_name) {
@@ -903,8 +930,14 @@
         if (sidebarImg && profile.logo_url) {
           sidebarImg.src = profile.logo_url;
           sidebarImg.alt = profile.company_name;
-        } else if (sidebarImg && profile.company_name) {
-          sidebarImg.alt = profile.company_name;
+        } else if (sidebarImg) {
+          // No logo uploaded — show company initials as fallback
+          const initials = (profile.company_name || 'D').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+          sidebarImg.style.display = 'none';
+          const initialsEl = document.createElement('div');
+          initialsEl.style.cssText = 'width:36px;height:36px;border-radius:8px;background:var(--gold-primary);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;';
+          initialsEl.textContent = initials;
+          sidebarImg.parentNode.insertBefore(initialsEl, sidebarImg);
         }
 
         // Propagate ?distributor= param to sidebar links
@@ -1039,6 +1072,39 @@
       if (hours < 24) return `${hours}h ago`;
       if (days < 7) return `${days}d ago`;
       return date.toLocaleDateString();
+    }
+
+    function showPendingVerification(profile) {
+      const statusMap = {
+        'pending': { label: 'Pending Review', color: '#f59e0b', icon: '&#9203;' },
+        'in_review': { label: 'Under Review', color: '#3b82f6', icon: '&#128269;' },
+        'rejected': { label: 'Not Approved', color: '#ef4444', icon: '&#10060;' }
+      };
+      const status = statusMap[profile.verification_status] || statusMap['pending'];
+      const mainContent = document.querySelector('.main-content') || document.querySelector('.dashboard-content');
+      if (mainContent) {
+        mainContent.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:40px 20px;">
+            <div style="max-width:480px;text-align:center;">
+              <div style="font-size:64px;margin-bottom:24px;">${status.icon}</div>
+              <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;">Account ${status.label}</h2>
+              <p style="color:rgba(255,255,255,0.6);margin:0 0 24px;line-height:1.6;">
+                Thank you for signing up, <strong>${profile.company_name}</strong>! Your account is currently being reviewed by our team. You'll receive an email at <strong>${profile.primary_contact_email}</strong> once your account has been verified.
+              </p>
+              <div style="background:var(--dark-elevated,#1e1e2d);border:1px solid ${status.color}33;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:${status.color};"></div>
+                  <span style="font-size:14px;font-weight:600;color:${status.color};">${status.label}</span>
+                </div>
+              </div>
+              <p style="color:rgba(255,255,255,0.4);font-size:13px;">Questions? Contact us at <a href="mailto:joshb@surprisegranite.com" style="color:var(--gold-primary);">joshb@surprisegranite.com</a></p>
+              <a href="/" style="display:inline-block;margin-top:16px;padding:10px 24px;background:var(--dark-surface);border:1px solid var(--border-subtle);border-radius:8px;color:inherit;text-decoration:none;font-size:14px;">Back to Home</a>
+            </div>
+          </div>
+        `;
+      }
+      // Hide sidebar nav items except dashboard
+      document.querySelectorAll('.sidebar-nav .nav-item:not(.active)').forEach(el => el.style.display = 'none');
     }
 
     // Initialize
