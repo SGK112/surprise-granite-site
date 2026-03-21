@@ -1224,18 +1224,18 @@
               <div class="success-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
               </div>
-              <h2 class="success-title">Welcome to the Pro Network!</h2>
+              <h2 class="success-title">Application Submitted!</h2>
               <p class="success-text">
-                Your account has been created. Choose a plan to start receiving leads, or jump straight to the marketplace to list your inventory.
+                Thank you for signing up. Our team will review your application and verify your business. You'll receive an email once your account is approved — usually within 1-2 business days.
               </p>
-              <a href="/vendor/select-plan/" class="btn btn-primary" style="margin-bottom: 12px;">
-                Choose Your Plan
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </a>
-              <a href="/vendor/dashboard/" class="btn btn-secondary" style="width: 100%;">
-                Go to Dashboard
+              <div style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b;"></div>
+                  <span style="font-size: 14px; font-weight: 600; color: #f59e0b;">Pending Review</span>
+                </div>
+              </div>
+              <a href="/" class="btn btn-secondary" style="width: 100%;">
+                Back to Home
               </a>
             </div>
           </div>
@@ -1458,7 +1458,7 @@
 
         if (authError) throw authError;
 
-        // 2. Create vendor profile
+        // 2. Create vendor profile (inactive until admin verifies)
         const { error: profileError } = await supabaseClient
           .from('vendor_profiles')
           .insert({
@@ -1472,11 +1472,29 @@
             state: formData.state,
             zip_code: formData.zip_code,
             service_radius_miles: formData.service_radius_miles,
-            onboarding_step: 3
+            onboarding_step: 3,
+            is_active: false,
+            verification_status: 'pending'
           });
 
         if (profileError) {
           console.error('Profile error:', profileError);
+        }
+
+        // 2b. Notify admin of new vendor signup
+        try {
+          fetch('https://www.surprisegranite.com/api/email/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: 'joshb@surprisegranite.com',
+              subject: 'New Vendor Signup: ' + formData.business_name,
+              message: `New vendor "${formData.business_name}" (${formData.business_type}) has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state} ${formData.zip_code}\n\nReview and verify at: https://www.surprisegranite.com/vendor/dashboard/`,
+              type: 'admin_notification'
+            })
+          });
+        } catch (notifyErr) {
+          console.error('Admin notification failed:', notifyErr);
         }
 
         // 3. Create initial service area

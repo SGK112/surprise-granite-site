@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS vendor_profiles (
   total_jobs_won INTEGER DEFAULT 0,
   total_revenue DECIMAL(12,2) DEFAULT 0,
 
-  -- Status
-  is_active BOOLEAN DEFAULT true,
+  -- Status (defaults to false — admin must verify before vendor can access dashboard)
+  is_active BOOLEAN DEFAULT false,
   is_featured BOOLEAN DEFAULT false,
   featured_until TIMESTAMPTZ,
 

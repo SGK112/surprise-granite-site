@@ -8075,6 +8075,70 @@ app.get('/api/admin/distributors', authenticateJWT, async (req, res) => {
   }
 });
 
+// Admin: Verify/approve a vendor
+app.patch('/api/admin/vendor/:id/verify', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { verification_status, is_active } = req.body;
+
+    const validStatuses = ['pending', 'submitted', 'verified', 'rejected', 'expired'];
+    if (verification_status && !validStatuses.includes(verification_status)) {
+      return res.status(400).json({ error: 'Invalid verification_status' });
+    }
+
+    const updates = { updated_at: new Date().toISOString() };
+    if (verification_status) updates.verification_status = verification_status;
+    if (typeof is_active === 'boolean') updates.is_active = is_active;
+    if (verification_status === 'verified') updates.verified_at = new Date().toISOString();
+
+    const { data: profile, error } = await supabase
+      .from('vendor_profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info(`Admin ${userId} updated vendor ${id}: ${JSON.stringify(updates)}`);
+    res.json({ profile });
+  } catch (error) {
+    logger.error('Admin verify vendor error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Admin: List all vendors
+app.get('/api/admin/vendors', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { data: vendors, error } = await supabase
+      .from('vendor_profiles')
+      .select('id, business_name, business_type, contact_name, email, phone, city, state, is_active, verification_status, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ vendors });
+  } catch (error) {
+    logger.error('Admin list vendors error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // ============ SLAB INVENTORY API ============
 
 // Get all slabs for a distributor

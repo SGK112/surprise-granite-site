@@ -189,6 +189,11 @@
         if (error || !user) { window.location.href = '/vendor/signup/'; return; }
         const { data: profile } = await supabaseClient.from('vendor_profiles').select('*').eq('id', user.id).single();
         if (!profile) { window.location.href = '/vendor/signup/'; return; }
+        // Verification gate — block unverified/inactive vendors
+        if (profile.verification_status !== 'verified' || !profile.is_active) {
+          window.location.href = '/vendor/dashboard/';
+          return;
+        }
         vendorProfile = profile;
         const { data: sub } = await supabaseClient.from('vendor_subscriptions').select('*, subscription_plans(*)').eq('vendor_id', user.id).single();
         subscription = sub;

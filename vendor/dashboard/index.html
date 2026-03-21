@@ -1004,6 +1004,12 @@
 
         vendorProfile = profile;
 
+        // Verification gate — block unverified/inactive vendors
+        if (profile.verification_status !== 'verified' || !profile.is_active) {
+          showPendingVerification(profile);
+          return;
+        }
+
         // Load subscription
         const { data: sub } = await supabaseClient
           .from('vendor_subscriptions')
@@ -1208,6 +1214,40 @@
       await supabaseClient.auth.signOut();
       localStorage.removeItem('sg_vendor_signup');
       window.location.href = '/';
+    }
+
+    function showPendingVerification(profile) {
+      const statusMap = {
+        'pending': { label: 'Pending Review', color: '#f59e0b', icon: '&#9203;' },
+        'submitted': { label: 'Under Review', color: '#3b82f6', icon: '&#128269;' },
+        'rejected': { label: 'Not Approved', color: '#ef4444', icon: '&#10060;' },
+        'expired': { label: 'Verification Expired', color: '#ef4444', icon: '&#9888;' }
+      };
+      const status = statusMap[profile.verification_status] || statusMap['pending'];
+      document.getElementById('loadingState').style.display = 'none';
+      const content = document.getElementById('dashboardContent');
+      if (content) {
+        content.style.display = 'block';
+        content.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:40px 20px;">
+            <div style="max-width:480px;text-align:center;">
+              <div style="font-size:64px;margin-bottom:24px;">${status.icon}</div>
+              <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;">Account ${status.label}</h2>
+              <p style="color:rgba(255,255,255,0.6);margin:0 0 24px;line-height:1.6;">
+                Thank you for signing up, <strong>${profile.business_name}</strong>! Your account is currently being reviewed by our team. You'll receive an email at <strong>${profile.email}</strong> once your account has been verified.
+              </p>
+              <div style="background:var(--dark-elevated,#1e1e2d);border:1px solid ${status.color}33;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:${status.color};"></div>
+                  <span style="font-size:14px;font-weight:600;color:${status.color};">${status.label}</span>
+                </div>
+              </div>
+              <p style="color:rgba(255,255,255,0.4);font-size:13px;">Questions? Contact us at <a href="mailto:joshb@surprisegranite.com" style="color:var(--gold-primary,#f9cb00);">joshb@surprisegranite.com</a></p>
+              <a href="/" style="display:inline-block;margin-top:16px;padding:10px 24px;background:var(--dark-surface,#12121a);border:1px solid var(--border-subtle,rgba(255,255,255,0.1));border-radius:8px;color:inherit;text-decoration:none;font-size:14px;">Back to Home</a>
+            </div>
+          </div>
+        `;
+      }
     }
 
     // Initialize
