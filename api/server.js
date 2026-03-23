@@ -7966,13 +7966,12 @@ app.get('/api/distributor/profile', authenticateJWT, async (req, res) => {
       .from('distributor_profiles')
       .select(`
         *,
-        distributor_locations(*),
-        distributor_analytics(*)
+        distributor_locations(*)
       `)
       .eq('user_id', userId)
       .single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
     if (!profile) return res.status(404).json({ error: 'Distributor profile not found' });
 
     res.json({ profile });
