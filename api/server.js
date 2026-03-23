@@ -6059,18 +6059,11 @@ app.patch('/api/leads/:id', authenticateJWT, async (req, res) => {
     delete updateData.created_at;
     updateData.updated_at = new Date().toISOString();
 
-    // Only pass columns that actually exist in the live Supabase leads table
+    // Whitelist: only these fields can be updated via PATCH (prevents mass assignment)
     const SAFE_LEAD_COLUMNS = [
-      'full_name', 'first_name', 'last_name',
-      'email', 'phone', 'zip_code',
-      'project_type', 'project_details', 'message',
-      'source', 'form_name', 'page_url', 'image_urls', 'images',
-      'billing_address', 'service_address', 'address_same',
+      'status', 'notes', 'assigned_to', 'contacted_at',
       'appointment_date', 'appointment_time', 'appointment_status',
-      'assigned_to', 'customer_id', 'status', 'budget', 'timeline',
-      'notes', 'raw_data', 'updated_at', 'user_id',
-      'pay_link_id', 'pay_link_url', 'pay_link_amount', 'pay_link_created_at',
-      'quick_quote_amount', 'contacted_at'
+      'budget', 'timeline', 'project_details', 'updated_at'
     ];
     const safeData = {};
     for (const key of SAFE_LEAD_COLUMNS) {
@@ -7994,6 +7987,8 @@ app.patch('/api/distributor/profile', authenticateJWT, async (req, res) => {
     delete updates.user_id;
     delete updates.stripe_connect_id;
     delete updates.verification_status;
+    delete updates.is_active;
+    delete updates.is_stone_yard_partner;
 
     const { data: profile, error } = await supabase
       .from('distributor_profiles')
@@ -9721,7 +9716,7 @@ app.post('/api/products', authenticateJWT, async (req, res) => {
 });
 
 // PATCH /api/products/:id - Update product
-app.patch('/api/products/:id', async (req, res) => {
+app.patch('/api/products/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -9771,7 +9766,7 @@ app.patch('/api/products/:id', async (req, res) => {
 });
 
 // DELETE /api/products/:id - Delete product
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -10168,7 +10163,7 @@ app.post('/api/integrations', authenticateJWT, async (req, res) => {
 });
 
 // PATCH /api/integrations/:id - Update integration
-app.patch('/api/integrations/:id', async (req, res) => {
+app.patch('/api/integrations/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
@@ -10208,7 +10203,7 @@ app.patch('/api/integrations/:id', async (req, res) => {
 });
 
 // DELETE /api/integrations/:id - Delete integration
-app.delete('/api/integrations/:id', async (req, res) => {
+app.delete('/api/integrations/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {

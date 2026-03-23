@@ -30,7 +30,7 @@
 
   // Stripe Configuration
   const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdatW3Hsua7p5EHSwkLa2WLx3YTSACjb9Yv5qoaGNX7pk2TZt5FcjSxRWw1KG1PoEpEkXmuCfr00vbSGkIMu';
-  const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+  const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
 
   // Initialize Stripe
   let stripe;

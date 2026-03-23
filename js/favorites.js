@@ -924,7 +924,8 @@
       submitBtn.textContent = 'Sending...';
 
       try {
-        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+        const response = await fetch(`${API_BASE}/api/send-estimate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

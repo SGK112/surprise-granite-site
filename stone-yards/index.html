@@ -833,6 +833,7 @@
     </div>
   </section>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const fallbackPartners = [
       { name: 'MSI Surfaces', address: '4405 W Roosevelt St, Phoenix, AZ', phone: '(602) 393-6330', lat: 33.4583, lng: -112.1407, website: 'https://www.msisurfaces.com', tag: 'Granite - Quartz - Porcelain' },
@@ -848,7 +849,81 @@
       { name: 'ESI - Edgebanding Services', address: '150 S. Kyrene Rd #9, Chandler, AZ', phone: '(480) 829-8900', lat: 33.3062, lng: -111.9418, website: 'https://edgebanding-services.com/locations/chandler-az/', tag: 'Hanstone Quartz Distributor' }
     ];
 
-    document.addEventListener('DOMContentLoaded', function() {
+    async function fetchDistributorsFromSupabase() {
+      try {
+        if (typeof window.supabase === 'undefined') {
+          console.warn('Supabase library not loaded, using fallback data');
+          return null;
+        }
+        const sb = window.supabase.createClient(
+          'https://ypeypgwsycxcagncgdur.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME'
+        );
+
+        const { data, error } = await sb
+          .from('distributor_profiles')
+          .select('company_name, company_type, material_types, website, distributor_locations(address, city, state, zip_code, phone, latitude, longitude, location_name)')
+          .eq('is_active', true)
+          .eq('verification_status', 'verified')
+          .eq('is_stone_yard_partner', true);
+
+        if (error) {
+          console.error('Supabase query error:', error.message);
+          return null;
+        }
+        if (!data || data.length === 0) {
+          console.warn('No distributors found in Supabase, using fallback');
+          return null;
+        }
+
+        // Map Supabase data to the same format as fallbackPartners
+        const partners = [];
+        data.forEach(d => {
+          const locations = d.distributor_locations || [];
+          if (locations.length === 0) {
+            // Skip distributors with no locations
+            return;
+          }
+          locations.forEach(loc => {
+            if (!loc.latitude || !loc.longitude) return;
+            const addressParts = [loc.address, loc.city, loc.state, loc.zip_code].filter(Boolean);
+            const tag = Array.isArray(d.material_types) ? d.material_types.join(' - ') : (d.company_type || 'Stone Yard');
+            partners.push({
+              name: loc.location_name || d.company_name,
+              address: addressParts.join(', '),
+              phone: loc.phone || '',
+              lat: parseFloat(loc.latitude),
+              lng: parseFloat(loc.longitude),
+              website: d.website || '',
+              tag: tag
+            });
+          });
+        });
+
+        return partners.length > 0 ? partners : null;
+      } catch (err) {
+        console.error('Failed to fetch distributors:', err);
+        return null;
+      }
+    }
+
+    function formatPhoneDisplay(phone) {
+      if (!phone) return '';
+      const digits = phone.replace(/[^0-9]/g, '');
+      if (digits.length === 10) {
+        return '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+      }
+      if (digits.length === 11 && digits[0] === '1') {
+        return '(' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7);
+      }
+      return phone;
+    }
+
+    function slugify(name) {
+      return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    function renderMap(partners) {
       const map = L.map('partner-map', {
         scrollWheelZoom: false,
         zoomControl: true
@@ -868,8 +943,13 @@
       });
 
       const markers = [];
-      fallbackPartners.forEach(p => {
+      partners.forEach(p => {
         const marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+        const phoneHtml = p.phone ? `
+            <div class="popup-phone">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              <a href="tel:${p.phone.replace(/[^0-9]/g, '')}">${formatPhoneDisplay(p.phone)}</a>
+            </div>` : '';
         marker.bindPopup(`
           <div class="popup-card">
             <h4>${p.name}</h4>
@@ -877,10 +957,7 @@
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <span>${p.address}</span>
             </div>
-            <div class="popup-phone">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-              <a href="tel:${p.phone.replace(/[^0-9]/g, '')}">${p.phone}</a>
-            </div>
+            ${phoneHtml}
             <a href="https://maps.google.com/maps?daddr=${encodeURIComponent(p.address)}" target="_blank" class="popup-btn">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Get Directions
@@ -890,8 +967,66 @@
         markers.push(marker);
       });
 
-      const group = L.featureGroup(markers);
-      map.fitBounds(group.getBounds().pad(0.1));
+      if (markers.length > 0) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+      }
+    }
+
+    function renderYardCards(partners) {
+      const grid = document.querySelector('.yards-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      partners.forEach((p, i) => {
+        const num = i + 1;
+        const phoneDigits = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
+        const phoneDisplay = formatPhoneDisplay(p.phone);
+        const slug = slugify(p.name);
+        const addressEncoded = encodeURIComponent(p.address).replace(/%20/g, '+');
+
+        const phoneHtml = p.phone ? `
+          <div class="yard-detail">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            <a href="tel:+${phoneDigits.length === 10 ? '1' : ''}${phoneDigits}">${phoneDisplay}</a>
+          </div>` : '';
+
+        const websiteBtn = p.website ? `<a href="${p.website}" target="_blank" class="yard-btn yard-btn-secondary">Website</a>` : '';
+
+        grid.innerHTML += `
+          <div class="yard-card">
+            <div class="yard-header">
+              <div class="yard-num">${num}</div>
+              <div class="yard-info">
+                <h3>${p.name}</h3>
+                <span class="yard-tag">${p.tag}</span>
+              </div>
+            </div>
+            <div class="yard-body">
+              <div class="yard-detail">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>${p.address}</span>
+              </div>
+              ${phoneHtml}
+              <div class="yard-actions">
+                <a href="https://maps.google.com/?q=${addressEncoded}" target="_blank" class="yard-btn yard-btn-primary">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                  Directions
+                </a>
+                ${websiteBtn}
+                <a href="/stone-yards/${slug}/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const livePartners = await fetchDistributorsFromSupabase();
+      const partners = livePartners || fallbackPartners;
+
+      renderMap(partners);
+      renderYardCards(partners);
     });
   </script>
 
@@ -916,283 +1051,7 @@
     </div>
 
     <div class="yards-grid">
-      <div class="yard-card" id="msi">
-        <div class="yard-header">
-          <div class="yard-num">1</div>
-          <div class="yard-info">
-            <h3>MSI Surfaces</h3>
-            <span class="yard-tag">Granite - Quartz - Porcelain</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>4405 W Roosevelt St, Phoenix, AZ 85043</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16023936330">(602) 393-6330</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=4405+W+Roosevelt+St+Phoenix+AZ+85043" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-              Directions
-            </a>
-            <a href="https://www.msisurfaces.com" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/msi/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card" id="arizona-tile">
-        <div class="yard-header">
-          <div class="yard-num">2</div>
-          <div class="yard-info">
-            <h3>Arizona Tile</h3>
-            <span class="yard-tag">Showroom & Slab Warehouse</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>8829 S Priest Dr, Tempe, AZ 85284</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+14808939393">(480) 893-9393</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=8829+S+Priest+Dr+Tempe+AZ+85284" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://www.arizonatile.com/locations/tempe/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/arizona-tile/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">3</div>
-          <div class="yard-info">
-            <h3>Cactus Stone & Tile</h3>
-            <span class="yard-tag">Natural Stone Specialists</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>401 S 50th St, Phoenix, AZ 85034</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16022756400">(602) 275-6400</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=401+S+50th+St+Phoenix+AZ+85034" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://cactustile.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/cactus-stone/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">4</div>
-          <div class="yard-info">
-            <h3>Cosentino Center</h3>
-            <span class="yard-tag">Silestone - Dekton - Sensa</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>8307 S Priest Dr, Tempe, AZ 85284</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+14807639400">(480) 763-9400</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=8307+S+Priest+Dr+Tempe+AZ+85284" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://www.cosentino.com/usa/cosentino-center/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/cosentino/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">5</div>
-          <div class="yard-info">
-            <h3>Cambria Gallery</h3>
-            <span class="yard-tag">Premium Quartz</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>1250 N Fairway Dr, Avondale, AZ 85323</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16239321482">(623) 932-1482</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=1250+N+Fairway+Dr+Avondale+AZ+85323" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://www.cambriausa.com/galleries/phoenix/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/cambria/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">6</div>
-          <div class="yard-info">
-            <h3>Daltile Stone & Slab</h3>
-            <span class="yard-tag">Tile - Slabs - Design Center</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>2040 W Rio Salado Pkwy, Tempe, AZ 85281</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16022432772">(602) 243-2772</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=2040+W+Rio+Salado+Pkwy+Tempe+AZ+85281" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://locations.daltile.com/az/tempe/393/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/daltile/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">7</div>
-          <div class="yard-info">
-            <h3>Bolder Image Stone</h3>
-            <span class="yard-tag">Granite - Quartzite - Marble</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>4101 W Van Buren St, Phoenix, AZ 85009</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16024847700">(602) 484-7700</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=4101+W+Van+Buren+St+Phoenix+AZ+85009" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://bolderimagestone.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/bolder-image-stone/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">8</div>
-          <div class="yard-info">
-            <h3>Aracruz Granite</h3>
-            <span class="yard-tag">Appointment Required</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>2310 W Sherman St, Phoenix, AZ 85009</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+16022521171">(602) 252-1171</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=2310+W+Sherman+St+Phoenix+AZ+85009" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="http://aracruzgranite.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/aracruz/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">9</div>
-          <div class="yard-info">
-            <h3>Classic Surfaces</h3>
-            <span class="yard-tag">Warehouse Location</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>4645 W McDowell Rd, Phoenix, AZ 85035</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+12192134239">(219) 213-4239</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=4645+W+McDowell+Rd+Phoenix+AZ+85035" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://www.classic-surfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/classic-surfaces/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card">
-        <div class="yard-header">
-          <div class="yard-num">10</div>
-          <div class="yard-info">
-            <h3>Architectural Surfaces</h3>
-            <span class="yard-tag">Appointment Required</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>9175 E Pima Center Pkwy, Scottsdale, AZ 85258</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+14802103570">(480) 210-3570</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=9175+E+Pima+Center+Pkwy+Scottsdale+AZ+85258" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://arcsurfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/architectural-surfaces/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="yard-card" id="esi">
-        <div class="yard-header">
-          <div class="yard-num">11</div>
-          <div class="yard-info">
-            <h3>ESI - Edgebanding Services</h3>
-            <span class="yard-tag">Hanstone Quartz Distributor</span>
-          </div>
-        </div>
-        <div class="yard-body">
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <span>150 S. Kyrene Rd #9, Chandler, AZ 85226</span>
-          </div>
-          <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            <a href="tel:+14808298900">(480) 829-8900</a>
-          </div>
-          <div class="yard-actions">
-            <a href="https://maps.google.com/?q=150+S+Kyrene+Rd+9+Chandler+AZ+85226" target="_blank" class="yard-btn yard-btn-primary">Directions</a>
-            <a href="https://edgebanding-services.com/locations/chandler-az/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
-            <a href="/stone-yards/esi/" class="yard-btn yard-btn-profile">View Profile &amp; Products</a>
-          </div>
-        </div>
-      </div>
+      <!-- Dynamically populated by renderYardCards() -->
     </div>
   </section>
 

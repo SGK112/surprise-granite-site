@@ -11,7 +11,7 @@
   // Configuration - use centralized config
   const sgConfig = window.SG_CONFIG || {};
   const CONFIG = {
-    apiUrl: sgConfig.API_URL || 'https://surprise-granite-email-api.onrender.com',
+    apiUrl: sgConfig.API_BASE || 'https://surprise-granite-email-api.onrender.com',
     supabaseUrl: sgConfig.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
     supabaseKey: sgConfig.SUPABASE_ANON_KEY || '',
     maxImages: 6,

@@ -8,7 +8,7 @@
 
   // Configuration - use centralized config
   const config = window.SG_CONFIG || {};
-  const API_URL = config.API_URL || 'https://surprise-granite-email-api.onrender.com';
+  const API_BASE = config.API_BASE || 'https://surprise-granite-email-api.onrender.com';
   const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
   const SUPABASE_KEY = config.SUPABASE_ANON_KEY || '';
 
