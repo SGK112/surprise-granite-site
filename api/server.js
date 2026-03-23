@@ -6047,7 +6047,7 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', authenticateJWT, async (r
 // ============ LEAD MANAGEMENT ============
 
 // Update a lead (uses service role to bypass RLS for unclaimed leads)
-app.patch('/api/leads/:id', async (req, res) => {
+app.patch('/api/leads/:id', authenticateJWT, async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ error: 'Database not configured' });
     const { id } = req.params;
