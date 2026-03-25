@@ -16938,34 +16938,34 @@
             <div style="display:flex;flex-direction:column;gap:16px;">
               <div>
                 <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Title</label>
-                <input id="edit-listing-title" value="${listing.title || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                <input id="edit-listing-title" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
               </div>
               <div>
                 <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Description</label>
-                <textarea id="edit-listing-desc" rows="3" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;resize:vertical;">${listing.description || ''}</textarea>
+                <textarea id="edit-listing-desc" rows="3" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;resize:vertical;"></textarea>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                   <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Price ($)</label>
-                  <input id="edit-listing-price" type="number" step="0.01" value="${listing.price || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                  <input id="edit-listing-price" type="number" step="0.01" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
                 </div>
                 <div>
                   <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Material</label>
-                  <input id="edit-listing-material" value="${listing.material_type || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                  <input id="edit-listing-material" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                 <div>
                   <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Length (in)</label>
-                  <input id="edit-listing-length" type="number" value="${listing.length_inches || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                  <input id="edit-listing-length" type="number" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
                 </div>
                 <div>
                   <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Width (in)</label>
-                  <input id="edit-listing-width" type="number" value="${listing.width_inches || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                  <input id="edit-listing-width" type="number" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
                 </div>
                 <div>
                   <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Thickness</label>
-                  <input id="edit-listing-thickness" value="${listing.thickness || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                  <input id="edit-listing-thickness" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
                 </div>
               </div>
               <button id="edit-listing-save" class="btn-modern primary" style="width:100%;padding:14px;font-size:15px;font-weight:600;">Save Changes</button>
@@ -16973,6 +16973,15 @@
           </div>`;
 
         document.body.appendChild(modal);
+
+        // Set values via DOM to prevent XSS
+        document.getElementById('edit-listing-title').value = listing.title || '';
+        document.getElementById('edit-listing-desc').value = listing.description || '';
+        document.getElementById('edit-listing-price').value = listing.price || '';
+        document.getElementById('edit-listing-material').value = listing.material_type || '';
+        document.getElementById('edit-listing-length').value = listing.length_inches || '';
+        document.getElementById('edit-listing-width').value = listing.width_inches || '';
+        document.getElementById('edit-listing-thickness').value = listing.thickness || '';
 
         document.getElementById('edit-listing-save').onclick = async () => {
           const saveBtn = document.getElementById('edit-listing-save');
@@ -22019,6 +22028,7 @@
     let allCollaborators = [];
     // allCustomers already declared above
     let currentJobId = null;
+    let currentJobData = null;
     let jobFilter = 'all';
     let contractorFilter = 'all';
 
@@ -22421,6 +22431,7 @@
         showToast('Job not found', 'error');
         return;
       }
+      currentJobData = job;
 
       // Populate job details
       document.getElementById('job-detail-number').textContent = job.job_number || 'N/A';
@@ -26534,8 +26545,11 @@
       const message = d.message || d.notes || '';
       const created = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
+      // Escape all values for safe HTML rendering
+      const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
       const printWindow = window.open('', '_blank');
-      printWindow.document.write(`<!DOCTYPE html><html><head><title>${name} - Profile</title>
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>${esc(name)} - Profile</title>
         <style>
           body { font-family: -apple-system, Arial, sans-serif; padding: 40px; color: #1a1a2e; max-width: 700px; margin: 0 auto; }
           h1 { font-size: 24px; margin-bottom: 4px; }
@@ -26551,16 +26565,16 @@
           @media print { body { padding: 20px; } }
         </style>
       </head><body>
-        <h1>${name}</h1>
-        <div class="meta"><span class="badge">${status}</span>${source ? ' &middot; Source: ' + source : ''}${created ? ' &middot; Created: ' + created : ''}</div>
+        <h1>${esc(name)}</h1>
+        <div class="meta"><span class="badge">${esc(status)}</span>${source ? ' &middot; Source: ' + esc(source) : ''}${created ? ' &middot; Created: ' + esc(created) : ''}</div>
         <div class="section">
           <h3>Contact</h3>
-          <div class="row"><span class="label">Email</span><span class="value">${email}</span></div>
-          <div class="row"><span class="label">Phone</span><span class="value">${phone}</span></div>
-          <div class="row"><span class="label">Address</span><span class="value">${address}</span></div>
+          <div class="row"><span class="label">Email</span><span class="value">${esc(email)}</span></div>
+          <div class="row"><span class="label">Phone</span><span class="value">${esc(phone)}</span></div>
+          <div class="row"><span class="label">Address</span><span class="value">${esc(address)}</span></div>
         </div>
-        ${message ? '<div class="section"><h3>Notes</h3><div class="notes">' + message.replace(/</g, '&lt;') + '</div></div>' : ''}
-        ${d.project_type ? '<div class="section"><h3>Project</h3><div class="row"><span class="label">Type</span><span class="value">' + d.project_type + '</span></div></div>' : ''}
+        ${message ? '<div class="section"><h3>Notes</h3><div class="notes">' + esc(message) + '</div></div>' : ''}
+        ${d.project_type ? '<div class="section"><h3>Project</h3><div class="row"><span class="label">Type</span><span class="value">' + esc(d.project_type) + '</span></div></div>' : ''}
         <div class="footer">Printed from Surprise Granite CRM &middot; ${new Date().toLocaleDateString()}</div>
       </body></html>`);
       printWindow.document.close();
@@ -31760,6 +31774,7 @@ Surprise Granite</textarea>
       if (!currentJobData) { showToast('No job selected', 'error'); return; }
 
       const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
       modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 

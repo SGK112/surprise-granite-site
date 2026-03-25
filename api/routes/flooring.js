@@ -21,8 +21,7 @@ const fs = require('fs');
 
 const flooringPricing = require('../services/flooringPricingService');
 const pricingService = require('../services/pricingService');
-const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { checkPermission } = require('../middleware/authorization');
+const { authenticateJWT: requireAuth, optionalAuth, requirePermission: checkPermission } = require('../lib/auth/middleware');
 const logger = require('../utils/logger');
 
 // Configure multer for price sheet uploads

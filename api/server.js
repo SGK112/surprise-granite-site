@@ -328,6 +328,7 @@ app.set('supabase', supabase);
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+app.set('stripe', stripe);
 
 // Import Stripe service for enhanced payment link features
 const stripeService = require('./services/stripeService');
