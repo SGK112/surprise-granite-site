@@ -4649,6 +4649,7 @@ body.dragging-active .card:has(.calendar-grid) {
       /* Reset main content margin - no sidebar/toolbar on mobile */
       .main-content {
         margin-left: 0 !important;
+        padding-top: 0 !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
         width: 100% !important;
@@ -4994,18 +4995,18 @@ body.dragging-active .card:has(.calendar-grid) {
 
 /* Mobile-specific: 480px and below */
 @media (max-width: 480px) {
-      /* Stats grid single column on small phones */
+      /* Stats grid 2 columns on small phones */
       .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
       }
 
       .stat-card {
-        padding: 16px;
+        padding: 14px;
       }
 
       .stat-value {
-        font-size: 24px;
+        font-size: 22px;
       }
 
       /* Topbar mobile adjustments - clean single row */
@@ -12555,7 +12556,6 @@ body.dragging-active .card:has(.calendar-grid) {
 /* Mobile (<=991px): full-width layout, no sidebar offset */
 @media (max-width: 991px) {
   body {
-    padding-top: var(--unified-nav-height);
     overflow-x: hidden;
   }
 
@@ -12564,10 +12564,14 @@ body.dragging-active .card:has(.calendar-grid) {
     padding: 16px !important;
   }
 
+  /* Topbar: not sticky on mobile — prevents overlap with content */
   .topbar {
+    position: relative !important;
+    top: auto !important;
     padding: 12px 16px !important;
     flex-wrap: wrap;
     gap: 8px;
+    z-index: 10;
   }
 
   /* Cards and panels full-width */
