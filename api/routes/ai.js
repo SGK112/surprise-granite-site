@@ -568,6 +568,9 @@ Be thorough but realistic. If you can't determine something, use standard dimens
     }
 
     // Parse the response
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({ error: 'AI returned empty response' });
+    }
     const content = data.choices[0].message.content;
     logger.info(`[Room-Scan] Response length: ${content.length}`);
 
@@ -1093,11 +1096,15 @@ RETURN THIS EXACT JSON STRUCTURE:
       throw new Error(step1Data.error.message);
     }
 
+    if (!step1Data.choices || !step1Data.choices[0]) {
+      throw new Error('AI returned empty response for reference analysis');
+    }
     const step1Content = step1Data.choices[0].message.content;
     const step1Json = step1Content.match(/\{[\s\S]*\}/);
     let originalLayout;
 
     try {
+      if (!step1Json) throw new Error('No JSON in AI response');
       originalLayout = JSON.parse(step1Json[0]);
     } catch (e) {
       return res.status(500).json({ error: 'Failed to parse reference image analysis' });
@@ -1152,11 +1159,15 @@ Keep elements that weren't mentioned. Only change what the user asked for. Be sp
       throw new Error(step2Data.error.message);
     }
 
+    if (!step2Data.choices || !step2Data.choices[0]) {
+      throw new Error('AI returned empty response for modification');
+    }
     const step2Content = step2Data.choices[0].message.content;
     const step2Json = step2Content.match(/\{[\s\S]*\}/);
 
     let modResult;
     try {
+      if (!step2Json) throw new Error('No JSON in AI response');
       modResult = JSON.parse(step2Json[0]);
     } catch (e) {
       return res.status(500).json({ error: 'Failed to parse modification response' });
@@ -1272,6 +1283,9 @@ GUIDELINES:
     if (data.error) {
       logger.error('[Design-Chat] OpenAI error:', data.error);
       throw new Error(data.error.message);
+    }
+    if (!data.choices || !data.choices[0]) {
+      throw new Error('AI returned empty response');
     }
 
     const content = data.choices[0].message.content;
@@ -1798,6 +1812,9 @@ Respond ONLY in valid JSON with keys: surfaces (array), layoutDescription (strin
     if (data.error) {
       logger.error('OpenAI surface-detect error:', data.error);
       return res.status(500).json({ error: data.error.message || 'Surface detection failed' });
+    }
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({ error: 'AI returned empty response for surface detection' });
     }
 
     const result = JSON.parse(data.choices[0].message.content);

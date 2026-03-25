@@ -2129,10 +2129,12 @@
       showToast('All notifications marked as read');
     }
 
-    // Load notifications periodically
+    // Load notifications periodically (single instance)
+    let _notificationInterval = null;
     function startNotificationPolling() {
       loadNotifications();
-      setInterval(loadNotifications, 60000); // Every minute
+      if (_notificationInterval) clearInterval(_notificationInterval);
+      _notificationInterval = setInterval(loadNotifications, 60000);
     }
 
     // Send daily digest email
@@ -9361,9 +9363,18 @@
     document.addEventListener('keydown', (e) => {
       // Escape closes modals
       if (e.key === 'Escape') {
+        // Close any open modal overlay (generic handler)
+        const openOverlay = document.querySelector('.modal-overlay:not([style*="display: none"]):not([style*="display:none"])');
+        if (openOverlay) { openOverlay.remove(); return; }
+        // Close specific modals
+        const profilePanel = document.getElementById('profile-panel-overlay');
+        if (profilePanel?.classList.contains('active')) { closeProfilePanel(); return; }
         closeLeadModal();
+        closeAddLeadModal();
         closeProductModal();
         closeInvoiceModal();
+        closeCreateEstimateModal();
+        closeCalendarEventModal();
       }
 
       // Don't trigger shortcuts when typing in inputs
