@@ -311,6 +311,12 @@ const scrapersRouter = require('./routes/scrapers');
 // QuickBooks Integration Routes
 const quickbooksRouter = require('./routes/quickbooks');
 
+// Flooring Routes
+const flooringRouter = require('./routes/flooring');
+
+// Health Check Routes
+const healthRouter = require('./routes/health');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -3736,6 +3742,10 @@ app.use('/api/pricing', pricingRouter);
 
 // ============ SCRAPER MANAGEMENT ROUTES ============
 app.use('/api/scrapers', scrapersRouter);
+
+// ============ FLOORING & HEALTH ROUTES ============
+app.use('/api/flooring', flooringRouter);
+app.use('/api/health', healthRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility

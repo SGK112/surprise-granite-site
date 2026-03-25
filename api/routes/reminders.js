@@ -17,7 +17,11 @@ const { asyncHandler } = require('../middleware/errorHandler');
 router.post('/process', asyncHandler(async (req, res) => {
   // Verify cron secret or admin auth
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     // Check for admin auth
@@ -44,7 +48,11 @@ router.post('/process', asyncHandler(async (req, res) => {
  */
 router.post('/appointments', asyncHandler(async (req, res) => {
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -65,7 +73,11 @@ router.post('/appointments', asyncHandler(async (req, res) => {
  */
 router.post('/leads', asyncHandler(async (req, res) => {
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -86,7 +98,11 @@ router.post('/leads', asyncHandler(async (req, res) => {
  */
 router.post('/payments', asyncHandler(async (req, res) => {
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -156,7 +172,11 @@ router.get('/scheduler/status', asyncHandler(async (req, res) => {
  */
 router.post('/scheduler/control', asyncHandler(async (req, res) => {
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -198,7 +218,11 @@ router.post('/scheduler/control', asyncHandler(async (req, res) => {
  */
 router.post('/run-now', asyncHandler(async (req, res) => {
   const cronSecret = req.headers['x-cron-secret'];
-  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    logger.error('[Reminders] CRON_SECRET env var not set — rejecting request');
+    return res.status(500).json({ error: 'Server misconfigured: CRON_SECRET not set' });
+  }
 
   if (cronSecret !== expectedSecret) {
     return res.status(401).json({ error: 'Unauthorized' });

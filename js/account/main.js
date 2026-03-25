@@ -1963,8 +1963,15 @@
 
         case 'reply_message':
         case 'view_message':
-          // TODO: Implement message viewing
-          showToast('Messages feature coming soon', 'info');
+          // Navigate to messages page and open the conversation
+          showPage('messages');
+          if (data.customer_id || data.lead_id) {
+            setTimeout(() => {
+              const entityId = data.customer_id || data.lead_id;
+              const msgItem = document.querySelector(`[data-conversation-id="${entityId}"]`);
+              if (msgItem) msgItem.click();
+            }, 500);
+          }
           break;
 
         case 'start_tutorial':
@@ -16003,7 +16010,60 @@
     }
 
     function attachFile() {
-      showToast('File attachments coming soon', 'info');
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx';
+      input.multiple = true;
+      input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const oversized = files.find(f => f.size > maxSize);
+        if (oversized) {
+          showToast(`${oversized.name} exceeds 10MB limit`, 'error');
+          return;
+        }
+
+        try {
+          const user = await getAuthUser();
+          if (!user) throw new Error('Not authenticated');
+
+          for (const file of files) {
+            const ext = file.name.split('.').pop();
+            const path = `messages/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+            const { data: uploadData, error: uploadErr } = await supabaseClient.storage
+              .from('attachments')
+              .upload(path, file);
+
+            if (uploadErr) throw uploadErr;
+
+            const { data: urlData } = supabaseClient.storage.from('attachments').getPublicUrl(path);
+            const publicUrl = urlData?.publicUrl;
+
+            // Insert as a message with attachment
+            if (currentNotification) {
+              const isLead = currentNotification.source === 'lead' || currentNotification.lead;
+              await supabaseClient.from('customer_messages').insert({
+                ...(isLead ? { lead_id: currentNotification.id } : { customer_id: currentNotification.id }),
+                sender_id: user.id,
+                direction: 'outbound',
+                channel: 'in_app',
+                message: `📎 ${file.name}`,
+                attachment_url: publicUrl,
+                status: 'sent'
+              });
+            }
+          }
+
+          showToast(`${files.length} file${files.length > 1 ? 's' : ''} attached`, 'success');
+          if (currentNotification) await loadThreadMessages(currentNotification.id);
+        } catch (err) {
+          console.error('Attachment error:', err);
+          showToast('Failed to attach file: ' + err.message, 'error');
+        }
+      };
+      input.click();
     }
 
     // Message status icon helper
@@ -16854,9 +16914,95 @@
       }
     }
 
-    function editListing(id) {
-      // TODO: Implement edit listing modal
-      showToast('Edit functionality coming soon!', 'info');
+    async function editListing(id) {
+      try {
+        const { data: listing, error } = await supabaseClient
+          .from('stone_listings')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error || !listing) throw new Error(error?.message || 'Listing not found');
+
+        // Build edit modal
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+          <div style="background:var(--dark-surface);border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;color:var(--text-primary);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+              <h3 style="font-size:18px;font-weight:700;">Edit Listing</h3>
+              <button onclick="this.closest('.modal-overlay').remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;">&times;</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Title</label>
+                <input id="edit-listing-title" value="${listing.title || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+              </div>
+              <div>
+                <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Description</label>
+                <textarea id="edit-listing-desc" rows="3" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;resize:vertical;">${listing.description || ''}</textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                  <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Price ($)</label>
+                  <input id="edit-listing-price" type="number" step="0.01" value="${listing.price || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                </div>
+                <div>
+                  <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Material</label>
+                  <input id="edit-listing-material" value="${listing.material_type || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div>
+                  <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Length (in)</label>
+                  <input id="edit-listing-length" type="number" value="${listing.length_inches || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                </div>
+                <div>
+                  <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Width (in)</label>
+                  <input id="edit-listing-width" type="number" value="${listing.width_inches || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                </div>
+                <div>
+                  <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Thickness</label>
+                  <input id="edit-listing-thickness" value="${listing.thickness || ''}" style="width:100%;padding:10px 12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;" />
+                </div>
+              </div>
+              <button id="edit-listing-save" class="btn-modern primary" style="width:100%;padding:14px;font-size:15px;font-weight:600;">Save Changes</button>
+            </div>
+          </div>`;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('edit-listing-save').onclick = async () => {
+          const saveBtn = document.getElementById('edit-listing-save');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+          try {
+            const updates = {
+              title: document.getElementById('edit-listing-title').value.trim(),
+              description: document.getElementById('edit-listing-desc').value.trim(),
+              price: parseFloat(document.getElementById('edit-listing-price').value) || null,
+              material_type: document.getElementById('edit-listing-material').value.trim() || null,
+              length_inches: parseFloat(document.getElementById('edit-listing-length').value) || null,
+              width_inches: parseFloat(document.getElementById('edit-listing-width').value) || null,
+              thickness: document.getElementById('edit-listing-thickness').value.trim() || null,
+              updated_at: new Date().toISOString()
+            };
+            const { error: updateErr } = await supabaseClient.from('stone_listings').update(updates).eq('id', id);
+            if (updateErr) throw updateErr;
+            modal.remove();
+            showToast('Listing updated', 'success');
+            loadMyListings();
+          } catch (err) {
+            showToast('Update failed: ' + err.message, 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+          }
+        };
+      } catch (err) {
+        showToast('Error loading listing: ' + err.message, 'error');
+      }
     }
 
     // =============================================
@@ -26377,7 +26523,49 @@
 
     // Print profile (simple version)
     function printProfile() {
-      showToast('Print feature coming soon', 'info');
+      if (!currentProfileData) { showToast('No profile data', 'error'); return; }
+      const d = currentProfileData;
+      const name = d.full_name || d.name || 'Unknown';
+      const email = d.email || 'N/A';
+      const phone = d.phone || 'N/A';
+      const address = formatAddressFromData(d) || 'N/A';
+      const status = d.status || 'new';
+      const source = d.source || d.lead_source || '';
+      const message = d.message || d.notes || '';
+      const created = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>${name} - Profile</title>
+        <style>
+          body { font-family: -apple-system, Arial, sans-serif; padding: 40px; color: #1a1a2e; max-width: 700px; margin: 0 auto; }
+          h1 { font-size: 24px; margin-bottom: 4px; }
+          .meta { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+          .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #f1f5f9; color: #334155; text-transform: capitalize; }
+          .section { margin-bottom: 24px; }
+          .section h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+          .row { display: flex; gap: 24px; margin-bottom: 8px; }
+          .label { font-weight: 600; min-width: 80px; color: #64748b; font-size: 13px; }
+          .value { font-size: 14px; }
+          .notes { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 13px; white-space: pre-wrap; }
+          .footer { margin-top: 32px; font-size: 11px; color: #94a3b8; text-align: center; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head><body>
+        <h1>${name}</h1>
+        <div class="meta"><span class="badge">${status}</span>${source ? ' &middot; Source: ' + source : ''}${created ? ' &middot; Created: ' + created : ''}</div>
+        <div class="section">
+          <h3>Contact</h3>
+          <div class="row"><span class="label">Email</span><span class="value">${email}</span></div>
+          <div class="row"><span class="label">Phone</span><span class="value">${phone}</span></div>
+          <div class="row"><span class="label">Address</span><span class="value">${address}</span></div>
+        </div>
+        ${message ? '<div class="section"><h3>Notes</h3><div class="notes">' + message.replace(/</g, '&lt;') + '</div></div>' : ''}
+        ${d.project_type ? '<div class="section"><h3>Project</h3><div class="row"><span class="label">Type</span><span class="value">' + d.project_type + '</span></div></div>' : ''}
+        <div class="footer">Printed from Surprise Granite CRM &middot; ${new Date().toLocaleDateString()}</div>
+      </body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 300);
     }
 
     // Load messages for profile
@@ -27829,8 +28017,77 @@
     }
 
     function showAddPhaseOptions() {
-      // TODO: Show custom phase options
-      showToast('Custom phases coming soon', 'info');
+      const phases = [
+        { name: 'Template', icon: '📋' },
+        { name: 'Measure', icon: '📐' },
+        { name: 'Fabrication', icon: '🔨' },
+        { name: 'Installation', icon: '🏗️' },
+        { name: 'Inspection', icon: '✅' },
+        { name: 'Punch List', icon: '📝' },
+        { name: 'Custom...', icon: '➕' }
+      ];
+
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div style="background:var(--dark-surface);border-radius:16px;padding:24px;max-width:400px;width:100%;color:var(--text-primary);">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">Add Phase</h3>
+          <div style="display:flex;flex-direction:column;gap:8px;" id="phase-options">
+            ${phases.map(p => `<button class="btn-modern secondary" data-phase="${p.name}" style="display:flex;align-items:center;gap:10px;padding:14px 16px;font-size:14px;width:100%;text-align:left;">${p.icon} ${p.name}</button>`).join('')}
+          </div>
+          <div id="custom-phase-input" style="display:none;margin-top:12px;">
+            <input id="custom-phase-name" placeholder="Phase name" style="width:100%;padding:12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;margin-bottom:8px;" />
+            <button id="custom-phase-add" class="btn-modern primary" style="width:100%;padding:12px;">Add Phase</button>
+          </div>
+        </div>`;
+
+      document.body.appendChild(modal);
+
+      const addPhase = async (phaseName) => {
+        if (!currentJobData?.id || !phaseName) return;
+        try {
+          const existingPhases = currentJobData.phases || [];
+          existingPhases.push({
+            name: phaseName,
+            status: 'pending',
+            added_at: new Date().toISOString()
+          });
+          const { error } = await supabaseClient.from('jobs')
+            .update({ phases: existingPhases, updated_at: new Date().toISOString() })
+            .eq('id', currentJobData.id);
+          if (error) throw error;
+          currentJobData.phases = existingPhases;
+          modal.remove();
+          showToast(`Phase "${phaseName}" added`, 'success');
+          // Refresh job display if scheduler is open
+          if (typeof renderJobScheduler === 'function') renderJobScheduler(currentJobData);
+        } catch (err) {
+          showToast('Failed to add phase: ' + err.message, 'error');
+        }
+      };
+
+      modal.querySelectorAll('[data-phase]').forEach(btn => {
+        btn.onclick = () => {
+          const phase = btn.dataset.phase;
+          if (phase === 'Custom...') {
+            document.getElementById('custom-phase-input').style.display = 'block';
+            document.getElementById('custom-phase-name').focus();
+          } else {
+            addPhase(phase);
+          }
+        };
+      });
+
+      const customAddBtn = document.getElementById('custom-phase-add');
+      if (customAddBtn) {
+        customAddBtn.onclick = () => {
+          const name = document.getElementById('custom-phase-name').value.trim();
+          if (!name) { showToast('Enter a phase name', 'warning'); return; }
+          addPhase(name);
+        };
+      }
     }
 
     // Connect lead row clicks to open profile panel
@@ -31435,13 +31692,95 @@
     }
 
     async function sendCustomerUpdate() {
-      // Placeholder for sending customer update email
-      showToast('Customer update feature coming soon!', 'info');
+      if (!currentJobData) { showToast('No job selected', 'error'); return; }
+      const job = currentJobData;
+      const customerEmail = job.customer_email;
+      const customerName = job.customer_name || 'Valued Customer';
+
+      if (!customerEmail) {
+        showToast('No customer email on this job', 'error');
+        return;
+      }
+
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      const statusLabel = job.status ? job.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'In Progress';
+      modal.innerHTML = `
+        <div style="background:var(--dark-surface);border-radius:16px;padding:24px;max-width:500px;width:100%;color:var(--text-primary);">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;">Send Customer Update</h3>
+          <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">To: ${customerName} (${customerEmail})</p>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Message</label>
+            <textarea id="update-message" rows="5" style="width:100%;padding:12px;background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-size:14px;resize:vertical;">Hi ${customerName},
+
+Here's an update on your project${job.job_number ? ' (' + job.job_number + ')' : ''}:
+
+Status: ${statusLabel}
+
+Please don't hesitate to reach out if you have any questions.
+
+Best regards,
+Surprise Granite</textarea>
+          </div>
+          <button id="send-update-btn" class="btn-modern primary" style="width:100%;padding:14px;font-size:15px;">Send Update Email</button>
+        </div>`;
+
+      document.body.appendChild(modal);
+
+      document.getElementById('send-update-btn').onclick = async () => {
+        const btn = document.getElementById('send-update-btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        try {
+          const message = document.getElementById('update-message').value.trim();
+          if (!message) throw new Error('Message is empty');
+          await apiCall('/api/email/send', {
+            method: 'POST',
+            body: JSON.stringify({
+              to_email: customerEmail,
+              to_name: customerName,
+              subject: `Project Update${job.job_number ? ' - ' + job.job_number : ''}`,
+              message: message,
+              sender_name: 'Surprise Granite'
+            })
+          });
+          modal.remove();
+          showToast('Update sent to ' + customerEmail, 'success');
+        } catch (err) {
+          showToast('Failed to send: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Send Update Email';
+        }
+      };
     }
 
     async function orderMaterials() {
-      // Placeholder for material ordering
-      showToast('Material ordering feature coming soon!', 'info');
+      if (!currentJobData) { showToast('No job selected', 'error'); return; }
+
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div style="background:var(--dark-surface);border-radius:16px;padding:24px;max-width:500px;width:100%;color:var(--text-primary);">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;">Order Materials</h3>
+          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Browse stone yards to find and order materials for this job.</p>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="/stone-yards/" target="_blank" class="btn-modern primary" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;text-decoration:none;">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              Browse Stone Yards
+            </a>
+            <a href="/marketplace/slabs/" target="_blank" class="btn-modern secondary" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;text-decoration:none;">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>
+              Browse Slab Marketplace
+            </a>
+            <button onclick="this.closest('.modal-overlay').remove()" class="btn-modern secondary" style="padding:12px;">Cancel</button>
+          </div>
+        </div>`;
+
+      document.body.appendChild(modal);
     }
 
     function saveJobChanges() {
@@ -32888,8 +33227,61 @@
       // Filter distributors by search query
     }
 
-    function godViewDistributor(id) {
-      showToast('Distributor details coming soon', 'info');
+    async function godViewDistributor(id) {
+      try {
+        const { data: dist, error } = await supabaseClient
+          .from('distributor_profiles')
+          .select('*, distributor_locations(*)')
+          .eq('id', id)
+          .single();
+        if (error || !dist) throw new Error(error?.message || 'Not found');
+
+        const locs = dist.distributor_locations || [];
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+          <div style="background:var(--dark-surface);border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;color:var(--text-primary);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+              <h3 style="font-size:20px;font-weight:700;">${escapeHtml(dist.company_name)}</h3>
+              <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:22px;">&times;</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+              <div style="background:var(--dark-elevated);padding:14px;border-radius:10px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Type</div>
+                <div style="font-size:15px;font-weight:600;margin-top:4px;">${(dist.company_type || 'N/A').replace(/_/g, ' ')}</div>
+              </div>
+              <div style="background:var(--dark-elevated);padding:14px;border-radius:10px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Status</div>
+                <div style="font-size:15px;font-weight:600;margin-top:4px;color:${dist.verification_status === 'verified' ? '#22c55e' : '#f59e0b'};">${dist.verification_status || 'pending'}</div>
+              </div>
+              <div style="background:var(--dark-elevated);padding:14px;border-radius:10px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contact</div>
+                <div style="font-size:14px;margin-top:4px;">${escapeHtml(dist.primary_contact_name || 'N/A')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${escapeHtml(dist.primary_contact_email || '')}</div>
+              </div>
+              <div style="background:var(--dark-elevated);padding:14px;border-radius:10px;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Materials</div>
+                <div style="font-size:13px;margin-top:4px;">${(dist.material_types || []).join(', ') || 'N/A'}</div>
+              </div>
+            </div>
+            ${locs.length > 0 ? '<h4 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text-secondary);">Locations (' + locs.length + ')</h4>' + locs.map(l => `
+              <div style="background:var(--dark-elevated);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px;">
+                <strong>${escapeHtml(l.location_name || 'Location')}</strong><br/>
+                ${escapeHtml([l.address, l.city, l.state, l.zip_code].filter(Boolean).join(', '))}<br/>
+                ${l.phone ? '<span style="color:var(--text-secondary);">' + escapeHtml(l.phone) + '</span>' : ''}
+              </div>`).join('') : ''}
+            <div style="margin-top:16px;display:flex;gap:8px;">
+              ${dist.website ? '<a href="' + escapeHtml(dist.website) + '" target="_blank" class="btn-modern secondary" style="flex:1;text-align:center;padding:12px;">Website</a>' : ''}
+              <button onclick="this.closest('div[style]').parentElement.remove()" class="btn-modern primary" style="flex:1;padding:12px;">Close</button>
+            </div>
+          </div>`;
+
+        document.body.appendChild(modal);
+      } catch (err) {
+        showToast('Error loading distributor: ' + err.message, 'error');
+      }
     }
 
     // GOD MODE Database
