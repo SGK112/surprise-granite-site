@@ -12435,6 +12435,26 @@ app.get('/api/stripe-status', authenticateJWT, async (req, res) => {
   }
 });
 
+// 404 handler for unknown API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ success: false, error: 'API endpoint not found' });
+});
+
+// Global error handler - prevents HTML error pages and unhandled crashes
+app.use((err, req, res, next) => {
+  // CORS error
+  if (err.message === 'Not allowed by CORS') {
+    logger.warn('[CORS] Blocked request from origin:', req.headers.origin, req.path);
+    return res.status(403).json({ success: false, error: 'Origin not allowed' });
+  }
+
+  logger.error('[Server Error]', err.message, { path: req.path, method: req.method });
+  res.status(err.status || 500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+  });
+});
+
 // Start server with WebSocket support
 server.listen(PORT, () => {
   logger.info(`Surprise Granite API running on port ${PORT}`);

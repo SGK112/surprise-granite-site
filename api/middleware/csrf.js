@@ -193,10 +193,12 @@ function csrfOriginCheck(allowedOrigins = []) {
   const defaultOrigins = [
     'https://surprisegranite.com',
     'https://www.surprisegranite.com',
+    'https://surprise-granite-site.onrender.com',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3333',
     'http://localhost:8080',
+    'http://localhost:8888',
     'http://localhost:5500',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3333',

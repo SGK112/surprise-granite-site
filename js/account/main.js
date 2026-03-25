@@ -4376,18 +4376,22 @@
 
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
+      const isMobile = window.innerWidth <= 768;
       toast.style.cssText = `
         position: fixed;
-        bottom: 20px;
+        bottom: ${isMobile ? '80px' : '20px'};
         left: 50%;
         transform: translateX(-50%);
-        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#333'};
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#333'};
         color: white;
         padding: 12px 24px;
         border-radius: 8px;
         font-size: 14px;
-        z-index: 10000;
+        z-index: 10001;
         animation: fadeIn 0.3s ease;
+        max-width: ${isMobile ? 'calc(100vw - 32px)' : '400px'};
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
       toast.textContent = message;
       document.body.appendChild(toast);
@@ -5370,9 +5374,9 @@
 
         document.getElementById('user-name').textContent = name;
         document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
-        alert('Profile saved successfully!');
+        showToast('Profile saved successfully!', 'success');
       } catch (err) {
-        alert('Error saving profile: ' + err.message);
+        showToast('Error saving profile: ' + err.message, 'error');
       }
     }
 
@@ -6154,7 +6158,7 @@
       return; // Skip old modal code
 
       var container = document.getElementById('lead-details');
-      if (!container) { alert('Container not found'); return; }
+      if (!container) { showToast('Container not found', 'error'); return; }
       container.innerHTML = '';
 
       // Get values safely
@@ -9308,12 +9312,12 @@
     async function addAdminUser() {
       const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
       if (!email || !email.includes('@')) {
-        alert('Please enter a valid email');
+        showToast('Please enter a valid email', 'error');
         return;
       }
 
       if (SUPER_ADMIN_EMAILS.includes(email)) {
-        alert('Already a super admin');
+        showToast('Already a super admin', 'info');
         return;
       }
 
@@ -9328,9 +9332,9 @@
 
         document.getElementById('new-admin-email').value = '';
         loadAdminUsers();
-        alert(`Admin access granted to ${email}`);
+        showToast(`Admin access granted to ${email}`, 'success');
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
@@ -9340,9 +9344,9 @@
       try {
         await supabaseClient.from('sg_users').update({ account_type: 'homeowner' }).eq('id', userId);
         loadAdminUsers();
-        alert(`Admin removed: ${email}`);
+        showToast(`Admin removed: ${email}`, 'success');
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
@@ -10496,7 +10500,23 @@
       }
     }
 
+    // Get auth token from localStorage without calling getSession() (avoids deadlock with auto-refresh)
+    function getAuthToken() {
+      try {
+        const storageKey = `sb-ypeypgwsycxcagncgdur-auth-token`;
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return parsed?.access_token || null;
+        }
+      } catch (e) {
+        console.warn('[getAuthToken] Could not read token from storage:', e);
+      }
+      return null;
+    }
+
     // Reusable API call helper - auto-includes Supabase JWT auth token
+    // Uses cached session from localStorage to avoid getSession() deadlock with auto-refresh lock
     async function apiCall(endpoint, options = {}) {
       // Skip API calls on static dev server (no backend)
       const isStaticServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -10504,8 +10524,8 @@
         return new Response(JSON.stringify({ collaborations: [] }), { status: 200 });
       }
 
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const token = session?.access_token;
+      const token = getAuthToken();
+
       return fetchWithTimeout(`${API_URL}${endpoint}`, {
         ...options,
         headers: {
@@ -11376,7 +11396,7 @@
         showToast('Invoice voided');
       } catch (err) {
         console.error('Void invoice error:', err);
-        alert('Error voiding invoice: ' + err.message);
+        showToast('Error voiding invoice: ' + err.message, 'error');
       }
     }
 
@@ -11828,7 +11848,7 @@
     async function checkQuickBooksStatus() {
       try {
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/status`, {
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         const data = await response.json();
         qboConnected = data.connected;
@@ -11851,7 +11871,7 @@
     async function connectQuickBooks() {
       try {
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/connect`, {
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         const data = await response.json();
         if (data.authUrl) {
@@ -11872,7 +11892,7 @@
       try {
         await fetchWithTimeout(`${API_BASE}/api/quickbooks/disconnect`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         qboConnected = false;
         updateQuickBooksUI();
@@ -11893,7 +11913,7 @@
       try {
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/sync/invoice/${invoiceId}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
 
         const data = await response.json();
@@ -11924,7 +11944,7 @@
       try {
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/sync/estimate/${estimateId}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
 
         const data = await response.json();
@@ -11955,7 +11975,7 @@
       try {
         const response = await fetchWithTimeout(API_BASE + '/api/quickbooks/sync/invoices', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
 
         const data = await response.json();
@@ -11986,7 +12006,7 @@
       try {
         const response = await fetchWithTimeout(API_BASE + '/api/quickbooks/sync/estimates', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
 
         const data = await response.json();
@@ -12745,7 +12765,7 @@
         let user = currentUser;
         if (!user) {
           const sessionPromise = supabaseClient.auth.getSession();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 3000));
           const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
@@ -12976,8 +12996,12 @@
         previewModal.classList.remove('active');
         // Delete the draft invoice since user wants to edit
         if (window._pendingInvoiceId) {
-          await supabaseClient.from('invoices').delete().eq('id', window._pendingInvoiceId);
-          await supabaseClient.from('invoice_tokens').delete().eq('invoice_id', window._pendingInvoiceId);
+          try {
+            await supabaseClient.from('invoices').delete().eq('id', window._pendingInvoiceId);
+            await supabaseClient.from('invoice_tokens').delete().eq('invoice_id', window._pendingInvoiceId);
+          } catch (err) {
+            console.warn('[Invoice] Draft cleanup failed:', err);
+          }
           window._pendingInvoiceId = null;
           window._pendingInvoiceToken = null;
         }
@@ -13147,7 +13171,7 @@
       // Check supabaseClient first
       if (!supabaseClient) {
         console.error('[Invoices] Supabase client not initialized');
-        alert('Error: Database connection not ready. Please refresh the page.');
+        showToast('Database connection not ready. Please refresh.', 'error');
         return;
       }
 
@@ -13203,7 +13227,7 @@
         if (!user) {
           // Fallback: try to get from session with timeout to prevent hanging
           const sessionPromise = supabaseClient.auth.getSession();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 3000));
           const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
@@ -13424,9 +13448,9 @@
           throw new Error('Failed to send reminder');
         }
 
-        alert('Payment reminder sent!');
+        showToast('Payment reminder sent!', 'success');
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
@@ -13623,7 +13647,7 @@
         window.open(`/invoice/view/?token=${token}`, '_blank');
       } catch (err) {
         console.error('View invoice error:', err);
-        alert('Error viewing invoice');
+        showToast('Error viewing invoice', 'error');
       }
     }
 
@@ -13672,7 +13696,7 @@
           .single();
 
         if (!invoice || !invoice.customer_email) {
-          alert('Invoice not found or missing customer email');
+          showToast('Invoice not found or missing customer email', 'error');
           return;
         }
 
@@ -13711,7 +13735,7 @@
         }
       } catch (err) {
         console.error('Send invoice error:', err);
-        alert('Error sending invoice');
+        showToast('Error sending invoice', 'error');
       }
     }
 
@@ -13728,7 +13752,7 @@
         await loadInvoices();
       } catch (err) {
         console.error('Delete invoice error:', err);
-        alert('Error deleting invoice');
+        showToast('Error deleting invoice', 'error');
       }
     }
 
@@ -14117,7 +14141,7 @@
         await loadJobs();
       } catch (err) {
         console.error('Mark paid error:', err);
-        alert('Error marking invoice as paid: ' + err.message);
+        showToast('Error marking invoice as paid: ' + err.message, 'error');
       }
     }
 
@@ -14721,13 +14745,13 @@
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        showToast('Please select an image file', 'error');
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        showToast('Image must be less than 5MB', 'error');
         return;
       }
 
@@ -14747,7 +14771,7 @@
         // Get current user
         const user = await getAuthUser();
         if (!user) {
-          alert('Please log in to upload images');
+          showToast('Please log in to upload images', 'error');
           return;
         }
 
@@ -14807,7 +14831,7 @@
 
       } catch (err) {
         console.error('Upload error:', err);
-        alert('Failed to upload image. Please try again or paste an image URL.');
+        showToast('Failed to upload image. Please try again.', 'error');
         progress.style.display = 'none';
       }
     }
@@ -14889,7 +14913,7 @@
       // Check listing limit first
       const canCreate = await checkListingLimit();
       if (!canCreate.allowed) {
-        alert(`You've reached your limit of ${canCreate.max} free listings. Upgrade to Pro for unlimited listings!`);
+        showToast(`You've reached your limit of ${canCreate.max} free listings. Upgrade to Pro for unlimited!`, 'warning');
         return;
       }
 
@@ -14982,7 +15006,7 @@
       if (!user) return { allowed: false, remaining: 0 };
 
       // Check if super admin by email
-      const userEmail = (user.data.user.email || '').toLowerCase();
+      const userEmail = (user.email || '').toLowerCase();
       if (SUPER_ADMIN_EMAILS.includes(userEmail)) {
         return { allowed: true, remaining: Infinity, isPro: true };
       }
@@ -14991,7 +15015,7 @@
       const { data: profile } = await supabaseClient
         .from('sg_users')
         .select('account_type')
-        .eq('id', user.data.user.id)
+        .eq('id', user.id)
         .single();
 
       const accountType = profile?.account_type || 'homeowner';
@@ -15003,7 +15027,7 @@
       const { count } = await supabaseClient
         .from('stone_listings')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.data.user.id)
+        .eq('user_id', user.id)
         .eq('status', 'active');
 
       return {
@@ -15034,7 +15058,7 @@
         const userBrandInput = document.getElementById('listing-brand-input').value;
 
         const listingData = {
-          user_id: user.data.user.id,
+          user_id: user.id,
           category: category,
           condition: document.getElementById('listing-condition').value || 'new',
           stone_name: catalogStoneName || document.getElementById('listing-title').value,
@@ -15071,11 +15095,11 @@
 
         closeCreateListingModal();
         await loadMyListings();
-        alert('Listing created successfully!');
+        showToast('Listing created successfully!', 'success');
 
       } catch (err) {
         console.error('Create listing error:', err);
-        alert('Failed to create listing: ' + err.message);
+        showToast('Failed to create listing: ' + err.message, 'error');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `
@@ -15129,7 +15153,7 @@
         const { data: listings, error } = await supabaseClient
           .from('stone_listings')
           .select('*')
-          .eq('user_id', user.data.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -15210,7 +15234,7 @@
             *,
             stone_listings!inner(title, user_id)
           `)
-          .eq('stone_listings.user_id', user.data.user.id)
+          .eq('stone_listings.user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (loadingEl) loadingEl.style.display = 'none';
@@ -15314,7 +15338,7 @@
           const { data: proNotifs } = await supabaseClient
             .from('pro_notifications')
             .select('*')
-            .eq('pro_user_id', user.data.user.id)
+            .eq('pro_user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);
 
@@ -15339,7 +15363,7 @@
           const { data: inquiries } = await supabaseClient
             .from('listing_inquiries')
             .select('*, stone_listings!inner(title, user_id)')
-            .eq('stone_listings.user_id', user.data.user.id)
+            .eq('stone_listings.user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);
 
@@ -15882,11 +15906,11 @@
 
         const { data: insertedMsg, error: msgErr } = await supabaseClient.from('customer_messages').insert({
           ...(isLead ? { lead_id: currentNotification.id } : { customer_id: currentNotification.id }),
-          sender_id: user.data.user.id,
+          sender_id: user.id,
           direction: 'outbound',
           channel: effectiveChannel,
           message: message,
-          sent_from: user.data.user.email,
+          sent_from: user.email,
           sent_to: recipientEmail || currentNotification.customer?.phone || null,
           status: 'sent'
         }).select('id');
@@ -15904,7 +15928,7 @@
                 to_email: recipientEmail,
                 to_name: recipientName,
                 message: message,
-                sender_name: user.data.user.user_metadata?.full_name || user.data.user.email || 'Surprise Granite',
+                sender_name: user.user_metadata?.full_name || user.email || 'Surprise Granite',
                 lead_id: isLead ? currentNotification.id : null
               })
             });
@@ -16177,7 +16201,7 @@
         const { data: customers } = await supabaseClient
           .from('customers')
           .select('id, name, email, phone')
-          .eq('invited_by', user.data.user.id)
+          .eq('invited_by', user.id)
           .limit(100);
 
         (customers || []).forEach(c => {
@@ -16213,7 +16237,7 @@
           const { data: collaborators } = await supabaseClient
             .from('general_collaborators')
             .select('id, name, email, phone')
-            .eq('invited_by', user.data.user.id)
+            .eq('invited_by', user.id)
             .limit(50);
 
           (collaborators || []).forEach(c => {
@@ -16422,7 +16446,7 @@
                 counterSqft: subject || 'Message from Surprise Granite',
                 splashSqft: '',
                 totalSqft: '',
-                edgeProfile: `From: ${user.data.user.email}`,
+                edgeProfile: `From: ${user.email}`,
                 edgeLF: '',
                 priceBudget: message,
                 pricePopular: '',
@@ -16445,12 +16469,12 @@
         if (composeRecipient.type === 'customer' && composeRecipient.id) {
           await supabaseClient.from('customer_messages').insert({
             customer_id: composeRecipient.id,
-            sender_id: user.data.user.id,
+            sender_id: user.id,
             direction: 'outbound',
             channel: channel,
             message: message,
             subject: subject || null,
-            sent_from: user.data.user.email,
+            sent_from: user.email,
             sent_to: composeRecipient.email || composeRecipient.phone,
             status: 'sent'
           });
@@ -16560,7 +16584,7 @@
 
       } catch (err) {
         console.error('Payment request error:', err);
-        alert('Failed to send payment request: ' + err.message);
+        showToast('Failed to send payment request: ' + err.message, 'error');
       } finally {
         sendBtn.disabled = false;
         sendBtn.innerHTML = originalText;
@@ -16793,7 +16817,7 @@
         await loadMyListings();
       } catch (err) {
         console.error('Delete listing error:', err);
-        alert('Failed to delete listing');
+        showToast('Failed to delete listing', 'error');
       }
     }
 
@@ -16808,7 +16832,7 @@
         await loadMyListings();
       } catch (err) {
         console.error('Mark sold error:', err);
-        alert('Failed to update listing');
+        showToast('Failed to update listing', 'error');
       }
     }
 
@@ -16826,13 +16850,13 @@
         await loadMyListings();
       } catch (err) {
         console.error('Reactivate error:', err);
-        alert('Failed to reactivate listing');
+        showToast('Failed to reactivate listing', 'error');
       }
     }
 
     function editListing(id) {
       // TODO: Implement edit listing modal
-      alert('Edit functionality coming soon!');
+      showToast('Edit functionality coming soon!', 'info');
     }
 
     // =============================================
@@ -17476,7 +17500,7 @@
         let user = currentUser;
         if (!user) {
           const sessionPromise = supabaseClient.auth.getSession();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 8000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout - please refresh')), 3000));
           const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
           user = session?.user;
         }
@@ -17652,8 +17676,12 @@
         previewModal.classList.remove('active');
         // Delete the draft estimate since user wants to edit
         if (window._pendingEstimateId) {
-          await supabaseClient.from('estimates').delete().eq('id', window._pendingEstimateId);
-          await supabaseClient.from('estimate_tokens').delete().eq('estimate_id', window._pendingEstimateId);
+          try {
+            await supabaseClient.from('estimates').delete().eq('id', window._pendingEstimateId);
+            await supabaseClient.from('estimate_tokens').delete().eq('estimate_id', window._pendingEstimateId);
+          } catch (err) {
+            console.warn('[Estimate] Draft cleanup failed:', err);
+          }
           window._pendingEstimateId = null;
           window._pendingEstimateToken = null;
         }
@@ -17946,7 +17974,7 @@
       // Check supabaseClient
       if (!supabaseClient) {
         console.error('[Estimate] Supabase client not initialized');
-        alert('Error: Database connection not ready. Please refresh the page.');
+        showToast('Database connection not ready. Please refresh.', 'error');
         return;
       }
       console.log('[Estimate] supabaseClient OK');
@@ -17955,7 +17983,7 @@
       const submitBtn = document.querySelector('button[form="create-estimate-form"][type="submit"]');
       if (!submitBtn) {
         console.error('[Estimate] Submit button not found');
-        alert('Error: Submit button not found');
+        showToast('Error: Submit button not found', 'error');
         return;
       }
       const originalText = submitBtn.innerHTML;
@@ -18230,7 +18258,7 @@
 
       } catch (err) {
         console.error('Create estimate error:', err);
-        alert('Error creating estimate: ' + err.message);
+        showToast('Error creating estimate: ' + err.message, 'error');
       } finally {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
@@ -18370,7 +18398,7 @@
 
       } catch (err) {
         console.error('Save draft error:', err);
-        alert('Error saving draft: ' + err.message);
+        showToast('Error saving draft: ' + err.message, 'error');
       }
     }
 
@@ -18429,7 +18457,7 @@
         if (fetchErr) throw fetchErr;
 
         if (!estimate.customer_email) {
-          alert('Please add a customer email before sending');
+          showToast('Please add a customer email before sending', 'warning');
           return;
         }
 
@@ -18540,7 +18568,7 @@
         await loadEstimates();
       } catch (err) {
         console.error('Send estimate error:', err);
-        alert('Error sending estimate: ' + err.message);
+        showToast('Error sending estimate: ' + err.message, 'error');
       } finally {
         // Reset button state
         if (btn) {
@@ -18663,7 +18691,7 @@
         }
       } catch (err) {
         console.error('View estimate error:', err);
-        alert('Error viewing estimate');
+        showToast('Error viewing estimate', 'error');
       }
     }
 
@@ -18709,7 +18737,7 @@
         showToast('Estimate deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
-        alert('Error deleting estimate');
+        showToast('Error deleting estimate', 'error');
       }
     }
 
@@ -18725,7 +18753,7 @@
         showToast('Estimate archived');
       } catch (err) {
         console.error('Archive estimate error:', err);
-        alert('Error archiving estimate');
+        showToast('Error archiving estimate', 'error');
       }
     }
 
@@ -18741,7 +18769,7 @@
         showToast('Estimate restored');
       } catch (err) {
         console.error('Unarchive estimate error:', err);
-        alert('Error restoring estimate');
+        showToast('Error restoring estimate', 'error');
       }
     }
 
@@ -18757,7 +18785,7 @@
         showToast('Estimate permanently deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
-        alert('Error deleting estimate');
+        showToast('Error deleting estimate', 'error');
       }
     }
 
@@ -18829,7 +18857,7 @@
         showToast('Estimate duplicated!');
       } catch (err) {
         console.error('Duplicate estimate error:', err);
-        alert('Error duplicating estimate');
+        showToast('Error duplicating estimate', 'error');
       }
     }
 
@@ -18959,7 +18987,7 @@
 
         // Prevent duplicate conversion
         if (estimate.status === 'converted' || estimate.converted_to_invoice_id) {
-          alert('This estimate has already been converted to an invoice.');
+          showToast('This estimate has already been converted to an invoice.', 'info');
           return;
         }
 
@@ -19082,7 +19110,7 @@
         await loadInvoices();
       } catch (err) {
         console.error('Convert to invoice error:', err);
-        alert('Error converting to invoice: ' + err.message);
+        showToast('Error converting to invoice: ' + err.message, 'error');
       }
     }
 
@@ -19109,8 +19137,7 @@
       if (!connectBtn || !disconnectBtn) return;
 
       try {
-        const session = await supabaseClient.auth.getSession();
-        const token = session.data.session?.access_token;
+        const token = getAuthToken();
         if (!token) return;
 
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/status`, {
@@ -19246,7 +19273,7 @@
         showToast('Business settings saved!');
       } catch (err) {
         console.error('Save business settings error:', err);
-        alert('Error saving settings: ' + err.message);
+        showToast('Error saving settings: ' + err.message, 'error');
       }
 
       return false;
@@ -19259,13 +19286,13 @@
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        showToast('Please select an image file', 'error');
         return;
       }
 
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        alert('Image must be smaller than 2MB');
+        showToast('Image must be smaller than 2MB', 'warning');
         return;
       }
 
@@ -19316,7 +19343,7 @@
         console.error('Logo upload error:', err);
         logoPlaceholder.innerHTML = 'No logo<br>uploaded';
         logoPlaceholder.style.display = 'block';
-        alert('Error uploading logo: ' + err.message);
+        showToast('Error uploading logo: ' + err.message, 'error');
       }
     }
 
@@ -22233,7 +22260,7 @@
         await loadJobs();
       } catch (err) {
         console.error('Create job error:', err);
-        alert('Error creating job: ' + err.message);
+        showToast('Error creating job: ' + err.message, 'error');
       }
     }
 
@@ -22245,7 +22272,7 @@
       // Find job in allJobs
       const job = allJobs.find(j => j.id === jobId);
       if (!job) {
-        alert('Job not found');
+        showToast('Job not found', 'error');
         return;
       }
 
@@ -22336,7 +22363,7 @@
         if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
       } catch (err) {
         console.error('Update status error:', err);
-        alert('Error updating status: ' + err.message);
+        showToast('Error updating status: ' + err.message, 'error');
       }
     }
 
@@ -22460,7 +22487,7 @@
         if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
       } catch (err) {
         console.error('Update schedule error:', err);
-        alert('Error updating schedule: ' + err.message);
+        showToast('Error updating schedule: ' + err.message, 'error');
       }
     }
 
@@ -22556,7 +22583,7 @@
         event.target.value = '';
       } catch (err) {
         console.error('Upload error:', err);
-        alert('Error uploading files: ' + err.message);
+        showToast('Error uploading files: ' + err.message, 'error');
       }
     }
 
@@ -22602,7 +22629,7 @@
 
       const job = allJobs.find(j => j.id === currentJobId);
       if (!job || !job.customer_id) {
-        alert('No customer associated with this job');
+        showToast('No customer associated with this job', 'error');
         return;
       }
 
@@ -22669,7 +22696,7 @@
 
       } catch (err) {
         console.error('Send portal link error:', err);
-        alert('Error generating portal link: ' + err.message);
+        showToast('Error generating portal link: ' + err.message, 'error');
       }
     }
 
@@ -22734,7 +22761,7 @@
 
       } catch (err) {
         console.error('Send contractor portal link error:', err);
-        alert('Error generating portal link: ' + err.message);
+        showToast('Error generating portal link: ' + err.message, 'error');
       }
     }
 
@@ -24306,8 +24333,7 @@
 
           try {
             // Always use production email API (not localhost)
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const token = session?.access_token;
+            const token = getAuthToken();
 
             const emailResp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
               method: 'POST',
@@ -24413,8 +24439,7 @@
           const inviteUrl = `https://www.surprisegranite.com/account/?invite=${inviteToken}`;
 
           try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const token = session?.access_token;
+            const token = getAuthToken();
 
             await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
               method: 'POST',
@@ -24656,12 +24681,12 @@
         // Send email if channel is email
         if (channel === 'email' && currentChatCollaborator.email) {
           try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            const _token = getAuthToken();
             await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-collaborator-message', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+                ...(_token ? { 'Authorization': `Bearer ${_token}` } : {})
               },
               body: JSON.stringify({
                 to: currentChatCollaborator.email,
@@ -30009,7 +30034,7 @@
         await loadCollaborators();
       } catch (err) {
         console.error('Create contractor error:', err);
-        alert('Error adding contractor: ' + err.message);
+        showToast('Error adding contractor: ' + err.message, 'error');
       }
     }
 
@@ -30181,7 +30206,7 @@
         }
       } catch (err) {
         console.error('Assign contractor error:', err);
-        alert('Error assigning contractor: ' + err.message);
+        showToast('Error assigning contractor: ' + err.message, 'error');
       }
     }
 
@@ -31450,7 +31475,7 @@
           contractor = data;
         } catch (err) {
           console.error('Load contractor error:', err);
-          alert('Could not load contractor');
+          showToast('Could not load contractor', 'error');
           return;
         }
       }
@@ -31562,7 +31587,7 @@
 
       const contractor = allCollaborators.find(c => c.id === currentContractorId);
       if (!contractor?.email) {
-        alert('No email address for this contractor');
+        showToast('No email address for this contractor', 'error');
         return;
       }
 
@@ -31787,7 +31812,7 @@
         }
       } catch (err) {
         console.error('Upload document error:', err);
-        alert('Error uploading document: ' + err.message);
+        showToast('Error uploading document: ' + err.message, 'error');
       }
 
       event.target.value = '';
@@ -31940,7 +31965,7 @@
         showToast('Catalog item added!');
       } catch (err) {
         console.error('Save catalog item error:', err);
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
       }
 
       return false;
@@ -31955,7 +31980,7 @@
         showToast('Item deleted');
       } catch (err) {
         console.error('Delete catalog item error:', err);
-        alert('Error deleting item');
+        showToast('Error deleting item', 'error');
       }
     }
 
@@ -32981,10 +33006,10 @@
       const startTime = Date.now();
       try {
         const headers = { 'Content-Type': 'application/json' };
-        if (includeAuth && supabaseClient) {
-          const { data: { session } } = await supabaseClient.auth.getSession();
-          if (session?.access_token) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
+        if (includeAuth) {
+          const _authToken = getAuthToken();
+          if (_authToken) {
+            headers['Authorization'] = `Bearer ${_authToken}`;
           }
         }
 
