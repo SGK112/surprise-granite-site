@@ -1273,10 +1273,13 @@
     let currentStep = 1;
     let formData = {};
 
-    // Check URL parameter for pre-selected business type
+    // Check URL parameter for pre-selected business type and claim flow
     (function initFromUrlParams() {
       const urlParams = new URLSearchParams(window.location.search);
       const typeParam = urlParams.get('type');
+      const partnerSlug = urlParams.get('partner');
+      const partnerName = urlParams.get('name');
+
       if (typeParam) {
         const typeMap = {
           'fabricator': 'fabricator',
@@ -1296,6 +1299,31 @@
         const radioBtn = document.querySelector(`input[name="business_type"][value="${mappedType}"]`);
         if (radioBtn) {
           radioBtn.checked = true;
+        }
+      }
+
+      // Claim flow: pre-fill and show banner
+      if (partnerSlug) {
+        // Pre-select supplier type for vendors claiming a listing
+        const supplierRadio = document.querySelector('input[name="business_type"][value="supplier"]');
+        if (supplierRadio) supplierRadio.checked = true;
+
+        // Pre-fill business name
+        if (partnerName) {
+          const nameInput = document.getElementById('businessName');
+          if (nameInput) nameInput.value = decodeURIComponent(partnerName);
+        }
+
+        // Store for claim association
+        if (typeof formData !== 'undefined') formData._partnerSlug = partnerSlug;
+
+        // Show claim banner
+        const formContainer = document.querySelector('.signup-card') || document.querySelector('.form-step.active');
+        if (formContainer) {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 2px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;';
+          banner.innerHTML = '<div style="width:40px;height:40px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div><div><strong style="color:#15803d;font-size:15px">Claiming: ' + (partnerName ? decodeURIComponent(partnerName) : partnerSlug) + '</strong><p style="margin:2px 0 0;font-size:13px;color:#4b5563">Complete signup to manage your listing and connect with contractors.</p></div>';
+          formContainer.parentNode.insertBefore(banner, formContainer);
         }
       }
     })();

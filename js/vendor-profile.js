@@ -453,6 +453,90 @@
       color: var(--vp-text-muted);
     }
 
+    /* ===== CLAIM LISTING ===== */
+    .vp-claim-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 40px;
+    }
+    .vp-claim-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
+      border: 2px dashed #86efac;
+      border-radius: 16px;
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .vp-claim-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .vp-claim-icon svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+    .vp-claim-body {
+      flex: 1;
+    }
+    .vp-claim-body h4 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #15803d;
+      margin-bottom: 4px;
+    }
+    .vp-claim-body p {
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .vp-claim-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .vp-claim-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+    }
+    .vp-claim-btn svg { width: 18px; height: 18px; }
+    .vp-claim-btn-primary {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      box-shadow: 0 4px 14px rgba(34,197,94,0.3);
+    }
+    .vp-claim-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.4);
+    }
+    .vp-claim-btn-vendor {
+      background: white;
+      color: var(--vp-navy);
+      border: 2px solid var(--vp-border);
+    }
+    .vp-claim-btn-vendor:hover {
+      border-color: var(--vp-navy);
+      background: var(--vp-bg-secondary);
+    }
+
     /* ===== MOBILE ===== */
     @media (max-width: 768px) {
       #vendor-profile { padding-top: 10px; }
@@ -466,6 +550,17 @@
       .vp-contact-btn { width: 100%; min-height: 48px; }
       .vp-cta-banner { padding: 0 16px; }
       .vp-cta-inner { padding: 32px 20px; }
+      .vp-claim-section { padding: 0 16px 32px; }
+      .vp-claim-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 20px;
+      }
+      .vp-claim-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .vp-claim-btn { justify-content: center; width: 100%; min-height: 48px; }
       .vp-tabs { gap: 0; }
       .vp-tab { padding: 12px 16px; font-size: 13px; }
     }
@@ -687,6 +782,33 @@
           </a>
         </div>
       </div>
+    `;
+
+    // Claim this listing section
+    const claimDistributorUrl = '/distributor/signup/?partner=' + encodeURIComponent(SLUG) + '&name=' + encodeURIComponent(vendor.name);
+    const claimVendorUrl = '/vendor/signup/?partner=' + encodeURIComponent(SLUG) + '&name=' + encodeURIComponent(vendor.name);
+    html += `
+      <section class="vp-claim-section">
+        <div class="vp-claim-card">
+          <div class="vp-claim-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <div class="vp-claim-body">
+            <h4>Is this your business?</h4>
+            <p>Claim this listing to manage your profile, add products and slab inventory, respond to inquiries, and connect with contractors.</p>
+          </div>
+          <div class="vp-claim-actions">
+            <a href="${claimDistributorUrl}" class="vp-claim-btn vp-claim-btn-primary">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              Distributor Account
+            </a>
+            <a href="${claimVendorUrl}" class="vp-claim-btn vp-claim-btn-vendor">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              Vendor Account
+            </a>
+          </div>
+        </div>
+      </section>
     `;
 
     html += '<div class="footer-spacer"></div>';

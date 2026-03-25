@@ -1447,9 +1447,12 @@
         L.marker([33.45, -112.07], { icon: goldIcon }).addTo(previewMap);
       } catch(e) {}
 
-      // Check URL params for pre-selection
+      // Check URL params for pre-selection and claim flow
       const urlParams = new URLSearchParams(window.location.search);
-      const partnerType = urlParams.get('type') || urlParams.get('partner');
+      const partnerType = urlParams.get('type');
+      const partnerSlug = urlParams.get('partner');
+      const partnerName = urlParams.get('name');
+
       if (partnerType) {
         const typeMap = {
           'stone-yard': 'stone_yard',
@@ -1463,6 +1466,31 @@
         const mappedType = typeMap[partnerType.toLowerCase()] || partnerType.replace(/-/g, '_');
         const radio = document.querySelector(`input[name="company_type"][value="${mappedType}"]`);
         if (radio) radio.checked = true;
+      }
+
+      // Claim flow: pre-fill company name and show claim banner
+      if (partnerSlug) {
+        // Pre-select stone_yard type for claim flow
+        const stoneYardRadio = document.querySelector('input[name="company_type"][value="stone_yard"]');
+        if (stoneYardRadio) stoneYardRadio.checked = true;
+
+        // Pre-fill company name if provided
+        if (partnerName) {
+          const nameInput = document.getElementById('companyName');
+          if (nameInput) nameInput.value = decodeURIComponent(partnerName);
+        }
+
+        // Store partner slug for claim association
+        formData._partnerSlug = partnerSlug;
+
+        // Show claim banner at top of form
+        const formContainer = document.querySelector('.signup-card') || document.querySelector('.form-step.active');
+        if (formContainer) {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 2px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;';
+          banner.innerHTML = '<div style="width:40px;height:40px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div><div><strong style="color:#15803d;font-size:15px">Claiming: ' + (partnerName ? decodeURIComponent(partnerName) : partnerSlug) + '</strong><p style="margin:2px 0 0;font-size:13px;color:#4b5563">Complete signup to manage your listing, add inventory, and connect with contractors.</p></div>';
+          formContainer.parentNode.insertBefore(banner, formContainer);
+        }
       }
     });
 
@@ -1660,7 +1688,8 @@
             onboarding_step: 4,
             is_active: false,
             is_stone_yard_partner: true,
-            verification_status: 'pending'
+            verification_status: 'pending',
+            ...(formData._partnerSlug ? { claimed_at: new Date().toISOString() } : {})
           })
           .select()
           .single();
@@ -1669,15 +1698,16 @@
           console.error('Profile error:', profileError);
         }
 
-        // 2b. Notify admin of new signup
+        // 2b. Notify admin of new signup (include claim info if claiming)
+        const claimNote = formData._partnerSlug ? `\n\n⚡ CLAIMED LISTING: /stone-yards/${formData._partnerSlug}/` : '';
         try {
           fetch('https://www.surprisegranite.com/api/email/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               to: 'joshb@surprisegranite.com',
-              subject: 'New Distributor Signup: ' + formData.company_name,
-              message: `New distributor "${formData.company_name}" has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state}\n\nReview and verify at: https://www.surprisegranite.com/distributor/dashboard/`,
+              subject: (formData._partnerSlug ? '⚡ Listing Claimed: ' : 'New Distributor Signup: ') + formData.company_name,
+              message: `New distributor "${formData.company_name}" has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state}${claimNote}\n\nReview and verify at: https://www.surprisegranite.com/distributor/dashboard/`,
               type: 'admin_notification'
             })
           });
