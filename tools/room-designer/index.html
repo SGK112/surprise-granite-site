@@ -81805,11 +81805,20 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
           </svg>
+          <span style="font-size:9px;margin-top:2px;">Select</span>
         </button>
-        <button class="tool-btn" onclick="setTool('pan')" title="Pan">
+        <button class="tool-btn" onclick="openMobileElementPicker()" title="Add Element" style="background:var(--accent);color:var(--dark);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
+          <span style="font-size:9px;margin-top:2px;">Add</span>
+        </button>
+        <button class="tool-btn" onclick="openMobileProperties()" title="Properties">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          <span style="font-size:9px;margin-top:2px;">Edit</span>
         </button>
         <button class="tool-btn" onclick="toggleMobileMenu()" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81817,21 +81826,14 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
             <line x1="3" y1="6" x2="21" y2="6"/>
             <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
+          <span style="font-size:9px;margin-top:2px;">More</span>
         </button>
         <button class="tool-btn" onclick="undo()" title="Undo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7v6h6"/>
             <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
           </svg>
-        </button>
-        <button class="tool-btn" onclick="openModal('shareModal')" title="Share">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
+          <span style="font-size:9px;margin-top:2px;">Undo</span>
         </button>
       `;
       document.body.appendChild(toolbar);
@@ -81862,11 +81864,14 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
                 </svg>
                 New Design
               </button>
+              <button class="btn btn-secondary" onclick="openMobileElementPicker(); document.getElementById('mobileMenuOverlay').classList.remove('active');">Add Elements</button>
               <button class="btn btn-secondary" onclick="openModal('templateModal'); document.getElementById('mobileMenuOverlay').classList.remove('active');">Load Template</button>
               <button class="btn btn-secondary" onclick="openModal('myDesignsModal'); document.getElementById('mobileMenuOverlay').classList.remove('active');">My Designs</button>
               <button class="btn btn-secondary" onclick="setView(currentView === '2d' ? '3d' : '2d'); document.getElementById('mobileMenuOverlay').classList.remove('active');">Toggle 2D/3D</button>
               <button class="btn btn-secondary" onclick="exportDesign(); document.getElementById('mobileMenuOverlay').classList.remove('active');">Save Design</button>
+              <button class="btn btn-secondary" onclick="openModal('shareModal'); document.getElementById('mobileMenuOverlay').classList.remove('active');">Share</button>
               <button class="btn btn-secondary" onclick="resetZoom(); document.getElementById('mobileMenuOverlay').classList.remove('active');">Reset Zoom</button>
+              <button class="btn btn-secondary" onclick="fitToScreen(); document.getElementById('mobileMenuOverlay').classList.remove('active');">Fit to Screen</button>
             </div>
           </div>
         `;
@@ -81876,6 +81881,128 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
         });
       }
     }
+
+    // Mobile element picker — bottom sheet with categorized elements
+    function openMobileElementPicker() {
+      let existing = document.getElementById('mobileElementPicker');
+      if (existing) { existing.classList.toggle('active'); return; }
+
+      const categories = [
+        { id: 'cabinets', label: 'Cabinets', icon: '🗄️', types: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'drawer-base', 'sink-base', 'island'] },
+        { id: 'surfaces', label: 'Surfaces', icon: '🪨', types: ['countertop', 'backsplash', 'flooring', 'tile'] },
+        { id: 'appliances', label: 'Appliances', icon: '🍳', types: ['sink', 'stove', 'refrigerator', 'dishwasher', 'oven', 'microwave', 'cooktop', 'range-hood'] },
+        { id: 'openings', label: 'Doors & Windows', icon: '🚪', types: ['door', 'window', 'archway', 'pass-through'] },
+        { id: 'structure', label: 'Structure', icon: '🧱', types: ['wall', 'pony-wall', 'column', 'beam', 'niche'] }
+      ];
+
+      const picker = document.createElement('div');
+      picker.id = 'mobileElementPicker';
+      picker.className = 'active';
+      picker.style.cssText = 'position:fixed;bottom:56px;left:0;right:0;z-index:1001;background:var(--dark-surface,#1e1e2d);border-top:1px solid var(--border,rgba(255,255,255,.1));border-radius:16px 16px 0 0;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;transition:transform .3s ease;';
+
+      // Category tabs
+      let html = '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1);-webkit-overflow-scrolling:touch;">';
+      categories.forEach((cat, i) => {
+        html += `<button onclick="showMobileCategory('${cat.id}')" class="mob-cat-tab" data-cat="${cat.id}" style="flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:${i===0?'var(--accent,#f9cb00)':'rgba(255,255,255,.05)'};color:${i===0?'#1a1a2e':'#fff'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${cat.icon} ${cat.label}</button>`;
+      });
+      html += '</div>';
+
+      // Element grids per category
+      categories.forEach((cat, i) => {
+        html += `<div class="mob-cat-grid" data-cat="${cat.id}" style="display:${i===0?'grid':'none'};grid-template-columns:repeat(3,1fr);gap:8px;">`;
+        cat.types.forEach(t => {
+          const label = t.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          html += `<button onclick="addElementFromMobile('${t}')" style="padding:12px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:12px;font-weight:500;cursor:pointer;text-align:center;min-height:52px;">${label}</button>`;
+        });
+        html += '</div>';
+      });
+
+      html += '<button onclick="document.getElementById(\'mobileElementPicker\').remove()" style="width:100%;margin-top:12px;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;">Close</button>';
+
+      picker.innerHTML = html;
+      document.body.appendChild(picker);
+    }
+    window.openMobileElementPicker = openMobileElementPicker;
+
+    window.showMobileCategory = function(catId) {
+      document.querySelectorAll('.mob-cat-grid').forEach(g => g.style.display = g.dataset.cat === catId ? 'grid' : 'none');
+      document.querySelectorAll('.mob-cat-tab').forEach(t => {
+        const isActive = t.dataset.cat === catId;
+        t.style.background = isActive ? 'var(--accent,#f9cb00)' : 'rgba(255,255,255,.05)';
+        t.style.color = isActive ? '#1a1a2e' : '#fff';
+      });
+    };
+
+    window.addElementFromMobile = function(type) {
+      // Close picker
+      const picker = document.getElementById('mobileElementPicker');
+      if (picker) picker.remove();
+      // Add element at center of visible canvas
+      if (typeof addElement === 'function') {
+        addElement(type);
+        showToast('Added ' + type.replace(/-/g, ' '), 'success');
+      } else if (typeof ELEMENT_TYPES !== 'undefined') {
+        // Fallback: find element definition and add manually
+        const def = Object.values(ELEMENT_TYPES).flat().find(e => e.type === type);
+        if (def) {
+          const el = { ...def, x: (roomWidth / 2) * pixelsPerFoot, y: (roomDepth / 2) * pixelsPerFoot, id: Date.now() + Math.random() };
+          elements.push(el);
+          draw();
+          showToast('Added ' + type.replace(/-/g, ' '), 'success');
+        }
+      }
+    };
+
+    // Mobile properties sheet — shows selected element properties
+    function openMobileProperties() {
+      if (!selectedElement) {
+        showToast('Select an element first', 'info');
+        return;
+      }
+      const el = selectedElement;
+      const existing = document.getElementById('mobilePropsSheet');
+      if (existing) existing.remove();
+
+      const sheet = document.createElement('div');
+      sheet.id = 'mobilePropsSheet';
+      sheet.style.cssText = 'position:fixed;bottom:56px;left:0;right:0;z-index:1001;background:var(--dark-surface,#1e1e2d);border-top:1px solid var(--border,rgba(255,255,255,.1));border-radius:16px 16px 0 0;max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;';
+
+      const wInches = Math.round((el.width || 0) * 12);
+      const hInches = Math.round((el.height || 0) * 12);
+      const rot = el.rotation || 0;
+      const label = (el.type || 'element').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+      sheet.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h4 style="color:#fff;font-size:16px;font-weight:700;margin:0;">${label}</h4>
+          <button onclick="document.getElementById('mobilePropsSheet').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;">&times;</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div>
+            <label style="font-size:11px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Width (inches)</label>
+            <input id="mob-prop-w" type="number" value="${wInches}" style="width:100%;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:15px;" onchange="updateMobileProp('width', this.value/12)"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Depth (inches)</label>
+            <input id="mob-prop-h" type="number" value="${hInches}" style="width:100%;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:15px;" onchange="updateMobileProp('height', this.value/12)"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="rotateSelectedElement(90); openMobileProperties();" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;cursor:pointer;">Rotate 90&deg;</button>
+          <button onclick="duplicateSelected(); document.getElementById('mobilePropsSheet').remove();" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;cursor:pointer;">Duplicate</button>
+          <button onclick="deleteSelected(); document.getElementById('mobilePropsSheet').remove();" style="flex:1;padding:12px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:#ef4444;font-size:13px;cursor:pointer;">Delete</button>
+        </div>
+      `;
+      document.body.appendChild(sheet);
+    }
+    window.openMobileProperties = openMobileProperties;
+
+    window.updateMobileProp = function(prop, value) {
+      if (!selectedElement) return;
+      selectedElement[prop] = parseFloat(value) || selectedElement[prop];
+      draw();
+      if (typeof update3DScene === 'function') update3DScene();
+    };
 
     // Initialize mobile toolbar on load
     if (window.innerWidth <= 900) {
