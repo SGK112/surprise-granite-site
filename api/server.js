@@ -3771,6 +3771,23 @@ app.use('/api/analyze-blueprint', (req, res, next) => { req.url = '/blueprint'; 
 app.use('/api/contractors', (req, res, next) => { req.url = '/contractors' + (req.url === '/' ? '/list' : ''); jobsRouter(req, res, next); });
 app.use('/api/contractor/respond', (req, res, next) => { req.url = '/contractor/respond'; jobsRouter(req, res, next); });
 
+// ============ VOICENOW CRM SYNC HELPER ============
+const VOICENOW_CRM_URL = process.env.VOICENOW_CRM_URL || 'https://voiceflow-crm.onrender.com';
+
+function syncToCRM(endpoint, data) {
+  const url = `${VOICENOW_CRM_URL}/api/surprise-granite/${endpoint}`;
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(r => {
+    if (r.ok) logger.info(`[CRM] Synced to ${endpoint}:`, data.email || data.id || 'unknown');
+    else logger.warn(`[CRM] ${endpoint} failed:`, r.status);
+  }).catch(err => {
+    logger.warn(`[CRM] ${endpoint} error:`, err.message);
+  });
+}
+
 // ============ LEAD NOTIFICATION (admin email + safety net save) ============
 app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
   try {
@@ -3809,6 +3826,17 @@ app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
         logger.error('[notify-lead] Supabase save failed:', dbErr.message);
       }
     }
+
+    // Sync to VoiceNow CRM for Aria
+    syncToCRM('webhook/new-lead', {
+      full_name: name,
+      email,
+      phone,
+      project_type,
+      message: message || details,
+      source: source || 'website',
+      form_name
+    });
 
     // Send admin email notification
     const adminEmail = ADMIN_EMAIL;
@@ -4003,6 +4031,17 @@ app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
         logger.info('[ARIA LEAD] Database save skipped:', dbErr.message);
       }
     }
+
+    // Sync to VoiceNow CRM for Aria
+    syncToCRM('webhook/new-lead', {
+      full_name: name,
+      email,
+      phone,
+      project_type,
+      project_details,
+      message: notes || project_details,
+      source: source || 'aria_voice_chat'
+    });
 
     res.json({ success: true, emailSent: emailResult.success });
   } catch (error) {
@@ -4245,6 +4284,18 @@ app.post('/api/invoices', authenticateJWT, async (req, res) => {
       );
       await sendNotification(customer_email, customerEmailData.subject, customerEmailData.html);
     }
+
+    // Sync to VoiceNow CRM
+    syncToCRM('webhook/new-invoice', {
+      id: finalizedInvoice.id,
+      invoice_number: finalizedInvoice.number,
+      total: finalizedInvoice.amount_due / 100,
+      status: finalizedInvoice.status,
+      customer_name,
+      customer_email,
+      customer_phone,
+      items: items.map(i => ({ name: i.description, quantity: i.quantity || 1, unit_price: i.amount / 100 }))
+    });
 
     res.json({
       success: true,
@@ -6206,6 +6257,19 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
         logger.error('Supabase lead save failed:', dbErr.message);
       }
     }
+
+    // Sync to VoiceNow CRM for Aria
+    syncToCRM('webhook/new-lead', {
+      full_name: homeowner_name,
+      email: homeowner_email,
+      phone: homeowner_phone,
+      project_type,
+      project_details,
+      message,
+      source,
+      zip_code: project_zip,
+      raw_data: { project_budget, project_timeline, appointment_date, appointment_time, project_address }
+    });
 
     // Determine if this is an appointment request
     const isAppointment = appointment_date || appointment_time || source === 'Booking Calendar';
