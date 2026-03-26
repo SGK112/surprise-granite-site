@@ -7,18 +7,19 @@
 
   /* ── dismiss memory ─────────────────────────────────────────────── */
   var DISMISS_KEY = 'sq_iq_dismissed';
-  var DISMISS_TTL = 24 * 60 * 60 * 1000; // 24 h
 
   function wasDismissed() {
     try {
-      var ts = localStorage.getItem(DISMISS_KEY);
-      if (!ts) return false;
-      return Date.now() - parseInt(ts, 10) < DISMISS_TTL;
+      // Only dismiss for current browser session, not 24 hours
+      return sessionStorage.getItem(DISMISS_KEY) === '1';
     } catch (e) { return false; }
   }
   function markDismissed() {
-    try { localStorage.setItem(DISMISS_KEY, Date.now()); } catch (e) {}
+    try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
   }
+
+  // Clear legacy 24h dismiss from localStorage (we now use sessionStorage)
+  try { localStorage.removeItem(DISMISS_KEY); } catch(e) {}
 
   if (wasDismissed()) return;
 
@@ -55,11 +56,13 @@
   var css = document.createElement('style');
   css.textContent = [
     '/* SQ Instant Quote Widget */',
-    '.sq-iq-btn{position:fixed;bottom:24px;left:24px;z-index:99998;background:#f9cb00;color:#1a1a2e;border:none;padding:14px 22px;border-radius:50px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;gap:8px;line-height:1}',
+    '.sq-iq-btn{position:fixed;bottom:24px;left:24px;z-index:9990;background:#f9cb00;color:#1a1a2e;border:none;padding:14px 22px;border-radius:50px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;gap:8px;line-height:1}',
+    '@media(max-width:768px){.sq-iq-btn{bottom:80px;left:16px;padding:12px 18px;font-size:14px}}',
     '.sq-iq-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}',
     '.sq-iq-btn svg{width:20px;height:20px;flex-shrink:0}',
 
-    '.sq-iq-overlay{position:fixed;bottom:90px;left:24px;z-index:99999;width:380px;max-width:calc(100vw - 48px);background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden;transform:scale(.92) translateY(12px);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .2s ease}',
+    '.sq-iq-overlay{position:fixed;bottom:90px;left:24px;z-index:9991;width:380px;max-width:calc(100vw - 48px);background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden;transform:scale(.92) translateY(12px);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .2s ease}',
+    '@media(max-width:480px){.sq-iq-overlay{left:8px;right:8px;bottom:auto;top:50%;transform:scale(.92) translateY(-50%);width:auto;max-width:none;max-height:85vh}.sq-iq-overlay.sq-open{transform:scale(1) translateY(-50%)}}',
     '.sq-iq-overlay.sq-open{transform:scale(1) translateY(0);opacity:1;pointer-events:auto}',
 
     '.sq-iq-header{background:#1a1a2e;color:#f9cb00;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}',
