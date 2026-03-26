@@ -38146,7 +38146,8 @@
                              (snappedToWall === 'front' && Math.abs((snapY + elH) - roomBottomWall) < 1);
 
         // Only apply rotation if this is a NEW wall snap AND element is touching
-        if (snappedToWall && snappedToWall !== lastSnappedWall && touchingWall && autoRotateTypes.includes(selectedElement.type)) {
+        // Skip if user has manually set rotation (locked)
+        if (snappedToWall && snappedToWall !== lastSnappedWall && touchingWall && autoRotateTypes.includes(selectedElement.type) && !selectedElement._rotationLocked) {
           lastSnappedWall = snappedToWall;
 
           // Cabinet BACK goes against wall, FRONT (doors) faces into room
@@ -39449,6 +39450,7 @@
     function rotateSelectedElement(degrees) {
       if (selectedElement && !selectedElement.locked) {
         selectedElement.rotation = ((selectedElement.rotation || 0) + degrees) % 360;
+        selectedElement._rotationLocked = true; // Prevent auto-rotate from overriding manual rotation
         updateProperties();
         saveUndoState();
         draw();
@@ -63640,9 +63642,21 @@
       }
       updateRoomList();
 
-      // Auto-reposition elements that were against the right or front walls
+      // Scale walls proportionally when room size changes
       const dw = roomWidth - oldWidth;
       const dd = roomDepth - oldDepth;
+      if ((dw !== 0 || dd !== 0) && walls.length > 0) {
+        const scaleX = roomWidth / oldWidth;
+        const scaleY = roomDepth / oldDepth;
+        walls.forEach(w => {
+          w.x = w.x * scaleX;
+          w.y = w.y * scaleY;
+          w.width = w.width * scaleX;
+          w.height = w.height * scaleY;
+        });
+      }
+
+      // Auto-reposition elements that were against the right or front walls
       if ((dw !== 0 || dd !== 0) && elements.length > 0) {
         const snapThresh = 1.0; // 1 foot threshold for wall detection
         elements.forEach(el => {
@@ -64826,16 +64840,16 @@
         if (el.locked === undefined) el.locked = false;
       });
 
-      // ===== POST-PROCESSING: Resolve countertop-through-tall-item collisions =====
-      // Prevent countertops from clipping through refrigerators, tall cabinets, etc.
+      // ===== POST-PROCESSING: Detect countertop-through-tall-item collisions =====
+      // Flag collisions but DON'T silently shrink countertops — let user decide
       const tallItemTypes = ['refrigerator', 'tall-cabinet', 'fridge-cabinet', 'single-oven-cabinet',
                              'tall-oven', 'double-oven-cabinet'];
       const tallItems = elements.filter(el => tallItemTypes.some(t => el.type === t || el.type?.startsWith(t + '-')));
       const countertops = elements.filter(el => el.type === 'countertop' || el.type === 'countertop-l' || el.type === 'countertop-u');
 
+      let collisionCount = 0;
       countertops.forEach(counter => {
         tallItems.forEach(tall => {
-          // Get bounding boxes in feet (x/y are in pixels, width/height in feet)
           const cxFt = counter.x / pixelsPerFoot;
           const cyFt = counter.y / pixelsPerFoot;
           const cRot = (counter.rotation || 0) % 360;
@@ -64848,41 +64862,21 @@
           const tW = (tRot === 90 || tRot === 270) ? tall.height : tall.width;
           const tH = (tRot === 90 || tRot === 270) ? tall.width : tall.height;
 
-          // Check X-axis overlap
           const overlapX = Math.min(cxFt + cW, txFt + tW) - Math.max(cxFt, txFt);
           const overlapY = Math.min(cyFt + cH, tyFt + tH) - Math.max(cyFt, tyFt);
 
           if (overlapX > 0.05 && overlapY > 0.05) {
-            // There IS a collision - adjust the countertop to avoid it
-            // Determine which side the tall item is on and shrink the counter away from it
-            if (Math.abs(cxFt - txFt) < 0.5 && cW > tW) {
-              // Tall item is at the LEFT edge of the counter - move counter right
-              const newX = txFt + tW;
-              const shrinkAmount = newX - cxFt;
-              counter.x = newX * pixelsPerFoot;
-              counter.width -= shrinkAmount;
-              if (counter.overhangLeft) counter.overhangLeft = 0;
-            } else if (Math.abs((cxFt + cW) - (txFt + tW)) < 0.5 && cW > tW) {
-              // Tall item is at the RIGHT edge of the counter - shrink counter
-              const shrinkAmount = (cxFt + cW) - txFt;
-              counter.width -= shrinkAmount;
-              if (counter.overhangRight) counter.overhangRight = 0;
-            } else if (Math.abs(cyFt - tyFt) < 0.5 && cH > tH) {
-              // Tall item at BACK edge - move counter forward
-              const newY = tyFt + tH;
-              const shrinkAmount = newY - cyFt;
-              counter.y = newY * pixelsPerFoot;
-              counter.height -= shrinkAmount;
-              if (counter.overhangBack) counter.overhangBack = 0;
-            } else if (Math.abs((cyFt + cH) - (tyFt + tH)) < 0.5 && cH > tH) {
-              // Tall item at FRONT edge - shrink counter depth
-              const shrinkAmount = (cyFt + cH) - tyFt;
-              counter.height -= shrinkAmount;
-              if (counter.overhangFront) counter.overhangFront = 0;
-            }
+            collisionCount++;
+            // Mark the overlapping elements visually instead of auto-shrinking
+            counter._hasCollision = true;
+            tall._hasCollision = true;
           }
         });
       });
+
+      if (collisionCount > 0) {
+        showToast(`${collisionCount} overlap${collisionCount > 1 ? 's' : ''} detected — adjust countertops near tall items`, 'warning');
+      }
 
       // Update everything (no need to call fitToScreen again)
       saveUndoState();
