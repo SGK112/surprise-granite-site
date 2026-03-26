@@ -364,6 +364,16 @@
       const container = document.getElementById('viewer3d');
       container.innerHTML = '';
 
+      // Check WebGL support before initializing 3D
+      try {
+        const testCanvas = document.createElement('canvas');
+        const gl = testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
+        if (!gl) throw new Error('WebGL not supported');
+      } catch (e) {
+        container.innerHTML = '<div class="loading" style="flex-direction:column;gap:12px;"><p style="font-size:18px;font-weight:600;">3D Not Supported</p><p style="font-size:14px;opacity:0.7;">Your browser or device doesn\'t support 3D graphics. Please try Chrome, Firefox, or Safari on a desktop computer.</p></div>';
+        return;
+      }
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0d0d15);
 

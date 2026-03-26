@@ -24334,7 +24334,10 @@
       if (stonePricingLoaded) return; // Already loaded
 
       try {
-        const response = await fetch('stone-pricing.json');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const response = await fetch('stone-pricing.json', { signal: controller.signal });
+        clearTimeout(timeoutId);
         if (!response.ok) {
           console.warn('Stone pricing file not found, using built-in materials only');
           return;
@@ -69715,8 +69718,11 @@
 
     // Calculate total quote from all elements
     function calculateQuoteTotal() {
-      // Use cached value if available and recent
-      if (window.currentQuoteTotal !== undefined && window.currentQuoteTotal > 0) {
+      // Cache is valid for 2 seconds and only if element count unchanged
+      const now = Date.now();
+      if (window.currentQuoteTotal !== undefined && window.currentQuoteTotal > 0 &&
+          window._quoteCacheElementCount === elements.length &&
+          window._quoteCacheTime && (now - window._quoteCacheTime) < 2000) {
         return window.currentQuoteTotal;
       }
 
@@ -69736,7 +69742,15 @@
       });
 
       window.currentQuoteTotal = total;
+      window._quoteCacheElementCount = elements.length;
+      window._quoteCacheTime = Date.now();
       return total;
+    }
+
+    // Invalidate quote cache (call when elements or prices change)
+    function invalidateQuoteCache() {
+      window.currentQuoteTotal = undefined;
+      window._quoteCacheElementCount = undefined;
     }
 
     // Get effective price for an element (priority: override -> catalog -> material -> custom -> default)
