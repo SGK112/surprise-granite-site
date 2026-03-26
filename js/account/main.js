@@ -3739,7 +3739,7 @@
       }
 
       if (filtered.length === 0) {
-        gridEl.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">No ${designsFilter === 'all' ? '' : designsFilter + ' '}designs found.</p>`;
+        gridEl.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">No ${designsFilter === 'all' ? '' : escapeHtml(designsFilter) + ' '}designs found.</p>`;
         return;
       }
 
@@ -13692,6 +13692,7 @@
             </html>
           `;
           const win = window.open('', '_blank');
+          if (!win) { showToast('Popup blocked — please allow popups', 'warning'); return; }
           win.document.write(invoiceHtml);
           win.document.close();
           return;
@@ -25687,7 +25688,7 @@
       const phoneHidden = document.getElementById('cal-event-location-phone');
       if (phoneDisplay) {
         if (phone) {
-          phoneDisplay.innerHTML = `<a href="tel:${phone}" style="color: var(--gold-primary); text-decoration: none;">${phone}</a>`;
+          phoneDisplay.innerHTML = `<a href="tel:${escapeHtml(phone)}" style="color: var(--gold-primary); text-decoration: none;">${escapeHtml(phone)}</a>`;
         } else {
           phoneDisplay.textContent = 'No phone number set - add in contact fields above';
         }
@@ -26633,6 +26634,7 @@
       const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
       const printWindow = window.open('', '_blank');
+      if (!printWindow) { showToast('Popup blocked — please allow popups', 'warning'); return; }
       printWindow.document.write(`<!DOCTYPE html><html><head><title>${esc(name)} - Profile</title>
         <style>
           body { font-family: -apple-system, Arial, sans-serif; padding: 40px; color: #1a1a2e; max-width: 700px; margin: 0 auto; }
@@ -30476,7 +30478,7 @@
           select.innerHTML += '<option disabled>──────────────</option>';
           (collaborators || []).forEach(c => {
             const displayName = c.company ? `${c.name} - ${c.company}` : c.name;
-            select.innerHTML += `<option value="${c.id}">${displayName} (${c.role || 'contractor'})</option>`;
+            select.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(displayName)} (${escapeHtml(c.role || 'contractor')})</option>`;
           });
         }
       } catch (err) {
@@ -30619,14 +30621,14 @@
       const customerSelect = document.getElementById('schedule-customer-select');
       customerSelect.innerHTML = '<option value="">-- Select Customer --</option>';
       allCustomers.forEach(c => {
-        customerSelect.innerHTML += `<option value="${c.id}">${c.name} ${c.email ? '(' + c.email + ')' : ''}</option>`;
+        customerSelect.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} ${c.email ? '(' + escapeHtml(c.email) + ')' : ''}</option>`;
       });
 
       // Populate jobs dropdown
       const jobSelect = document.getElementById('schedule-job-select');
       jobSelect.innerHTML = '<option value="">-- Create New or Select Existing --</option>';
       allJobs.filter(j => j.status !== 'completed' && j.status !== 'cancelled').forEach(j => {
-        jobSelect.innerHTML += `<option value="${j.id}">${j.job_number || 'Job'} - ${j.customer_name || j.description}</option>`;
+        jobSelect.innerHTML += `<option value="${escapeHtml(j.id)}">${escapeHtml(j.job_number || 'Job')} - ${escapeHtml(j.customer_name || j.description || '')}</option>`;
       });
 
       // Preselect job if provided

@@ -228,8 +228,12 @@ router.get('/products', optionalAuth, async (req, res) => {
     let products = [];
 
     if (fs.existsSync(dataPath)) {
-      const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-      products = data.flooring || [];
+      try {
+        const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+        products = data.flooring || [];
+      } catch (parseErr) {
+        logger.error('[Flooring] Failed to parse data file:', parseErr.message);
+      }
     }
 
     // Enrich with pricing
@@ -326,7 +330,8 @@ router.get('/products/:slug', optionalAuth, async (req, res) => {
       });
     }
 
-    const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    let data;
+    try { data = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch (e) { return res.status(500).json({ error: 'Data file corrupted' }); }
     const products = data.flooring || [];
 
     const product = products.find(p => p.slug === slug);
@@ -471,7 +476,8 @@ router.post('/apply-prices',
 
       // Update flooring.json with new prices
       const dataPath = path.join(__dirname, '../../data/flooring.json');
-      const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+      let data;
+      try { data = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch (e) { return res.status(500).json({ error: 'Data file corrupted' }); }
       let products = data.flooring || [];
 
       let updated = 0;
