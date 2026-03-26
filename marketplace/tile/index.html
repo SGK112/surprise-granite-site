@@ -638,17 +638,17 @@
           return;
         }
 
-        // Wait for pricing service to initialize
-        if (window.SG_PRICING) {
+        // Render immediately with whatever pricing is available
+        renderProducts(products);
+        updatePricingBanner(currentTier || 'guest', null);
+
+        // Update prices if/when pricing service signals a tier change
+        if (window.SG_PRICING && window.SG_PRICING.onTierChange) {
           window.SG_PRICING.onTierChange((tier, user) => {
             currentTier = tier;
             updatePricingBanner(tier, user);
             renderProducts(allProducts);
           });
-        } else {
-          // Pricing not loaded, render with static prices
-          renderProducts(products);
-          updatePricingBanner('guest', null);
         }
 
         setupFilters(products);

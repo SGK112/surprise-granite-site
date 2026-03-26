@@ -613,16 +613,15 @@
         allProducts = products;
         console.log('Loaded', products.length, 'flooring products');
 
-        // Check for pricing service
-        if (window.SG_PRICING) {
+        // Render immediately, update when pricing changes
+        renderProducts(products);
+        updatePricingBanner(currentTier || 'guest', null);
+        if (window.SG_PRICING && window.SG_PRICING.onTierChange) {
           window.SG_PRICING.onTierChange((tier, user) => {
             currentTier = tier;
             updatePricingBanner(tier, user);
             renderProducts(allProducts);
           });
-        } else {
-          renderProducts(products);
-          updatePricingBanner('guest', null);
         }
 
         setupFilters(products);
