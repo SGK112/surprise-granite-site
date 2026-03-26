@@ -1526,12 +1526,24 @@
                         </svg>
                         Generate Estimate
                     </button>
-                    <a href="/get-a-free-estimate/" class="cta-btn cta-btn-secondary">
+                    <a href="/get-a-free-estimate/?source=flooring-calculator" class="cta-btn cta-btn-secondary">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                         Schedule Free Estimate
                     </a>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+                    <a href="/marketplace/flooring/" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:rgba(249,203,0,0.08); border:1px solid rgba(249,203,0,0.2); border-radius:8px; color:#1a1a2e; text-decoration:none; font-size:13px; font-weight:600; min-width:140px;">🪵 Shop Flooring</a>
+                    <a href="/tools/remodel-calculator/" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:rgba(249,203,0,0.08); border:1px solid rgba(249,203,0,0.2); border-radius:8px; color:#1a1a2e; text-decoration:none; font-size:13px; font-weight:600; min-width:140px;">🚿 Remodel Calculator</a>
+                </div>
+                <div style="margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Email me this estimate:</p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="email" id="floor-calc-email" placeholder="you@email.com" style="flex:1; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px;"/>
+                        <button onclick="sendFloorEstimate()" style="padding:10px 16px; background:#f9cb00; color:#1a1a2e; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;">Send</button>
+                    </div>
+                    <div id="floor-email-sent" style="display:none; color:#22c55e; font-size:13px; margin-top:6px;">Sent! Check your inbox.</div>
                 </div>
             </div>
         </div>
@@ -2043,6 +2055,23 @@
             </p>
         </div>
     </footer>
+<script>
+function sendFloorEstimate() {
+  var email = document.getElementById('floor-calc-email').value.trim();
+  if (!email || !email.includes('@')) return;
+  var total = document.querySelector('.result-value')?.textContent || document.querySelector('.total-amount')?.textContent || 'See calculator';
+  fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, source: 'flooring-calculator', form_name: 'flooring-calculator', message: 'Flooring Calculator Estimate: ' + total, page_url: window.location.href })
+  }).catch(function(){});
+  fetch('https://surprise-granite-email-api.onrender.com/api/email/send', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to_email: email, subject: 'Your Flooring Estimate - Surprise Granite', message: 'Here is your flooring estimate: ' + total + '\n\nReady to get started?\nhttps://www.surprisegranite.com/get-a-free-estimate/?source=flooring-calculator\n\nShop flooring: https://www.surprisegranite.com/marketplace/flooring/\n\nCall us: (602) 833-3189', sender_name: 'Surprise Granite' })
+  }).catch(function(){});
+  document.getElementById('floor-email-sent').style.display = 'block';
+  document.getElementById('floor-calc-email').value = '';
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>

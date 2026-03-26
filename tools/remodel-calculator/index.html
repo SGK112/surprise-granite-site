@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Bathroom & Shower Remodel Calculator | Surprise Granite</title>
+  <meta name="description" content="Estimate your bathroom or shower remodel cost instantly. Calculate tile, fixtures, labor, and materials for your Arizona remodel project."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="canonical" href="https://surprisegranite.com/tools/remodel-calculator/"/>
+  <meta property="og:title" content="Bathroom & Shower Remodel Calculator | Surprise Granite"/>
+  <meta property="og:description" content="Get an instant cost estimate for your bathroom remodel. Tile showers, vanity tops, flooring, and more."/>
+  <meta property="og:type" content="website"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260130"/>
+  <script defer src="/js/unified-nav.js?v=20260201d"></script>
+  <style>
+    :root {
+      --gold: #f9cb00; --gold-dark: #d4a900; --navy: #1a1a2e; --navy-light: #2d2d44;
+      --bg: #fff; --bg-alt: #f8fafc; --border: #e2e8f0; --text: #1a1a2e; --text-sec: #64748b;
+      --success: #22c55e; --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    .calc-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      padding: 48px 24px; text-align: center; color: #fff;
+    }
+    .calc-hero h1 { font-size: clamp(24px, 5vw, 36px); font-weight: 800; margin-bottom: 8px; }
+    .calc-hero p { color: rgba(255,255,255,0.8); font-size: 16px; max-width: 600px; margin: 0 auto; }
+    .calc-container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+    .calc-section { margin-bottom: 32px; }
+    .calc-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .calc-section h2 .step { width: 28px; height: 28px; background: var(--gold); color: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .calc-grid { grid-template-columns: 1fr; } }
+    .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; }
+    .calc-field select, .calc-field input {
+      width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 15px; background: #fff; color: var(--text); transition: border-color 0.2s;
+    }
+    .calc-field select:focus, .calc-field input:focus { outline: none; border-color: var(--gold); }
+    .option-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .option-card {
+      border: 2px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center;
+      cursor: pointer; transition: all 0.2s; background: #fff;
+    }
+    .option-card:hover { border-color: var(--gold); }
+    .option-card.selected { border-color: var(--gold); background: rgba(249,203,0,0.05); box-shadow: 0 0 0 1px var(--gold); }
+    .option-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .option-card .name { font-size: 14px; font-weight: 600; }
+    .option-card .price { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+    .addon-row {
+      display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .addon-row:hover { border-color: var(--gold); }
+    .addon-row.selected { border-color: var(--gold); background: rgba(249,203,0,0.05); }
+    .addon-row .addon-info { display: flex; align-items: center; gap: 12px; }
+    .addon-row .addon-price { font-weight: 600; color: var(--text-sec); white-space: nowrap; }
+    .addon-check { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+    .addon-row.selected .addon-check { background: var(--gold); border-color: var(--gold); }
+    .addon-row.selected .addon-check::after { content: '✓'; color: var(--navy); font-size: 12px; font-weight: 700; }
+
+    /* Results */
+    .results-card {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      border-radius: 16px; padding: 32px; color: #fff; position: sticky; top: 80px;
+    }
+    .results-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: rgba(255,255,255,0.8); }
+    .result-line { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+    .result-line:last-of-type { border-bottom: none; }
+    .result-total { display: flex; justify-content: space-between; padding: 16px 0; margin-top: 8px; border-top: 2px solid var(--gold); font-size: 20px; font-weight: 800; }
+    .result-total .amount { color: var(--gold); }
+    .result-range { text-align: center; margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7); }
+    .cta-btn {
+      display: block; width: 100%; padding: 16px; margin-top: 16px; background: var(--gold); color: var(--navy);
+      border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; text-align: center;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .cta-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .cta-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .cta-btn.secondary:hover { background: rgba(255,255,255,0.25); }
+    .shop-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .shop-link {
+      display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; text-decoration: none;
+      font-size: 13px; font-weight: 500; transition: all 0.2s;
+    }
+    .shop-link:hover { background: rgba(255,255,255,0.15); }
+    .shop-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Email capture */
+    .email-capture {
+      margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.08); border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .email-capture p { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+    .email-row { display: flex; gap: 8px; }
+    .email-row input {
+      flex: 1; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+      background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;
+    }
+    .email-row input::placeholder { color: rgba(255,255,255,0.4); }
+    .email-row button {
+      padding: 10px 16px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px;
+      font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap;
+    }
+    .email-sent { color: var(--success); font-size: 13px; margin-top: 8px; }
+
+    /* Layout */
+    .calc-layout { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
+    @media (max-width: 768px) {
+      .calc-layout { grid-template-columns: 1fr; }
+      .results-card { position: static; }
+    }
+    .footer-spacer { height: 80px; }
+  </style>
+</head>
+<body>
+  <section class="calc-hero">
+    <h1>Bathroom & Shower Remodel Calculator</h1>
+    <p>Get an instant cost estimate for your remodel. Select your options below — prices based on Phoenix metro area averages.</p>
+  </section>
+
+  <div class="calc-container">
+    <div class="calc-layout">
+      <div>
+        <!-- Step 1: Project Type -->
+        <div class="calc-section">
+          <h2><span class="step">1</span> Project Type</h2>
+          <div class="option-cards" id="project-type">
+            <div class="option-card selected" data-value="shower" onclick="selectOption('project-type', this)">
+              <div class="icon">🚿</div>
+              <div class="name">Shower Remodel</div>
+              <div class="price">Most Popular</div>
+            </div>
+            <div class="option-card" data-value="full-bath" onclick="selectOption('project-type', this)">
+              <div class="icon">🛁</div>
+              <div class="name">Full Bathroom</div>
+              <div class="price">Complete Reno</div>
+            </div>
+            <div class="option-card" data-value="tub-to-shower" onclick="selectOption('project-type', this)">
+              <div class="icon">🔄</div>
+              <div class="name">Tub-to-Shower</div>
+              <div class="price">Conversion</div>
+            </div>
+            <div class="option-card" data-value="vanity-only" onclick="selectOption('project-type', this)">
+              <div class="icon">🪞</div>
+              <div class="name">Vanity & Counter</div>
+              <div class="price">Quick Update</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Dimensions -->
+        <div class="calc-section">
+          <h2><span class="step">2</span> Dimensions</h2>
+          <div class="calc-grid">
+            <div class="calc-field">
+              <label>Shower/Tub Area (sq ft)</label>
+              <input type="number" id="shower-sqft" value="35" min="10" max="200" oninput="calculate()"/>
+            </div>
+            <div class="calc-field">
+              <label>Bathroom Floor (sq ft)</label>
+              <input type="number" id="floor-sqft" value="50" min="0" max="500" oninput="calculate()"/>
+            </div>
+            <div class="calc-field">
+              <label>Vanity Length (inches)</label>
+              <input type="number" id="vanity-inches" value="48" min="0" max="120" oninput="calculate()"/>
+            </div>
+            <div class="calc-field">
+              <label>Countertop Material</label>
+              <select id="counter-material" onchange="calculate()">
+                <option value="quartz">Quartz ($55-85/sq ft)</option>
+                <option value="granite">Granite ($45-75/sq ft)</option>
+                <option value="marble">Marble ($65-100/sq ft)</option>
+                <option value="laminate">Laminate ($15-30/sq ft)</option>
+                <option value="none">No Countertop</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Tile Selection -->
+        <div class="calc-section">
+          <h2><span class="step">3</span> Tile Quality</h2>
+          <div class="option-cards" id="tile-tier">
+            <div class="option-card" data-value="budget" onclick="selectOption('tile-tier', this)">
+              <div class="icon">💰</div>
+              <div class="name">Budget</div>
+              <div class="price">$4-8/sq ft</div>
+            </div>
+            <div class="option-card selected" data-value="mid" onclick="selectOption('tile-tier', this)">
+              <div class="icon">⭐</div>
+              <div class="name">Popular</div>
+              <div class="price">$8-15/sq ft</div>
+            </div>
+            <div class="option-card" data-value="premium" onclick="selectOption('tile-tier', this)">
+              <div class="icon">💎</div>
+              <div class="name">Premium</div>
+              <div class="price">$15-30/sq ft</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Add-ons -->
+        <div class="calc-section">
+          <h2><span class="step">4</span> Add-ons & Upgrades</h2>
+          <div class="addon-row selected" data-addon="waterproofing" data-cost="800" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Waterproofing (Kerdi/RedGard)</span></div>
+            <div class="addon-price">$800</div>
+          </div>
+          <div class="addon-row" data-addon="niche" data-cost="350" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Shower Niche (recessed shelf)</span></div>
+            <div class="addon-price">$350</div>
+          </div>
+          <div class="addon-row" data-addon="bench" data-cost="650" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Built-in Shower Bench</span></div>
+            <div class="addon-price">$650</div>
+          </div>
+          <div class="addon-row" data-addon="glass" data-cost="1200" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Frameless Glass Enclosure</span></div>
+            <div class="addon-price">$1,200</div>
+          </div>
+          <div class="addon-row" data-addon="fixtures" data-cost="600" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Premium Fixtures (rain head, handheld)</span></div>
+            <div class="addon-price">$600</div>
+          </div>
+          <div class="addon-row" data-addon="lighting" data-cost="450" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>LED Recessed Lighting (3 lights)</span></div>
+            <div class="addon-price">$450</div>
+          </div>
+          <div class="addon-row" data-addon="heated-floor" data-cost="900" onclick="toggleAddon(this)">
+            <div class="addon-info"><div class="addon-check"></div><span>Heated Floor (electric mat)</span></div>
+            <div class="addon-price">$900</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Sidebar -->
+      <div>
+        <div class="results-card">
+          <h3>YOUR ESTIMATE</h3>
+          <div id="result-lines"></div>
+          <div class="result-total">
+            <span>Estimated Total</span>
+            <span class="amount" id="result-total">$0</span>
+          </div>
+          <div class="result-range" id="result-range"></div>
+
+          <a href="/get-a-free-estimate/?source=remodel-calculator" class="cta-btn">Get Free In-Home Estimate</a>
+          <a href="/book/?source=remodel-calculator" class="cta-btn secondary">Book Consultation</a>
+
+          <div class="shop-links">
+            <a href="/marketplace/tile/" class="shop-link">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Shop Tile
+            </a>
+            <a href="/marketplace/slabs/" class="shop-link">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
+              Shop Slabs
+            </a>
+            <a href="/marketplace/sinks/" class="shop-link">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M5 10V6a2 2 0 012-2h10a2 2 0 012 2v4"/></svg>
+              Shop Sinks
+            </a>
+            <a href="/marketplace/faucets/" class="shop-link">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m-7-7h14"/></svg>
+              Shop Faucets
+            </a>
+          </div>
+
+          <div class="email-capture">
+            <p>Save this estimate to your email:</p>
+            <div class="email-row">
+              <input type="email" id="capture-email" placeholder="you@email.com"/>
+              <button onclick="sendEstimateEmail()">Send</button>
+            </div>
+            <div class="email-sent" id="email-sent" style="display:none;">Estimate sent! Check your inbox.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-spacer"></div>
+  <script src="/js/remodely-hub.js"></script>
+  <script>
+    const PRICING = {
+      labor: { shower: 45, 'full-bath': 55, 'tub-to-shower': 50, 'vanity-only': 35 },
+      tile: { budget: { min: 4, max: 8 }, mid: { min: 8, max: 15 }, premium: { min: 15, max: 30 } },
+      counter: { quartz: { min: 55, max: 85 }, granite: { min: 45, max: 75 }, marble: { min: 65, max: 100 }, laminate: { min: 15, max: 30 }, none: { min: 0, max: 0 } },
+      demo: { shower: 600, 'full-bath': 1200, 'tub-to-shower': 900, 'vanity-only': 300 },
+      plumbing: { shower: 800, 'full-bath': 1500, 'tub-to-shower': 1200, 'vanity-only': 500 }
+    };
+
+    function getSelected(groupId) {
+      const sel = document.querySelector(`#${groupId} .option-card.selected`);
+      return sel ? sel.dataset.value : null;
+    }
+
+    function selectOption(groupId, el) {
+      document.querySelectorAll(`#${groupId} .option-card`).forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      calculate();
+    }
+
+    function toggleAddon(el) {
+      el.classList.toggle('selected');
+      calculate();
+    }
+
+    function calculate() {
+      const projectType = getSelected('project-type') || 'shower';
+      const tileTier = getSelected('tile-tier') || 'mid';
+      const showerSqft = parseFloat(document.getElementById('shower-sqft').value) || 0;
+      const floorSqft = parseFloat(document.getElementById('floor-sqft').value) || 0;
+      const vanityIn = parseFloat(document.getElementById('vanity-inches').value) || 0;
+      const counterMat = document.getElementById('counter-material').value;
+
+      const totalTileSqft = showerSqft + (projectType !== 'vanity-only' ? floorSqft : 0);
+      const vanSqft = (vanityIn / 12) * 2; // approx 2ft deep
+
+      // Calculate line items
+      const lines = [];
+      let totalMin = 0, totalMax = 0;
+
+      // Demo
+      const demo = PRICING.demo[projectType] || 600;
+      lines.push({ label: 'Demo & Removal', min: demo, max: demo });
+
+      // Plumbing
+      const plumb = PRICING.plumbing[projectType] || 800;
+      lines.push({ label: 'Plumbing', min: plumb, max: plumb });
+
+      // Tile material
+      const tp = PRICING.tile[tileTier];
+      if (totalTileSqft > 0) {
+        lines.push({ label: `Tile (${totalTileSqft} sq ft)`, min: totalTileSqft * tp.min, max: totalTileSqft * tp.max });
+      }
+
+      // Tile labor
+      const laborRate = PRICING.labor[projectType] || 45;
+      if (totalTileSqft > 0) {
+        lines.push({ label: 'Tile Installation Labor', min: totalTileSqft * (laborRate * 0.8), max: totalTileSqft * laborRate });
+      }
+
+      // Countertop
+      const cp = PRICING.counter[counterMat];
+      if (vanSqft > 0 && cp.max > 0) {
+        lines.push({ label: `${counterMat.charAt(0).toUpperCase() + counterMat.slice(1)} Vanity Top`, min: vanSqft * cp.min, max: vanSqft * cp.max });
+      }
+
+      // Add-ons
+      document.querySelectorAll('.addon-row.selected').forEach(row => {
+        const cost = parseFloat(row.dataset.cost) || 0;
+        const label = row.querySelector('.addon-info span').textContent;
+        lines.push({ label, min: cost, max: cost });
+      });
+
+      // Render
+      const linesHtml = lines.map(l => {
+        totalMin += l.min;
+        totalMax += l.max;
+        const avg = Math.round((l.min + l.max) / 2);
+        return `<div class="result-line"><span>${l.label}</span><span>$${avg.toLocaleString()}</span></div>`;
+      }).join('');
+
+      document.getElementById('result-lines').innerHTML = linesHtml;
+      const avg = Math.round((totalMin + totalMax) / 2);
+      document.getElementById('result-total').textContent = '$' + avg.toLocaleString();
+      document.getElementById('result-range').textContent = `Range: $${Math.round(totalMin).toLocaleString()} – $${Math.round(totalMax).toLocaleString()}`;
+    }
+
+    async function sendEstimateEmail() {
+      const email = document.getElementById('capture-email').value.trim();
+      if (!email || !email.includes('@')) { return; }
+      try {
+        const total = document.getElementById('result-total').textContent;
+        const range = document.getElementById('result-range').textContent;
+        const projectType = getSelected('project-type') || 'shower';
+        const lines = document.getElementById('result-lines').innerText;
+
+        // Send via API
+        await fetch('https://surprise-granite-email-api.onrender.com/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to_email: email,
+            to_name: '',
+            subject: 'Your Bathroom Remodel Estimate - Surprise Granite',
+            message: `Here's your bathroom remodel estimate:\n\nProject: ${projectType.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}\nEstimated Total: ${total}\n${range}\n\nBreakdown:\n${lines}\n\n---\nReady to get started? Book a free in-home estimate:\nhttps://www.surprisegranite.com/get-a-free-estimate/?source=remodel-calculator\n\nOr call us: (602) 833-3189\n\nSurprise Granite - Premium Countertops & Remodeling`,
+            sender_name: 'Surprise Granite'
+          })
+        });
+
+        // Also create a lead
+        await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            source: 'remodel-calculator',
+            form_name: 'remodel-calculator',
+            project_type: projectType.replace('-', ' '),
+            message: `Remodel Calculator Estimate: ${total} (${range})`,
+            page_url: window.location.href
+          })
+        });
+
+        document.getElementById('email-sent').style.display = 'block';
+        document.getElementById('capture-email').value = '';
+      } catch (err) {
+        console.error('Email send error:', err);
+      }
+    }
+
+    // Initialize
+    calculate();
+  </script>
+</body>
+</html>
