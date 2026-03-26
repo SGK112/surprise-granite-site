@@ -217,7 +217,7 @@
       }
     }
 
-    async function waitForAuth(timeoutMs = 10000) {
+    async function waitForAuth(timeoutMs = 5000) {
       console.log('[Auth] waitForAuth called, authReady:', authReady);
       if (authReady) return true;
       if (authReadyPromise) {
@@ -5211,82 +5211,78 @@
 
       console.log('[showPage] Loading data for page:', page);
 
-      // Load data based on page - wrapped in try-catch to prevent silent failures
+      // Load data with timeout to prevent hanging — if a loader takes >15s, show error
+      async function loadWithTimeout(fn, label) {
+        try {
+          await Promise.race([
+            fn(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Loading timed out')), 15000))
+          ]);
+        } catch (err) {
+          console.error(`[showPage] ${label} failed:`, err.message);
+          showToast(`${label} loading issue — try refreshing`, 'warning');
+        }
+      }
+
       try {
-        // Load estimates when that page is shown
         if (page === 'estimates') {
-          await loadEstimates();
+          await loadWithTimeout(loadEstimates, 'Estimates');
         }
 
-        // Load invoices when that page is shown
         if (page === 'invoices') {
-          await loadInvoices();
+          await loadWithTimeout(loadInvoices, 'Invoices');
         }
 
-        // Load leads when that page is shown
         if (page === 'leads') {
-          await loadLeads();
+          await loadWithTimeout(loadLeads, 'Leads');
         }
 
-        // Load favorites when that page is shown
         if (page === 'favorites') {
-          await loadFavorites();
+          await loadWithTimeout(loadFavorites, 'Favorites');
         }
 
-        // Load my designs when that page is shown
         if (page === 'my-designs') {
-          await loadMyDesigns();
+          await loadWithTimeout(loadMyDesigns, 'Designs');
         }
 
-        // Load listings when that page is shown
         if (page === 'listings') {
-          await loadMyListings();
+          await loadWithTimeout(loadMyListings, 'Listings');
         }
 
-        // Load jobs when that page is shown
         if (page === 'jobs') {
-          await loadJobs();
+          await loadWithTimeout(loadJobs, 'Jobs');
         }
 
-        // Load projects when that page is shown
         if (page === 'projects') {
-          await loadProjects();
+          await loadWithTimeout(loadProjects, 'Projects');
         }
 
-        // Load orders when that page is shown
         if (page === 'orders') {
-          await loadOrders();
+          await loadWithTimeout(loadOrders, 'Orders');
         }
 
-        // Load collaborators when that page is shown
         if (page === 'collaborators') {
-          await loadCollaborators();
+          await loadWithTimeout(loadCollaborators, 'Collaborators');
         }
 
-        // Load calendar when that page is shown - optimized for speed
         if (page === 'calendar') {
           renderCalendar(); // Show empty grid immediately
-          // Load job events first (clears array), then custom events (merges)
-          await loadCalendarEvents();
-          await loadAllCalendarEvents();
+          await loadWithTimeout(loadCalendarEvents, 'Calendar');
+          await loadWithTimeout(loadAllCalendarEvents, 'Events');
         }
 
-        // Load customers when that page is shown
         if (page === 'customers') {
-          await loadCustomers();
+          await loadWithTimeout(loadCustomers, 'Customers');
         }
 
-        // Load messages when that page is shown
         if (page === 'messages') {
-          await loadConversations();
+          await loadWithTimeout(loadConversations, 'Messages');
         }
 
-        // Load collaborations when that page is shown
         if (page === 'collaborations') {
-          await loadCollaborations();
-          // Also load network count and invitations count for badges
-          await loadMyNetwork();
-          await loadReceivedInvitations();
+          await loadWithTimeout(loadCollaborations, 'Collaborations');
+          await loadWithTimeout(loadMyNetwork, 'Network');
+          await loadWithTimeout(loadReceivedInvitations, 'Invitations');
         }
       } catch (err) {
         console.error('[showPage] Error loading data for', page, err);
@@ -17269,9 +17265,9 @@
                   View Invoice
                 </button>
               ` : (estimate.status === 'approved' || estimate.status === 'sent') ? `
-                <button class="btn-modern success small" onclick="convertToInvoice('${estimate.id}')" style="background: #22c55e;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  Convert to Invoice
+                <button class="btn-modern small" onclick="convertToInvoice('${estimate.id}')" style="background: #22c55e; color: white;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Invoice
                 </button>
               ` : ''}
               <button class="btn-modern secondary small" onclick="duplicateEstimate('${estimate.id}')">
