@@ -132,7 +132,7 @@
   overlay.innerHTML = [
     '<div class="sq-iq-header"><h3>Instant Quote</h3><button class="sq-iq-close" aria-label="Close">&times;</button></div>',
     '<div class="sq-iq-body"></div>',
-    '<div class="sq-iq-footer"><a href="https://www.surprisegranite.com" target="_blank" rel="noopener">Powered by Surprise Granite</a></div>'
+    '<div class="sq-iq-footer"><a href="https://remodely.ai" target="_blank" rel="noopener">Powered by Remodely AI</a></div>'
   ].join('');
   document.body.appendChild(overlay);
 
