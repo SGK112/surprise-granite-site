@@ -5,23 +5,7 @@
 (function () {
   'use strict';
 
-  /* ── dismiss memory ─────────────────────────────────────────────── */
-  var DISMISS_KEY = 'sq_iq_dismissed';
-
-  function wasDismissed() {
-    try {
-      // Only dismiss for current browser session, not 24 hours
-      return sessionStorage.getItem(DISMISS_KEY) === '1';
-    } catch (e) { return false; }
-  }
-  function markDismissed() {
-    try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
-  }
-
-  // Clear legacy 24h dismiss from localStorage (we now use sessionStorage)
-  try { localStorage.removeItem(DISMISS_KEY); } catch(e) {}
-
-  if (wasDismissed()) return;
+  // No dismiss — widget always shows. Close just hides it on current page.
 
   /* ── pricing table (installed, $/sq ft) ─────────────────────────── */
   var PRICING = {
@@ -331,14 +315,13 @@
     btn.style.display = 'none';
   }
 
-  function close(remember) {
+  function close() {
     overlay.classList.remove('sq-open');
     btn.style.display = '';
-    if (remember) markDismissed();
   }
 
   btn.addEventListener('click', open);
-  closeBtn.addEventListener('click', function () { close(true); });
+  closeBtn.addEventListener('click', function () { close(); });
 
   // close on Escape
   document.addEventListener('keydown', function (e) {
