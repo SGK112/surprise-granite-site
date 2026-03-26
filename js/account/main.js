@@ -7347,8 +7347,8 @@
 
         if (error) throw error;
 
-        // Sync to VoiceNow CRM (fire-and-forget)
-        if (!editingLeadId && data?.id) {
+        // Sync to VoiceNow CRM (fire-and-forget) — both creates and updates
+        if (data?.id) {
           syncLeadToCRM(data);
         }
 
@@ -7740,7 +7740,10 @@
         if (error) throw error;
 
         const idx = allLeads.findIndex(l => l.id === selectedLead.id);
-        if (idx !== -1) allLeads[idx].status = newStatus;
+        if (idx !== -1) {
+          allLeads[idx].status = newStatus;
+          syncLeadToCRM(allLeads[idx]); // Sync status change to VoiceNow
+        }
 
         updateStats();
         renderLeads();
@@ -9173,6 +9176,10 @@
 
         closeEditCustomerModal();
         showToast(selectedCustomer ? 'Customer updated!' : 'Customer added!');
+
+        // Sync customer to VoiceNow CRM
+        if (result.data) syncCustomerToCRM(result.data);
+
         await loadCustomers();
 
         // If we were viewing this customer, refresh the view
@@ -10495,6 +10502,65 @@
       }).catch(err => {
         console.warn('[CRM] VoiceNow invoice sync error:', err.message);
       });
+    }
+
+    // Sync customer to VoiceNow CRM as a lead (CRM uses leads as the universal contact)
+    function syncCustomerToCRM(customer) {
+      if (!customer?.id) return;
+      syncLeadToCRM({
+        id: customer.id,
+        full_name: customer.name || customer.full_name,
+        email: customer.email,
+        phone: customer.phone,
+        source: 'customer-account',
+        status: 'won',
+        billing_address: customer.billing_address || customer.address,
+        notes: customer.notes,
+        project_type: customer.project_type
+      });
+    }
+
+    // Sync appointment/calendar event to VoiceNow CRM
+    function syncAppointmentToCRM(event) {
+      if (!event?.id) return;
+      fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: event.id,
+          full_name: event.customer_name || event.title,
+          email: event.customer_email,
+          phone: event.customer_phone,
+          source: 'appointment',
+          status: 'contacted',
+          message: `Appointment: ${event.title || 'Scheduled'}\nDate: ${event.start_date || event.date}\nTime: ${event.start_time || ''}\nType: ${event.event_type || 'appointment'}`,
+          raw_data: { appointment: event }
+        })
+      }).then(r => {
+        if (r.ok) console.log('[CRM] Appointment synced:', event.id);
+      }).catch(err => console.warn('[CRM] Appointment sync error:', err.message));
+    }
+
+    // Sync job/project to VoiceNow CRM
+    function syncJobToCRM(job) {
+      if (!job?.id) return;
+      fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: job.id,
+          full_name: job.customer_name,
+          email: job.customer_email,
+          phone: job.customer_phone,
+          source: 'job',
+          status: 'won',
+          project_type: job.job_type || job.description,
+          message: `Job: ${job.job_number || ''} ${job.description || ''}\nStatus: ${job.status || 'active'}`,
+          raw_data: { job: { id: job.id, job_number: job.job_number, status: job.status, description: job.description } }
+        })
+      }).then(r => {
+        if (r.ok) console.log('[CRM] Job synced:', job.id);
+      }).catch(err => console.warn('[CRM] Job sync error:', err.message));
     }
 
     // Fetch with timeout - prevents hanging when Render API is cold-starting
@@ -14153,6 +14219,10 @@
           phone: invoice.customer_phone,
           name: invoice.customer_name
         });
+
+        // Sync paid invoice and new job to VoiceNow CRM
+        syncInvoiceToCRM({ ...invoice, status: 'paid', amount_paid: invoice.total });
+        if (newJob) syncJobToCRM(newJob);
 
         showToast('Invoice marked as paid! Job created.');
         await loadInvoices();
@@ -18295,6 +18365,9 @@
           }
           estimate = updated;
 
+          // Sync updated estimate to VoiceNow CRM
+          if (updated) syncEstimateToCRM(updated);
+
           // Replace line items: delete old, insert new
           await supabaseClient.from('estimate_items').delete().eq('estimate_id', isEditing);
         } else {
@@ -22424,6 +22497,10 @@
 
         closeNewJobModal();
         showToast('Job created successfully!');
+
+        // Sync job to VoiceNow CRM
+        syncJobToCRM(jobData);
+
         await loadJobs();
       } catch (err) {
         console.error('Create job error:', err);
@@ -28662,6 +28739,18 @@
           } catch (leadErr) {
             console.warn('Could not update lead status:', leadErr.message);
           }
+        }
+
+        // Sync to VoiceNow CRM
+        if (savedEvent) {
+          syncAppointmentToCRM({
+            ...savedEvent,
+            customer_name: contactName,
+            customer_email: contactEmail,
+            customer_phone: contactPhone,
+            date: startDate,
+            start_time: startTime
+          });
         }
 
         showToast(eventId ? 'Event updated!' : 'Event created!', 'success');
