@@ -32520,15 +32520,198 @@ Surprise Granite</textarea>
     }
 
     function addCatalogItemToEstimate(item) {
-      addEstimateLineItem({
+      addEstimateLineItem('material', {
         name: item.name,
         description: item.description,
-        unit_type: item.unit,
+        unit: item.unit || 'sqft',
         quantity: 1,
         price: item.default_price
       });
       document.getElementById('catalog-picker-modal')?.remove();
     }
+
+    // ==================== PRODUCT PICKER FOR ESTIMATES ====================
+    let _productPickerData = null;
+
+    async function openProductPicker() {
+      // Load product data if not cached
+      if (!_productPickerData) {
+        showToast('Loading products...', 'info');
+        try {
+          const [stoneResp, floorResp, tileResp] = await Promise.all([
+            fetch('/tools/room-designer/stone-pricing.json').then(r => r.ok ? r.json() : {}),
+            fetch('/data/flooring-with-pricing.json').then(r => r.ok ? r.json() : []),
+            fetch('/data/tile.json').then(r => r.ok ? r.json() : [])
+          ]);
+
+          const products = [];
+
+          // Stone products (granite, quartz, marble, etc.)
+          for (const [category, items] of Object.entries(stoneResp)) {
+            if (!Array.isArray(items)) continue;
+            items.forEach(item => {
+              if (!item.name) return;
+              products.push({
+                name: item.name,
+                brand: item.brand || '',
+                category: category.charAt(0).toUpperCase() + category.slice(1),
+                type: 'countertop',
+                price: item.price || 0,
+                unit: 'sqft',
+                image: item.thumbnail || item.primaryImage || '',
+                description: `${item.brand || ''} ${category} - ${item.color || ''}`.trim()
+              });
+            });
+          }
+
+          // Flooring products
+          const floorItems = Array.isArray(floorResp) ? floorResp : (floorResp.flooring || []);
+          floorItems.forEach(item => {
+            if (!item.name) return;
+            products.push({
+              name: item.name,
+              brand: item.brand || item.vendor || '',
+              category: 'Flooring',
+              type: 'flooring',
+              price: item.wholesale_cost_sf || item.price || 0,
+              unit: 'sqft',
+              image: item.primaryImage || '',
+              description: `${item.brand || ''} ${item.type || 'Flooring'} - ${item.primaryColor || ''}`.trim()
+            });
+          });
+
+          // Tile products
+          const tiles = Array.isArray(tileResp) ? tileResp : [];
+          tiles.forEach(item => {
+            if (!item.title) return;
+            products.push({
+              name: item.title,
+              brand: item.vendor || '',
+              category: 'Tile',
+              type: 'tile',
+              price: parseFloat(item.price) || 0,
+              unit: 'sqft',
+              image: (item.images && item.images[0]) || '',
+              description: `${item.vendor || ''} ${item.productType || 'Tile'}`.trim()
+            });
+          });
+
+          // Common labor/service items
+          const services = [
+            { name: 'Countertop Template', category: 'Labor', type: 'labor', price: 150, unit: 'job', description: 'On-site laser template measurement' },
+            { name: 'Countertop Fabrication', category: 'Labor', type: 'labor', price: 35, unit: 'sqft', description: 'CNC cutting, polishing, edge profiling' },
+            { name: 'Countertop Installation', category: 'Labor', type: 'labor', price: 15, unit: 'sqft', description: 'Professional installation with seams and caulk' },
+            { name: 'Sink Cutout', category: 'Labor', type: 'labor', price: 200, unit: 'each', description: 'Undermount or drop-in sink cutout' },
+            { name: 'Cooktop Cutout', category: 'Labor', type: 'labor', price: 250, unit: 'each', description: 'Cooktop/range cutout in countertop' },
+            { name: 'Edge Profile - Standard', category: 'Labor', type: 'labor', price: 8, unit: 'lnft', description: 'Eased or beveled edge' },
+            { name: 'Edge Profile - Premium', category: 'Labor', type: 'labor', price: 18, unit: 'lnft', description: 'Ogee, bullnose, or waterfall edge' },
+            { name: 'Backsplash Installation', category: 'Labor', type: 'labor', price: 12, unit: 'sqft', description: 'Tile backsplash install with grout' },
+            { name: 'Plumbing Disconnect/Reconnect', category: 'Labor', type: 'labor', price: 250, unit: 'each', description: 'Sink plumbing disconnect and reconnect' },
+            { name: 'Demo & Removal', category: 'Labor', type: 'labor', price: 8, unit: 'sqft', description: 'Remove existing countertop and haul away' },
+            { name: 'Sealer Application', category: 'Service', type: 'service', price: 4, unit: 'sqft', description: '15-year penetrating stone sealer' },
+            { name: 'Delivery Fee', category: 'Service', type: 'service', price: 0, unit: 'job', description: 'Material delivery to job site' },
+            { name: 'Permit Fee', category: 'Service', type: 'service', price: 250, unit: 'each', description: 'Building permit if required' },
+            { name: 'Waterproofing', category: 'Service', type: 'service', price: 800, unit: 'job', description: 'Kerdi/RedGard waterproofing for shower' },
+            { name: 'Frameless Glass Enclosure', category: 'Service', type: 'service', price: 1200, unit: 'each', description: 'Frameless shower glass door and panel' },
+          ];
+          products.push(...services.map(s => ({ ...s, brand: 'Surprise Granite', image: '' })));
+
+          _productPickerData = products;
+          console.log(`[ProductPicker] Loaded ${products.length} products`);
+        } catch (err) {
+          console.error('[ProductPicker] Load error:', err);
+          showToast('Error loading products', 'error');
+          return;
+        }
+      }
+
+      // Build picker modal
+      const existing = document.getElementById('product-picker-modal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'product-picker-modal';
+      modal.className = 'modal-overlay';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10100;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      const categories = [...new Set(_productPickerData.map(p => p.category))].sort();
+
+      modal.innerHTML = `
+        <div style="background:var(--dark-surface,#1e1e2d);border-radius:16px;width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;color:#fff;overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:18px;font-weight:700;margin:0;">Add Product to Estimate</h3>
+            <button onclick="document.getElementById('product-picker-modal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;">&times;</button>
+          </div>
+          <div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="pp-search" type="text" placeholder="Search products..." oninput="filterProductPicker()" style="flex:1;min-width:200px;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;" />
+            <select id="pp-category" onchange="filterProductPicker()" style="padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;">
+              <option value="">All Categories</option>
+              ${categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+            </select>
+          </div>
+          <div id="pp-results" style="flex:1;overflow-y:auto;padding:12px 20px;-webkit-overflow-scrolling:touch;"></div>
+          <div style="padding:12px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.4);text-align:center;">
+            Click a product to add it to your estimate
+          </div>
+        </div>`;
+
+      document.body.appendChild(modal);
+      document.getElementById('pp-search').focus();
+      filterProductPicker();
+    }
+    window.openProductPicker = openProductPicker;
+
+    window.filterProductPicker = function() {
+      const search = (document.getElementById('pp-search')?.value || '').toLowerCase();
+      const cat = document.getElementById('pp-category')?.value || '';
+      const results = document.getElementById('pp-results');
+      if (!results || !_productPickerData) return;
+
+      let filtered = _productPickerData;
+      if (cat) filtered = filtered.filter(p => p.category === cat);
+      if (search) filtered = filtered.filter(p =>
+        (p.name || '').toLowerCase().includes(search) ||
+        (p.brand || '').toLowerCase().includes(search) ||
+        (p.description || '').toLowerCase().includes(search)
+      );
+
+      // Limit to 100 for performance
+      const shown = filtered.slice(0, 100);
+      const remaining = filtered.length - shown.length;
+
+      results.innerHTML = shown.map((p, i) => `
+        <div onclick="addProductToEstimate(${i})" style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='transparent'">
+          ${p.image ? `<img src="${escapeHtml(p.image)}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'" />` : '<div style="width:48px;height:48px;border-radius:6px;background:rgba(255,255,255,.08);flex-shrink:0;"></div>'}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5);">${escapeHtml(p.brand)}${p.category ? ' &middot; ' + escapeHtml(p.category) : ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:15px;font-weight:700;color:#f9cb00;">$${(p.price || 0).toFixed(2)}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);">/${p.unit || 'each'}</div>
+          </div>
+        </div>
+      `).join('') + (remaining > 0 ? `<div style="text-align:center;padding:16px;color:rgba(255,255,255,.4);font-size:13px;">+${remaining} more — refine your search</div>` : '');
+
+      // Store filtered list for click handler
+      window._ppFiltered = shown;
+    };
+
+    window.addProductToEstimate = function(idx) {
+      const p = window._ppFiltered?.[idx];
+      if (!p) return;
+      const catMap = { countertop: 'material', flooring: 'material', tile: 'material', labor: 'labor', service: 'service' };
+      addEstimateLineItem(catMap[p.type] || 'material', {
+        name: p.name,
+        description: p.description || '',
+        unit: p.unit || 'sqft',
+        quantity: 1,
+        price: p.price || 0
+      });
+      document.getElementById('product-picker-modal')?.remove();
+      showToast(`Added: ${p.name}`, 'success');
+    };
 
     // ==================== GOD MODE FUNCTIONS ====================
     // Only accessible to joshb@surprisegranite.com
