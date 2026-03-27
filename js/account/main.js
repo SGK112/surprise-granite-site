@@ -10587,12 +10587,42 @@
         const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed = JSON.parse(raw);
-          return parsed?.access_token || null;
+          const token = parsed?.access_token;
+          if (token) {
+            // Check if token is expired by decoding JWT payload
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              const expiresAt = payload.exp * 1000;
+              if (Date.now() < expiresAt - 30000) { // 30s buffer
+                return token;
+              }
+              // Token expired or about to expire — fall through to getSession
+              console.log('[getAuthToken] Token expired, refreshing...');
+            } catch (e) {
+              return token; // Can't decode, use as-is
+            }
+          }
         }
       } catch (e) {
         console.warn('[getAuthToken] Could not read token from storage:', e);
       }
       return null;
+    }
+
+    // Async version that refreshes expired tokens
+    async function getAuthTokenAsync() {
+      const cached = getAuthToken();
+      if (cached) return cached;
+      // Token expired — get a fresh one via getSession (with short timeout)
+      try {
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+        const sessionPromise = supabaseClient.auth.getSession();
+        const { data: { session } } = await Promise.race([sessionPromise, timeout]);
+        return session?.access_token || null;
+      } catch (e) {
+        console.warn('[getAuthTokenAsync] Could not refresh token:', e.message);
+        return null;
+      }
     }
 
     // Reusable API call helper - auto-includes Supabase JWT auth token
@@ -10604,7 +10634,8 @@
         return new Response(JSON.stringify({ collaborations: [] }), { status: 200 });
       }
 
-      const token = getAuthToken();
+      // Use cached token, fall back to async refresh if expired
+      const token = getAuthToken() || await getAuthTokenAsync();
 
       return fetchWithTimeout(`${API_URL}${endpoint}`, {
         ...options,
