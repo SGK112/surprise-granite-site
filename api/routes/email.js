@@ -17,12 +17,14 @@ const emailService = require('../services/emailService');
 // Email configuration
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+const FROM_EMAIL = process.env.FROM_EMAIL || process.env.EMAIL_USER || 'info@surprisegranite.com';
 
 // Create transporter
+const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
@@ -72,7 +74,7 @@ router.post('/test', asyncHandler(async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: 'Test Email from ' + COMPANY.name,
       html: `
@@ -135,7 +137,7 @@ router.post('/notify', asyncHandler(async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: sanitizeString(subject, 200),
       html
@@ -184,7 +186,7 @@ router.post('/send', asyncHandler(async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"Surprise Granite" <${SMTP_USER}>`,
+      from: `"Surprise Granite" <${FROM_EMAIL}>`,
       to,
       subject: sanitizeString(subject, 200),
       html,
@@ -255,7 +257,7 @@ router.post('/contact', asyncHandler(async (req, res) => {
     // Send to admin
     if (SMTP_USER) {
       await transporter.sendMail({
-        from: `"${COMPANY.name} Website" <${SMTP_USER}>`,
+        from: `"${COMPANY.name} Website" <${FROM_EMAIL}>`,
         to: adminEmail,
         replyTo: email,
         subject: `Contact Form: ${subject || 'New Message'} from ${sanitizeString(name, 50)}`,
@@ -276,7 +278,7 @@ router.post('/contact', asyncHandler(async (req, res) => {
 
     if (SMTP_USER) {
       await transporter.sendMail({
-        from: `"${COMPANY.name}" <${SMTP_USER}>`,
+        from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
         to: email,
         subject: `Thank you for contacting ${COMPANY.name}`,
         html: confirmHtml
@@ -519,7 +521,7 @@ router.post('/invoice-reminder', asyncHandler(async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to: customer_email,
       subject: `${urgencyText}: Invoice #${invoiceNum} - $${amount.toFixed(2)} Due`,
       html: emailHtml
@@ -781,7 +783,7 @@ router.post('/daily-digest', asyncHandler(async (req, res) => {
 
     // Send the email
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to: email,
       subject: `Your Daily Digest - ${todayFormatted}`,
       html
@@ -959,7 +961,7 @@ router.post('/workflow-invite', asyncHandler(async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: subject || `📅 Project Schedule - ${events.length} Event${events.length > 1 ? 's' : ''} Confirmed`,
       html
@@ -1036,7 +1038,7 @@ router.post('/send-estimate', asyncHandler(async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: `Your Estimate from ${COMPANY.name}${estimate_number ? ' - ' + estimate_number : ''}`,
       html
@@ -1116,7 +1118,7 @@ router.post('/send-invoice', asyncHandler(async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: `Invoice from ${COMPANY.name}${invoice_number ? ' - ' + invoice_number : ''}`,
       html
@@ -1186,7 +1188,7 @@ router.post('/send-invoice-reminder', asyncHandler(async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
       to,
       subject: `Payment Reminder - Invoice${invoice_number ? ' ' + invoice_number : ''} Overdue`,
       html
