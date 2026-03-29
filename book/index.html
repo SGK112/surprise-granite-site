@@ -1613,25 +1613,26 @@
         console.log('Could not send notification, appointment saved to database');
       }
 
-      // Also send to CRM webhook
-      try {
-        await fetch('https://voiceflow-crm.onrender.com/api/webhooks/website-lead', {
+      // Sync to CRM with retry
+      (function syncCRM(attempt) {
+        attempt = attempt || 1;
+        fetch('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: data.full_name || data.name,
+            full_name: data.full_name || data.name,
             email: data.email,
             phone: data.phone,
             project_type: data.project_type,
             source: 'Booking Calendar',
-            message: data.message,
-            appointment_date: data.raw_data?.preferred_date,
-            appointment_time: data.raw_data?.preferred_time
+            message: data.message
           })
+        }).then(function(r) {
+          if (!r.ok && attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
+        }).catch(function() {
+          if (attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
         });
-      } catch (e) {
-        console.log('CRM webhook failed');
-      }
+      })();
     }
 
   </script>

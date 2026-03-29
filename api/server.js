@@ -3481,8 +3481,24 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'Surprise Granite API' });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+app.get('/health', async (req, res) => {
+  const checks = { status: 'healthy', timestamp: new Date().toISOString() };
+  // Check CRM reachability
+  try {
+    const r = await fetch(`${VOICENOW_CRM_URL}/health`, { signal: AbortSignal.timeout(5000) });
+    checks.crm = r.ok ? 'ok' : 'degraded';
+  } catch (e) { checks.crm = 'down'; }
+  // Check Supabase
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('leads').select('id').limit(1);
+      checks.supabase = error ? 'error' : 'ok';
+    } catch (e) { checks.supabase = 'down'; }
+  }
+  // Check email (SMTP verified flag from email routes)
+  checks.email = process.env.SMTP_USER ? 'configured' : 'not_configured';
+  if (checks.crm === 'down' || checks.supabase === 'down') checks.status = 'degraded';
+  res.json(checks);
 });
 
 // ============ CALENDAR BOOKING (PUBLIC) ============
@@ -3800,7 +3816,12 @@ function syncToCRM(endpoint, data, attempt = 1) {
 }
 
 // ============ BATCH SYNC RECENT LEADS TO CRM ============
+const CRM_SYNC_KEY = process.env.CRM_SYNC_KEY || 'sg_crm_sync_2026';
 app.post('/api/crm-sync/leads', async (req, res) => {
+  const authKey = req.headers['x-sync-key'] || req.body.key;
+  if (authKey !== CRM_SYNC_KEY) {
+    return res.status(401).json({ error: 'Invalid sync key' });
+  }
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   try {
     const since = req.body.since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -3828,6 +3849,39 @@ app.post('/api/crm-sync/leads', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ============ SCHEDULED CRM CATCHUP (every 30 min) ============
+if (supabase) {
+  async function crmCatchupSync() {
+    try {
+      const since = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // last hour
+      const { data: leads, error } = await supabase
+        .from('leads')
+        .select('*')
+        .gte('created_at', since)
+        .order('created_at', { ascending: true });
+      if (error || !leads?.length) return;
+      let synced = 0;
+      for (const lead of leads) {
+        try {
+          const r = await fetch(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lead)
+          });
+          if (r.ok) synced++;
+        } catch (e) { /* continue */ }
+      }
+      if (synced > 0) logger.info(`[CRM Catchup] Synced ${synced}/${leads.length} leads from last hour`);
+    } catch (e) {
+      logger.error('[CRM Catchup] Error:', e.message);
+    }
+  }
+  // Run every 30 minutes
+  setInterval(crmCatchupSync, 30 * 60 * 1000);
+  // Run once 60s after startup
+  setTimeout(crmCatchupSync, 60 * 1000);
+}
 
 // ============ LEAD NOTIFICATION (admin email + safety net save) ============
 app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {

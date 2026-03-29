@@ -2187,10 +2187,8 @@
       document.getElementById('dashboard-app').style.display = 'block';
       setupDashboard();
 
-      // Check QuickBooks connection status
-      if (typeof checkQuickBooksStatus === 'function') {
-        checkQuickBooksStatus();
-      }
+      // QuickBooks disabled — not connected, skip to avoid 401 noise
+      // if (typeof checkQuickBooksStatus === 'function') checkQuickBooksStatus();
 
       // Initialize StateManager with current user and sync all persisted data
       if (typeof StateManager !== 'undefined') {

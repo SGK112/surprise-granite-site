@@ -1737,25 +1737,26 @@ END:VCALENDAR`;
           console.log('API submit error:', e);
         }
 
-        // Submit to CRM webhook
-        try {
-          await fetch('https://voiceflow-crm.onrender.com/api/webhooks/website-lead', {
+        // Sync to CRM with retry
+        (function syncCRM(attempt) {
+          attempt = attempt || 1;
+          fetch('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              name: name,
+              full_name: name,
               email: email,
               phone: phone,
               project_type: SERVICE_LABELS[selectedService],
               source: 'Appointment Booking Page',
-              message: leadData.message,
-              appointment_date: appointmentDate,
-              appointment_time: selectedTime
+              message: leadData.message
             })
+          }).then(function(r) {
+            if (!r.ok && attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
+          }).catch(function() {
+            if (attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
           });
-        } catch (e) {
-          console.log('CRM webhook error:', e);
-        }
+        })();
 
         // Create calendar event via local API
         try {
