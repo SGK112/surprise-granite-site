@@ -29,6 +29,16 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify SMTP credentials on startup
+let smtpVerified = false;
+if (SMTP_USER && SMTP_PASS) {
+  transporter.verify()
+    .then(() => { smtpVerified = true; logger.info('[Email] SMTP credentials verified OK'); })
+    .catch(err => { smtpVerified = false; logger.error('[Email] SMTP credentials INVALID — emails will fail. Error: ' + err.message); });
+} else {
+  logger.warn('[Email] SMTP_USER or SMTP_PASS not set — emails disabled');
+}
+
 // Company info
 const COMPANY = emailService.COMPANY || {
   name: 'Surprise Granite',
@@ -48,8 +58,8 @@ router.post('/test', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Valid email address required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   try {
@@ -90,8 +100,8 @@ router.post('/notify', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Subject and message are required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   let html;
@@ -145,8 +155,8 @@ router.post('/send', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Subject and message body are required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated. Generate a new Gmail App Password for ' + (SMTP_USER || 'info@surprisegranite.com') });
   }
 
   // Build professional HTML email
@@ -397,8 +407,8 @@ router.post('/invoice-reminder', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Valid customer email required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   const name = customer_name || 'Valued Customer';
@@ -531,8 +541,8 @@ router.post('/daily-digest', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'User ID required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   // Import Supabase client
@@ -971,8 +981,8 @@ router.post('/send-estimate', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Estimate URL required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   try {
@@ -1048,8 +1058,8 @@ router.post('/send-invoice', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invoice URL required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   try {
@@ -1124,8 +1134,8 @@ router.post('/send-invoice-reminder', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Valid email address required' });
   }
 
-  if (!SMTP_USER) {
-    return res.status(500).json({ error: 'Email not configured' });
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable — SMTP credentials need to be updated' });
   }
 
   try {

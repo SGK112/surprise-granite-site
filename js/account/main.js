@@ -6002,8 +6002,10 @@
           throw new Error(result.error || 'Failed to send email');
         }
       } catch (err) {
-        console.error('Email send error:', err);
-        showToast('Failed to send email: ' + err.message, 'error');
+        const msg = err.message.includes('SMTP') || err.message.includes('unavailable')
+          ? 'Email service is down — Gmail App Password needs to be regenerated in Google Account settings'
+          : 'Failed to send email: ' + err.message;
+        showToast(msg, 'error');
         btn.disabled = false;
         btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Email';
       }
@@ -11956,9 +11958,18 @@
     // Check QuickBooks connection status
     async function checkQuickBooksStatus() {
       try {
+        const token = await getAuthTokenAsync();
+        if (!token) {
+          qboConnected = false;
+          return;
+        }
         const response = await fetchWithTimeout(`${API_BASE}/api/quickbooks/status`, {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) {
+          qboConnected = false;
+          return;
+        }
         const data = await response.json();
         qboConnected = data.connected;
         updateQuickBooksUI();
