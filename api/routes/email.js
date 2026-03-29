@@ -29,6 +29,9 @@ const transporter = nodemailer.createTransport({
     user: SMTP_USER,
     pass: SMTP_PASS
   }
+}, {
+  // Default replyTo for all emails — ensures replies go to real address
+  replyTo: process.env.ADMIN_EMAIL || 'info@surprisegranite.com'
 });
 
 // Verify SMTP credentials on startup and periodically retry
