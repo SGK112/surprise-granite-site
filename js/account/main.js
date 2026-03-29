@@ -16934,7 +16934,7 @@
     async function sendQuickPaySMS() {
       const smsText = `Hi ${quickPayData.name}! Here's your payment link for $${quickPayData.amount.toFixed(2)}: ${quickPayData.url} - Surprise Granite`;
       const rawPhone = quickPayData.phone ? quickPayData.phone.replace(/\D/g, '') : '';
-      const phone = rawPhone ? (rawPhone.length === 10 ? '+1' + rawPhone : (rawPhone.startsWith('1') && rawPhone.length === 11 ? '+' + rawPhone : '+' + rawPhone)) : '';
+      const phone = rawPhone.length === 10 ? '+1' + rawPhone : (rawPhone.length === 11 && rawPhone.startsWith('1') ? '+' + rawPhone : '');
 
       // If we have a phone number, try to send via VoiceNow CRM first
       if (phone) {
