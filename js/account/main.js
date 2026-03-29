@@ -2259,7 +2259,6 @@
 
     function initShepherdTours() {
       if (typeof Shepherd === 'undefined') {
-        console.warn('[Tutorial] Shepherd.js not loaded');
         return;
       }
 
@@ -2496,7 +2495,6 @@
     // Start a specific tour
     function startTour(tourName) {
       if (!shepherdTours[tourName]) {
-        console.warn('[Tutorial] Tour not found:', tourName);
         return;
       }
 
@@ -11965,7 +11963,6 @@
         qboConnected = data.connected;
         updateQuickBooksUI();
       } catch (e) {
-        console.log('QuickBooks status check failed:', e);
         qboConnected = false;
       }
     }

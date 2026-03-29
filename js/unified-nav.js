@@ -492,7 +492,6 @@
       el.removeAttribute('data-nav-menu-open');
     });
 
-    console.log('Old navigation elements removed');
   }
 
   // Intercept Webflow hamburger button clicks and redirect to unified nav

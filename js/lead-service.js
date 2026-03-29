@@ -80,7 +80,10 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(result[0] || lead)
-        }).catch(() => {});
+        }).then(r => {
+          if (!r.ok) console.warn('[LeadService] CRM sync failed:', r.status);
+          else console.log('[LeadService] Lead synced to CRM');
+        }).catch(err => console.warn('[LeadService] CRM sync error:', err.message));
       } catch (e) { /* silent */ }
 
       // Send admin notification (fire-and-forget)
