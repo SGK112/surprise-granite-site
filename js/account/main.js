@@ -10457,18 +10457,21 @@
     // VoiceNow CRM API for payments, SMS, and advanced features
     const VOICENOW_API = 'https://voiceflow-crm.onrender.com';
 
-    // Fire-and-forget sync to VoiceNow CRM
-    function syncLeadToCRM(lead) {
+    // Sync lead to VoiceNow CRM with retry
+    function syncLeadToCRM(lead, attempt) {
       if (!lead?.id) return;
+      attempt = attempt || 1;
       fetch(`${VOICENOW_API}/api/surprise-granite/webhook/new-lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lead)
       }).then(r => {
         if (r.ok) console.log('[CRM] Lead synced to VoiceNow:', lead.id);
-        else console.warn('[CRM] VoiceNow webhook failed:', r.status);
-      }).catch(err => {
-        console.warn('[CRM] VoiceNow sync error:', err.message);
+        else if (attempt < 3) {
+          setTimeout(() => syncLeadToCRM(lead, attempt + 1), attempt * 3000);
+        }
+      }).catch(() => {
+        if (attempt < 3) setTimeout(() => syncLeadToCRM(lead, attempt + 1), attempt * 3000);
       });
     }
 

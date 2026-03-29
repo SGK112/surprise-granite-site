@@ -294,7 +294,7 @@
     function check() { done++; if (done >= 2) cb(ok); }
 
     post('https://surprise-granite-email-api.onrender.com/api/leads', payload, function (s) { if (!s) ok = false; check(); });
-    post('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', crmPayload, function (s) { if (!s) ok = false; check(); });
+    postWithRetry('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', crmPayload, function (s) { if (!s) ok = false; check(); });
   }
 
   function post(url, data, cb) {
@@ -304,6 +304,24 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       }).then(function (r) { cb(r.ok); }).catch(function () { cb(false); });
+    } catch (e) { cb(false); }
+  }
+
+  function postWithRetry(url, data, cb, attempt) {
+    attempt = attempt || 1;
+    try {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(function (r) {
+        if (r.ok) { cb(true); }
+        else if (attempt < 3) { setTimeout(function() { postWithRetry(url, data, cb, attempt + 1); }, attempt * 3000); }
+        else { cb(false); }
+      }).catch(function () {
+        if (attempt < 3) { setTimeout(function() { postWithRetry(url, data, cb, attempt + 1); }, attempt * 3000); }
+        else { cb(false); }
+      });
     } catch (e) { cb(false); }
   }
 

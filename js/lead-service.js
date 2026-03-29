@@ -7,6 +7,33 @@
 (function() {
   'use strict';
 
+  const CRM_WEBHOOK = 'https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead';
+
+  function syncToCRMWithRetry(leadData, attempt) {
+    attempt = attempt || 1;
+    fetch(CRM_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leadData)
+    }).then(function(r) {
+      if (r.ok) {
+        console.log('[LeadService] Lead synced to CRM');
+      } else if (attempt < 3) {
+        console.warn('[LeadService] CRM sync attempt ' + attempt + ' failed (' + r.status + '), retrying...');
+        setTimeout(function() { syncToCRMWithRetry(leadData, attempt + 1); }, attempt * 3000);
+      } else {
+        console.error('[LeadService] CRM sync failed after 3 attempts');
+      }
+    }).catch(function(err) {
+      if (attempt < 3) {
+        console.warn('[LeadService] CRM sync attempt ' + attempt + ' error, retrying...', err.message);
+        setTimeout(function() { syncToCRMWithRetry(leadData, attempt + 1); }, attempt * 3000);
+      } else {
+        console.error('[LeadService] CRM sync failed after 3 attempts:', err.message);
+      }
+    });
+  }
+
   const config = window.SG_CONFIG || {};
   const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
   const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
@@ -74,17 +101,8 @@
 
       console.log('[LeadService] Lead submitted successfully:', result[0]?.id);
 
-      // Push to VoiceNow CRM (fire-and-forget)
-      try {
-        fetch('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(result[0] || lead)
-        }).then(r => {
-          if (!r.ok) console.warn('[LeadService] CRM sync failed:', r.status);
-          else console.log('[LeadService] Lead synced to CRM');
-        }).catch(err => console.warn('[LeadService] CRM sync error:', err.message));
-      } catch (e) { /* silent */ }
+      // Push to VoiceNow CRM with retry (Render cold starts can cause first attempt to fail)
+      syncToCRMWithRetry(result[0] || lead);
 
       // Send admin notification (fire-and-forget)
       if (window.SG_notifyNewLead) {

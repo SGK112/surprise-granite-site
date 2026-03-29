@@ -3774,19 +3774,60 @@ app.use('/api/contractor/respond', (req, res, next) => { req.url = '/contractor/
 // ============ VOICENOW CRM SYNC HELPER ============
 const VOICENOW_CRM_URL = process.env.VOICENOW_CRM_URL || 'https://voiceflow-crm.onrender.com';
 
-function syncToCRM(endpoint, data) {
+function syncToCRM(endpoint, data, attempt = 1) {
   const url = `${VOICENOW_CRM_URL}/api/surprise-granite/${endpoint}`;
   fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   }).then(r => {
-    if (r.ok) logger.info(`[CRM] Synced to ${endpoint}:`, data.email || data.id || 'unknown');
-    else logger.warn(`[CRM] ${endpoint} failed:`, r.status);
+    if (r.ok) {
+      logger.info(`[CRM] Synced to ${endpoint}:`, data.email || data.id || 'unknown');
+    } else if (attempt < 3) {
+      logger.warn(`[CRM] ${endpoint} attempt ${attempt} failed (${r.status}), retrying...`);
+      setTimeout(() => syncToCRM(endpoint, data, attempt + 1), attempt * 3000);
+    } else {
+      logger.error(`[CRM] ${endpoint} failed after 3 attempts:`, r.status);
+    }
   }).catch(err => {
-    logger.warn(`[CRM] ${endpoint} error:`, err.message);
+    if (attempt < 3) {
+      logger.warn(`[CRM] ${endpoint} attempt ${attempt} error, retrying...`, err.message);
+      setTimeout(() => syncToCRM(endpoint, data, attempt + 1), attempt * 3000);
+    } else {
+      logger.error(`[CRM] ${endpoint} failed after 3 attempts:`, err.message);
+    }
   });
 }
+
+// ============ BATCH SYNC RECENT LEADS TO CRM ============
+app.post('/api/crm-sync/leads', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+  try {
+    const since = req.body.since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: leads, error } = await supabase
+      .from('leads')
+      .select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    let synced = 0;
+    for (const lead of leads) {
+      try {
+        const r = await fetch(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(lead)
+        });
+        if (r.ok) synced++;
+      } catch (e) { /* continue */ }
+    }
+    logger.info(`[CRM Batch Sync] Synced ${synced}/${leads.length} leads since ${since}`);
+    res.json({ success: true, total: leads.length, synced });
+  } catch (err) {
+    logger.error('[CRM Batch Sync] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ============ LEAD NOTIFICATION (admin email + safety net save) ============
 app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
