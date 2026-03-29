@@ -29,15 +29,23 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Verify SMTP credentials on startup
+// Verify SMTP credentials on startup and periodically retry
 let smtpVerified = false;
-if (SMTP_USER && SMTP_PASS) {
+function verifySmtp() {
+  if (!SMTP_USER || !SMTP_PASS) return;
   transporter.verify()
-    .then(() => { smtpVerified = true; logger.info('[Email] SMTP credentials verified OK'); })
-    .catch(err => { smtpVerified = false; logger.error('[Email] SMTP credentials INVALID — emails will fail. Error: ' + err.message); });
-} else {
-  logger.warn('[Email] SMTP_USER or SMTP_PASS not set — emails disabled');
+    .then(() => {
+      if (!smtpVerified) logger.info('[Email] SMTP credentials verified OK');
+      smtpVerified = true;
+    })
+    .catch(err => {
+      smtpVerified = false;
+      logger.error('[Email] SMTP credentials INVALID: ' + err.message);
+    });
 }
+verifySmtp();
+// Re-check every 5 minutes so updating the password on Render auto-recovers after restart
+setInterval(verifySmtp, 5 * 60 * 1000);
 
 // Company info
 const COMPANY = emailService.COMPANY || {

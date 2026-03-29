@@ -16930,7 +16930,8 @@
 
     async function sendQuickPaySMS() {
       const smsText = `Hi ${quickPayData.name}! Here's your payment link for $${quickPayData.amount.toFixed(2)}: ${quickPayData.url} - Surprise Granite`;
-      const phone = quickPayData.phone ? quickPayData.phone.replace(/\D/g, '') : '';
+      const rawPhone = quickPayData.phone ? quickPayData.phone.replace(/\D/g, '') : '';
+      const phone = rawPhone ? (rawPhone.length === 10 ? '+1' + rawPhone : (rawPhone.startsWith('1') && rawPhone.length === 11 ? '+' + rawPhone : '+' + rawPhone)) : '';
 
       // If we have a phone number, try to send via VoiceNow CRM first
       if (phone) {
@@ -16956,7 +16957,7 @@
           if (result.success) {
             showToast(`SMS sent to ${quickPayData.phone}!`, 'success');
           } else {
-            throw new Error(result.message || 'SMS failed');
+            throw new Error(result.error || result.message || 'SMS failed');
           }
         } catch (err) {
           console.warn('VoiceNow SMS failed, falling back to native:', err);
