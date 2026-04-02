@@ -24,6 +24,9 @@
   <!-- Cart -->
   <script src="/js/cart.js?v=20260401b"></script>
 
+  <!-- PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+
   <!-- Supabase for auth check -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -162,6 +165,12 @@
               </button>
             </div>
             <div id="shareCopied" style="display:none;text-align:center;font-size:12px;color:var(--success);margin-top:6px;font-weight:600;">Link copied to clipboard!</div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);">
+              <button type="button" class="btn-share" id="generateInvoice" style="width:100%;background:var(--text-primary);color:#fff;border-color:var(--text-primary);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Generate Invoice PDF
+              </button>
+            </div>
           </div>
 
           <!-- Security Badge -->
@@ -348,6 +357,178 @@
           }).catch(function() {});
         });
       }
+
+      // === GENERATE INVOICE PDF ===
+      document.getElementById('generateInvoice')?.addEventListener('click', function() {
+        if (!window.SgCart || !window.jspdf) return;
+        var cart = window.SgCart.getCart();
+        var totals = window.SgCart.getCartTotals();
+        if (cart.length === 0) return;
+
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF({ unit: 'pt', format: 'letter' });
+        var W = doc.internal.pageSize.getWidth();
+        var invNum = 'SG-' + Date.now().toString(36).toUpperCase();
+        var today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        var payURL = 'https://www.surprisegranite.com/pay?invoice=' + encodeURIComponent(invNum) + '&amount=' + Math.round(totals.total * 100);
+        var y = 50;
+
+        // --- Header ---
+        doc.setFillColor(26, 26, 46);
+        doc.rect(0, 0, W, 90, 'F');
+        doc.setFillColor(249, 203, 0);
+        doc.rect(0, 90, W, 4, 'F');
+
+        doc.setTextColor(249, 203, 0);
+        doc.setFontSize(28);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SURPRISE GRANITE', 40, 50);
+        doc.setFontSize(10);
+        doc.setTextColor(180, 180, 200);
+        doc.setFont('helvetica', 'normal');
+        doc.text('MARBLE & QUARTZ', 40, 68);
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text('16827 W Greenway Rd, Surprise, AZ 85388', W - 40, 40, { align: 'right' });
+        doc.text('(602) 833-3189  |  www.surprisegranite.com', W - 40, 56, { align: 'right' });
+        doc.text('ROC #340191', W - 40, 72, { align: 'right' });
+
+        y = 120;
+
+        // --- Invoice title + details ---
+        doc.setTextColor(26, 26, 46);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INVOICE', 40, y);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Invoice #:  ' + invNum, W - 40, y - 14, { align: 'right' });
+        doc.text('Date:  ' + today, W - 40, y, { align: 'right' });
+        doc.text('Due:  Upon Receipt', W - 40, y + 14, { align: 'right' });
+
+        y += 40;
+
+        // --- Table header ---
+        doc.setFillColor(245, 245, 247);
+        doc.rect(40, y, W - 80, 28, 'F');
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('ITEM', 52, y + 18);
+        doc.text('QTY', W - 220, y + 18, { align: 'center' });
+        doc.text('PRICE', W - 150, y + 18, { align: 'right' });
+        doc.text('TOTAL', W - 52, y + 18, { align: 'right' });
+
+        y += 38;
+
+        // --- Line items ---
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(10);
+
+        cart.forEach(function(item) {
+          if (y > 660) {
+            doc.addPage();
+            y = 50;
+          }
+          var name = item.name || 'Product';
+          if (name.length > 45) name = name.substring(0, 42) + '...';
+          var variant = item.variant || '';
+          var price = parseFloat(item.price) || 0;
+          var qty = parseInt(item.quantity) || 1;
+          var lineTotal = price * qty;
+
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(30, 30, 30);
+          doc.text(name, 52, y);
+          if (variant) {
+            doc.setFontSize(8);
+            doc.setTextColor(130, 130, 130);
+            doc.text(variant, 52, y + 13);
+            doc.setFontSize(10);
+          }
+          doc.setTextColor(30, 30, 30);
+          doc.text(String(qty), W - 220, y, { align: 'center' });
+          doc.text(fmt(price), W - 150, y, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmt(lineTotal), W - 52, y, { align: 'right' });
+
+          y += variant ? 32 : 24;
+
+          // Separator
+          doc.setDrawColor(230, 230, 230);
+          doc.setLineWidth(0.5);
+          doc.line(52, y - 8, W - 52, y - 8);
+        });
+
+        y += 12;
+
+        // --- Totals ---
+        var totalsX = W - 52;
+        var labelsX = W - 200;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(11);
+        doc.text('Subtotal', labelsX, y, { align: 'right' });
+        doc.setTextColor(30, 30, 30);
+        doc.text(fmt(totals.subtotal), totalsX, y, { align: 'right' });
+
+        y += 20;
+        doc.setTextColor(100, 100, 100);
+        doc.text('Shipping', labelsX, y, { align: 'right' });
+        doc.setTextColor(30, 30, 30);
+        doc.text(totals.shipping === 0 ? 'Free' : fmt(totals.shipping), totalsX, y, { align: 'right' });
+
+        y += 20;
+        doc.setTextColor(100, 100, 100);
+        doc.text('Tax', labelsX, y, { align: 'right' });
+        doc.setTextColor(30, 30, 30);
+        doc.text('Calculated at checkout', totalsX, y, { align: 'right' });
+
+        y += 8;
+        doc.setDrawColor(26, 26, 46);
+        doc.setLineWidth(1.5);
+        doc.line(labelsX - 20, y, totalsX, y);
+
+        y += 22;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(26, 26, 46);
+        doc.text('Total Due', labelsX, y, { align: 'right' });
+        doc.text(fmt(totals.total), totalsX, y, { align: 'right' });
+
+        // --- Pay link box ---
+        y += 40;
+        if (y > 640) { doc.addPage(); y = 50; }
+
+        doc.setFillColor(249, 203, 0);
+        doc.roundedRect(40, y, W - 80, 60, 8, 8, 'F');
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(26, 26, 46);
+        doc.text('Pay Online', (W / 2), y + 22, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text(payURL, (W / 2), y + 40, { align: 'center' });
+        doc.link(40, y, W - 80, 60, { url: payURL });
+
+        // --- Footer ---
+        y += 80;
+        if (y > 700) { doc.addPage(); y = 50; }
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Thank you for choosing Surprise Granite.', 40, y);
+        doc.text('Questions? Call (602) 833-3189 or email info@surprisegranite.com', 40, y + 14);
+        doc.text('Licensed, Bonded & Insured  |  ROC #340191  |  surprisegranite.com', 40, y + 28);
+
+        // Save
+        doc.save('Surprise-Granite-Invoice-' + invNum + '.pdf');
+      });
 
       // Load shared quote from URL
       function loadSharedQuote() {
