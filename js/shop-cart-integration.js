@@ -419,7 +419,7 @@
           <!-- Items rendered here -->
         </div>
         <div class="cart-drawer-footer" id="cartDrawerFooter">
-          <div class="cart-drawer-total">
+          <div class="cart-drawer-total" style="font-weight:700;">
             <span>Total</span>
             <span id="cartDrawerTotal">$0.00</span>
           </div>
@@ -533,8 +533,56 @@
       '</div>';
     }).join('');
 
-    var total = cart.reduce(function(sum, item) { return sum + (item.price * item.quantity); }, 0);
-    totalEl.textContent = '$' + total.toFixed(2);
+    var totals = window.SgCart ? window.SgCart.getCartTotals() : { subtotal: 0, shipping: 0, total: 0 };
+    var subtotal = totals.subtotal;
+    var shipping = totals.shipping;
+
+    // Show subtotal + shipping breakdown
+    var shippingLine = document.getElementById('cartDrawerShipping');
+    if (!shippingLine) {
+      // Insert shipping line before total
+      var shippingDiv = document.createElement('div');
+      shippingDiv.className = 'cart-drawer-total';
+      shippingDiv.id = 'cartDrawerShippingRow';
+      shippingDiv.style.cssText = 'font-size:13px;color:#94a3b8;padding-top:0;margin-top:-4px;';
+      shippingDiv.innerHTML = '<span>Shipping</span><span id="cartDrawerShipping"></span>';
+      totalEl.parentElement.before(shippingDiv);
+
+      // Rename "Total" label to show subtotal above
+      var subtotalDiv = document.createElement('div');
+      subtotalDiv.className = 'cart-drawer-total';
+      subtotalDiv.id = 'cartDrawerSubtotalRow';
+      subtotalDiv.style.cssText = 'font-size:13px;color:#94a3b8;padding-bottom:0;';
+      subtotalDiv.innerHTML = '<span>Subtotal</span><span id="cartDrawerSubtotal"></span>';
+      var shippingRow = document.getElementById('cartDrawerShippingRow');
+      shippingRow.before(subtotalDiv);
+
+      shippingLine = document.getElementById('cartDrawerShipping');
+    }
+
+    document.getElementById('cartDrawerSubtotal').textContent = '$' + subtotal.toFixed(2);
+    shippingLine.textContent = shipping === 0 ? (subtotal >= 500 ? 'Free' : '$0.00') : '$' + shipping.toFixed(2);
+    totalEl.textContent = '$' + totals.total.toFixed(2);
+
+    // Free shipping hint
+    var hintEl = document.getElementById('cartDrawerShipHint');
+    if (!hintEl) {
+      hintEl = document.createElement('div');
+      hintEl.id = 'cartDrawerShipHint';
+      hintEl.style.cssText = 'text-align:center;font-size:12px;color:#22c55e;padding:4px 0 8px;';
+      var footerEl2 = document.getElementById('cartDrawerFooter');
+      if (footerEl2) footerEl2.insertBefore(hintEl, footerEl2.firstChild);
+    }
+    if (shipping > 0) {
+      var remaining = (500 - subtotal).toFixed(2);
+      hintEl.textContent = 'Add $' + remaining + ' more for free shipping';
+      hintEl.style.display = 'block';
+    } else if (subtotal >= 500) {
+      hintEl.textContent = 'You qualify for free shipping!';
+      hintEl.style.display = 'block';
+    } else {
+      hintEl.style.display = 'none';
+    }
   }
 
   // Update quantity from drawer
