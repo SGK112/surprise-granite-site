@@ -941,6 +941,7 @@
    * Quick Add to Cart from any page
    */
   function quickAddToCart(productData) {
+    if (!productData || !productData.name) return false;
     const item = {
       id: productData.id || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       name: productData.name,
@@ -965,6 +966,7 @@
    * Quick Buy Now from any page
    */
   function quickBuyNow(productData) {
+    if (!productData || !productData.name) return false;
     const item = {
       id: productData.id || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       name: productData.name,

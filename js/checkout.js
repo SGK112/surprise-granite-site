@@ -331,8 +331,8 @@
       const lineItems = cart.map(item => ({
         id: item.id || null,
         handle: item.handle || null,
-        name: item.name,
-        price: Math.round(item.price * 100), // Convert to cents
+        name: item.name || 'Product',
+        price: Math.round((parseFloat(item.price) || 0) * 100),
         quantity: item.quantity || 1,
         image: item.image || ''
       }));
@@ -348,8 +348,10 @@
 
       // Add tax as a line item
       if (totals.tax > 0) {
+        var selectedState = document.getElementById('state')?.value || 'AZ';
+        var taxPct = totals.subtotal > 0 ? ((totals.tax / totals.subtotal) * 100).toFixed(1) : '8.1';
         lineItems.push({
-          name: 'Tax (' + (document.getElementById('state')?.value || 'AZ') + ' ' + (taxRate * 100).toFixed(1) + '%)',
+          name: 'Tax (' + selectedState + ' ' + taxPct + '%)',
           price: Math.round(totals.tax * 100),
           quantity: 1
         });
