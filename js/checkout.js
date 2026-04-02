@@ -72,8 +72,18 @@
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-    // Calculate tax (Arizona state tax ~5.6% + avg local ~2.5%)
-    const taxRate = 0.081; // 8.1% combined
+    // Tax by state (combined state + avg local rates)
+    const TAX_RATES = {
+      AZ: 0.081,  // 5.6% state + ~2.5% local avg
+      CA: 0.0875, // 7.25% state + ~1.5% local avg
+      CO: 0.075,  // 2.9% state + ~4.6% local avg
+      NV: 0.082,  // 6.85% state + ~1.35% local avg
+      NM: 0.073,  // 4.875% state + ~2.4% local avg
+      TX: 0.0825, // 6.25% state + ~2% local avg
+      UT: 0.071   // 4.85% state + ~2.25% local avg
+    };
+    const selectedState = document.getElementById('state')?.value || 'AZ';
+    const taxRate = TAX_RATES[selectedState] || TAX_RATES.AZ;
     const tax = subtotal * taxRate;
 
     // Shipping logic
@@ -339,7 +349,7 @@
       // Add tax as a line item
       if (totals.tax > 0) {
         lineItems.push({
-          name: 'Tax (AZ 8.1%)',
+          name: 'Tax (' + (document.getElementById('state')?.value || 'AZ') + ' ' + (taxRate * 100).toFixed(1) + '%)',
           price: Math.round(totals.tax * 100),
           quantity: 1
         });
@@ -460,6 +470,12 @@
         if (submitButton) {
           submitButton.addEventListener('click', handleSubmit);
         }
+      }
+
+      // Re-render totals when state changes (tax varies by state)
+      const stateSelect = document.getElementById('state');
+      if (stateSelect) {
+        stateSelect.addEventListener('change', () => renderOrderSummary());
       }
 
       // Remove error class on input

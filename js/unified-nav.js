@@ -1003,4 +1003,12 @@
   } else {
     cleanupObserver.observe(document.body, { childList: true, subtree: false });
   }
+
+  // Load cookie consent banner (only if not yet decided)
+  if (!localStorage.getItem('sg_cookie_consent')) {
+    var _cs = document.createElement('script');
+    _cs.src = '/js/cookie-consent.js?v=20260401';
+    _cs.defer = true;
+    document.head.appendChild(_cs);
+  }
 })();
