@@ -126,21 +126,8 @@
     });
   }
 
-  // Suppress Shopyflow errors
-  function suppressShopyflowErrors() {
-    const originalError = console.error;
-    console.error = function(...args) {
-      const msg = args[0]?.toString() || '';
-      if (msg.includes('shopyflow') ||
-          msg.includes('sf-product') ||
-          msg.includes('Storefront Access Token') ||
-          msg.includes('cart module')) {
-        // Suppress Shopyflow errors
-        return;
-      }
-      originalError.apply(console, args);
-    };
-  }
+  // Error suppression removed — Shopyflow/Shopify no longer loaded
+  function suppressShopyflowErrors() {}
 
   // Remove blog content from product areas
   function removeBlogContent() {
