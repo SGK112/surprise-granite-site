@@ -78,12 +78,8 @@
 
     // Shipping logic
     let shipping = 0;
-    if (subtotal > 0 && subtotal < 100) {
-      shipping = 15;
-    } else if (subtotal >= 100 && subtotal < 500) {
-      shipping = 25;
-    } else if (subtotal >= 500) {
-      shipping = 0; // Free shipping over $500
+    if (subtotal > 0 && subtotal < 1000) {
+      shipping = subtotal < 100 ? 15 : subtotal < 500 ? 25 : 49;
     }
 
     // Check for promo with error handling

@@ -353,10 +353,10 @@
 
     const totalSavings = guestTotal - subtotal;
 
-    // Shipping: free over $500, tiered below
+    // Shipping: free over $1000, tiered below
     let shipping = 0;
-    if (subtotal > 0 && subtotal < 500) {
-      shipping = subtotal < 100 ? 15 : 25;
+    if (subtotal > 0 && subtotal < 1000) {
+      shipping = subtotal < 100 ? 15 : subtotal < 500 ? 25 : 49;
     }
 
     return {

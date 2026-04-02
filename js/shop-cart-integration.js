@@ -561,7 +561,7 @@
     }
 
     document.getElementById('cartDrawerSubtotal').textContent = '$' + subtotal.toFixed(2);
-    shippingLine.textContent = shipping === 0 ? (subtotal >= 500 ? 'Free' : '$0.00') : '$' + shipping.toFixed(2);
+    shippingLine.textContent = shipping === 0 ? (subtotal >= 1000 ? 'Free' : '$0.00') : '$' + shipping.toFixed(2);
     totalEl.textContent = '$' + totals.total.toFixed(2);
 
     // Free shipping hint
@@ -574,10 +574,10 @@
       if (footerEl2) footerEl2.insertBefore(hintEl, footerEl2.firstChild);
     }
     if (shipping > 0) {
-      var remaining = (500 - subtotal).toFixed(2);
+      var remaining = (1000 - subtotal).toFixed(2);
       hintEl.textContent = 'Add $' + remaining + ' more for free shipping';
       hintEl.style.display = 'block';
-    } else if (subtotal >= 500) {
+    } else if (subtotal >= 1000) {
       hintEl.textContent = 'You qualify for free shipping!';
       hintEl.style.display = 'block';
     } else {
