@@ -21,8 +21,8 @@
   <script defer src="/js/unified-nav.js?v=20260201d"></script>
   <link rel="stylesheet" href="/css/cart.css?v=20260111c">
 
-  <!-- Shopify Cart -->
-  <script src="/js/shopify-cart.js?v=20260228"></script>
+  <!-- Cart -->
+  <script src="/js/cart.js?v=20260401"></script>
 
   <!-- Supabase for auth check -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -144,6 +144,26 @@
             Proceed to Checkout
           </button>
 
+          <!-- Share Quote -->
+          <div class="share-quote" id="shareQuote" style="display:none;">
+            <p style="font-size:13px;color:var(--text-secondary);margin:0 0 8px;text-align:center;">Share this quote</p>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn-share" id="shareLink" title="Copy link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                Copy Link
+              </button>
+              <button type="button" class="btn-share" id="shareEmail" title="Email quote">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </button>
+              <button type="button" class="btn-share" id="shareNative" title="Share" style="display:none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Share
+              </button>
+            </div>
+            <div id="shareCopied" style="display:none;text-align:center;font-size:12px;color:var(--success);margin-top:6px;font-weight:600;">Link copied to clipboard!</div>
+          </div>
+
           <!-- Security Badge -->
           <div class="security-badge">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e">
@@ -187,91 +207,182 @@
 
   <!-- Scripts -->
   <script>
-    document.addEventListener('DOMContentLoaded', async function() {
-      // Wait for ShopifyCart to initialize
-      await new Promise(r => setTimeout(r, 500));
-
+    document.addEventListener('DOMContentLoaded', function() {
       const cartEmpty = document.getElementById('cartEmpty');
       const cartItems = document.getElementById('cartItems');
       const cartSummary = document.getElementById('cartSummary');
       const checkoutBtn = document.getElementById('checkoutBtn');
+      const shareQuote = document.getElementById('shareQuote');
+
+      function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+      function fmt(n) { return '$' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
       function renderCart() {
-        const items = window.ShopifyCart?.getItems() || [];
-        const total = window.ShopifyCart?.getTotal() || 0;
+        if (!window.SgCart) return;
+        var cart = window.SgCart.getCart();
+        var totals = window.SgCart.getCartTotals();
 
-        if (items.length === 0) {
+        if (cart.length === 0) {
           cartEmpty.style.display = 'block';
           cartItems.style.display = 'none';
           cartSummary.style.display = 'none';
+          if (shareQuote) shareQuote.style.display = 'none';
           return;
         }
 
         cartEmpty.style.display = 'none';
         cartItems.style.display = 'block';
         cartSummary.style.display = 'block';
+        if (shareQuote) shareQuote.style.display = 'block';
 
-        // Render items
-        cartItems.innerHTML = items.map(item => `
-          <div class="cart-item" data-line-id="${item.id}">
-            <div class="cart-item-image">
-              <img src="${item.image || '/images/placeholder.jpg'}" alt="${item.title}">
-            </div>
-            <div class="cart-item-details">
-              <h3 class="cart-item-title">${item.title}</h3>
-              ${item.variantTitle && item.variantTitle !== 'Default Title' ? `<p class="cart-item-variant">${item.variantTitle}</p>` : ''}
-              <p class="cart-item-price">$${item.price.toFixed(2)}</p>
-            </div>
-            <div class="cart-item-quantity">
-              <button class="qty-btn" onclick="updateQty('${item.id}', ${item.quantity - 1})">−</button>
-              <span class="qty-value">${item.quantity}</span>
-              <button class="qty-btn" onclick="updateQty('${item.id}', ${item.quantity + 1})">+</button>
-            </div>
-            <div class="cart-item-total">
-              $${(item.price * item.quantity).toFixed(2)}
-            </div>
-            <button class="cart-item-remove" onclick="removeItem('${item.id}')">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-        `).join('');
+        cartItems.innerHTML = cart.map(function(item) {
+          var safeId = esc(item.id);
+          var safeVariant = esc(item.variant);
+          var price = parseFloat(item.price) || 0;
+          var qty = parseInt(item.quantity) || 1;
+          return '<div class="cart-item">' +
+            '<div class="cart-item-image"><img src="' + esc(item.image || '/images/placeholder.jpg') + '" alt="' + esc(item.name) + '"></div>' +
+            '<div class="cart-item-details">' +
+              '<h3 class="cart-item-title">' + esc(item.name) + '</h3>' +
+              (item.variant ? '<p class="cart-item-variant">' + safeVariant + '</p>' : '') +
+              '<p class="cart-item-price">' + fmt(price) + '</p>' +
+            '</div>' +
+            '<div class="cart-item-quantity">' +
+              '<button class="qty-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty - 1) + ')">−</button>' +
+              '<span class="qty-value">' + qty + '</span>' +
+              '<button class="qty-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty + 1) + ')">+</button>' +
+            '</div>' +
+            '<div class="cart-item-total">' + fmt(price * qty) + '</div>' +
+            '<button class="cart-item-remove" onclick="removeItem(\'' + safeId + '\',\'' + safeVariant + '\')">' +
+              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>' +
+          '</div>';
+        }).join('');
 
-        // Update subtotal (tax/shipping calculated at Shopify checkout)
-        document.getElementById('cartSubtotal').textContent = '$' + total.toFixed(2);
-        document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('cartSubtotal').textContent = fmt(totals.subtotal);
+        document.getElementById('cartShipping').textContent = totals.shipping === 0 ? (totals.subtotal >= 1000 ? 'Free' : '$0.00') : fmt(totals.shipping);
+        document.getElementById('cartTax').textContent = 'Calculated at checkout';
+        document.getElementById('cartTotal').textContent = fmt(totals.total);
       }
 
-      // Cart update functions
-      window.updateQty = async function(lineId, newQty) {
-        if (newQty <= 0) {
-          await window.ShopifyCart.removeItem(lineId);
-        } else {
-          await window.ShopifyCart.updateQuantity(lineId, newQty);
-        }
+      window.updateQty = function(id, variant, newQty) {
+        if (!window.SgCart) return;
+        if (newQty <= 0) { window.SgCart.removeFromCart(id, variant); }
+        else { window.SgCart.updateQuantity(id, variant, newQty); }
+        renderCart();
       };
 
-      window.removeItem = async function(lineId) {
-        await window.ShopifyCart.removeItem(lineId);
+      window.removeItem = function(id, variant) {
+        if (!window.SgCart) return;
+        window.SgCart.removeFromCart(id, variant);
+        renderCart();
       };
 
-      // Checkout button
+      // Checkout
       checkoutBtn?.addEventListener('click', function() {
-        window.ShopifyCart.checkout();
+        if (window.SgCart) window.SgCart.checkout();
       });
 
-      // Listen for cart changes
-      window.ShopifyCart?.onChange(renderCart);
+      // === SHARE QUOTE ===
 
-      // Initial render
+      // Build shareable quote URL (encodes cart into URL hash)
+      function buildQuoteURL() {
+        if (!window.SgCart) return window.location.href;
+        var cart = window.SgCart.getCart();
+        var payload = cart.map(function(item) {
+          return { n: item.name, p: item.price, q: item.quantity, v: item.variant || '', i: item.image || '', id: item.id || '', c: item.category || '' };
+        });
+        var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        return window.location.origin + '/cart/?quote=' + encoded;
+      }
+
+      // Build plain text quote summary
+      function buildQuoteText() {
+        if (!window.SgCart) return '';
+        var cart = window.SgCart.getCart();
+        var totals = window.SgCart.getCartTotals();
+        var lines = ['Surprise Granite — Quote', ''];
+        cart.forEach(function(item) {
+          lines.push((item.quantity > 1 ? item.quantity + 'x ' : '') + item.name + (item.variant ? ' (' + item.variant + ')' : '') + ' — ' + fmt(item.price * item.quantity));
+        });
+        lines.push('');
+        lines.push('Subtotal: ' + fmt(totals.subtotal));
+        if (totals.shipping > 0) lines.push('Shipping: ' + fmt(totals.shipping));
+        else if (totals.subtotal >= 1000) lines.push('Shipping: Free');
+        lines.push('Total: ' + fmt(totals.total));
+        lines.push('');
+        lines.push('View & order: ' + buildQuoteURL());
+        return lines.join('\n');
+      }
+
+      // Copy link
+      document.getElementById('shareLink')?.addEventListener('click', function() {
+        var url = buildQuoteURL();
+        navigator.clipboard.writeText(url).then(function() {
+          var el = document.getElementById('shareCopied');
+          if (el) { el.style.display = 'block'; setTimeout(function() { el.style.display = 'none'; }, 2000); }
+        });
+      });
+
+      // Email
+      document.getElementById('shareEmail')?.addEventListener('click', function() {
+        var totals = window.SgCart ? window.SgCart.getCartTotals() : { total: 0 };
+        var subject = 'Surprise Granite Quote — ' + fmt(totals.total);
+        var body = buildQuoteText();
+        window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      });
+
+      // Native share (mobile)
+      var nativeBtn = document.getElementById('shareNative');
+      if (navigator.share && nativeBtn) {
+        nativeBtn.style.display = 'inline-flex';
+        nativeBtn.addEventListener('click', function() {
+          var totals = window.SgCart ? window.SgCart.getCartTotals() : { total: 0 };
+          navigator.share({
+            title: 'Surprise Granite Quote — ' + fmt(totals.total),
+            text: buildQuoteText(),
+            url: buildQuoteURL()
+          }).catch(function() {});
+        });
+      }
+
+      // Load shared quote from URL
+      function loadSharedQuote() {
+        var params = new URLSearchParams(window.location.search);
+        var quoteData = params.get('quote');
+        if (!quoteData || !window.SgCart) return;
+        try {
+          var items = JSON.parse(decodeURIComponent(escape(atob(quoteData))));
+          if (!Array.isArray(items) || items.length === 0) return;
+          window.SgCart.clearCart();
+          items.forEach(function(item) {
+            window.SgCart.addToCart({
+              id: item.id || item.n,
+              name: item.n,
+              price: item.p,
+              quantity: item.q || 1,
+              variant: item.v || '',
+              image: item.i || '',
+              category: item.c || '',
+              href: ''
+            });
+          });
+          // Clean URL
+          history.replaceState(null, '', '/cart/');
+        } catch (e) {
+          console.error('Invalid quote data:', e);
+        }
+      }
+
+      // Init
+      loadSharedQuote();
       renderCart();
 
-      // Guest checkout button
-      const guestBtn = document.getElementById('continueAsGuest');
+      // Guest checkout
+      var guestBtn = document.getElementById('continueAsGuest');
       if (guestBtn) {
         guestBtn.addEventListener('click', function() {
-          const prompt = document.getElementById('accountPrompt');
+          var prompt = document.getElementById('accountPrompt');
           if (prompt) prompt.style.display = 'none';
         });
       }
