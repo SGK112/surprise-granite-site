@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
   <link rel="stylesheet" href="/css/design-system.css?v=20260111c">
   <script defer src="/js/unified-nav.js?v=20260201d"></script>
-  <link rel="stylesheet" href="/css/cart.css?v=20260111c">
+  <link rel="stylesheet" href="/css/cart.css?v=20260401">
 
   <!-- Cart -->
   <script src="/js/cart.js?v=20260401b"></script>
@@ -241,21 +241,24 @@
           var price = parseFloat(item.price) || 0;
           var qty = parseInt(item.quantity) || 1;
           return '<div class="cart-item">' +
-            '<div class="cart-item-image"><img src="' + esc(item.image || '/images/placeholder.jpg') + '" alt="' + esc(item.name) + '"></div>' +
+            '<div class="cart-item-image"><img src="' + esc(item.image || '/images/placeholder.jpg') + '" alt="' + esc(item.name) + '" loading="lazy"></div>' +
             '<div class="cart-item-details">' +
-              '<h3 class="cart-item-title">' + esc(item.name) + '</h3>' +
+              '<h3 class="cart-item-name">' + esc(item.name) + '</h3>' +
               (item.variant ? '<p class="cart-item-variant">' + safeVariant + '</p>' : '') +
-              '<p class="cart-item-price">' + fmt(price) + '</p>' +
+              '<p class="cart-item-price">' + fmt(price) + ' each</p>' +
             '</div>' +
-            '<div class="cart-item-quantity">' +
-              '<button class="qty-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty - 1) + ')">−</button>' +
-              '<span class="qty-value">' + qty + '</span>' +
-              '<button class="qty-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty + 1) + ')">+</button>' +
+            '<div class="cart-item-actions">' +
+              '<div class="cart-item-total">' + fmt(price * qty) + '</div>' +
+              '<div class="quantity-selector">' +
+                '<button class="quantity-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty - 1) + ')"' + (qty <= 1 ? ' disabled' : '') + '>−</button>' +
+                '<span class="quantity-value">' + qty + '</span>' +
+                '<button class="quantity-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty + 1) + ')">+</button>' +
+              '</div>' +
+              '<button class="remove-item" onclick="removeItem(\'' + safeId + '\',\'' + safeVariant + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                'Remove' +
+              '</button>' +
             '</div>' +
-            '<div class="cart-item-total">' + fmt(price * qty) + '</div>' +
-            '<button class="cart-item-remove" onclick="removeItem(\'' + safeId + '\',\'' + safeVariant + '\')">' +
-              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-            '</button>' +
           '</div>';
         }).join('');
 
