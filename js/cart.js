@@ -353,12 +353,18 @@
 
     const totalSavings = guestTotal - subtotal;
 
+    // Shipping: free over $500, tiered below
+    let shipping = 0;
+    if (subtotal > 0 && subtotal < 500) {
+      shipping = subtotal < 100 ? 15 : 25;
+    }
+
     return {
       subtotal,
       itemCount,
-      shipping: 0, // Calculated at checkout
+      shipping,
       tax: 0, // Calculated at checkout
-      total: subtotal,
+      total: subtotal + shipping,
       guestTotal,
       savings: totalSavings,
       savingsPercent: guestTotal > 0 ? Math.round((totalSavings / guestTotal) * 100) : 0,

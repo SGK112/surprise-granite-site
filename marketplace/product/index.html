@@ -3279,19 +3279,36 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             input.value = val;
           };
 
+          // Build cart item from current product state
+          window._getCartItem = function(qty) {
+            var priceEl = document.getElementById('detail-price');
+            var price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) : 0;
+            var variantSelect = document.querySelector('.variant-select');
+            var variantLabel = variantSelect ? variantSelect.options[variantSelect.selectedIndex].text : '';
+            return {
+              id: product.handle || product.id,
+              name: product.title,
+              price: price,
+              image: (product.images && product.images[0]) || '',
+              variant: variantLabel,
+              quantity: qty || 1,
+              category: category || product.category || product.productType || '',
+              href: window.location.href
+            };
+          };
+
           // Add to Cart handler
-          window._addToCartDetail = async function(btn) {
-            var variantId = window._selectedVariantId;
+          window._addToCartDetail = function(btn) {
             var qty = parseInt(document.getElementById('detail-qty').value) || 1;
-            if (!variantId || !window.ShopifyCart) return;
+            if (!window.SgCart) return;
 
             try {
               btn.disabled = true;
               var origHTML = btn.innerHTML;
               btn.innerHTML = '<svg class="spin" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Adding...';
 
-              var success = await window.ShopifyCart.addItem(variantId, qty);
-              if (!success) throw new Error('Could not add to cart. Please try again.');
+              var item = window._getCartItem(qty);
+              window.SgCart.addToCart(item);
 
               btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Added!';
               btn.style.background = '#22c55e';
@@ -3313,18 +3330,17 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           };
 
           // Buy Now handler
-          window._buyNowDetail = async function() {
+          window._buyNowDetail = function() {
             var btn = document.querySelector('.detail-buy-now-btn');
-            var variantId = window._selectedVariantId;
             var qty = parseInt(document.getElementById('detail-qty').value) || 1;
-            if (!variantId || !window.ShopifyCart) return;
+            if (!window.SgCart) return;
 
             try {
               btn.disabled = true;
               btn.innerHTML = '<svg class="spin" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Processing...';
 
-              await window.ShopifyCart.addItem(variantId, qty);
-              window.location.href = '/cart/';
+              var item = window._getCartItem(qty);
+              window.SgCart.buyNow(item);
             } catch (err) {
               console.error('Buy now error:', err);
               btn.disabled = false;
