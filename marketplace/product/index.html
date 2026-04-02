@@ -3141,35 +3141,24 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       const estimateProduct = document.getElementById('estimate-product');
       if (estimateProduct) estimateProduct.value = title;
 
-      // Update Order Sample button — link directly to Shopify cart
+      // Update Order Sample button — add to own cart
       const sampleBtn = document.getElementById('btn-order-sample');
-      if (sampleBtn) {
-        const shopifyDomain = 'surprise-granite.myshopify.com';
-        const variantGid = product.variants?.[0]?.id || '';
-        const variantNumericId = variantGid.split('/').pop();
-
-        if (variantNumericId) {
-          // Direct add-to-cart URL
-          sampleBtn.href = `https://${shopifyDomain}/cart/${variantNumericId}:1`;
-        } else if (product.handle) {
-          // Fallback: link to the Shopify product page
-          sampleBtn.href = `https://${shopifyDomain}/products/${product.handle}`;
-        }
-
-        // If no variant in local data, try Shopify Storefront API match
-        if (!variantNumericId && window.ShopifyProducts?.findMatch) {
-          window.ShopifyProducts.findMatch(title).then(match => {
-            if (match) {
-              const matchVariantGid = match.variants?.edges?.[0]?.node?.id || '';
-              const matchVariantId = matchVariantGid.split('/').pop();
-              if (matchVariantId) {
-                sampleBtn.href = `https://${shopifyDomain}/cart/${matchVariantId}:1`;
-              } else if (match.onlineStoreUrl) {
-                sampleBtn.href = match.onlineStoreUrl;
-              }
-            }
-          }).catch(() => {});
-        }
+      if (sampleBtn && window.SgCart) {
+        sampleBtn.href = 'javascript:void(0)';
+        sampleBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.SgCart.addToCart({
+            id: product.handle || product.id,
+            name: title + ' (Sample)',
+            price: parseFloat(product.variants?.[0]?.price) || 0,
+            image: (product.images && product.images[0]) || '',
+            quantity: 1,
+            variant: 'Sample',
+            category: category || '',
+            href: window.location.href
+          });
+          if (window.openCartDrawer) window.openCartDrawer();
+        });
       }
 
       // --- Add to Cart for purchasable products ---

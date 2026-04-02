@@ -283,13 +283,9 @@
   <script src="/js/cart.js?v=20260401b"></script>
   <script>
     let currentProduct = null;
-    let shopifyVariantId = null;
     let pricePerSqFt = 0;
     let currentTier = 'guest';
     let currentPricing = null;
-
-    const SHOPIFY_STORE = 'surprise-granite.myshopify.com';
-    const STOREFRONT_TOKEN = '17a4557623df390a5a866c7640ec021a';
 
     // Initialize pricing service listener
     function initPricing() {
@@ -375,18 +371,6 @@
       }
     }
 
-    async function shopifyFetch(query, variables = {}) {
-      const res = await fetch(`https://${SHOPIFY_STORE}/api/2024-01/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
-        },
-        body: JSON.stringify({ query, variables })
-      });
-      return res.json();
-    }
-
     async function loadProduct() {
       const params = new URLSearchParams(window.location.search);
       const handle = params.get('handle');
@@ -396,56 +380,6 @@
         return;
       }
 
-      // First try to load from Shopify (for cart functionality)
-      try {
-        const query = `
-          query getProductByHandle($handle: String!) {
-            productByHandle(handle: $handle) {
-              id
-              title
-              description
-              vendor
-              productType
-              images(first: 5) {
-                edges { node { url altText } }
-              }
-              variants(first: 1) {
-                edges {
-                  node {
-                    id
-                    price { amount }
-                    sku
-                  }
-                }
-              }
-            }
-          }
-        `;
-
-        const result = await shopifyFetch(query, { handle });
-        const shopifyProduct = result.data?.productByHandle;
-
-        if (shopifyProduct) {
-          currentProduct = {
-            title: shopifyProduct.title,
-            description: shopifyProduct.description,
-            vendor: shopifyProduct.vendor,
-            brandDisplay: shopifyProduct.vendor,
-            images: shopifyProduct.images.edges.map(e => e.node.url),
-            price: shopifyProduct.variants.edges[0]?.node.price.amount || '0'
-          };
-          shopifyVariantId = shopifyProduct.variants.edges[0]?.node.id;
-          pricePerSqFt = parseFloat(currentProduct.price) || 0;
-
-          updateProductDisplay();
-          showAddToCart();
-          return;
-        }
-      } catch (err) {
-        console.log('Shopify fetch failed, falling back to tile.json:', err);
-      }
-
-      // Fallback to tile.json (for products not yet in Shopify)
       try {
         const res = await fetch('/data/tile.json');
         const tiles = await res.json();
@@ -459,7 +393,7 @@
         currentProduct = product;
         pricePerSqFt = parseFloat(product.price) || 0;
         updateProductDisplay();
-        showQuoteOnly();
+        showAddToCart();
 
       } catch (err) {
         console.error('Error loading product:', err);
@@ -521,11 +455,8 @@
       // Keep quote-only for products not in Shopify
     }
 
-    async function addToCart() {
-      if (!shopifyVariantId) {
-        alert('This product is not available for online purchase yet. Please request a quote.');
-        return;
-      }
+    function addToCart() {
+      if (!currentProduct || !window.SgCart) return;
 
       const qty = parseInt(document.getElementById('cart-qty').value) || 1;
       const btn = document.getElementById('add-to-cart-btn');
@@ -535,23 +466,28 @@
       btn.disabled = true;
 
       try {
-        const success = await window.ShopifyCart.addItem(shopifyVariantId, qty);
-        if (success) {
-          btn.innerHTML = '✓ Added to Cart!';
-          btn.style.background = '#22c55e';
-          setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = '';
-            btn.disabled = false;
-          }, 2000);
-        } else {
-          throw new Error('Failed to add to cart');
-        }
+        window.SgCart.addToCart({
+          id: currentProduct.handle || currentProduct.title,
+          name: currentProduct.title,
+          price: pricePerSqFt,
+          image: (currentProduct.images && currentProduct.images[0]) || '',
+          quantity: qty,
+          variant: '',
+          category: 'tile',
+          href: window.location.href
+        });
+        btn.innerHTML = '✓ Added to Cart!';
+        btn.style.background = '#22c55e';
+        if (window.openCartDrawer) window.openCartDrawer();
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 2000);
       } catch (err) {
         console.error('Add to cart error:', err);
         btn.innerHTML = originalText;
         btn.disabled = false;
-        alert('Error adding to cart. Please try again or request a quote.');
       }
     }
 
