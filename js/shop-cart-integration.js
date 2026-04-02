@@ -461,16 +461,23 @@
   };
 
   // Global add-to-cart for marketplace inline buttons
-  window.sgAddToCart = async function(variantId, btn) {
-    if (!variantId || !window.ShopifyCart) {
-      var card = btn.closest('a[href], .product-card[onclick]');
-      if (card && card.href) window.location.href = card.href;
-      return;
-    }
+  window.sgAddToCart = function(productDataOrId, btn) {
+    if (!window.SgCart) return;
     try {
       btn.disabled = true;
       btn.textContent = 'Adding...';
-      await window.ShopifyCart.addItem(variantId, 1);
+
+      // Extract product info from the card
+      var card = btn.closest('[data-product-name], .product-card, [sf-data-product]');
+      var name = (card && (card.getAttribute('data-product-name') || card.querySelector('.product-name, .shop-product-name, h3, h4')?.textContent)) || 'Product';
+      var priceEl = card && card.querySelector('.product-price, .shop-product-price, [class*="price"]');
+      var price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
+      var imgEl = card && card.querySelector('img');
+      var image = imgEl ? imgEl.src : '';
+      var id = (typeof productDataOrId === 'string' ? productDataOrId : '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      window.SgCart.addToCart({ id: id, name: name.trim(), price: price, image: image, quantity: 1, variant: '', category: '', href: '' });
+
       btn.textContent = 'Added!';
       btn.style.background = '#22c55e';
       if (window.openCartDrawer) window.openCartDrawer();
@@ -900,7 +907,7 @@
 
   // Initialize
   function init() {
-    // Wait for SgCart shim to be available (set by shopify-cart.js)
+    // Wait for SgCart to be available (set by cart.js)
     if (!window.SgCart) {
       setTimeout(init, 100);
       return;
@@ -914,12 +921,8 @@
     interceptShopifyLinks();
     updateFloatingCount();
 
-    // Listen for Shopify cart changes to update drawer and badge
-    if (window.ShopifyCart && window.ShopifyCart.onChange) {
-      window.ShopifyCart.onChange(function() {
-        renderCartDrawer();
-        updateFloatingCount();
-      });
+    // No ShopifyCart dependency — drawer re-renders on SgCart calls via renderCartDrawer()
+    if (false) {
     }
 
     // Re-run when new products are loaded (for infinite scroll, etc.)
