@@ -32,12 +32,14 @@
   const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdatW3Hsua7p5EHSwkLa2WLx3YTSACjb9Yv5qoaGNX7pk2TZt5FcjSxRWw1KG1PoEpEkXmuCfr00vbSGkIMu';
   const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
 
-  // Initialize Stripe
+  // Initialize Stripe (only if Stripe.js is loaded)
   let stripe;
-  try {
-    stripe = Stripe(STRIPE_PUBLIC_KEY);
-  } catch (e) {
-    console.warn('Stripe not loaded yet');
+  if (typeof Stripe !== 'undefined') {
+    try {
+      stripe = Stripe(STRIPE_PUBLIC_KEY);
+    } catch (e) {
+      console.warn('Stripe init failed:', e.message);
+    }
   }
 
   // Cart Storage Key
