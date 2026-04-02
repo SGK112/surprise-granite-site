@@ -297,15 +297,24 @@
 
       // === SHARE QUOTE ===
 
-      // Build shareable quote URL (encodes cart into URL hash)
+      // URL-safe base64
+      function toUrlBase64(str) {
+        return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+      function fromUrlBase64(str) {
+        str = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (str.length % 4) str += '=';
+        return decodeURIComponent(escape(atob(str)));
+      }
+
+      // Build shareable quote URL
       function buildQuoteURL() {
         if (!window.SgCart) return window.location.href;
         var cart = window.SgCart.getCart();
         var payload = cart.map(function(item) {
           return { n: item.name, p: item.price, q: item.quantity, v: item.variant || '', i: item.image || '', id: item.id || '', c: item.category || '' };
         });
-        var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-        return window.location.origin + '/cart/?quote=' + encoded;
+        return window.location.origin + '/cart/?quote=' + encodeURIComponent(toUrlBase64(JSON.stringify(payload)));
       }
 
       // Build plain text quote summary
@@ -536,7 +545,7 @@
         var quoteData = params.get('quote');
         if (!quoteData || !window.SgCart) return;
         try {
-          var items = JSON.parse(decodeURIComponent(escape(atob(quoteData))));
+          var items = JSON.parse(fromUrlBase64(quoteData));
           if (!Array.isArray(items) || items.length === 0) return;
           window.SgCart.clearCart();
           items.forEach(function(item) {
