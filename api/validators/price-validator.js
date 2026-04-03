@@ -154,42 +154,7 @@ async function validateSingleItem(item, supabase) {
     try {
       let product = null;
 
-      // 1. Try shopify_products first (migrated Shopify products)
-      if (item.id) {
-        // Try by UUID
-        const { data: shopifyProduct } = await supabase
-          .from('shopify_products')
-          .select('id, name, price, compare_at_price, handle, status')
-          .eq('id', item.id)
-          .single();
-
-        if (shopifyProduct) {
-          product = {
-            ...shopifyProduct,
-            retail_price: shopifyProduct.price,
-            source: 'shopify_products'
-          };
-        }
-      }
-
-      // 2. Try by handle if no UUID match
-      if (!product && item.handle) {
-        const { data: shopifyProduct } = await supabase
-          .from('shopify_products')
-          .select('id, name, price, compare_at_price, handle, status')
-          .eq('handle', item.handle)
-          .single();
-
-        if (shopifyProduct) {
-          product = {
-            ...shopifyProduct,
-            retail_price: shopifyProduct.price,
-            source: 'shopify_products'
-          };
-        }
-      }
-
-      // 3. Fall back to distributor_products
+      // Look up in distributor_products
       if (!product && item.id) {
         const { data: distProduct } = await supabase
           .from('distributor_products')

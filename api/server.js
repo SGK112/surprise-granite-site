@@ -3476,6 +3476,9 @@ app.use(express.json({ limit: '10mb' }));
 // CSRF Protection - checks Origin/Referer for state-changing requests
 app.use(csrfOriginCheck());
 
+// CRM sync config (defined before health check uses it)
+const VOICENOW_CRM_URL = process.env.VOICENOW_CRM_URL || 'https://www.voicenowcrm.com';
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'Surprise Granite API' });
@@ -3788,7 +3791,7 @@ app.use('/api/contractors', (req, res, next) => { req.url = '/contractors' + (re
 app.use('/api/contractor/respond', (req, res, next) => { req.url = '/contractor/respond'; jobsRouter(req, res, next); });
 
 // ============ VOICENOW CRM SYNC HELPER ============
-const VOICENOW_CRM_URL = process.env.VOICENOW_CRM_URL || 'https://voiceflow-crm.onrender.com';
+// VOICENOW_CRM_URL defined above (near health check)
 
 function syncToCRM(endpoint, data, attempt = 1) {
   const url = `${VOICENOW_CRM_URL}/api/surprise-granite/${endpoint}`;
