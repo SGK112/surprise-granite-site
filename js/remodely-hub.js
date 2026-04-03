@@ -19,7 +19,7 @@
   // Aria configuration (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
     // API Configuration - VoiceNow CRM backend for OpenAI TTS
-    apiEndpoint: 'https://voiceflow-crm.onrender.com',
+    apiEndpoint: 'https://www.voicenowcrm.com',
 
     businessName: 'Remodely',
     assistantName: 'Aria',

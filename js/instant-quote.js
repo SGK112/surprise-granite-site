@@ -294,7 +294,7 @@
     function check() { done++; if (done >= 2) cb(ok); }
 
     post('https://surprise-granite-email-api.onrender.com/api/leads', payload, function (s) { if (!s) ok = false; check(); });
-    postWithRetry('https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead', crmPayload, function (s) { if (!s) ok = false; check(); });
+    postWithRetry('https://www.voicenowcrm.com/api/surprise-granite/webhook/new-lead', crmPayload, function (s) { if (!s) ok = false; check(); });
   }
 
   function post(url, data, cb) {

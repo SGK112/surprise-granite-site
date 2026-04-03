@@ -10,7 +10,7 @@
   class AriaOpenAI {
     constructor(config = {}) {
       this.config = {
-        apiEndpoint: config.apiEndpoint || 'https://voiceflow-crm.onrender.com',
+        apiEndpoint: config.apiEndpoint || 'https://www.voicenowcrm.com',
         assistantName: config.assistantName || 'Aria',
         businessName: config.businessName || 'Surprise Granite',
         greeting: config.greeting || "Hi! I'm Aria from Surprise Granite. How can I help you today?",

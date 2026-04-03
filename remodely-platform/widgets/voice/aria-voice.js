@@ -51,7 +51,7 @@
     ],
 
     // API Configuration - VoiceNow CRM backend
-    apiEndpoint: 'https://voiceflow-crm.onrender.com',
+    apiEndpoint: 'https://www.voicenowcrm.com',
     openaiKey: '', // Set via environment
     webhookUrl: '',
 

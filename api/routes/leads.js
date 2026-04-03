@@ -132,7 +132,7 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
         savedLead = lead;
 
         // Push to VoiceNow CRM (fire-and-forget)
-        const crmWebhookUrl = process.env.VOICENOW_CRM_URL || 'https://voiceflow-crm.onrender.com';
+        const crmWebhookUrl = process.env.VOICENOW_CRM_URL || 'https://www.voicenowcrm.com';
         fetch(`${crmWebhookUrl}/api/surprise-granite/webhook/new-lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

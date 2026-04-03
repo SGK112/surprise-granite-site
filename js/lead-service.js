@@ -7,7 +7,7 @@
 (function() {
   'use strict';
 
-  const CRM_WEBHOOK = 'https://voiceflow-crm.onrender.com/api/surprise-granite/webhook/new-lead';
+  const CRM_WEBHOOK = 'https://www.voicenowcrm.com/api/surprise-granite/webhook/new-lead';
 
   function syncToCRMWithRetry(leadData, attempt) {
     attempt = attempt || 1;
