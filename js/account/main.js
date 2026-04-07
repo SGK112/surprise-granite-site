@@ -3099,15 +3099,22 @@
           emptyEl.style.display = 'block';
           return;
         }
-        // Load ALL orders from shopify_orders
-        const { data, error } = await supabaseClient
-          .from('shopify_orders')
-          .select('*')
-          .order('shopify_created_at', { ascending: false });
+        // Load from BOTH orders tables
+        const [storeRes, shopifyRes] = await Promise.all([
+          supabaseClient.from('orders').select('*').order('created_at', { ascending: false }),
+          supabaseClient.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false })
+        ]);
 
-        if (error) throw error;
+        const storeOrders = (storeRes.data || []).map(o => ({ ...o, _source: 'store' }));
+        const shopifyOrders = (shopifyRes.data || []).map(o => ({ ...o, _source: 'shopify' }));
 
-        allOrders = data || [];
+        // Combine and sort by date (newest first)
+        allOrders = [...storeOrders, ...shopifyOrders].sort((a, b) => {
+          const da = new Date(a.created_at || a.shopify_created_at);
+          const db2 = new Date(b.created_at || b.shopify_created_at);
+          return db2 - da;
+        });
+
         filteredOrders = [...allOrders];
         ordersLoaded = true;
 
@@ -3138,23 +3145,22 @@
 
     function updateOrderStats() {
       const total = allOrders.length;
-      // Check multiple possible field names for total
       const revenue = allOrders.reduce((sum, o) => {
-        const orderTotal = parseFloat(o.total_price || o.total || o.amount || 0);
-        return sum + orderTotal;
+        return sum + (parseFloat(o.total_price || o.total || o.amount || 0));
       }, 0);
-      const paid = allOrders.filter(o => o.financial_status === 'paid').length;
-      const fulfilled = allOrders.filter(o => o.fulfillment_status === 'fulfilled').length;
+      const paid = allOrders.filter(o => {
+        const ps = (o.payment_status || o.financial_status || '').toLowerCase();
+        return ps === 'paid';
+      }).length;
+      const fulfilled = allOrders.filter(o => {
+        const s = (o.status || o.fulfillment_status || '').toLowerCase();
+        return s === 'shipped' || s === 'delivered' || s === 'fulfilled';
+      }).length;
 
       document.getElementById('stat-total-orders').textContent = total.toLocaleString();
       document.getElementById('stat-orders-revenue').textContent = '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('stat-paid-orders').textContent = paid.toLocaleString();
       document.getElementById('stat-fulfilled-orders').textContent = fulfilled.toLocaleString();
-
-      // Debug: log first order to see field names
-      if (allOrders.length > 0) {
-        console.log('Sample order fields:', Object.keys(allOrders[0]), 'Total field values:', allOrders[0].total_price, allOrders[0].total);
-      }
     }
 
     function setupOrdersSearch() {
@@ -3174,11 +3180,19 @@
       const fulfillmentFilter = document.getElementById('orders-fulfillment-filter').value;
 
       filteredOrders = allOrders.filter(order => {
-        // Status filter
-        if (statusFilter && order.financial_status !== statusFilter) return false;
+        // Status filter — check both table schemas
+        if (statusFilter) {
+          const ps = (order.payment_status || order.financial_status || '').toLowerCase();
+          if (ps !== statusFilter.toLowerCase()) return false;
+        }
 
         // Fulfillment filter
-        if (fulfillmentFilter && order.fulfillment_status !== fulfillmentFilter) return false;
+        if (fulfillmentFilter) {
+          const fs = order._source === 'store'
+            ? (['shipped','delivered'].includes(order.status) ? order.status : 'unfulfilled')
+            : (order.fulfillment_status || 'unfulfilled');
+          if (fs.toLowerCase() !== fulfillmentFilter.toLowerCase()) return false;
+        }
 
         // Search
         if (ordersSearchTerm) {
@@ -3214,28 +3228,36 @@
       const pageOrders = filteredOrders.slice(start, end);
 
       listEl.innerHTML = pageOrders.map(order => {
-        const orderDate = order.shopify_created_at
-          ? new Date(order.shopify_created_at).toLocaleDateString('en-US', {
+        const isStore = order._source === 'store';
+        const orderDate = (order.created_at || order.shopify_created_at)
+          ? new Date(order.created_at || order.shopify_created_at).toLocaleDateString('en-US', {
               year: 'numeric', month: 'short', day: 'numeric'
             })
           : 'N/A';
 
-        const financialStatus = (order.financial_status || 'pending').toLowerCase();
-        const fulfillmentStatus = (order.fulfillment_status || 'unfulfilled').toLowerCase();
+        const orderStatus = isStore ? (order.status || 'pending').toLowerCase() : (order.financial_status || 'pending').toLowerCase();
+        const fulfillmentStatus = isStore
+          ? (['shipped','delivered'].includes(order.status) ? order.status : 'unfulfilled').toLowerCase()
+          : (order.fulfillment_status || 'unfulfilled').toLowerCase();
+        const payStatus = isStore ? (order.payment_status || 'unpaid').toLowerCase() : (order.financial_status || 'pending').toLowerCase();
 
-        // Parse line items
-        const lineItems = Array.isArray(order.line_items) ? order.line_items : [];
+        // Parse line items — store orders use 'items', shopify uses 'line_items'
+        const lineItems = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+        const hasTracking = !!order.tracking_number;
 
         return `
           <div class="order-card" onclick="showOrderDetail('${order.id}')" style="cursor: pointer;">
             <div class="order-header">
               <div class="order-info">
-                <div class="order-number">Order #${escapeHtml(String(order.order_number || order.id))}</div>
+                <div class="order-number">Order #${escapeHtml(String(order.order_number || order.id))}
+                  ${isStore ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(249,203,0,0.15);color:var(--gold-primary);margin-left:6px;">STORE</span>' : ''}
+                  ${hasTracking ? ' <span style="font-size:12px;" title="Tracking: ' + escapeHtml(order.tracking_number) + '">📦</span>' : ''}
+                </div>
                 <div class="order-date">${orderDate}</div>
                 <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(order.customer_name || order.customer_email || 'Guest')}</div>
               </div>
               <div class="order-status">
-                <span class="status-badge ${financialStatus}">${escapeHtml(financialStatus)}</span>
+                <span class="status-badge ${payStatus}">${escapeHtml(payStatus)}</span>
                 <span class="status-badge ${fulfillmentStatus}">${escapeHtml(fulfillmentStatus)}</span>
               </div>
             </div>
@@ -3245,15 +3267,15 @@
                 <div class="order-item">
                   <div class="order-item-image">
                     ${item.image?.url
-                      ? `<img src="${escapeHtml(item.image.url)}" alt="${escapeHtml(item.title || item.name)}" loading="lazy">`
+                      ? `<img src="${escapeHtml(item.image.url)}" alt="${escapeHtml(item.title || item.name || item.product_name)}" loading="lazy">`
                       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;padding:15px;color:var(--text-muted)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
                     }
                   </div>
                   <div class="order-item-details">
-                    <div class="order-item-name">${escapeHtml(item.title || item.name || 'Product')}</div>
+                    <div class="order-item-name">${escapeHtml(item.title || item.name || item.product_name || 'Product')}</div>
                     <div class="order-item-meta">Qty: ${item.quantity || 1}</div>
                   </div>
-                  <div class="order-item-price">$${((item.originalUnitPrice?.amount || item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+                  <div class="order-item-price">$${((item.originalUnitPrice?.amount || item.unit_price || item.price || item.total || item.line_total || 0) * (item.quantity || 1)).toFixed(2)}</div>
                 </div>
               `).join('')}
               ${lineItems.length > 2 ? `
@@ -3305,20 +3327,80 @@
       const order = allOrders.find(o => o.id === orderId);
       if (!order) return;
 
-      const lineItems = Array.isArray(order.line_items) ? order.line_items : [];
-      const orderDate = order.shopify_created_at
-        ? new Date(order.shopify_created_at).toLocaleDateString('en-US', {
+      const isStore = order._source === 'store';
+      const lineItems = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+      const orderDate = (order.created_at || order.shopify_created_at)
+        ? new Date(order.created_at || order.shopify_created_at).toLocaleDateString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
           })
         : 'N/A';
 
+      const orderStatus = isStore ? (order.status || 'pending') : (order.financial_status || 'pending');
+      const payStatus = isStore ? (order.payment_status || 'unpaid') : (order.financial_status || 'pending');
+
+      // Build management actions for store orders (admin only)
+      const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+      let actionsHtml = '';
+      if (isStore) {
+        actionsHtml = `
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--gold-primary);">Manage Order</div>
+
+            <!-- Status Update -->
+            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Update Status</div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="modal-status-${orderId}" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+                  ${['pending','confirmed','processing','shipped','delivered','cancelled','refunded'].map(s =>
+                    `<option value="${s}" ${s === orderStatus ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+                  ).join('')}
+                </select>
+                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
+                  <input type="checkbox" id="modal-status-notify-${orderId}" checked> Notify
+                </label>
+                <button onclick="orderAction_updateStatus('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--info, #3b82f6);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Update</button>
+              </div>
+            </div>
+
+            <!-- Tracking -->
+            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Shipping & Tracking</div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <select id="modal-carrier-${orderId}" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+                  <option value="">Carrier</option>
+                  ${['UPS','FedEx','USPS','DHL','Other'].map(c =>
+                    `<option value="${c}" ${order.tracking_carrier === c ? 'selected' : ''}>${c}</option>`
+                  ).join('')}
+                </select>
+                <input type="text" id="modal-tracking-${orderId}" value="${escapeHtml(order.tracking_number || '')}" placeholder="Tracking number" style="flex:1;min-width:150px;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
+                  <input type="checkbox" id="modal-tracking-notify-${orderId}" checked> Notify
+                </label>
+                <button onclick="orderAction_addTracking('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--success, #22c55e);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Ship</button>
+              </div>
+            </div>
+
+            <!-- Message Customer -->
+            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Message Customer</div>
+              <textarea id="modal-message-${orderId}" placeholder="Type a message to email the customer..." style="width:100%;min-height:60px;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+              <div style="margin-top:8px;text-align:right;">
+                <button onclick="orderAction_sendMessage('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--gold-primary, #f9cb00);color:var(--dark-surface, #1a1a2e);font-size:13px;font-weight:600;cursor:pointer;">Send Email</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       const modal = document.createElement('div');
       modal.className = 'order-detail-modal';
-      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100001; padding: 20px;';
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: flex-start; justify-content: center; z-index: 100001; padding: 40px 20px; overflow-y: auto;';
       modal.innerHTML = `
-        <div style="background: var(--dark-surface); border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-subtle);">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border-subtle);">
-            <h3 style="font-size: 18px; font-weight: 700;">Order #${escapeHtml(String(order.order_number || order.id))}</h3>
+        <div style="background: var(--dark-surface); border-radius: 16px; max-width: 650px; width: 100%; max-height: calc(100vh - 80px); overflow-y: auto; border: 1px solid var(--border-subtle);">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); position: sticky; top: 0; background: var(--dark-surface); z-index: 10;">
+            <h3 style="font-size: 18px; font-weight: 700;">Order #${escapeHtml(String(order.order_number || order.id))}
+              ${isStore ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(249,203,0,0.15);color:var(--gold-primary);margin-left:6px;">STORE</span>' : ''}
+            </h3>
             <button onclick="this.closest('.order-detail-modal').remove()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
           </div>
           <div style="padding: 24px;">
@@ -3328,24 +3410,26 @@
                 <div style="font-weight: 500;">${orderDate}</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Status</div>
-                <div><span class="status-badge ${order.financial_status || 'pending'}">${escapeHtml(order.financial_status || 'pending')}</span></div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Payment</div>
+                <div><span class="status-badge ${payStatus}">${escapeHtml(payStatus)}</span></div>
               </div>
               <div>
                 <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Customer</div>
                 <div style="font-weight: 500;">${escapeHtml(order.customer_name || 'Guest')}</div>
                 <div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(order.customer_email || '')}</div>
+                ${order.customer_phone ? `<div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(order.customer_phone)}</div>` : ''}
               </div>
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Fulfillment</div>
-                <div><span class="status-badge ${order.fulfillment_status || 'unfulfilled'}">${escapeHtml(order.fulfillment_status || 'unfulfilled')}</span></div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Status</div>
+                <div><span class="status-badge ${orderStatus}">${escapeHtml(orderStatus)}</span></div>
+                ${order.tracking_number ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">📦 ${escapeHtml(order.tracking_carrier || '')} ${escapeHtml(order.tracking_number)}</div>` : ''}
               </div>
             </div>
 
             <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Items (${lineItems.length})</div>
             <div style="background: var(--dark-elevated); border-radius: 12px; padding: 12px;">
-              ${lineItems.map(item => `
-                <div style="display: flex; gap: 12px; padding: 8px 0; align-items: center; ${lineItems.indexOf(item) > 0 ? 'border-top: 1px solid var(--border-subtle);' : ''}">
+              ${lineItems.map((item, idx) => `
+                <div style="display: flex; gap: 12px; padding: 8px 0; align-items: center; ${idx > 0 ? 'border-top: 1px solid var(--border-subtle);' : ''}">
                   <div style="width: 50px; height: 50px; border-radius: 8px; background: var(--dark-surface); overflow: hidden; flex-shrink: 0;">
                     ${item.image?.url
                       ? `<img src="${escapeHtml(item.image.url)}" style="width: 100%; height: 100%; object-fit: cover;">`
@@ -3353,18 +3437,20 @@
                     }
                   </div>
                   <div style="flex: 1;">
-                    <div style="font-weight: 500;">${escapeHtml(item.title || item.name || 'Product')}</div>
+                    <div style="font-weight: 500;">${escapeHtml(item.title || item.name || item.product_name || 'Product')}</div>
                     <div style="font-size: 13px; color: var(--text-muted);">Qty: ${item.quantity || 1}</div>
                   </div>
-                  <div style="font-weight: 600;">$${((item.originalUnitPrice?.amount || item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+                  <div style="font-weight: 600;">$${((item.originalUnitPrice?.amount || item.unit_price || item.price || item.total || item.line_total || 0) * (item.quantity || 1)).toFixed(2)}</div>
                 </div>
-              `).join('')}
+              `).join('') || '<div style="padding: 12px; color: var(--text-muted);">No line items</div>'}
             </div>
 
             <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 16px; font-weight: 600;">Total</span>
               <span style="font-size: 24px; font-weight: 700; color: var(--gold-primary);">$${parseFloat(order.total || 0).toFixed(2)}</span>
             </div>
+
+            ${actionsHtml}
           </div>
         </div>
       `;
@@ -3372,6 +3458,57 @@
         if (e.target === modal) modal.remove();
       });
       document.body.appendChild(modal);
+    }
+
+    // Order management action functions
+    async function orderAction_apiCall(method, path, body) {
+      const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+      const session = await supabaseClient.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(API_BASE + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function orderAction_updateStatus(orderId) {
+      const status = document.getElementById('modal-status-' + orderId).value;
+      const notify = document.getElementById('modal-status-notify-' + orderId).checked;
+      try {
+        const result = await orderAction_apiCall('PATCH', `/api/admin/orders/${orderId}/status`, { status, notify_customer: notify });
+        showToast('Status updated to ' + status + (result.email_sent ? ' — customer notified' : ''), 'success');
+        document.querySelector('.order-detail-modal')?.remove();
+        ordersLoaded = false;
+        await loadOrders();
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    async function orderAction_addTracking(orderId) {
+      const tracking_number = document.getElementById('modal-tracking-' + orderId).value.trim();
+      const tracking_carrier = document.getElementById('modal-carrier-' + orderId).value;
+      const notify = document.getElementById('modal-tracking-notify-' + orderId).checked;
+      if (!tracking_number) { showToast('Enter a tracking number', 'error'); return; }
+      try {
+        const result = await orderAction_apiCall('PUT', `/api/admin/orders/${orderId}/tracking`, { tracking_number, tracking_carrier, notify_customer: notify });
+        showToast('Tracking saved' + (result.email_sent ? ' — shipping notification sent' : ''), 'success');
+        document.querySelector('.order-detail-modal')?.remove();
+        ordersLoaded = false;
+        await loadOrders();
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    async function orderAction_sendMessage(orderId) {
+      const message = document.getElementById('modal-message-' + orderId).value.trim();
+      if (!message) { showToast('Enter a message', 'error'); return; }
+      try {
+        const result = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/message`, { message });
+        showToast(result.email_sent ? 'Message sent to customer' : 'Message saved but email failed', result.email_sent ? 'success' : 'error');
+        document.getElementById('modal-message-' + orderId).value = '';
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
     }
 
     function exportOrdersCSV() {
