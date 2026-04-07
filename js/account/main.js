@@ -3109,9 +3109,10 @@
         const shopifyOrders = (shopifyRes.data || []).map(o => ({ ...o, _source: 'shopify' }));
 
         // Combine and sort by date (newest first)
+        // Use shopify_created_at for Shopify orders (created_at is import date)
         allOrders = [...storeOrders, ...shopifyOrders].sort((a, b) => {
-          const da = new Date(a.created_at || a.shopify_created_at);
-          const db2 = new Date(b.created_at || b.shopify_created_at);
+          const da = new Date(a._source === 'shopify' ? (a.shopify_created_at || a.created_at) : a.created_at);
+          const db2 = new Date(b._source === 'shopify' ? (b.shopify_created_at || b.created_at) : b.created_at);
           return db2 - da;
         });
 
