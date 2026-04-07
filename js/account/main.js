@@ -3100,12 +3100,19 @@
           return;
         }
         // Load from BOTH orders tables
+        // Use admin API for store orders (bypasses RLS) + direct query for shopify
+        const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+
         const [storeRes, shopifyRes] = await Promise.all([
-          supabaseClient.from('orders').select('*').order('created_at', { ascending: false }),
+          fetch(API_BASE + '/api/admin/orders?source=store', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }).then(r => r.json()).catch(() => ({ orders: [] })),
           supabaseClient.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false })
         ]);
 
-        const storeOrders = (storeRes.data || []).map(o => ({ ...o, _source: 'store' }));
+        const storeOrders = (storeRes.orders || []);
         const shopifyOrders = (shopifyRes.data || []).map(o => ({ ...o, _source: 'shopify' }));
 
         // Combine and sort by date (newest first)
