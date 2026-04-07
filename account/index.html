@@ -3106,28 +3106,39 @@
         <section id="page-orders" class="page-section">
           <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
             <div>
-              <h1 class="page-title">Order History</h1>
-              <p class="page-subtitle">View and manage all orders</p>
+              <h1 class="page-title">Orders</h1>
+              <p class="page-subtitle">Manage orders, fulfillment & customer notifications</p>
             </div>
-            <button class="btn-modern secondary" onclick="exportOrdersCSV()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export CSV
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-modern secondary" onclick="testOrderEmail()" id="test-email-btn" style="font-size: 12px; padding: 8px 12px;">Test Email</button>
+              <button class="btn-modern secondary" onclick="exportOrdersCSV()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export CSV
+              </button>
+            </div>
           </div>
 
           <!-- Orders Stats -->
-          <div id="orders-stats" class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 24px; margin-bottom: 24px;">
+          <div id="orders-stats" class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 24px; margin-bottom: 24px;">
             <div class="stat-card-mini">
-              <div class="stat-card-value" id="stat-total-orders">-</div>
-              <div class="stat-card-label">Total Orders</div>
+              <div class="stat-card-value" id="stat-needs-action" style="color: var(--error, #ef4444);">-</div>
+              <div class="stat-card-label">Needs Shipment</div>
+            </div>
+            <div class="stat-card-mini">
+              <div class="stat-card-value" id="stat-store-orders" style="color: var(--gold-primary);">-</div>
+              <div class="stat-card-label">Store Orders</div>
             </div>
             <div class="stat-card-mini">
               <div class="stat-card-value" id="stat-orders-revenue" style="color: var(--success);">-</div>
               <div class="stat-card-label">Revenue</div>
+            </div>
+            <div class="stat-card-mini">
+              <div class="stat-card-value" id="stat-total-orders">-</div>
+              <div class="stat-card-label">Total Orders</div>
             </div>
             <div class="stat-card-mini">
               <div class="stat-card-value" id="stat-paid-orders" style="color: var(--info);">-</div>
@@ -3139,7 +3150,15 @@
             </div>
           </div>
 
-          <!-- Search & Filters -->
+          <!-- Action Required Banner -->
+          <div id="orders-action-required" style="display: none;"></div>
+
+          <!-- Source Tabs + Search & Filters -->
+          <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+            <button class="btn-modern primary" id="tab-all" onclick="switchOrderSource('all')" style="padding: 8px 16px; font-size: 13px;">All</button>
+            <button class="btn-modern secondary" id="tab-store" onclick="switchOrderSource('store')" style="padding: 8px 16px; font-size: 13px;">Store</button>
+            <button class="btn-modern secondary" id="tab-shopify" onclick="switchOrderSource('shopify')" style="padding: 8px 16px; font-size: 13px;">Shopify (Legacy)</button>
+          </div>
           <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px; position: relative;">
               <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3150,20 +3169,19 @@
                 aria-label="Search orders">
             </div>
             <select id="orders-status-filter" onchange="filterOrders()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;"
-              aria-label="Filter by payment status">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;">
               <option value="">All Statuses</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
               <option value="refunded">Refunded</option>
             </select>
             <select id="orders-fulfillment-filter" onchange="filterOrders()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;"
-              aria-label="Filter by fulfillment status">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;">
               <option value="">All Fulfillment</option>
               <option value="fulfilled">Fulfilled</option>
               <option value="unfulfilled">Unfulfilled</option>
-              <option value="partial">Partial</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
             </select>
           </div>
 
@@ -3181,8 +3199,8 @@
               </svg>
             </div>
             <h3>No Orders Yet</h3>
-            <p>When you place orders, they'll appear here.</p>
-            <a href="/shop/" class="btn-modern primary">Browse Products</a>
+            <p>Orders from your online store will appear here.</p>
+            <a href="/marketplace/" class="btn-modern primary">Browse Marketplace</a>
           </div>
 
           <!-- Orders List -->
@@ -3190,7 +3208,7 @@
 
           <!-- Pagination -->
           <div id="orders-pagination" style="display: none; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: var(--dark-elevated); border-radius: 12px;">
-            <div id="orders-page-info" style="color: var(--text-muted); font-size: 14px;">Showing 1-50 of 557</div>
+            <div id="orders-page-info" style="color: var(--text-muted); font-size: 14px;"></div>
             <div style="display: flex; gap: 8px;">
               <button id="orders-prev-btn" onclick="ordersPagePrev()" class="btn-modern secondary" style="padding: 8px 16px;" disabled>Previous</button>
               <button id="orders-next-btn" onclick="ordersPageNext()" class="btn-modern secondary" style="padding: 8px 16px;">Next</button>
@@ -7932,7 +7950,7 @@
     </div>
   </div>
 
-  <script src="/js/account/main.js?v=20260407c"></script>
+  <script src="/js/account/main.js?v=20260407d"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js?v=3"></script>
 

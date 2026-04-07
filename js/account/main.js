@@ -3075,6 +3075,7 @@
     let ordersPage = 1;
     const ordersPageSize = 50;
     let ordersSearchTerm = '';
+    let ordersSourceFilter = 'all';
 
     async function loadOrders() {
       console.log('[Orders] loadOrders called, ordersLoaded:', ordersLoaded);
@@ -3152,23 +3153,90 @@
     }
 
     function updateOrderStats() {
+      const storeOrders = allOrders.filter(o => o._source === 'store');
       const total = allOrders.length;
-      const revenue = allOrders.reduce((sum, o) => {
-        return sum + (parseFloat(o.total_price || o.total || o.amount || 0));
-      }, 0);
-      const paid = allOrders.filter(o => {
-        const ps = (o.payment_status || o.financial_status || '').toLowerCase();
-        return ps === 'paid';
-      }).length;
+      const revenue = allOrders.reduce((sum, o) => sum + (parseFloat(o.total_price || o.total || o.amount || 0)), 0);
+      const paid = allOrders.filter(o => (o.payment_status || o.financial_status || '').toLowerCase() === 'paid').length;
       const fulfilled = allOrders.filter(o => {
         const s = (o.status || o.fulfillment_status || '').toLowerCase();
         return s === 'shipped' || s === 'delivered' || s === 'fulfilled';
       }).length;
+      const needsAction = storeOrders.filter(o => {
+        const s = (o.status || '').toLowerCase();
+        return o.payment_status === 'paid' && !['shipped', 'delivered'].includes(s);
+      }).length;
 
       document.getElementById('stat-total-orders').textContent = total.toLocaleString();
+      document.getElementById('stat-store-orders').textContent = storeOrders.length.toLocaleString();
       document.getElementById('stat-orders-revenue').textContent = '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('stat-paid-orders').textContent = paid.toLocaleString();
       document.getElementById('stat-fulfilled-orders').textContent = fulfilled.toLocaleString();
+      document.getElementById('stat-needs-action').textContent = needsAction.toLocaleString();
+
+      // Render action-required banner for unfulfilled store orders
+      renderActionRequired(storeOrders);
+
+      // Update tab counts
+      document.getElementById('tab-all').textContent = 'All (' + total + ')';
+      document.getElementById('tab-store').textContent = 'Store (' + storeOrders.length + ')';
+      document.getElementById('tab-shopify').textContent = 'Shopify (' + (total - storeOrders.length) + ')';
+    }
+
+    function renderActionRequired(storeOrders) {
+      const container = document.getElementById('orders-action-required');
+      const unfulfilled = storeOrders.filter(o => {
+        const s = (o.status || '').toLowerCase();
+        return o.payment_status === 'paid' && !['shipped', 'delivered'].includes(s);
+      });
+
+      if (unfulfilled.length === 0) { container.style.display = 'none'; return; }
+
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,203,0,0.05)); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #ef4444;">Needs Shipment (${unfulfilled.length})</div>
+          ${unfulfilled.map(order => {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const itemNames = items.map(i => (i.product_name || i.name || 'Product') + ' x' + (i.quantity || 1)).join(', ');
+            const addr = [order.shipping_city, order.shipping_state].filter(Boolean).join(', ');
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px; gap: 12px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                  <div style="font-weight: 600; font-size: 14px;">${escapeHtml(order.order_number)} — ${escapeHtml(order.customer_name || 'Customer')}</div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${escapeHtml(itemNames)} ${addr ? '| Ship to: ' + escapeHtml(addr) : ''}</div>
+                </div>
+                <div style="font-weight: 700; color: var(--gold-primary); font-size: 15px; white-space: nowrap;">$${parseFloat(order.total || 0).toFixed(2)}</div>
+                <div style="display: flex; gap: 6px;">
+                  <button onclick="event.stopPropagation(); showOrderDetail('${order.id}')" class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;">Details</button>
+                  <button onclick="event.stopPropagation(); quickAddTracking('${order.id}')" class="btn-modern primary" style="padding: 6px 12px; font-size: 12px;">Add Tracking</button>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    function quickAddTracking(orderId) {
+      // Open the order detail modal scrolled to tracking section
+      showOrderDetail(orderId);
+    }
+
+    function switchOrderSource(source) {
+      ordersSourceFilter = source;
+      document.getElementById('tab-all').className = 'btn-modern ' + (source === 'all' ? 'primary' : 'secondary');
+      document.getElementById('tab-store').className = 'btn-modern ' + (source === 'store' ? 'primary' : 'secondary');
+      document.getElementById('tab-shopify').className = 'btn-modern ' + (source === 'shopify' ? 'primary' : 'secondary');
+      ordersPage = 1;
+      filterOrders();
+    }
+
+    async function testOrderEmail() {
+      const btn = document.getElementById('test-email-btn');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const result = await orderAction_apiCall('POST', '/api/admin/orders/test-email', {});
+        showToast(result.success ? 'Test email sent to ' + result.sent_to : 'Failed: ' + result.error, result.success ? 'success' : 'error');
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Test Email'; }
     }
 
     function setupOrdersSearch() {
@@ -3188,6 +3256,9 @@
       const fulfillmentFilter = document.getElementById('orders-fulfillment-filter').value;
 
       filteredOrders = allOrders.filter(order => {
+        // Source filter
+        if (ordersSourceFilter !== 'all' && order._source !== ordersSourceFilter) return false;
+
         // Status filter — check both table schemas
         if (statusFilter) {
           const ps = (order.payment_status || order.financial_status || '').toLowerCase();

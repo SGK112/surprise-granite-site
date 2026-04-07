@@ -25,7 +25,8 @@ const COMPANY = {
   logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
   tagline: 'Premium Countertops & Expert Installation',
   license: 'AZ ROC# 341113',
-  poweredBy: 'Powered by Remodely.ai'
+  poweredBy: 'Powered by Remodely.ai',
+  googleReviewUrl: 'https://g.page/r/CXsLJCVtUF84EAE/review'
 };
 
 // Create transporter
@@ -1276,6 +1277,15 @@ function generateShippingNotificationEmail(order) {
     <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
       Questions about your shipment? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
     </p>
+
+    <div style="margin-top: 24px; padding: 20px; background: #fef9e7; border-radius: 8px; text-align: center;">
+      <p style="margin: 0 0 10px; color: #1a1a2e; font-size: 15px; font-weight: 600;">Love your purchase?</p>
+      <a href="${COMPANY.googleReviewUrl}" style="display: inline-block; background: #f9cb00; color: #1a1a2e; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">Leave Us a Google Review</a>
+      <p style="margin: 10px 0 0; color: #888; font-size: 12px;">Your review helps other homeowners find quality countertops.</p>
+    </div>
+
+    <p style="margin: 0; color: #666; font-size: 14px; text-align: center; display: none;">
+    </p>
   `;
 
   return {
@@ -1292,7 +1302,7 @@ function generateOrderStatusEmail(order) {
     confirmed: { label: 'Confirmed', color: '#4caf50', icon: '✓', message: 'Your order has been confirmed and is being prepared.' },
     processing: { label: 'Processing', color: '#ff9800', icon: '⚙', message: 'Your order is being processed and prepared for shipment.' },
     shipped: { label: 'Shipped', color: '#2196F3', icon: '📦', message: 'Your order is on its way!' },
-    delivered: { label: 'Delivered', color: '#4caf50', icon: '🏠', message: 'Your order has been delivered. Enjoy!' },
+    delivered: { label: 'Delivered', color: '#4caf50', icon: '🏠', message: 'Your order has been delivered. Enjoy! We\'d love to hear how it went.' },
     cancelled: { label: 'Cancelled', color: '#f44336', icon: '✕', message: 'Your order has been cancelled.' },
     refunded: { label: 'Refunded', color: '#9c27b0', icon: '↩', message: 'Your order has been refunded.' }
   };
@@ -1323,6 +1333,12 @@ function generateOrderStatusEmail(order) {
     <p style="margin: 20px 0 0; color: #666; font-size: 14px; text-align: center;">
       Questions? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
     </p>
+
+    ${order.status === 'delivered' ? `
+    <div style="margin-top: 24px; padding: 20px; background: #fef9e7; border-radius: 8px; text-align: center;">
+      <p style="margin: 0 0 10px; color: #1a1a2e; font-size: 15px; font-weight: 600;">How was your experience?</p>
+      <a href="${COMPANY.googleReviewUrl}" style="display: inline-block; background: #f9cb00; color: #1a1a2e; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">Leave Us a Google Review</a>
+    </div>` : ''}
   `;
 
   return {
