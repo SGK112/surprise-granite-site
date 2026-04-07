@@ -77,7 +77,7 @@
     addressMode: 'none', // 'none', 'simple', 'billing-service'
     defaultState: 'AZ',
     showProjectFields: true,
-    showImageUpload: false,
+    showImageUpload: true,
     source: 'unified-lead-form',
     formName: 'unified',
     onSubmit: null,
@@ -139,10 +139,83 @@
         addressToggle.addEventListener('change', (e) => this.handleAddressToggle(e.target.checked));
       }
 
+      // Image upload — inject UI if enabled
+      if (this.config.showImageUpload) {
+        this.uploadedImageUrls = [];
+        const form = this.container.querySelector('form');
+        const submitBtn = form?.querySelector('[type="submit"], [data-submit]');
+        if (form && submitBtn) {
+          const uploadSection = document.createElement('div');
+          uploadSection.className = 'ulf-input-group ulf-image-upload';
+          uploadSection.innerHTML = `
+            <label class="ulf-label">Project Photos (optional)</label>
+            <div class="ulf-dropzone" style="border:2px dashed rgba(255,255,255,0.2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s">
+              <input type="file" multiple accept="image/*" style="display:none" data-image-input>
+              <p style="margin:0;color:rgba(255,255,255,0.6);font-size:14px">
+                <span style="font-size:24px">📷</span><br>
+                Tap to add photos of your project<br>
+                <small>Up to 5 images, 10MB each</small>
+              </p>
+            </div>
+            <div class="ulf-image-previews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px" data-image-previews></div>
+            <div class="ulf-upload-status" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px" data-upload-status></div>
+          `;
+          submitBtn.parentNode.insertBefore(uploadSection, submitBtn);
+
+          const dropzone = uploadSection.querySelector('.ulf-dropzone');
+          const fileInput = uploadSection.querySelector('[data-image-input]');
+          const previews = uploadSection.querySelector('[data-image-previews]');
+          const status = uploadSection.querySelector('[data-upload-status]');
+
+          dropzone.addEventListener('click', () => fileInput.click());
+          dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.5)'; });
+          dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
+          dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; this.handleImageFiles(e.dataTransfer.files, previews, status); });
+          fileInput.addEventListener('change', (e) => this.handleImageFiles(e.target.files, previews, status));
+        }
+      }
+
       // Form submission
       const form = this.container.querySelector('form');
       if (form) {
         form.addEventListener('submit', (e) => this.handleSubmit(e));
+      }
+    }
+
+    /**
+     * Handle image file selection — upload to Supabase and show previews
+     */
+    async handleImageFiles(files, previewsEl, statusEl) {
+      if (!files?.length) return;
+      const remaining = 5 - (this.uploadedImageUrls?.length || 0);
+      if (remaining <= 0) { statusEl.textContent = 'Maximum 5 photos reached'; return; }
+
+      const toUpload = Array.from(files).slice(0, remaining);
+      statusEl.textContent = `Uploading ${toUpload.length} photo(s)...`;
+
+      const formData = new FormData();
+      toUpload.forEach(f => formData.append('images', f));
+
+      try {
+        const apiBase = (window.SG_CONFIG?.API_URL || '') + '/api/leads/upload-images';
+        const resp = await fetch(apiBase, { method: 'POST', body: formData });
+        const result = await resp.json();
+
+        if (result.success && result.urls?.length) {
+          this.uploadedImageUrls.push(...result.urls);
+          result.urls.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1)';
+            previewsEl.appendChild(img);
+          });
+          statusEl.textContent = `${this.uploadedImageUrls.length} photo(s) attached`;
+        } else {
+          statusEl.textContent = 'Upload failed — try again';
+        }
+      } catch (err) {
+        console.error('Image upload error:', err);
+        statusEl.textContent = 'Upload failed — try again';
       }
     }
 
@@ -325,6 +398,11 @@
         data.service_address = this.collectAddress('service');
       }
 
+      // Attach uploaded image URLs
+      if (this.uploadedImageUrls?.length) {
+        data.image_urls = this.uploadedImageUrls;
+      }
+
       return data;
     }
 
@@ -424,7 +502,8 @@
           state: data.billing_address?.state,
           zip: data.billing_address?.zip || data.zip_code,
           formName: this.config.formName,
-          source: this.config.source
+          source: this.config.source,
+          image_urls: data.image_urls || []
         });
         results.push({ endpoint: 'supabase', success: result.success, data: result.data });
       } else {
@@ -449,7 +528,8 @@
               message: data.message,
               source: 'website',
               form_name: this.config.formName,
-              page_url: window.location.href
+              page_url: window.location.href,
+              image_urls: data.image_urls || []
             })
           });
           results.push({ endpoint: 'supabase', success: response.ok, status: response.status });

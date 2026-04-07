@@ -41,6 +41,48 @@ function convertTo24Hour(time12h) {
 }
 
 /**
+ * Upload images for a lead submission
+ * POST /api/leads/upload-images
+ * Accepts multipart form data with up to 5 images
+ * Returns array of public URLs stored in Supabase Storage
+ */
+const multer = require('multer');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 5 }, // 10MB per file, max 5
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  }
+});
+
+router.post('/upload-images', upload.array('images', 5), asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) return res.status(500).json({ error: 'Storage not available' });
+  if (!req.files?.length) return res.status(400).json({ error: 'No images uploaded' });
+
+  const urls = [];
+  for (const file of req.files) {
+    const ext = file.originalname.split('.').pop() || 'jpg';
+    const path = `lead-photos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('uploads')
+      .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
+
+    if (error) {
+      logger.warn('Image upload failed', { path, error: error.message });
+      continue;
+    }
+
+    const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(path);
+    if (urlData?.publicUrl) urls.push(urlData.publicUrl);
+  }
+
+  res.json({ success: true, urls, count: urls.length });
+}));
+
+/**
  * Submit a new lead
  * POST /api/leads
  */
@@ -60,7 +102,8 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     appointment_date,
     appointment_time,
     project_address,
-    message
+    message,
+    image_urls
   } = req.body;
 
   // Input validation
@@ -100,6 +143,7 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     project_details: sanitizeString(project_details, 2000),
     source: sanitizeString(source, 50),
     status: 'new',
+    image_urls: Array.isArray(image_urls) ? image_urls.slice(0, 10) : [],
     raw_data: {
       project_address: sanitizeString(project_address, 500),
       lead_price,
