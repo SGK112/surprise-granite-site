@@ -317,6 +317,9 @@ const flooringRouter = require('./routes/flooring');
 // Health Check Routes
 const healthRouter = require('./routes/health');
 
+// Order Management Routes (admin)
+const ordersRouter = require('./routes/orders');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -336,17 +339,18 @@ const stripeService = require('./services/stripeService');
 // Import Email service for templates
 const emailService = require('./services/emailService');
 
-// Email configuration - using Gmail SMTP or configure your own
+// Email configuration - use shared emailService transporter
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
-const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
+const FROM_EMAIL = process.env.FROM_EMAIL || SMTP_USER;
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
+  port: SMTP_PORT,
+  secure: SMTP_PORT === 465,
   auth: {
     user: SMTP_USER,
-    pass: SMTP_PASS
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
   }
 });
 
@@ -362,7 +366,7 @@ async function sendNotification(to, subject, html) {
     }
 
     await transporter.sendMail({
-      from: `"Surprise Granite" <${SMTP_USER}>`,
+      from: `"Surprise Granite" <${FROM_EMAIL}>`,
       to,
       subject,
       html
@@ -3766,6 +3770,7 @@ app.use('/api/scrapers', scrapersRouter);
 // ============ FLOORING & HEALTH ROUTES ============
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/admin/orders', ordersRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility

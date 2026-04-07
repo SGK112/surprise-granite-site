@@ -10,6 +10,8 @@ const { escapeHtml } = require('../utils/security');
 // Email configuration
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
+const FROM_EMAIL = process.env.FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@surprisegranite.com';
 
 // Company Branding - Surprise Granite
@@ -29,8 +31,8 @@ const COMPANY = {
 // Create transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
+  port: SMTP_PORT,
+  secure: SMTP_PORT === 465,
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
@@ -53,7 +55,7 @@ async function sendNotification(to, subject, html, attachments = []) {
     }
 
     const mailOptions = {
-      from: `"${COMPANY.shortName}" <${SMTP_USER}>`,
+      from: `"${COMPANY.shortName}" <${FROM_EMAIL}>`,
       to,
       subject,
       html
@@ -1229,6 +1231,141 @@ function generateInvoiceWithAttachmentsEmail({
   };
 }
 
+/**
+ * Generate shipping notification email for customer
+ */
+function generateShippingNotificationEmail(order) {
+  const trackingUrl = order.tracking_url || (order.tracking_carrier && order.tracking_number
+    ? getTrackingUrl(order.tracking_carrier, order.tracking_number)
+    : null);
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #2196F3, #1565C0); border-radius: 50%; margin: 0 auto 20px; line-height: 80px;">
+        <span style="font-size: 40px; color: #fff;">📦</span>
+      </div>
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Your Order Has Shipped!</h2>
+      <p style="margin: 0; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #${escapeHtml(order.order_number || '')}</p>
+    </div>
+
+    ${order.tracking_number ? `
+    <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <table width="100%" cellspacing="0" cellpadding="6">
+        ${order.tracking_carrier ? `
+        <tr>
+          <td style="color: #666; font-weight: 600; width: 120px;">Carrier:</td>
+          <td style="color: #1a1a2e; font-weight: 500;">${escapeHtml(order.tracking_carrier)}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="color: #666; font-weight: 600;">Tracking #:</td>
+          <td style="color: #1a1a2e; font-weight: 600;">${escapeHtml(order.tracking_number)}</td>
+        </tr>
+      </table>
+    </div>
+    ${trackingUrl ? `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${trackingUrl}" style="display: inline-block; background: linear-gradient(135deg, #2196F3 0%, #1565C0 100%); color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 16px;">Track Your Package</a>
+    </div>` : ''}
+    ` : ''}
+
+    ${order.shipping_message ? `
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">${escapeHtml(order.shipping_message)}</p>
+    </div>` : ''}
+
+    <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+      Questions about your shipment? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  return {
+    subject: `Your Order Has Shipped - ${COMPANY.shortName} #${escapeHtml(order.order_number || '')}`,
+    html: wrapEmailTemplate(content, { headerText: '📦 Order Shipped' })
+  };
+}
+
+/**
+ * Generate order status update email for customer
+ */
+function generateOrderStatusEmail(order) {
+  const statusLabels = {
+    confirmed: { label: 'Confirmed', color: '#4caf50', icon: '✓', message: 'Your order has been confirmed and is being prepared.' },
+    processing: { label: 'Processing', color: '#ff9800', icon: '⚙', message: 'Your order is being processed and prepared for shipment.' },
+    shipped: { label: 'Shipped', color: '#2196F3', icon: '📦', message: 'Your order is on its way!' },
+    delivered: { label: 'Delivered', color: '#4caf50', icon: '🏠', message: 'Your order has been delivered. Enjoy!' },
+    cancelled: { label: 'Cancelled', color: '#f44336', icon: '✕', message: 'Your order has been cancelled.' },
+    refunded: { label: 'Refunded', color: '#9c27b0', icon: '↩', message: 'Your order has been refunded.' }
+  };
+
+  const status = statusLabels[order.status] || { label: order.status, color: '#666', icon: '•', message: '' };
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="width: 80px; height: 80px; background: ${status.color}; border-radius: 50%; margin: 0 auto 20px; line-height: 80px;">
+        <span style="font-size: 40px; color: #fff;">${status.icon}</span>
+      </div>
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Order ${status.label}</h2>
+      <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #${escapeHtml(order.order_number || '')}</p>
+      <p style="margin: 0; color: #666; font-size: 14px;">${status.message}</p>
+    </div>
+
+    ${order.admin_message ? `
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <p style="margin: 0 0 8px; color: #1a1a2e; font-weight: 600; font-size: 14px;">Message from our team:</p>
+      <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">${escapeHtml(order.admin_message)}</p>
+    </div>` : ''}
+
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; text-align: center;">
+      <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase;">Order Total</p>
+      <p style="margin: 0; color: #1a1a2e; font-size: 24px; font-weight: 700;">$${(order.total || 0).toFixed(2)}</p>
+    </div>
+
+    <p style="margin: 20px 0 0; color: #666; font-size: 14px; text-align: center;">
+      Questions? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  return {
+    subject: `Order ${status.label} - ${COMPANY.shortName} #${escapeHtml(order.order_number || '')}`,
+    html: wrapEmailTemplate(content, { headerText: `Order ${status.label}` })
+  };
+}
+
+/**
+ * Generate a custom message email to customer about their order
+ */
+function generateOrderMessageEmail(order, message) {
+  const content = `
+    <p style="margin: 0 0 15px; color: #333; font-size: 16px;">
+      Hi ${escapeHtml((order.customer_name || 'there').split(' ')[0])},
+    </p>
+    <p style="margin: 0 0 8px; color: #666; font-size: 13px;">Regarding your order <strong>#${escapeHtml(order.order_number || '')}</strong>:</p>
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f9cb00;">
+      <p style="margin: 0; color: #333; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(message)}</p>
+    </div>
+    <p style="margin: 0; color: #666; font-size: 14px;">
+      Reply to this email or call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a> if you have any questions.
+    </p>
+  `;
+
+  return {
+    subject: `Update on Your Order #${escapeHtml(order.order_number || '')} - ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerText: 'Order Update' })
+  };
+}
+
+/**
+ * Get tracking URL for common carriers
+ */
+function getTrackingUrl(carrier, trackingNumber) {
+  const c = (carrier || '').toLowerCase();
+  if (c.includes('ups')) return `https://www.ups.com/track?tracknum=${trackingNumber}`;
+  if (c.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+  if (c.includes('usps')) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`;
+  if (c.includes('dhl')) return `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${trackingNumber}`;
+  return null;
+}
+
 module.exports = {
   sendNotification,
   sendAdminNotification,
@@ -1248,6 +1385,9 @@ module.exports = {
   generatePayLinkEmail,
   generateEstimateWithAttachmentsEmail,
   generateInvoiceWithAttachmentsEmail,
+  generateShippingNotificationEmail,
+  generateOrderStatusEmail,
+  generateOrderMessageEmail,
   COMPANY,
   ADMIN_EMAIL,
   isConfigured: () => !!SMTP_USER
