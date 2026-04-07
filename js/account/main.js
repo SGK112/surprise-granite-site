@@ -3225,6 +3225,24 @@
       document.getElementById('tab-all').className = 'btn-modern ' + (source === 'all' ? 'primary' : 'secondary');
       document.getElementById('tab-store').className = 'btn-modern ' + (source === 'store' ? 'primary' : 'secondary');
       document.getElementById('tab-shopify').className = 'btn-modern ' + (source === 'shopify' ? 'primary' : 'secondary');
+
+      // Show bulk close button when on Shopify tab
+      let bulkBtn = document.getElementById('bulk-close-shopify');
+      if (source === 'shopify') {
+        if (!bulkBtn) {
+          bulkBtn = document.createElement('button');
+          bulkBtn.id = 'bulk-close-shopify';
+          bulkBtn.className = 'btn-modern secondary';
+          bulkBtn.style.cssText = 'padding: 8px 16px; font-size: 12px; color: var(--error, #ef4444); border-color: rgba(239,68,68,0.3);';
+          bulkBtn.textContent = 'Close All Shopify Orders';
+          bulkBtn.onclick = orderAction_bulkCloseShopify;
+          document.getElementById('tab-shopify').parentNode.appendChild(bulkBtn);
+        }
+        bulkBtn.style.display = '';
+      } else if (bulkBtn) {
+        bulkBtn.style.display = 'none';
+      }
+
       ordersPage = 1;
       filterOrders();
     }
@@ -3430,7 +3448,7 @@
               <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Update Status</div>
               <div style="display: flex; gap: 8px; align-items: center;">
                 <select id="modal-status-${orderId}" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
-                  ${['pending','confirmed','processing','shipped','delivered','cancelled','refunded'].map(s =>
+                  ${['pending','confirmed','processing','shipped','delivered','completed','cancelled','refunded'].map(s =>
                     `<option value="${s}" ${s === orderStatus ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
                   ).join('')}
                 </select>
@@ -3530,6 +3548,16 @@
             </div>
 
             ${actionsHtml}
+
+            <!-- Close Order -->
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; color: var(--text-muted);">${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'This order is closed.' : 'Mark as done when fulfilled.'}</span>
+              <button onclick="orderAction_close('${order.id}', '${order._source}')"
+                style="padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border-subtle); background: ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'var(--dark-elevated)' : 'var(--success, #22c55e)'}; color: ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'var(--text-muted)' : '#fff'}; font-size: 13px; font-weight: 600; cursor: pointer;"
+                ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'disabled' : ''}>
+                ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'Closed' : 'Close Order'}
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -3575,6 +3603,26 @@
         const result = await orderAction_apiCall('PUT', `/api/admin/orders/${orderId}/tracking`, { tracking_number, tracking_carrier, notify_customer: notify });
         showToast('Tracking saved' + (result.email_sent ? ' — shipping notification sent' : ''), 'success');
         document.querySelector('.order-detail-modal')?.remove();
+        ordersLoaded = false;
+        await loadOrders();
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    async function orderAction_close(orderId, source) {
+      try {
+        await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/close`, { source });
+        showToast('Order closed', 'success');
+        document.querySelector('.order-detail-modal')?.remove();
+        ordersLoaded = false;
+        await loadOrders();
+      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    async function orderAction_bulkCloseShopify() {
+      if (!confirm('Close ALL Shopify orders? This marks them as fulfilled/paid. This cannot be undone.')) return;
+      try {
+        const result = await orderAction_apiCall('POST', '/api/admin/orders/bulk-close', { source: 'all-shopify' });
+        showToast(`${result.closed} Shopify orders closed`, 'success');
         ordersLoaded = false;
         await loadOrders();
       } catch (err) { showToast('Failed: ' + err.message, 'error'); }

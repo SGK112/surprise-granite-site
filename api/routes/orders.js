@@ -174,7 +174,7 @@ router.patch('/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status, notify_customer = false, message } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status', valid: validStatuses });
     }
@@ -336,6 +336,85 @@ router.put('/:id/notes', authenticateJWT, requireAdmin, async (req, res) => {
   } catch (err) {
     logger.error('Error updating notes:', err.message);
     res.status(500).json({ error: 'Failed to update notes' });
+  }
+});
+
+/**
+ * POST /api/admin/orders/:id/close - Close/complete an order (works for both tables)
+ */
+router.post('/:id/close', authenticateJWT, requireAdmin, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { id } = req.params;
+    const { source } = req.body; // 'store' or 'shopify'
+
+    if (source === 'shopify') {
+      const { data, error } = await supabase
+        .from('shopify_orders')
+        .update({ fulfillment_status: 'FULFILLED', financial_status: 'PAID' })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) return res.status(500).json({ error: 'Failed to close shopify order' });
+      return res.json({ order: data, closed: true });
+    }
+
+    // Store order
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: 'Failed to close order' });
+    await logOrderEvent(supabase, id, 'status_change', 'Order closed/completed', req.adminUser?.email);
+    res.json({ order: data, closed: true });
+  } catch (err) {
+    logger.error('Error closing order:', err.message);
+    res.status(500).json({ error: 'Failed to close order' });
+  }
+});
+
+/**
+ * POST /api/admin/orders/bulk-close - Close multiple orders at once
+ */
+router.post('/bulk-close', authenticateJWT, requireAdmin, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { source, ids } = req.body; // source: 'shopify' | 'store' | 'all-shopify'
+
+    let closed = 0;
+
+    if (source === 'all-shopify') {
+      // Close ALL shopify orders
+      const { data, error } = await supabase
+        .from('shopify_orders')
+        .update({ fulfillment_status: 'FULFILLED', financial_status: 'PAID' })
+        .neq('fulfillment_status', 'FULFILLED');
+
+      if (!error) closed = data?.length || 0;
+    } else if (source === 'shopify' && Array.isArray(ids)) {
+      const { data, error } = await supabase
+        .from('shopify_orders')
+        .update({ fulfillment_status: 'FULFILLED', financial_status: 'PAID' })
+        .in('id', ids);
+
+      if (!error) closed = data?.length || 0;
+    } else if (source === 'store' && Array.isArray(ids)) {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .in('id', ids);
+
+      if (!error) closed = data?.length || 0;
+    }
+
+    res.json({ closed, success: true });
+  } catch (err) {
+    logger.error('Error bulk closing orders:', err.message);
+    res.status(500).json({ error: 'Failed to bulk close' });
   }
 });
 
