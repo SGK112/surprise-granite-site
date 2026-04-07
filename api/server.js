@@ -2270,6 +2270,19 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             const shippingAddress = session.shipping_details?.address || session.customer_details?.address || {};
             const billingAddress = session.customer_details?.address || {};
 
+            // Check for duplicate (idempotency on stripe_session_id)
+            const { data: existingOrder } = await supabase
+              .from('orders')
+              .select('id')
+              .eq('stripe_session_id', session.id)
+              .limit(1)
+              .single();
+
+            if (existingOrder) {
+              logger.info('Order already exists for session:', session.id, '- skipping duplicate');
+              break;
+            }
+
             // Insert order record
             const { data: order, error: orderErr } = await supabase
               .from('orders')
