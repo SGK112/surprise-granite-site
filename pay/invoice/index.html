@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay by Invoice | Surprise Granite</title>
+  <meta name="description" content="Request and pay an invoice from Surprise Granite. Enter your details and we'll build your invoice instantly.">
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --gold: #f9cb00; --gold-dark: #cca600;
+      --navy: #1a2b3c; --navy-light: #2d3e50;
+      --bg: #f5f5f7; --white: #ffffff;
+      --text: #1a1a2e; --text-muted: #888; --text-light: #aaa;
+      --border: #e5e5e5; --shadow: 0 2px 20px rgba(0,0,0,0.06);
+      --success: #22c55e; --error: #ef4444;
+    }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Header */
+    .page-header {
+      background: var(--navy); padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .page-header img { height: 36px; }
+    .page-header a { color: #fff; text-decoration: none; font-size: 13px; opacity: 0.7; }
+    .page-header a:hover { opacity: 1; }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 420px 1fr; min-height: calc(100vh - 68px); }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    /* Form Panel */
+    .form-panel {
+      background: var(--white); padding: 40px 32px; border-right: 1px solid var(--border);
+      overflow-y: auto; max-height: calc(100vh - 68px);
+    }
+    .form-panel h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .form-panel .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; background: var(--white); color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--gold); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+    /* Line Items */
+    .line-items { margin-bottom: 18px; }
+    .line-item-row {
+      display: grid; grid-template-columns: 1fr 70px 100px 36px; gap: 8px; align-items: end; margin-bottom: 8px;
+    }
+    .line-item-row input { padding: 10px 12px; font-size: 13px; }
+    .btn-remove-item {
+      width: 36px; height: 40px; border: 1px solid var(--border); border-radius: 8px;
+      background: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .btn-remove-item:hover { border-color: var(--error); color: var(--error); }
+    .btn-add-item {
+      padding: 8px 16px; border: 1px dashed var(--border); border-radius: 8px; background: none;
+      font-size: 13px; color: var(--text-muted); cursor: pointer; width: 100%;
+    }
+    .btn-add-item:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Pay Button */
+    .btn-pay {
+      width: 100%; padding: 16px; background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--navy); border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 24px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-pay:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(249,203,0,0.3); }
+    .btn-pay:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+      width: 100%; padding: 12px; background: none; border: 2px solid var(--border); border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; color: var(--text);
+    }
+    .btn-secondary:hover { border-color: var(--navy); }
+
+    /* Invoice Preview Panel */
+    .preview-panel {
+      background: var(--bg); padding: 40px; overflow-y: auto; max-height: calc(100vh - 68px);
+      display: flex; align-items: flex-start; justify-content: center;
+    }
+    @media (max-width: 900px) { .preview-panel { display: none; } }
+    .invoice-paper {
+      background: var(--white); border-radius: 12px; box-shadow: var(--shadow);
+      padding: 48px 44px; width: 100%; max-width: 560px; min-height: 700px;
+      transition: all 0.3s; position: relative;
+    }
+
+    /* Invoice Styles */
+    .inv-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .inv-logo { width: 50px; height: 50px; border-radius: 8px; }
+    .inv-co { text-align: right; font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+    .inv-co strong { color: var(--text); font-size: 13px; display: block; }
+    .inv-gold-line { height: 3px; background: linear-gradient(90deg, var(--gold), transparent); margin-bottom: 20px; transition: width 0.8s; }
+    .inv-ttl { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+    .inv-ttl span { color: var(--gold); }
+    .inv-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 20px; }
+    .inv-meta-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); font-weight: 600; margin-bottom: 3px; }
+    .inv-meta-val { font-size: 13px; font-weight: 500; min-height: 18px; }
+    .inv-meta-val.empty { color: var(--text-light); font-style: italic; font-weight: 400; }
+    .inv-tbl { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .inv-tbl th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); font-weight: 600; padding: 8px 0; border-bottom: 2px solid var(--border); }
+    .inv-tbl th:last-child, .inv-tbl td:last-child { text-align: right; }
+    .inv-tbl td { padding: 12px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .inv-tbl .desc { font-weight: 500; }
+    .inv-tbl .empty-row td { color: var(--text-light); font-style: italic; }
+    .inv-totals { display: flex; flex-direction: column; align-items: flex-end; margin-top: 12px; }
+    .inv-tot-row { display: flex; justify-content: space-between; width: 200px; font-size: 13px; padding: 4px 0; }
+    .inv-tot-row.grand { font-size: 20px; font-weight: 700; border-top: 2px solid var(--text); padding-top: 10px; margin-top: 6px; }
+    .inv-tot-row.grand .amt { color: var(--gold); }
+    .inv-foot { margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-light); text-align: center; }
+    .inv-placeholder { color: var(--text-light); font-style: italic; }
+
+    /* Powered by */
+    .powered { text-align: center; padding: 20px; font-size: 11px; color: var(--text-light); }
+    .powered a { color: var(--gold-dark); text-decoration: none; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: #fff; padding: 14px 20px; border-radius: 10px; font-size: 14px; z-index: 2000; opacity: 0; transform: translateY(20px); transition: all 0.3s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="page-header">
+    <a href="/"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png" alt="Surprise Granite"></a>
+    <div style="display:flex;gap:20px;">
+      <a href="/marketplace/">Shop</a>
+      <a href="/cart/">Cart</a>
+      <a href="tel:6028333189">(602) 833-3189</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Form Panel -->
+    <div class="form-panel">
+      <h1>Pay by Invoice</h1>
+      <p class="subtitle">Enter your details and we'll build your invoice instantly.</p>
+
+      <!-- Customer Info -->
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="inv-name" placeholder="John Smith" oninput="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="inv-email" placeholder="john@example.com" oninput="updatePreview()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="inv-phone" placeholder="(555) 123-4567" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input type="text" id="inv-company" placeholder="Optional" oninput="updatePreview()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="inv-address" placeholder="123 Main St" oninput="updatePreview()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="inv-city" placeholder="Phoenix" oninput="updatePreview()">
+        </div>
+        <div class="form-row" style="gap:8px;">
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" id="inv-state" placeholder="AZ" maxlength="2" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>Zip</label>
+            <input type="text" id="inv-zip" placeholder="85379" maxlength="10" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <!-- Line Items -->
+      <div class="form-group">
+        <label>Items / Services</label>
+      </div>
+      <div class="line-items" id="line-items">
+        <div class="line-item-row" data-index="0">
+          <input type="text" placeholder="Description" class="li-desc" oninput="updatePreview()">
+          <input type="number" placeholder="Qty" value="1" min="1" class="li-qty" oninput="updatePreview()">
+          <input type="number" placeholder="Price" step="0.01" min="0" class="li-price" oninput="updatePreview()">
+          <button class="btn-remove-item" onclick="removeItem(this)" title="Remove">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-add-item" onclick="addItem()">+ Add Line Item</button>
+
+      <div class="form-divider"></div>
+
+      <!-- Notes -->
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <textarea id="inv-notes" rows="2" placeholder="Payment terms, project details, etc." oninput="updatePreview()"></textarea>
+      </div>
+
+      <!-- Pay -->
+      <button class="btn-pay" id="pay-btn" onclick="handlePay()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Pay Now — <span id="pay-total">$0.00</span>
+      </button>
+      <button class="btn-secondary" onclick="handleShare()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share Invoice Link
+      </button>
+
+      <div class="powered">
+        Secure payments by Stripe &middot; Powered by <a href="https://remodely.ai">Remodely.ai</a>
+      </div>
+    </div>
+
+    <!-- Live Invoice Preview -->
+    <div class="preview-panel">
+      <div class="invoice-paper" id="invoice-paper">
+        <!-- Header -->
+        <div class="inv-hdr">
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png" class="inv-logo" alt="">
+          <div class="inv-co">
+            <strong>Surprise Granite Marble & Quartz</strong>
+            15464 W Aster Dr, Surprise, AZ 85379<br>
+            (602) 833-3189 | info@surprisegranite.com<br>
+            AZ ROC# 341113
+          </div>
+        </div>
+        <div class="inv-gold-line"></div>
+
+        <!-- Title -->
+        <div class="inv-ttl">INV<span>OICE</span></div>
+
+        <!-- Meta -->
+        <div class="inv-meta">
+          <div>
+            <div class="inv-meta-lbl">Bill To</div>
+            <div class="inv-meta-val empty" id="prev-name">Your name appears here</div>
+            <div class="inv-meta-val" id="prev-email" style="font-size:12px;color:var(--text-muted);"></div>
+            <div class="inv-meta-val" id="prev-phone" style="font-size:12px;color:var(--text-muted);"></div>
+            <div class="inv-meta-val" id="prev-address" style="font-size:12px;color:var(--text-muted);"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="inv-meta-lbl">Invoice #</div>
+            <div class="inv-meta-val" id="prev-number">—</div>
+            <div class="inv-meta-lbl" style="margin-top:8px;">Date</div>
+            <div class="inv-meta-val" id="prev-date"></div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <table class="inv-tbl">
+          <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+          <tbody id="prev-items">
+            <tr class="empty-row"><td colspan="4">Add items on the left to see them here</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="inv-totals" id="prev-totals">
+          <div class="inv-tot-row"><span>Subtotal</span><span id="prev-subtotal">$0.00</span></div>
+          <div class="inv-tot-row grand"><span>Total</span><span class="amt" id="prev-total">$0.00</span></div>
+        </div>
+
+        <!-- Notes -->
+        <div id="prev-notes" style="margin-top:20px;padding:14px;background:#fafafa;border-radius:8px;font-size:12px;color:var(--text-muted);line-height:1.5;display:none;"></div>
+
+        <!-- Footer -->
+        <div class="inv-foot">
+          Thank you for your business! &middot; www.surprisegranite.com &middot; (602) 833-3189
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    // Generate invoice number
+    const invNum = 'SG-' + Date.now().toString(36).toUpperCase().slice(-6);
+    document.getElementById('prev-number').textContent = invNum;
+    document.getElementById('prev-date').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    let itemIndex = 1;
+
+    function updatePreview() {
+      const name = document.getElementById('inv-name').value;
+      const email = document.getElementById('inv-email').value;
+      const phone = document.getElementById('inv-phone').value;
+      const company = document.getElementById('inv-company').value;
+      const address = document.getElementById('inv-address').value;
+      const city = document.getElementById('inv-city').value;
+      const state = document.getElementById('inv-state').value;
+      const zip = document.getElementById('inv-zip').value;
+      const notes = document.getElementById('inv-notes').value;
+
+      // Update name
+      const nameEl = document.getElementById('prev-name');
+      if (name) {
+        nameEl.textContent = name + (company ? ' — ' + company : '');
+        nameEl.classList.remove('empty');
+      } else {
+        nameEl.textContent = 'Your name appears here';
+        nameEl.classList.add('empty');
+      }
+
+      // Update contact
+      document.getElementById('prev-email').textContent = email;
+      document.getElementById('prev-phone').textContent = phone;
+      const addrParts = [address, [city, state, zip].filter(Boolean).join(', ')].filter(Boolean);
+      document.getElementById('prev-address').textContent = addrParts.join(', ');
+
+      // Update notes
+      const notesEl = document.getElementById('prev-notes');
+      if (notes) {
+        notesEl.style.display = '';
+        notesEl.innerHTML = '<strong style="color:var(--text);">Notes:</strong> ' + esc(notes);
+      } else {
+        notesEl.style.display = 'none';
+      }
+
+      // Update line items
+      const rows = document.querySelectorAll('.line-item-row');
+      const tbody = document.getElementById('prev-items');
+      let subtotal = 0;
+      let hasItems = false;
+
+      let html = '';
+      rows.forEach(row => {
+        const desc = row.querySelector('.li-desc').value;
+        const qty = parseInt(row.querySelector('.li-qty').value) || 0;
+        const price = parseFloat(row.querySelector('.li-price').value) || 0;
+        const amount = qty * price;
+
+        if (desc || price > 0) {
+          hasItems = true;
+          subtotal += amount;
+          html += `<tr>
+            <td class="desc">${esc(desc || 'Item')}</td>
+            <td>${qty}</td>
+            <td>$${price.toFixed(2)}</td>
+            <td>$${amount.toFixed(2)}</td>
+          </tr>`;
+        }
+      });
+
+      if (!hasItems) {
+        html = '<tr class="empty-row"><td colspan="4">Add items on the left to see them here</td></tr>';
+      }
+      tbody.innerHTML = html;
+
+      // Update totals
+      document.getElementById('prev-subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('prev-total').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('pay-total').textContent = '$' + subtotal.toFixed(2);
+    }
+
+    function addItem() {
+      const container = document.getElementById('line-items');
+      const row = document.createElement('div');
+      row.className = 'line-item-row';
+      row.dataset.index = itemIndex++;
+      row.innerHTML = `
+        <input type="text" placeholder="Description" class="li-desc" oninput="updatePreview()">
+        <input type="number" placeholder="Qty" value="1" min="1" class="li-qty" oninput="updatePreview()">
+        <input type="number" placeholder="Price" step="0.01" min="0" class="li-price" oninput="updatePreview()">
+        <button class="btn-remove-item" onclick="removeItem(this)" title="Remove">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      `;
+      container.appendChild(row);
+      row.querySelector('.li-desc').focus();
+    }
+
+    function removeItem(btn) {
+      const rows = document.querySelectorAll('.line-item-row');
+      if (rows.length <= 1) return; // Keep at least one row
+      btn.closest('.line-item-row').remove();
+      updatePreview();
+    }
+
+    function getFormData() {
+      const rows = document.querySelectorAll('.line-item-row');
+      const items = [];
+      rows.forEach(row => {
+        const desc = row.querySelector('.li-desc').value.trim();
+        const qty = parseInt(row.querySelector('.li-qty').value) || 1;
+        const price = parseFloat(row.querySelector('.li-price').value) || 0;
+        if (desc && price > 0) items.push({ name: desc, price: Math.round(price * 100), quantity: qty });
+      });
+      return {
+        name: document.getElementById('inv-name').value.trim(),
+        email: document.getElementById('inv-email').value.trim(),
+        phone: document.getElementById('inv-phone').value.trim(),
+        company: document.getElementById('inv-company').value.trim(),
+        address: document.getElementById('inv-address').value.trim(),
+        city: document.getElementById('inv-city').value.trim(),
+        state: document.getElementById('inv-state').value.trim(),
+        zip: document.getElementById('inv-zip').value.trim(),
+        notes: document.getElementById('inv-notes').value.trim(),
+        items: items,
+        invoiceNumber: invNum
+      };
+    }
+
+    async function handlePay() {
+      const data = getFormData();
+      if (!data.name) { showToast('Enter your name', 'error'); return; }
+      if (!data.email) { showToast('Enter your email', 'error'); return; }
+      if (data.items.length === 0) { showToast('Add at least one item with a price', 'error'); return; }
+
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(0,0,0,0.2);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite;"></span> Processing...';
+
+      try {
+        // Build Stripe line items
+        const lineItems = data.items.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }));
+
+        const response = await fetch(API_BASE + '/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: lineItems,
+            customer_email: data.email,
+            shipping_state: data.state,
+            success_url: window.location.origin + '/pay/success/?invoice=' + invNum,
+            cancel_url: window.location.href
+          })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        if (result.url) window.location.href = result.url;
+        else throw new Error('No checkout URL returned');
+      } catch (err) {
+        showToast('Payment error: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Pay Now — <span id="pay-total">$' + (data.items.reduce((s, i) => s + i.price * i.quantity, 0) / 100).toFixed(2) + '</span>';
+      }
+    }
+
+    async function handleShare() {
+      const data = getFormData();
+      if (data.items.length === 0) { showToast('Add items before sharing', 'error'); return; }
+
+      // Encode invoice data in URL for sharing
+      const params = new URLSearchParams({
+        n: data.name, e: data.email, p: data.phone, co: data.company,
+        addr: data.address, city: data.city, st: data.state, zip: data.zip,
+        notes: data.notes, inv: invNum
+      });
+      data.items.forEach((item, i) => {
+        params.append('d' + i, item.name);
+        params.append('q' + i, item.quantity);
+        params.append('a' + i, item.price);
+      });
+
+      const url = window.location.origin + '/pay/invoice/?' + params.toString();
+
+      if (navigator.share) {
+        navigator.share({ title: 'Invoice ' + invNum + ' — Surprise Granite', url: url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast('Invoice link copied to clipboard!', 'success');
+      }
+    }
+
+    // Pre-fill from URL params (for shared invoices)
+    function prefillFromURL() {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('n')) document.getElementById('inv-name').value = p.get('n');
+      if (p.get('e')) document.getElementById('inv-email').value = p.get('e');
+      if (p.get('p')) document.getElementById('inv-phone').value = p.get('p');
+      if (p.get('co')) document.getElementById('inv-company').value = p.get('co');
+      if (p.get('addr')) document.getElementById('inv-address').value = p.get('addr');
+      if (p.get('city')) document.getElementById('inv-city').value = p.get('city');
+      if (p.get('st')) document.getElementById('inv-state').value = p.get('st');
+      if (p.get('zip')) document.getElementById('inv-zip').value = p.get('zip');
+      if (p.get('notes')) document.getElementById('inv-notes').value = p.get('notes');
+      if (p.get('inv')) {
+        document.getElementById('prev-number').textContent = p.get('inv');
+      }
+
+      // Pre-fill items
+      let i = 0;
+      while (p.get('d' + i)) {
+        if (i > 0) addItem();
+        const rows = document.querySelectorAll('.line-item-row');
+        const row = rows[rows.length - 1];
+        row.querySelector('.li-desc').value = p.get('d' + i);
+        row.querySelector('.li-qty').value = p.get('q' + i) || 1;
+        row.querySelector('.li-price').value = (parseInt(p.get('a' + i)) / 100).toFixed(2);
+        i++;
+      }
+
+      updatePreview();
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      const d = document.createElement('div');
+      d.textContent = String(str);
+      return d.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + (type || '');
+      setTimeout(() => t.className = 'toast', 4000);
+    }
+
+    // Init
+    prefillFromURL();
+  </script>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+</body>
+</html>
