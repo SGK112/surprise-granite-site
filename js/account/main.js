@@ -3453,7 +3453,7 @@
                   ).join('')}
                 </select>
                 <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                  <input type="checkbox" id="modal-status-notify-${orderId}" checked> Notify
+                  <input type="checkbox" id="modal-status-notify-${orderId}"> Email customer
                 </label>
                 <button onclick="orderAction_updateStatus('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--info, #3b82f6);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Update</button>
               </div>
@@ -3471,7 +3471,7 @@
                 </select>
                 <input type="text" id="modal-tracking-${orderId}" value="${escapeHtml(order.tracking_number || '')}" placeholder="Tracking number" style="flex:1;min-width:150px;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
                 <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                  <input type="checkbox" id="modal-tracking-notify-${orderId}" checked> Notify
+                  <input type="checkbox" id="modal-tracking-notify-${orderId}"> Email customer
                 </label>
                 <button onclick="orderAction_addTracking('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--success, #22c55e);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Ship</button>
               </div>
