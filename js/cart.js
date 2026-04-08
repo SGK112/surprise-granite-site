@@ -474,7 +474,7 @@
       return `
       <div class="cart-item" data-id="${safeId}" data-variant="${safeVariant}">
         <div class="cart-item-image">
-          <img src="${safeImage}" alt="${safeName}" loading="lazy">
+          <img src="${safeImage}" alt="${safeName}" loading="lazy" onerror="this.onerror=null;this.src='/images/6243807090316203124aee66_placeholder-image.svg'">
         </div>
         <div class="cart-item-details">
           <a href="${safeHref}" class="cart-item-name">${safeName}</a>

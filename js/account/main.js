@@ -949,11 +949,7 @@
             }
             break;
           case 'download-pdf':
-            if (item.pdf_url) {
-              window.open(item.pdf_url, '_blank');
-            } else {
-              showToast('No PDF available for this invoice', 'warning');
-            }
+            showInvoiceBuilder(item.id || item.invoice_id, item.pdf_url);
             break;
           case 'send-reminder':
             await sendInvoiceReminder(item.id);
@@ -9126,7 +9122,7 @@
                       <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-'}</td>
                       <td>
                         ${inv.stripe_hosted_url ? `<a href="${inv.stripe_hosted_url}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px;">Pay</a>` : ''}
-                        ${inv.stripe_pdf_url ? `<a href="${inv.stripe_pdf_url}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;">PDF</a>` : ''}
+                        <button onclick="event.stopPropagation();showInvoiceBuilder('${inv.id}')" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;">PDF</button>
                       </td>
                     </tr>
                   `).join('')}
@@ -13345,6 +13341,81 @@
     }
 
     // Show the professional template in a preview modal
+    // Show animated invoice builder for any invoice (new or existing)
+    async function showInvoiceBuilder(invoiceId, fallbackPdfUrl) {
+      try {
+        // Fetch invoice + line items from Supabase
+        const [invRes, itemsRes] = await Promise.all([
+          supabaseClient.from('invoices').select('*').eq('id', invoiceId).single(),
+          supabaseClient.from('invoice_items').select('*').eq('invoice_id', invoiceId)
+        ]);
+
+        const inv = invRes.data;
+        if (!inv) {
+          // Fallback to Stripe PDF if we can't load invoice data
+          if (fallbackPdfUrl) window.open(fallbackPdfUrl, '_blank');
+          else showToast('Could not load invoice', 'error');
+          return;
+        }
+
+        const items = (itemsRes.data || []).map(i => ({
+          description: i.description || i.name || 'Item',
+          quantity: i.quantity || 1,
+          amount: i.unit_price || i.total || 0
+        }));
+
+        // If no line items, create one from the total
+        if (items.length === 0 && inv.total > 0) {
+          items.push({ description: inv.notes || 'Services', quantity: 1, amount: inv.total });
+        }
+
+        // Get token for sharing
+        let token = null;
+        const { data: tokenData } = await supabaseClient
+          .from('invoice_tokens')
+          .select('token')
+          .eq('invoice_id', invoiceId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (tokenData) token = tokenData.token;
+
+        if (window.buildInvoiceAnimation) {
+          window.buildInvoiceAnimation({
+            invoiceNumber: inv.invoice_number || inv.number || 'INV-' + inv.id?.slice(0, 6),
+            customerName: inv.customer_name,
+            customerEmail: inv.customer_email,
+            customerPhone: inv.customer_phone,
+            customerAddress: inv.customer_address,
+            customerCity: inv.customer_city,
+            customerState: inv.customer_state,
+            customerZip: inv.customer_zip,
+            items: items,
+            notes: inv.notes,
+            dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined,
+            depositAmount: inv.deposit_requested || 0
+          }, {
+            token: token,
+            previewUrl: token ? '/invoice/view/?token=' + token : null,
+            onSend: inv.customer_email ? function() {
+              document.querySelector('.inv-builder-overlay')?.remove();
+              if (token) showInvoiceTemplatePreview(token, inv.customer_email);
+            } : null
+          });
+        } else if (fallbackPdfUrl) {
+          window.open(fallbackPdfUrl, '_blank');
+        } else {
+          showToast('Invoice builder not loaded', 'error');
+        }
+      } catch (err) {
+        console.error('showInvoiceBuilder error:', err);
+        if (fallbackPdfUrl) window.open(fallbackPdfUrl, '_blank');
+        else showToast('Error loading invoice: ' + err.message, 'error');
+      }
+    }
+    // Make it globally accessible for onclick handlers
+    window.showInvoiceBuilder = showInvoiceBuilder;
+
     function showInvoiceTemplatePreview(token, customerEmail) {
       const previewUrl = `/invoice/view/?token=${token}`;
 
@@ -27233,7 +27304,7 @@
                 </div>
                 <div style="display: flex; gap: 8px;">
                   ${inv.stripe_hosted_url ? `<a href="${inv.stripe_hosted_url}" target="_blank" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">Pay</a>` : ''}
-                  ${inv.stripe_pdf_url ? `<a href="${inv.stripe_pdf_url}" target="_blank" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">PDF</a>` : ''}
+                  <button onclick="event.stopPropagation();showInvoiceBuilder('${inv.id}')" class="btn-modern secondary" style="font-size: 11px; padding: 6px 10px;">PDF</button>
                 </div>
               </div>
             </div>
