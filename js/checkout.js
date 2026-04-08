@@ -74,16 +74,20 @@
 
     // Tax by state (combined state + avg local rates)
     const TAX_RATES = {
-      AZ: 0.081,  // 5.6% state + ~2.5% local avg
-      CA: 0.0875, // 7.25% state + ~1.5% local avg
-      CO: 0.075,  // 2.9% state + ~4.6% local avg
-      NV: 0.082,  // 6.85% state + ~1.35% local avg
-      NM: 0.073,  // 4.875% state + ~2.4% local avg
-      TX: 0.0825, // 6.25% state + ~2% local avg
-      UT: 0.071   // 4.85% state + ~2.25% local avg
+      AZ: 0.081, AL: 0.092, AR: 0.094, CA: 0.0875, CO: 0.075,
+      CT: 0.0635, DC: 0.06, FL: 0.07, GA: 0.074, HI: 0.044,
+      ID: 0.06, IL: 0.0882, IN: 0.07, IA: 0.06, KS: 0.087,
+      KY: 0.06, LA: 0.0955, ME: 0.055, MD: 0.06, MA: 0.0625,
+      MI: 0.06, MN: 0.0773, MS: 0.07, MO: 0.082, NE: 0.069,
+      NV: 0.082, NJ: 0.066, NM: 0.073, NY: 0.08, NC: 0.07,
+      ND: 0.069, OH: 0.0723, OK: 0.089, PA: 0.06, RI: 0.07,
+      SC: 0.074, SD: 0.064, TN: 0.0955, TX: 0.0825, UT: 0.071,
+      VT: 0.06, VA: 0.057, WA: 0.092, WV: 0.06, WI: 0.055,
+      WY: 0.054
+      // AK, DE, MT, NH, OR = no sales tax (0)
     };
     const selectedState = document.getElementById('state')?.value || 'AZ';
-    const taxRate = TAX_RATES[selectedState] || TAX_RATES.AZ;
+    const taxRate = TAX_RATES[selectedState] || 0;
     const tax = subtotal * taxRate;
 
     // Shipping logic
@@ -366,6 +370,7 @@
         body: JSON.stringify({
           items: lineItems,
           customer_email: formData.email,
+          shipping_state: document.getElementById('state')?.value || '',
           success_url: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${window.location.origin}/checkout/`
         })

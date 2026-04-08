@@ -134,7 +134,7 @@ router.post('/quick-pay', async (req, res) => {
 router.post('/checkout', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
-    const { items, success_url, cancel_url, customer_email } = req.body;
+    const { items, success_url, cancel_url, customer_email, shipping_state } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'No items provided' });
@@ -144,7 +144,7 @@ router.post('/checkout', async (req, res) => {
     const { validateCartPrices, buildStripeLineItems } = require('../validators/price-validator');
 
     // SERVER-SIDE PRICE VALIDATION
-    const validation = await validateCartPrices(items, supabase);
+    const validation = await validateCartPrices(items, supabase, shipping_state);
 
     if (!validation.valid) {
       logger.warn('Cart validation failed', { errors: validation.errors });

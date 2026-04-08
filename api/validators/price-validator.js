@@ -11,8 +11,21 @@ const logger = require('../utils/logger');
 // This accounts for minor rounding differences
 const MAX_PRICE_VARIANCE = 0.01;
 
-// Tax rate (Arizona combined state + local)
-const TAX_RATE = 0.081;
+// Tax rates by state (combined state + avg local)
+const STATE_TAX_RATES = {
+  AZ: 0.081,  AL: 0.092,  AR: 0.094,  CA: 0.0875, CO: 0.075,
+  CT: 0.0635, DC: 0.06,   FL: 0.07,   GA: 0.074,  HI: 0.044,
+  ID: 0.06,   IL: 0.0882, IN: 0.07,   IA: 0.06,   KS: 0.087,
+  KY: 0.06,   LA: 0.0955, ME: 0.055,  MD: 0.06,   MA: 0.0625,
+  MI: 0.06,   MN: 0.0773, MS: 0.07,   MO: 0.082,  NE: 0.069,
+  NV: 0.082,  NJ: 0.066,  NM: 0.073,  NY: 0.08,   NC: 0.07,
+  ND: 0.069,  OH: 0.0723, OK: 0.089,  PA: 0.06,   RI: 0.07,
+  SC: 0.074,  SD: 0.064,  TN: 0.0955, TX: 0.0825, UT: 0.071,
+  VT: 0.06,   VA: 0.057,  WA: 0.092,  WV: 0.06,   WI: 0.055,
+  WY: 0.054
+  // States with no sales tax: AK, DE, MT, NH, OR — default to 0
+};
+const DEFAULT_TAX_RATE = 0; // No tax if state unknown or tax-free
 
 // Shipping tiers
 const SHIPPING_TIERS = [
@@ -39,12 +52,15 @@ function calculateShipping(subtotalCents) {
 }
 
 /**
- * Calculate tax
+ * Calculate tax based on shipping state
  * @param {number} subtotalCents - Subtotal in cents
+ * @param {string} state - Two-letter state code
  * @returns {number} Tax amount in cents
  */
-function calculateTax(subtotalCents) {
-  return Math.round(subtotalCents * TAX_RATE);
+function calculateTax(subtotalCents, state) {
+  const stateCode = (state || '').toUpperCase().trim();
+  const rate = STATE_TAX_RATES[stateCode] !== undefined ? STATE_TAX_RATES[stateCode] : DEFAULT_TAX_RATE;
+  return Math.round(subtotalCents * rate);
 }
 
 /**
@@ -54,7 +70,7 @@ function calculateTax(subtotalCents) {
  * @param {object} supabase - Supabase client
  * @returns {object} Validation result
  */
-async function validateCartPrices(items, supabase) {
+async function validateCartPrices(items, supabase, shippingState) {
   const result = {
     valid: true,
     validatedItems: [],
@@ -103,7 +119,9 @@ async function validateCartPrices(items, supabase) {
 
   // Calculate server-side totals (never trust client for these)
   result.calculatedTotals.shipping = calculateShipping(result.calculatedTotals.subtotal);
-  result.calculatedTotals.tax = calculateTax(result.calculatedTotals.subtotal);
+  result.calculatedTotals.tax = calculateTax(result.calculatedTotals.subtotal, shippingState);
+  result.calculatedTotals.taxState = (shippingState || '').toUpperCase() || 'NONE';
+  result.calculatedTotals.taxRate = STATE_TAX_RATES[(shippingState || '').toUpperCase()] || 0;
   result.calculatedTotals.total =
     result.calculatedTotals.subtotal +
     result.calculatedTotals.shipping +
@@ -268,8 +286,8 @@ function buildStripeLineItems(validation) {
       price_data: {
         currency: 'usd',
         product_data: {
-          name: 'Tax (AZ 8.1%)',
-          metadata: { type: 'tax' }
+          name: `Tax (${validation.calculatedTotals.taxState} ${(validation.calculatedTotals.taxRate * 100).toFixed(1)}%)`,
+          metadata: { type: 'tax', state: validation.calculatedTotals.taxState }
         },
         unit_amount: validation.calculatedTotals.tax
       },
@@ -286,6 +304,6 @@ module.exports = {
   buildStripeLineItems,
   calculateShipping,
   calculateTax,
-  TAX_RATE,
+  STATE_TAX_RATES,
   SHIPPING_TIERS
 };
