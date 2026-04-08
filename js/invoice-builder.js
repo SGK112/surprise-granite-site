@@ -71,19 +71,19 @@
     .inv-total-row { display: flex; justify-content: space-between; width: 240px; font-size: 14px; padding: 6px 0; }
     .inv-total-row.grand { font-size: 20px; font-weight: 700; border-top: 2px solid #1a1a2e; padding-top: 10px; margin-top: 4px; }
     .inv-total-row.grand .inv-amount { color: #f9cb00; }
-    .inv-stamp { position: absolute; top: 50%; right: 40px; transform: translateY(-50%) rotate(-15deg); font-size: 48px; font-weight: 900; color: rgba(34,197,94,0.12); text-transform: uppercase; letter-spacing: 4px; pointer-events: none; }
+    .inv-stamp { position: absolute; bottom: 80px; right: 30px; transform: rotate(-12deg); font-size: 36px; font-weight: 900; color: rgba(200,200,200,0.08); text-transform: uppercase; letter-spacing: 6px; pointer-events: none; z-index: 0; }
     .inv-notes { margin-top: 24px; padding: 16px; background: #fafafa; border-radius: 8px; font-size: 13px; color: #666; line-height: 1.6; }
     .inv-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #f0f0f0; font-size: 11px; color: #999; text-align: center; }
 
     /* Action bar */
     .inv-actions {
-      display: flex; gap: 10px; justify-content: center; padding: 20px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; padding: 16px 20px;
       background: #1a1a2e; border-radius: 0 0 12px 12px;
     }
     .inv-actions button {
-      padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px;
-      font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
-      transition: all 0.2s;
+      padding: 12px 16px; border-radius: 8px; border: none; font-size: 13px;
+      font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.2s; white-space: nowrap;
     }
     .inv-btn-print { background: #fff; color: #1a1a2e; }
     .inv-btn-print:hover { background: #f0f0f0; }
@@ -101,8 +101,8 @@
     }
     .inv-btn-close:hover { background: rgba(0,0,0,0.1); color: #333; }
     @media (max-width: 500px) {
-      .inv-actions { flex-wrap: wrap; }
-      .inv-actions button { flex: 1; min-width: 120px; justify-content: center; font-size: 12px; padding: 10px 14px; }
+      .inv-actions { grid-template-columns: 1fr 1fr; }
+      .inv-actions button { font-size: 12px; padding: 10px 12px; }
     }
   `;
   document.head.appendChild(style);
@@ -154,11 +154,11 @@
             <div>
               <div class="inv-meta-group">
                 <label>Bill To</label>
-                <span>${esc(data.customerName || 'Customer')}</span>
+                ${data.customerName ? `<span>${esc(data.customerName)}</span>` : `<input type="text" placeholder="Customer name" style="border:none;border-bottom:1px dashed #ccc;font-size:14px;font-weight:500;padding:4px 0;width:100%;font-family:inherit;outline:none;" id="inv-edit-name">`}
               </div>
-              ${data.customerEmail ? `<div class="inv-meta-group" style="margin-top:8px"><label>Email</label><span>${esc(data.customerEmail)}</span></div>` : ''}
-              ${data.customerPhone ? `<div class="inv-meta-group" style="margin-top:8px"><label>Phone</label><span>${esc(data.customerPhone)}</span></div>` : ''}
-              ${data.customerAddress ? `<div class="inv-meta-group" style="margin-top:8px"><label>Address</label><span>${esc(data.customerAddress)}${data.customerCity ? ', ' + esc(data.customerCity) : ''}${data.customerState ? ', ' + esc(data.customerState) : ''} ${esc(data.customerZip || '')}</span></div>` : ''}
+              ${data.customerEmail ? `<div class="inv-meta-group" style="margin-top:8px"><label>Email</label><span>${esc(data.customerEmail)}</span></div>` : `<div class="inv-meta-group" style="margin-top:8px"><label>Email</label><input type="email" placeholder="customer@email.com" style="border:none;border-bottom:1px dashed #ccc;font-size:13px;padding:4px 0;width:100%;font-family:inherit;outline:none;color:#1a1a2e;" id="inv-edit-email"></div>`}
+              ${data.customerPhone ? `<div class="inv-meta-group" style="margin-top:8px"><label>Phone</label><span>${esc(data.customerPhone)}</span></div>` : `<div class="inv-meta-group" style="margin-top:8px"><label>Phone</label><input type="tel" placeholder="(555) 123-4567" style="border:none;border-bottom:1px dashed #ccc;font-size:13px;padding:4px 0;width:100%;font-family:inherit;outline:none;color:#1a1a2e;" id="inv-edit-phone"></div>`}
+              ${data.customerAddress ? `<div class="inv-meta-group" style="margin-top:8px"><label>Address</label><span>${esc(data.customerAddress)}${data.customerCity ? ', ' + esc(data.customerCity) : ''}${data.customerState ? ', ' + esc(data.customerState) : ''} ${esc(data.customerZip || '')}</span></div>` : `<div class="inv-meta-group" style="margin-top:8px"><label>Address</label><input type="text" placeholder="Street, City, State ZIP" style="border:none;border-bottom:1px dashed #ccc;font-size:13px;padding:4px 0;width:100%;font-family:inherit;outline:none;color:#1a1a2e;" id="inv-edit-address"></div>`}
             </div>
             <div style="text-align: right;">
               <div class="inv-meta-group">
@@ -220,18 +220,24 @@
             <strong style="color:#1a1a2e;">Notes:</strong><br>${esc(data.notes)}
           </div>` : ''}
 
+          <!-- Pay Online Link -->
+          <div class="inv-animate" data-delay="${2600 + items.length * 200}" style="margin-top:24px;text-align:center;">
+            <a href="/checkout/" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#f9cb00,#e5b800);color:#1a1a2e;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">Pay Online</a>
+            <div style="margin-top:6px;font-size:11px;color:#aaa;">${COMPANY.website}/checkout</div>
+          </div>
+
           <!-- Footer -->
-          <div class="inv-footer inv-animate" data-delay="${2700 + items.length * 200}">
+          <div class="inv-footer inv-animate" data-delay="${2800 + items.length * 200}">
             Thank you for your business! | ${COMPANY.website} | ${COMPANY.phone}
           </div>
 
           <!-- Stamp -->
-          <div class="inv-stamp inv-scale" data-delay="${2900 + items.length * 200}">INVOICE</div>
+          <div class="inv-stamp inv-scale" data-delay="${3000 + items.length * 200}">INVOICE</div>
 
         </div>
 
         <!-- Action buttons -->
-        <div class="inv-actions inv-fade" data-delay="${3100 + items.length * 200}">
+        <div class="inv-actions inv-fade" data-delay="${3200 + items.length * 200}">
           <button class="inv-btn-print" onclick="window._invPrint()">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
             Print
