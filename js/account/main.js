@@ -13302,9 +13302,34 @@
         window._pendingInvoiceToken = token;
         window._editingInvoiceId = null;
 
-        // Show preview modal with iframe
-        console.log('[Invoices] Step 5: Showing preview...');
-        showInvoiceTemplatePreview(token, formData.customerEmail);
+        // Show animated invoice builder
+        console.log('[Invoices] Step 5: Showing animated builder...');
+        if (window.buildInvoiceAnimation) {
+          window.buildInvoiceAnimation({
+            invoiceNumber: invoice.invoice_number || invoiceNumber,
+            customerName: formData.customerName,
+            customerEmail: formData.customerEmail,
+            customerPhone: formData.customerPhone,
+            customerAddress: formData.customerAddress,
+            customerCity: formData.customerCity,
+            customerState: formData.customerState,
+            customerZip: formData.customerZip,
+            items: formData.items,
+            notes: formData.notes,
+            dueDate: invoiceData.due_date ? new Date(invoiceData.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined,
+            depositAmount: formData.depositEnabled ? formData.depositAmount : 0
+          }, {
+            token: token,
+            previewUrl: '/invoice/view/?token=' + token,
+            onSend: function() {
+              // Trigger the existing send flow
+              document.querySelector('.inv-builder-overlay')?.remove();
+              showInvoiceTemplatePreview(token, formData.customerEmail);
+            }
+          });
+        } else {
+          showInvoiceTemplatePreview(token, formData.customerEmail);
+        }
 
       } catch (err) {
         console.error('[Invoices] Preview error:', err);
