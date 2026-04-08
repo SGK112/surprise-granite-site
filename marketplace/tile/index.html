@@ -615,6 +615,7 @@
               <h3 class="product-title">${product.title}</h3>
               ${priceHtml}
               <span class="product-btn">View Details</span>
+              ${parseFloat(product.price) > 0 ? `<button class="add-to-cart-btn" onclick="event.preventDefault();event.stopPropagation();window.sgAddToCart && window.sgAddToCart('${product.handle || product.id}', this)" style="width:100%;padding:8px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;">Add to Cart</button>` : ''}
               <button class="calc-project-btn" onclick="event.stopPropagation(); openCalcModal('${product.title.replace(/'/g, "\\'")}', ${parseFloat(product.price) || 0})">Calculate Your Project</button>
             </div>
           </div>
