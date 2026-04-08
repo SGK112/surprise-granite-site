@@ -474,6 +474,14 @@
       var price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
       var imgEl = card && card.querySelector('img');
       var image = imgEl ? imgEl.src : '';
+      // Fallback: try background-image on .product-image div
+      if (!image || !image.startsWith('http')) {
+        var bgEl = card && card.querySelector('.product-image');
+        if (bgEl) {
+          var bgImg = bgEl.style.backgroundImage;
+          if (bgImg) image = bgImg.replace(/url\(['"]?/, '').replace(/['"]?\)/, '');
+        }
+      }
       var id = (typeof productDataOrId === 'string' ? productDataOrId : '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
       window.SgCart.addToCart({ id: id, name: name.trim(), price: price, image: image, quantity: 1, variant: '', category: '', href: '' });
@@ -520,11 +528,11 @@
     // Use .id which is the Shopify line ID for update/remove operations
     itemsContainer.innerHTML = cart.map(function(item) {
       var safeId = (item.id || '').replace(/'/g, "\\'");
-      var imgSrc = item.image || '/images/placeholder.jpg';
+      var imgSrc = (item.image && item.image.startsWith('http')) ? item.image : '/images/6243807090316203124aee66_placeholder-image.svg';
       var itemName = item.name || 'Product';
       var price = (typeof item.price === 'number') ? item.price.toFixed(2) : '0.00';
       return '<div class="cart-drawer-item">' +
-        '<img src="' + imgSrc + '" alt="' + itemName + '" class="cart-drawer-item-img">' +
+        '<img src="' + imgSrc + '" alt="' + itemName + '" class="cart-drawer-item-img" onerror="this.onerror=null;this.src=\'/images/6243807090316203124aee66_placeholder-image.svg\'">' +
         '<div class="cart-drawer-item-info">' +
           '<div class="cart-drawer-item-name">' + itemName + '</div>' +
           '<div class="cart-drawer-item-price">$' + price + '</div>' +

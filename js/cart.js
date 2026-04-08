@@ -466,7 +466,7 @@
       const safeId = escapeAttr(item.id);
       const safeVariant = escapeAttr(item.variant || '');
       const safeName = escapeHtml(item.name);
-      const safeImage = escapeAttr(item.image || '/images/placeholder.jpg');
+      const safeImage = escapeAttr((item.image && item.image.startsWith('http')) ? item.image : '/images/6243807090316203124aee66_placeholder-image.svg');
       const safeHref = escapeAttr(item.href || '#');
       const safePrice = parseFloat(item.price) || 0;
       const safeQty = parseInt(item.quantity) || 1;
