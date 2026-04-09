@@ -5460,6 +5460,11 @@
       estimateModalState = { customerId: null, leadId: null, editingEstimateId: null };
       workflowState.reset();
 
+      // Force data refresh when navigating to any tab
+      ordersLoaded = false;
+      customersLoaded = false;
+      productsLoaded = false;
+
       // Wait for auth to be ready before loading any data
       if (!authReady || !supabaseClient) {
         console.log('[showPage] Waiting for auth, authReady:', authReady, 'supabaseClient:', !!supabaseClient);
