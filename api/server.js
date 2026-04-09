@@ -3236,7 +3236,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`;
 
               await transporter.sendMail({
-                from: `"Surprise Granite" <${SMTP_USER}>`,
+                from: `"Surprise Granite" <${FROM_EMAIL}>`,
                 to: project.customer_email,
                 subject: `Payment Received - ${project.name}`,
                 html: receiptHtml
@@ -3253,7 +3253,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
               if (owner?.email) {
                 await transporter.sendMail({
-                  from: `"Surprise Granite" <${SMTP_USER}>`,
+                  from: `"Surprise Granite" <${FROM_EMAIL}>`,
                   to: owner.email,
                   subject: `Payment Received - ${project.name} - $${amount.toFixed(2)}`,
                   html: `
@@ -5372,7 +5372,7 @@ app.post('/api/customers/send-portal-link', authenticateJWT, async (req, res) =>
     });
 
     await transporter.sendMail({
-      from: `"${companyName}" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: `"${companyName}" <${FROM_EMAIL}>`,
       to: email,
       subject: `Your Customer Portal Access - ${companyName}`,
       html
@@ -7554,7 +7554,7 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
       `;
       try {
         await transporter.sendMail({
-          from: `"${companyName}" <${SMTP_USER}>`,
+          from: `"${companyName}" <${FROM_EMAIL}>`,
           to: recipientEmail,
           subject: subject,
           html: wrappedHtml
@@ -7861,7 +7861,7 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
 
     // Send email with PDF attachment
     const emailOptions = {
-      from: `"${companyName}" <${SMTP_USER}>`,
+      from: `"${companyName}" <${FROM_EMAIL}>`,
       to: custEmail,
       subject: `Your Estimate #${estNumber || estimate_id?.slice(-8) || 'N/A'} from ${companyName}`,
       html: emailHtml,
@@ -11885,7 +11885,7 @@ app.post('/api/projects/:id/send-quote', authenticateJWT, async (req, res) => {
 </html>`;
 
     await transporter.sendMail({
-      from: `"Surprise Granite" <${SMTP_USER}>`,
+      from: `"Surprise Granite" <${FROM_EMAIL}>`,
       to: customer_email,
       subject: `Your Project Quote - ${project.name || 'Kitchen Design'}`,
       html: emailHtml
@@ -11956,7 +11956,7 @@ app.post('/api/projects/approve', async (req, res) => {
 
       if (owner?.email) {
         await transporter.sendMail({
-          from: `"Surprise Granite" <${SMTP_USER}>`,
+          from: `"Surprise Granite" <${FROM_EMAIL}>`,
           to: owner.email,
           subject: `Quote Approved - ${project.name}`,
           html: `
@@ -12323,7 +12323,7 @@ app.post('/api/design-comments', commentRateLimiter, async (req, res) => {
         const escapedMessage = escapeHtmlForEmail(sanitizedMessage);
 
         await transporter.sendMail({
-          from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
+          from: `"Surprise Granite" <${FROM_EMAIL}>`,
           to: ownerEmail,
           subject: `New Comment from ${customerName} on ${projectName}`,
           html: `
@@ -12479,7 +12479,7 @@ app.post('/api/design-comments/:lead_id/reply', commentRateLimiter, authenticate
         const escapedMessage = escapeHtmlForEmail(sanitizedMessage);
 
         await transporter.sendMail({
-          from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
+          from: `"Surprise Granite" <${FROM_EMAIL}>`,
           to: lead.email,
           subject: `New reply on your design project`,
           html: `
