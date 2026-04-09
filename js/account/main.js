@@ -4,6 +4,12 @@
 
     const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
 
+    // API base URL — single source of truth
+    const SG_API_BASE = window.SG_CONFIG?.API_BASE
+      || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://' + window.location.host
+        : 'https://surprise-granite-email-api.onrender.com');
+
     let supabaseClient;
     let currentUser = null;
     let userProfile = null;
@@ -3098,7 +3104,7 @@
         }
         // Load from BOTH orders tables
         // Use admin API for store orders (bypasses RLS) + direct query for shopify
-        const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+        const API_BASE = SG_API_BASE;
         const session = await supabaseClient.auth.getSession();
         const token = session?.data?.session?.access_token;
 
@@ -3432,7 +3438,7 @@
       const payStatus = isStore ? (order.payment_status || 'unpaid') : (order.financial_status || 'pending');
 
       // Build management actions for store orders (admin only)
-      const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+      const API_BASE = SG_API_BASE;
       let actionsHtml = '';
       if (isStore) {
         actionsHtml = `
@@ -3565,7 +3571,7 @@
 
     // Order management action functions
     async function orderAction_apiCall(method, path, body) {
-      const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+      const API_BASE = SG_API_BASE;
       const session = await supabaseClient.auth.getSession();
       const token = session?.data?.session?.access_token;
       const res = await fetch(API_BASE + path, {
@@ -4611,7 +4617,7 @@
 
         // Send email notification via API
         try {
-          await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -7544,7 +7550,7 @@
           if (error || !data) {
             console.log('[SaveLead] Trying API fallback...');
             try {
-              const resp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/leads/' + editingLeadId, {
+              const resp = await fetchWithTimeout(SG_API_BASE + '/api/leads/' + editingLeadId, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(leadData)
@@ -10707,10 +10713,8 @@
     }
 
     // ============ INVOICE MANAGEMENT ============
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `http://${window.location.host}`
-      : 'https://surprise-granite-email-api.onrender.com';
-    const API_BASE = API_URL;
+    const API_URL = SG_API_BASE;
+    const API_BASE = SG_API_BASE;
 
     // VoiceNow CRM API for payments, SMS, and advanced features
     const VOICENOW_API = 'https://www.voicenowcrm.com';
@@ -17079,7 +17083,7 @@
         const note = document.getElementById('payment-note').value;
 
         // Create payment link via API
-        const response = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/payment-links', {
+        const response = await fetchWithTimeout(SG_API_BASE + '/api/payment-links', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -17096,7 +17100,7 @@
         }
 
         // Send email with payment link
-        const emailResponse = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        const emailResponse = await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -17250,7 +17254,7 @@
       btn.innerHTML = '<span class="spinner"></span>';
 
       try {
-        const emailResponse = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        const emailResponse = await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -18850,7 +18854,7 @@
             try {
               const emailController = new AbortController();
               const emailTimeout = setTimeout(() => emailController.abort(), 10000);
-              await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+              await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal: emailController.signal,
@@ -19051,7 +19055,7 @@
 
         const approvalUrl = `${window.location.origin}/estimate/view/?token=${token}`;
 
-        await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -19167,7 +19171,7 @@
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
-          const response = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          const response = await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
@@ -24978,7 +24982,7 @@
             // Always use production email API (not localhost)
             const token = getAuthToken();
 
-            const emailResp = await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+            const emailResp = await fetchWithTimeout(SG_API_BASE + '/api/send-network-invite', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -25084,7 +25088,7 @@
           try {
             const token = getAuthToken();
 
-            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-network-invite', {
+            await fetchWithTimeout(SG_API_BASE + '/api/send-network-invite', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -25325,7 +25329,7 @@
         if (channel === 'email' && currentChatCollaborator.email) {
           try {
             const _token = getAuthToken();
-            await fetchWithTimeout('https://surprise-granite-email-api.onrender.com/api/send-collaborator-message', {
+            await fetchWithTimeout(SG_API_BASE + '/api/send-collaborator-message', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -26698,7 +26702,7 @@
 
     async function sendWorkflowInviteEmails(events, participants, customerName, address) {
       try {
-        const API_BASE = window.API_BASE_URL || '';
+        const API_BASE = SG_API_BASE;
 
         // Format events for email
         const eventsList = events.map(e => {
@@ -26739,7 +26743,7 @@
 
     async function sendWorkflowSmsNotifications(events, participants) {
       try {
-        const API_BASE = window.API_BASE_URL || '';
+        const API_BASE = SG_API_BASE;
 
         for (const participant of participants) {
           if (!participant.phone) continue;
