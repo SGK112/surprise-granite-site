@@ -3725,7 +3725,7 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Request failed');
-        showToast(data.data?.created ? 'Customer added to CRM' : 'Customer updated in CRM', 'success');
+        showToast(data.isNew ? 'Customer added to CRM' : 'Customer updated in CRM', 'success');
       } catch (err) {
         showToast('CRM save failed: ' + err.message, 'error');
       }

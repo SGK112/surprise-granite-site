@@ -361,6 +361,14 @@
         });
       }
 
+      // Pull promo code from localStorage. The backend re-validates it;
+      // this is just a pass-through, never a trusted discount value.
+      let promoCode = null;
+      try {
+        const cached = JSON.parse(localStorage.getItem('sg_promo') || 'null');
+        if (cached?.code) promoCode = cached.code;
+      } catch (_) {}
+
       // Create checkout session
       const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
         method: 'POST',
@@ -371,6 +379,7 @@
           items: lineItems,
           customer_email: formData.email,
           shipping_state: document.getElementById('state')?.value || '',
+          promo_code: promoCode,
           success_url: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${window.location.origin}/checkout/`
         })

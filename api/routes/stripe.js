@@ -134,7 +134,7 @@ router.post('/quick-pay', async (req, res) => {
 router.post('/checkout', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
-    const { items, success_url, cancel_url, customer_email, shipping_state } = req.body;
+    const { items, success_url, cancel_url, customer_email, shipping_state, promo_code } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'No items provided' });
@@ -158,7 +158,57 @@ router.post('/checkout', async (req, res) => {
       logger.info('Cart validation warnings', { warnings: validation.warnings });
     }
 
+    // SERVER-SIDE PROMO VALIDATION — never trust the client's discount.
+    let promoResult = null;
+    if (promo_code) {
+      const { validatePromoCode } = require('./promotions');
+      promoResult = await validatePromoCode({
+        supabase,
+        code: promo_code,
+        subtotal: validation.calculatedTotals.subtotal,
+        shippingAmount: validation.calculatedTotals.shipping,
+        customerEmail: customer_email
+      });
+      if (!promoResult.valid) {
+        return res.status(400).json({ error: 'Invalid promo code', reason: promoResult.reason });
+      }
+    }
+
     const lineItems = buildStripeLineItems(validation);
+
+    // Apply promo as a negative line item after the price validator's
+    // build so it can't push the total negative. Stripe's coupon/discount
+    // API would be cleaner but requires pre-created coupon objects per
+    // session. Negative line items aren't supported by Stripe Checkout, so
+    // if we have a discount we subtract it from the product unit amounts
+    // proportionally, or drop shipping to zero for free_shipping promos.
+    if (promoResult?.valid) {
+      if (promoResult.free_shipping) {
+        // Remove any shipping line items we added.
+        for (let i = lineItems.length - 1; i >= 0; i--) {
+          const name = lineItems[i]?.price_data?.product_data?.name || '';
+          if (/^Shipping/i.test(name)) lineItems.splice(i, 1);
+        }
+      } else if (promoResult.discount_amount > 0) {
+        // Proportional discount across product line items only (skip tax
+        // and shipping lines the validator injected).
+        const productLines = lineItems.filter(li => {
+          const n = li?.price_data?.product_data?.name || '';
+          return !/^Tax\s*\(/i.test(n) && !/^Shipping/i.test(n);
+        });
+        const productSubtotal = productLines.reduce(
+          (sum, li) => sum + (li.price_data.unit_amount / 100) * li.quantity, 0
+        );
+        if (productSubtotal > 0) {
+          const ratio = Math.min(1, promoResult.discount_amount / productSubtotal);
+          for (const li of productLines) {
+            const unitDollars = li.price_data.unit_amount / 100;
+            const discounted = Math.max(0, unitDollars * (1 - ratio));
+            li.price_data.unit_amount = Math.round(discounted * 100);
+          }
+        }
+      }
+    }
 
     const sessionConfig = {
       payment_method_types: ['card'],
@@ -173,7 +223,12 @@ router.post('/checkout', async (req, res) => {
       metadata: {
         order_source: 'website_cart',
         validated_total: validation.calculatedTotals.total,
-        price_adjustments: validation.warnings.length > 0 ? 'yes' : 'no'
+        price_adjustments: validation.warnings.length > 0 ? 'yes' : 'no',
+        ...(promoResult?.valid ? {
+          promo_id: promoResult.promotion.id,
+          promo_code: promoResult.promotion.code,
+          promo_discount: String(promoResult.discount_amount)
+        } : {})
       }
     };
 

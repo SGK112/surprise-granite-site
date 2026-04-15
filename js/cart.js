@@ -579,9 +579,12 @@
   }
 
   /**
-   * Handle promo code
+   * Handle promo code — validated server-side against the promotions
+   * table. The server is the source of truth: we only cache the code
+   * name locally so checkout can re-submit it; discount math never
+   * trusts the client.
    */
-  function applyPromoCode() {
+  async function applyPromoCode() {
     const input = document.getElementById('promoCode');
     const message = document.getElementById('promoMessage');
     const code = input ? input.value.trim().toUpperCase() : '';
@@ -594,25 +597,45 @@
       return;
     }
 
-    // Example promo codes
-    const promoCodes = {
-      'WELCOME10': { discount: 0.10, type: 'percent', message: '10% off applied!' },
-      'SAVE20': { discount: 0.20, type: 'percent', message: '20% off applied!' },
-      'FREESHIP': { discount: 0, type: 'shipping', message: 'Free shipping applied!' }
-    };
+    // Compute current cart subtotal so the server can enforce
+    // min_order_amount and calculate the real discount.
+    const subtotal = (typeof getCartSubtotal === 'function'
+      ? getCartSubtotal()
+      : (window.sgCart?.reduce?.((s, i) => s + (i.price || 0) * (i.quantity || 1), 0) || 0));
 
-    const promo = promoCodes[code];
-    if (promo) {
-      if (message) {
-        message.className = 'promo-message success';
-        message.textContent = promo.message;
+    const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE)
+      || 'https://surprise-granite-email-api.onrender.com';
+
+    try {
+      const res = await fetch(apiBase + '/api/promotions/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, subtotal })
+      });
+      const data = await res.json();
+      if (data.valid) {
+        if (message) {
+          message.className = 'promo-message success';
+          message.textContent = data.promotion.description || `${code} applied!`;
+        }
+        // Cache only the code + display info. Real discount is enforced
+        // again on /api/stripe/checkout; never trust this value.
+        localStorage.setItem('sg_promo', JSON.stringify({
+          code: data.promotion.code,
+          type: data.promotion.type,
+          display_discount: data.discount_amount
+        }));
+      } else {
+        if (message) {
+          message.className = 'promo-message error';
+          message.textContent = data.reason || 'Invalid promo code';
+        }
+        localStorage.removeItem('sg_promo');
       }
-      // Store promo for checkout
-      localStorage.setItem('sg_promo', JSON.stringify({ code, ...promo }));
-    } else {
+    } catch (err) {
       if (message) {
         message.className = 'promo-message error';
-        message.textContent = 'Invalid promo code';
+        message.textContent = 'Could not validate code — please try again';
       }
     }
   }

@@ -2463,6 +2463,36 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               } catch (custAutoErr) {
                 logger.warn('Could not auto-upsert customer from checkout:', custAutoErr.message);
               }
+
+              // Record promo redemption if one was applied at checkout.
+              try {
+                const promoId = session.metadata?.promo_id;
+                const promoDiscount = Number(session.metadata?.promo_discount || 0);
+                if (promoId) {
+                  await supabase.from('promotion_redemptions').insert({
+                    promotion_id: promoId,
+                    order_id: order.id,
+                    customer_email: session.customer_details?.email?.toLowerCase() || null,
+                    discount_amount: promoDiscount
+                  });
+                  // Atomic counter increment via RPC isn't set up; use a
+                  // read-modify-write which is fine for non-racy volumes.
+                  const { data: promoRow } = await supabase
+                    .from('promotions')
+                    .select('current_uses')
+                    .eq('id', promoId)
+                    .single();
+                  if (promoRow) {
+                    await supabase
+                      .from('promotions')
+                      .update({ current_uses: (promoRow.current_uses || 0) + 1 })
+                      .eq('id', promoId);
+                  }
+                  logger.info('Promo redeemed:', session.metadata?.promo_code, 'order:', order.order_number);
+                }
+              } catch (promoErr) {
+                logger.warn('Could not record promo redemption:', promoErr.message);
+              }
             }
           } catch (dbErr) {
             logger.error('Database error creating order:', dbErr.message);
@@ -3863,6 +3893,8 @@ app.use('/api/scrapers', scrapersRouter);
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
+const promotionsRouter = require('./routes/promotions');
+app.use('/api/promotions', promotionsRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility
@@ -4366,8 +4398,8 @@ app.post('/api/customers', authenticateJWT, async (req, res) => {
   }
 });
 
-// Get customer by email
-app.get('/api/customers/:email', async (req, res) => {
+// Get customer by email (requires auth — do not leak PII)
+app.get('/api/customers/:email', authenticateJWT, async (req, res) => {
   try {
     const customers = await stripe.customers.list({
       email: req.params.email,
