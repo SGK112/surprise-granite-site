@@ -378,6 +378,138 @@ router.post('/:id/close', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 /**
+ * POST /api/admin/orders/:id/refund — Issue a Stripe refund against an order
+ * Body: { amount?: number (dollars, omit for full), reason?: string, notify_customer?: boolean }
+ */
+router.post('/:id/refund', authenticateJWT, requireAdmin, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const stripeService = require('../services/stripeService');
+    const stripe = stripeService.getStripeInstance();
+    const { id } = req.params;
+    const { amount, reason, notify_customer } = req.body || {};
+
+    if (!stripe) {
+      return res.status(500).json({ error: 'Stripe not configured' });
+    }
+
+    const { data: order, error: fetchErr } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (fetchErr || !order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    if (!order.stripe_payment_intent_id) {
+      return res.status(400).json({ error: 'Order has no Stripe payment to refund' });
+    }
+    if (order.status === 'refunded') {
+      return res.status(400).json({ error: 'Order is already fully refunded' });
+    }
+
+    // Convert dollars → cents; omit for full refund.
+    const refundParams = { payment_intent: order.stripe_payment_intent_id };
+    if (amount != null) {
+      const cents = Math.round(Number(amount) * 100);
+      if (!Number.isFinite(cents) || cents <= 0) {
+        return res.status(400).json({ error: 'Invalid refund amount' });
+      }
+      refundParams.amount = cents;
+    }
+    // Stripe accepts: duplicate, fraudulent, requested_by_customer
+    if (reason && ['duplicate', 'fraudulent', 'requested_by_customer'].includes(reason)) {
+      refundParams.reason = reason;
+    }
+
+    let refund;
+    try {
+      refund = await stripe.refunds.create(refundParams);
+    } catch (stripeErr) {
+      logger.error('Stripe refund failed:', stripeErr.message);
+      return res.status(502).json({ error: 'Stripe refund failed: ' + stripeErr.message });
+    }
+
+    const refundedAmount = (refund.amount || 0) / 100;
+    const totalPaid = Number(order.total || 0);
+    const isFullRefund = refundedAmount >= totalPaid - 0.005;
+
+    const existingRefunds = Array.isArray(order.metadata?.refunds) ? order.metadata.refunds : [];
+    const nextStatus = isFullRefund ? 'refunded' : (order.status || 'confirmed');
+    const nextPaymentStatus = isFullRefund ? 'refunded' : 'partially_refunded';
+
+    const { error: updErr } = await supabase
+      .from('orders')
+      .update({
+        status: nextStatus,
+        payment_status: nextPaymentStatus,
+        metadata: {
+          ...(order.metadata || {}),
+          refunds: [
+            ...existingRefunds,
+            {
+              refund_id: refund.id,
+              amount: refundedAmount,
+              reason: reason || null,
+              created_at: new Date().toISOString(),
+              by: req.adminUser?.email || null
+            }
+          ]
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updErr) {
+      logger.error('Order refund recorded in Stripe but DB update failed:', updErr.message);
+    }
+
+    await logOrderEvent(
+      supabase,
+      id,
+      'refund',
+      `Refunded $${refundedAmount.toFixed(2)}${reason ? ' (' + reason + ')' : ''}`,
+      req.adminUser?.email
+    );
+
+    // Optional customer notification
+    let emailSent = false;
+    if (notify_customer && order.customer_email) {
+      try {
+        await emailService.sendEmail({
+          to: order.customer_email,
+          subject: `Refund Issued — ${order.order_number || id}`,
+          html: emailService.wrapEmailTemplate(`
+            <h2 style="color:#1a1a2e;">Refund Issued</h2>
+            <p>Hi ${order.customer_name || 'there'},</p>
+            <p>We've issued a refund of <strong>$${refundedAmount.toFixed(2)}</strong>
+            for order <strong>${order.order_number || id}</strong>. It should appear on
+            your original payment method within 5–10 business days.</p>
+            ${reason ? `<p>Reason: ${reason}</p>` : ''}
+            <p>Questions? Reply to this email or call (602) 833-3189.</p>
+            <p>— Surprise Granite</p>
+          `)
+        });
+        emailSent = true;
+      } catch (emailErr) {
+        logger.warn('Refund email failed:', emailErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      refund_id: refund.id,
+      amount: refundedAmount,
+      full_refund: isFullRefund,
+      email_sent: emailSent
+    });
+  } catch (err) {
+    logger.error('Error issuing refund:', err.message);
+    res.status(500).json({ error: 'Failed to issue refund' });
+  }
+});
+
+/**
  * POST /api/admin/orders/bulk-close - Close multiple orders at once
  */
 router.post('/bulk-close', authenticateJWT, requireAdmin, async (req, res) => {

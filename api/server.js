@@ -2428,36 +2428,33 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                   const adminUserId = adminUser?.id;
 
                   if (adminUserId) {
-                    const emailLower = customerEmail.toLowerCase();
-                    const customerRow = {
-                      user_id: adminUserId,
-                      email: emailLower,
-                      name: session.customer_details?.name || session.shipping_details?.name || null,
-                      phone: session.customer_details?.phone || null,
-                      address: shippingAddress.line1 || null,
-                      city: shippingAddress.city || null,
-                      state: shippingAddress.state || null,
-                      zip: shippingAddress.postal_code || null,
-                      stripe_customer_id: session.customer || null,
-                      source: 'store_checkout',
-                      notes: `Last order: ${orderNumber} ($${total.toFixed(2)})`,
-                      updated_at: new Date().toISOString()
-                    };
-
-                    const { data: existingCustomer } = await supabase
+                    // Migration 010 added UNIQUE(user_id, email) and a
+                    // JSONB metadata column, so we can upsert atomically.
+                    const { error: custErr } = await supabase
                       .from('customers')
-                      .select('id')
-                      .eq('user_id', adminUserId)
-                      .eq('email', emailLower)
-                      .limit(1)
-                      .single();
+                      .upsert({
+                        user_id: adminUserId,
+                        email: customerEmail.toLowerCase(),
+                        name: session.customer_details?.name || session.shipping_details?.name || null,
+                        phone: session.customer_details?.phone || null,
+                        address: shippingAddress.line1 || null,
+                        city: shippingAddress.city || null,
+                        state: shippingAddress.state || null,
+                        zip: shippingAddress.postal_code || null,
+                        stripe_customer_id: session.customer || null,
+                        source: 'store_checkout',
+                        metadata: {
+                          last_order_number: orderNumber,
+                          last_order_id: order.id,
+                          last_order_total: total
+                        },
+                        updated_at: new Date().toISOString()
+                      }, { onConflict: 'user_id,email' });
 
-                    if (existingCustomer) {
-                      await supabase.from('customers').update(customerRow).eq('id', existingCustomer.id);
-                      logger.info('Customer updated in CRM:', emailLower);
+                    if (custErr) {
+                      logger.warn('Customer CRM upsert failed:', custErr.message);
                     } else {
-                      await supabase.from('customers').insert(customerRow);
-                      logger.info('Customer created in CRM:', emailLower);
+                      logger.info('Customer upserted to CRM:', customerEmail);
                     }
                   } else {
                     logger.warn('No admin user found; skipping CRM customer upsert');

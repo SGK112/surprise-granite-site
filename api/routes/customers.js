@@ -16,7 +16,7 @@ const { authenticateJWT } = require('../lib/auth/middleware');
  * Create a new customer
  * POST /api/customers
  */
-router.post('/', customerRateLimiter, asyncHandler(async (req, res) => {
+router.post('/', authenticateJWT, customerRateLimiter, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
 
   const { email, name, phone, company, address, metadata = {} } = req.body;
@@ -24,6 +24,12 @@ router.post('/', customerRateLimiter, asyncHandler(async (req, res) => {
   // Validation
   if (!email || !isValidEmail(email)) {
     return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  // customers.user_id is NOT NULL; scope this customer to the caller.
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   // Create in Stripe
@@ -43,18 +49,15 @@ router.post('/', customerRateLimiter, asyncHandler(async (req, res) => {
   let localCustomer = null;
   if (supabase) {
     try {
-      // NOTE: live 'customers' table schema does NOT have a 'metadata' column.
-      // Fields: id, user_id, name, email, phone, address, city, state, zip,
-      // notes, source, stripe_customer_id, company, company_name, total_jobs,
-      // total_spent, lead_id, qbo_*. Stash extra metadata in notes.
-      const notesParts = [];
-      if (metadata?.source) notesParts.push(`Source: ${metadata.source}`);
-      if (metadata?.last_order_number) notesParts.push(`Last order: ${metadata.last_order_number}`);
-      if (metadata?.last_order_total != null) notesParts.push(`Total: $${Number(metadata.last_order_total).toFixed(2)}`);
-
+      // Requires migration 010_customers_metadata_and_unique.sql:
+      //   - metadata JSONB column
+      //   - UNIQUE index on (user_id, lower(email))
+      // Upsert on the composite constraint so repeat customers update in
+      // place instead of spawning duplicate rows.
       const { data, error } = await supabase
         .from('customers')
         .upsert({
+          user_id: userId,
           email: email.toLowerCase().trim(),
           name: sanitizeString(name, 200),
           phone,
@@ -62,9 +65,9 @@ router.post('/', customerRateLimiter, asyncHandler(async (req, res) => {
           address: sanitizeString(address, 500),
           stripe_customer_id: stripeCustomer.id,
           source: metadata?.source || 'api',
-          notes: notesParts.join(' · ') || null,
+          metadata: metadata || {},
           updated_at: new Date().toISOString()
-        }, { onConflict: 'email' })
+        }, { onConflict: 'user_id,email' })
         .select()
         .single();
 

@@ -3455,6 +3455,10 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Save to CRM
               </button>
+              <button onclick="refundOrder('${orderId}')" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" ${order.payment_status === 'refunded' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                ${order.payment_status === 'refunded' ? 'Refunded' : 'Refund'}
+              </button>
             </div>
 
             <!-- Status Update -->
@@ -3653,6 +3657,38 @@
       } catch (err) { showToast('Failed: ' + err.message, 'error'); }
     }
 
+    // Issue a Stripe refund against an order
+    async function refundOrder(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) { showToast('Order not found', 'error'); return; }
+      const total = Number(order.total || 0);
+      const amountStr = prompt(`Refund amount in dollars (leave blank for full refund of $${total.toFixed(2)}):`, '');
+      if (amountStr === null) return; // cancelled
+      const amount = amountStr.trim() === '' ? null : Number(amountStr);
+      if (amount != null && (!Number.isFinite(amount) || amount <= 0)) {
+        showToast('Invalid amount', 'error');
+        return;
+      }
+      if (amount != null && amount > total) {
+        showToast('Refund cannot exceed order total', 'error');
+        return;
+      }
+      const reason = prompt('Reason (optional — duplicate, fraudulent, requested_by_customer):', 'requested_by_customer') || undefined;
+      const notify = confirm('Email the customer that a refund was issued?');
+      if (!confirm(`Refund $${(amount ?? total).toFixed(2)} to the customer? This cannot be undone.`)) return;
+      try {
+        const result = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/refund`, {
+          amount, reason, notify_customer: notify
+        });
+        showToast(`Refund issued: $${Number(result.amount).toFixed(2)}${result.full_refund ? ' (full)' : ''}${result.email_sent ? ' — customer notified' : ''}`, 'success');
+        document.querySelector('.order-detail-modal')?.remove();
+        ordersLoaded = false;
+        await loadOrders();
+      } catch (err) {
+        showToast('Refund failed: ' + err.message, 'error');
+      }
+    }
+
     // Save order's customer to the CRM (upserts into customers table + Stripe)
     async function saveCustomerToCRM(orderId) {
       const order = allOrders.find(o => o.id === orderId);
@@ -3667,9 +3703,14 @@
         order.shipping_country
       ].filter(Boolean).join(', ');
       try {
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
         const res = await fetch(SG_API_BASE + '/api/customers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
           body: JSON.stringify({
             email: order.customer_email,
             name: order.customer_name || '',
