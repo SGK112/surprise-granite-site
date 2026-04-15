@@ -12,36 +12,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const { authenticateJWT } = require('../lib/auth/middleware');
-
-// Admin check — matches the gate in routes/orders.js.
-// TODO: consolidate into a shared middleware once sg_users.role is the
-// canonical source of truth across all admin routes.
-const ADMIN_EMAILS = ['joshb@surprisegranite.com', 'josh.b@surprisegranite.com'];
-
-async function requireAdmin(req, res, next) {
-  try {
-    const supabase = req.app.get('supabase');
-    if (!req.user?.id || !supabase) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    const { data: user } = await supabase
-      .from('sg_users')
-      .select('email, role, account_type')
-      .eq('id', req.user.id)
-      .single();
-    const isAdmin = ADMIN_EMAILS.includes(user?.email) ||
-      ['admin', 'super_admin', 'owner'].includes(user?.role) ||
-      ['admin', 'super_admin'].includes(user?.account_type);
-    if (!isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    req.adminUser = user;
-    next();
-  } catch (err) {
-    logger.error('Promotions admin check failed:', err.message);
-    return res.status(500).json({ error: 'Auth check failed' });
-  }
-}
+const { requireAdmin } = require('../middleware/adminAuth');
 
 // ---------- Validation logic (shared w/ checkout route) ----------
 
