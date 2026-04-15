@@ -158,6 +158,21 @@ router.post('/checkout', async (req, res) => {
       logger.info('Cart validation warnings', { warnings: validation.warnings });
     }
 
+    // INVENTORY AVAILABILITY CHECK — reject if any tracked SKU would
+    // oversell. Items without an inventory row are untracked and pass.
+    try {
+      const { checkAvailability } = require('./inventory');
+      const avail = await checkAvailability(supabase, items);
+      if (!avail.ok) {
+        return res.status(409).json({
+          error: 'Insufficient stock',
+          issues: avail.issues
+        });
+      }
+    } catch (invErr) {
+      logger.warn('Inventory check skipped:', invErr.message);
+    }
+
     // SERVER-SIDE PROMO VALIDATION — never trust the client's discount.
     let promoResult = null;
     if (promo_code) {

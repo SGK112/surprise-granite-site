@@ -472,6 +472,17 @@ router.post('/:id/refund', authenticateJWT, requireAdmin, async (req, res) => {
       req.adminUser?.email
     );
 
+    // On full refund, restock the items so inventory reflects reality.
+    if (isFullRefund) {
+      try {
+        const { restockForOrder } = require('./inventory');
+        const items = Array.isArray(order.items) ? order.items : [];
+        await restockForOrder(supabase, { order, items, reason: 'refund' });
+      } catch (restockErr) {
+        logger.warn('Refund restock failed:', restockErr.message);
+      }
+    }
+
     // Optional customer notification
     let emailSent = false;
     if (notify_customer && order.customer_email) {

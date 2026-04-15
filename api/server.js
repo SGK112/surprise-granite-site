@@ -2464,6 +2464,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 logger.warn('Could not auto-upsert customer from checkout:', custAutoErr.message);
               }
 
+              // Decrement inventory for any tracked SKUs in this order.
+              try {
+                const { deductForOrder } = require('./routes/inventory');
+                await deductForOrder(supabase, { order, items: orderItems });
+              } catch (invErr) {
+                logger.warn('Inventory deduction failed:', invErr.message);
+              }
+
               // Record promo redemption if one was applied at checkout.
               try {
                 const promoId = session.metadata?.promo_id;
@@ -3895,6 +3903,8 @@ app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
 const promotionsRouter = require('./routes/promotions');
 app.use('/api/promotions', promotionsRouter);
+const inventoryRouter = require('./routes/inventory');
+app.use('/api/inventory', inventoryRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility
