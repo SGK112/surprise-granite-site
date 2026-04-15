@@ -11,8 +11,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
-const { authenticateJWT } = require('../lib/auth/middleware');
-const { requireAdmin } = require('../middleware/adminAuth');
+const { adminAccess } = require('../middleware/adminAuth');
 
 // ---------- Validation logic (shared w/ checkout route) ----------
 
@@ -126,7 +125,7 @@ router.post('/validate', async (req, res) => {
 
 // ---------- Admin CRUD (Aria target) ----------
 
-router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { active } = req.query;
@@ -142,7 +141,7 @@ router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/:id', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { data, error } = await supabase
@@ -165,7 +164,7 @@ router.get('/:id', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.post('/', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const {
@@ -219,7 +218,7 @@ router.post('/', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.put('/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/:id', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const allowed = [
@@ -248,7 +247,7 @@ router.put('/:id', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.delete('/:id', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { error } = await supabase.from('promotions').delete().eq('id', req.params.id);

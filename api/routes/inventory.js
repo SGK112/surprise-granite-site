@@ -12,8 +12,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
-const { authenticateJWT } = require('../lib/auth/middleware');
-const { requireAdmin } = require('../middleware/adminAuth');
+const { adminAccess } = require('../middleware/adminAuth');
 
 // ---------- Core helpers (exported for webhook use) ----------
 
@@ -148,7 +147,7 @@ async function restockForOrder(supabase, { order, items, reason = 'refund' }) {
 
 // ---------- Admin CRUD ----------
 
-router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { low_stock } = req.query;
@@ -170,7 +169,7 @@ router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/:sku', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/:sku', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { data, error } = await supabase
@@ -194,7 +193,7 @@ router.get('/:sku', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.post('/', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const {
@@ -241,7 +240,7 @@ router.post('/', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.put('/:sku', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/:sku', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { data: existing } = await supabase
@@ -284,7 +283,7 @@ router.put('/:sku', authenticateJWT, requireAdmin, async (req, res) => {
  * Body: { delta: number, reason: string, note?: string }
  * reason: restock | manual_adjust | correction | shrinkage
  */
-router.post('/:sku/adjust', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/:sku/adjust', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { delta, reason = 'manual_adjust', note } = req.body || {};
@@ -320,7 +319,7 @@ router.post('/:sku/adjust', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/:sku', authenticateJWT, requireAdmin, async (req, res) => {
+router.delete('/:sku', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { error } = await supabase

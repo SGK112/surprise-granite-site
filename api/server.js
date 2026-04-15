@@ -3902,17 +3902,19 @@ app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
 
-// Admin identity — lets clients and Aria confirm they have admin access
-// and see the role/email the backend recognizes them as.
-const { requireAdmin: adminAuthMiddleware } = require('./middleware/adminAuth');
-app.get('/api/admin/me', authenticateJWT, adminAuthMiddleware, (req, res) => {
+// Admin identity — lets clients and Aria confirm they have admin access.
+// Accepts either a Supabase JWT (humans) or Aria's X-Aria-Service-Key
+// header (server-to-server from VoiceNow).
+const { adminAccess } = require('./middleware/adminAuth');
+app.get('/api/admin/me', adminAccess, (req, res) => {
   res.json({
     admin: {
       id: req.adminUser?.id,
       email: req.adminUser?.email,
       full_name: req.adminUser?.full_name || null,
       role: req.adminUser?.role || null,
-      account_type: req.adminUser?.account_type || null
+      account_type: req.adminUser?.account_type || null,
+      via: req.isServiceCall ? 'service_key' : 'jwt'
     }
   });
 });

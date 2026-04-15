@@ -6,14 +6,13 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
-const { authenticateJWT } = require('../lib/auth/middleware');
-const { requireAdmin } = require('../middleware/adminAuth');
+const { adminAccess } = require('../middleware/adminAuth');
 const emailService = require('../services/emailService');
 
 /**
  * GET /api/admin/orders - List all orders (both tables)
  */
-router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { source, status, payment_status, search, limit = 100, offset = 0 } = req.query;
@@ -86,7 +85,7 @@ router.get('/', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * GET /api/admin/orders/:id - Get single order
  */
-router.get('/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/:id', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -136,7 +135,7 @@ router.get('/:id', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * PATCH /api/admin/orders/:id/status - Update order status
  */
-router.patch('/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
+router.patch('/:id/status', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -188,7 +187,7 @@ router.patch('/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * PUT /api/admin/orders/:id/tracking - Add/update tracking info
  */
-router.put('/:id/tracking', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/:id/tracking', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -242,7 +241,7 @@ router.put('/:id/tracking', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * POST /api/admin/orders/:id/message - Send a message to customer
  */
-router.post('/:id/message', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/:id/message', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -283,7 +282,7 @@ router.post('/:id/message', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * PUT /api/admin/orders/:id/notes - Update internal notes
  */
-router.put('/:id/notes', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/:id/notes', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -310,7 +309,7 @@ router.put('/:id/notes', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * POST /api/admin/orders/:id/close - Close/complete an order (works for both tables)
  */
-router.post('/:id/close', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/:id/close', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { id } = req.params;
@@ -349,7 +348,7 @@ router.post('/:id/close', authenticateJWT, requireAdmin, async (req, res) => {
  * POST /api/admin/orders/:id/refund — Issue a Stripe refund against an order
  * Body: { amount?: number (dollars, omit for full), reason?: string, notify_customer?: boolean }
  */
-router.post('/:id/refund', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/:id/refund', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const stripeService = require('../services/stripeService');
@@ -491,7 +490,7 @@ router.post('/:id/refund', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * POST /api/admin/orders/bulk-close - Close multiple orders at once
  */
-router.post('/bulk-close', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/bulk-close', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     const { source, ids } = req.body; // source: 'shopify' | 'store' | 'all-shopify'
@@ -532,7 +531,7 @@ router.post('/bulk-close', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * POST /api/admin/orders/test-email - Test email delivery
  */
-router.post('/test-email', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/test-email', adminAccess, async (req, res) => {
   try {
     const { to } = req.body;
     const recipient = to || req.adminUser?.email || emailService.ADMIN_EMAIL;
@@ -562,7 +561,7 @@ router.post('/test-email', authenticateJWT, requireAdmin, async (req, res) => {
 /**
  * POST /api/admin/orders/bootstrap - Create order_events table if missing
  */
-router.post('/bootstrap', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/bootstrap', adminAccess, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
 
