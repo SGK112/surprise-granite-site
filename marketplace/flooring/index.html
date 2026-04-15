@@ -593,10 +593,11 @@
         const type = product.type || 'Luxury Vinyl';
         const slug = product.slug || (product.name || '').toLowerCase().replace(/\s+/g, '-');
 
-        // Calculate price based on type and tier
+        // Prefer per-product tier pricing from flooring.json; fall back to type-based.
+        const tierPrices = product.price_sf || {};
         const basePrice = getFlooringPrice(type);
-        const userPrice = calculatePrice(basePrice, currentTier);
-        const retailPrice = calculatePrice(basePrice, 'guest');
+        const userPrice = tierPrices[currentTier] ?? tierPrices.guest ?? calculatePrice(basePrice, currentTier);
+        const retailPrice = tierPrices.guest ?? calculatePrice(basePrice, 'guest');
         const showSavings = currentTier !== 'guest' && retailPrice - userPrice > 0.10;
 
         // Link to flooring detail page (we'll use a query param approach)
