@@ -2253,18 +2253,46 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               logger.error('Error fetching line items:', lineItemErr.message);
             }
 
-            // Transform line items for storage
-            const orderItems = lineItems.map(item => ({
+            // Transform line items for storage. Our price validator injects
+            // a synthetic "Tax (XX N.N%)" line item and a "Shipping" line
+            // item; treat those as totals, not products, so the stored
+            // items array is clean for invoices/packing slips.
+            const isTaxDesc = (d) => /^Tax\s*\(/i.test(d || '');
+            const isShippingDesc = (d) => /^Shipping$/i.test((d || '').trim());
+
+            const productLineItems = lineItems.filter(
+              item => !isTaxDesc(item.description) && !isShippingDesc(item.description)
+            );
+            const orderItems = productLineItems.map(item => ({
               name: item.description || item.price?.product?.name || 'Product',
               quantity: item.quantity || 1,
               unit_price: (item.price?.unit_amount || item.amount_total) / 100,
               total: (item.amount_total || 0) / 100
             }));
 
-            // Calculate totals from session
+            // Calculate totals from session. Prefer Stripe's own tax/shipping
+            // fields (populated when automatic_tax or shipping_options is on);
+            // fall back to summing matching synthetic line items from the
+            // price validator path.
             const total = (session.amount_total || 0) / 100;
-            const subtotal = (session.amount_subtotal || session.amount_total || 0) / 100;
-            const shipping = session.shipping_cost?.amount_total ? session.shipping_cost.amount_total / 100 : 0;
+            const stripeShipping = session.shipping_cost?.amount_total
+              ? session.shipping_cost.amount_total / 100 : 0;
+            const stripeTax = session.total_details?.amount_tax
+              ? session.total_details.amount_tax / 100 : 0;
+
+            const fallbackTax = lineItems
+              .filter(i => isTaxDesc(i.description))
+              .reduce((sum, i) => sum + ((i.amount_total || 0) / 100), 0);
+            const fallbackShipping = lineItems
+              .filter(i => isShippingDesc(i.description))
+              .reduce((sum, i) => sum + ((i.amount_total || 0) / 100), 0);
+
+            const tax = stripeTax || fallbackTax;
+            const shipping = stripeShipping || fallbackShipping;
+            // subtotal = product total (excluding tax and shipping)
+            const subtotal = productLineItems.reduce(
+              (sum, i) => sum + ((i.amount_total || 0) / 100), 0
+            ) || ((session.amount_subtotal || session.amount_total || 0) / 100 - tax - shipping);
 
             // Extract addresses
             const shippingAddress = session.shipping_details?.address || session.customer_details?.address || {};
@@ -2306,7 +2334,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 billing_country: billingAddress.country || 'US',
                 subtotal: subtotal,
                 shipping_amount: shipping,
-                tax_amount: 0, // Tax included in line items for Stripe Checkout
+                tax_amount: tax,
                 total: total,
                 items: orderItems,
                 stripe_session_id: session.id,

@@ -10,6 +10,7 @@ const { handleApiError, isValidEmail, sanitizeString } = require('../utils/secur
 const { customerRateLimiter } = require('../middleware/rateLimiter');
 const { asyncHandler } = require('../middleware/errorHandler');
 const stripeService = require('../services/stripeService');
+const { authenticateJWT } = require('../lib/auth/middleware');
 
 /**
  * Create a new customer
@@ -96,7 +97,7 @@ router.post('/', customerRateLimiter, asyncHandler(async (req, res) => {
  * Get customer by email
  * GET /api/customers/:email
  */
-router.get('/:email', asyncHandler(async (req, res) => {
+router.get('/:email', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   const { email } = req.params;
 
@@ -141,7 +142,7 @@ router.get('/:email', asyncHandler(async (req, res) => {
  * List customers
  * GET /api/customers
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
 
   if (!supabase) {
@@ -182,7 +183,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * Update customer
  * PUT /api/customers/:id
  */
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
 
   if (!supabase) {
@@ -190,7 +191,8 @@ router.put('/:id', asyncHandler(async (req, res) => {
   }
 
   const { id } = req.params;
-  const { name, phone, company, address, metadata } = req.body;
+  // Live customers schema has no `metadata` column; accept notes instead.
+  const { name, phone, company, address, city, state, zip, notes } = req.body;
 
   const updates = {
     updated_at: new Date().toISOString()
@@ -200,7 +202,10 @@ router.put('/:id', asyncHandler(async (req, res) => {
   if (phone !== undefined) updates.phone = phone;
   if (company !== undefined) updates.company = sanitizeString(company, 200);
   if (address !== undefined) updates.address = sanitizeString(address, 500);
-  if (metadata !== undefined) updates.metadata = metadata;
+  if (city !== undefined) updates.city = sanitizeString(city, 100);
+  if (state !== undefined) updates.state = sanitizeString(state, 50);
+  if (zip !== undefined) updates.zip = sanitizeString(zip, 20);
+  if (notes !== undefined) updates.notes = sanitizeString(notes, 2000);
 
   const { data: customer, error } = await supabase
     .from('customers')
@@ -233,7 +238,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * Get customer invoices
  * GET /api/customers/:id/invoices
  */
-router.get('/:id/invoices', asyncHandler(async (req, res) => {
+router.get('/:id/invoices', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
 
   if (!supabase) {
