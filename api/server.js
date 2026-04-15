@@ -2384,6 +2384,60 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               } catch (leadAutoErr) {
                 logger.warn('Could not auto-create lead from checkout:', leadAutoErr.message);
               }
+
+              // Auto-upsert customer into CRM customers table.
+              // customers table requires user_id (NOT NULL) and has no unique
+              // constraint on email, so we do a manual find-or-insert.
+              try {
+                const customerEmail = session.customer_details?.email;
+                if (customerEmail) {
+                  const { data: adminUser } = await supabase
+                    .from('sg_users')
+                    .select('id')
+                    .eq('account_type', 'admin')
+                    .limit(1)
+                    .single();
+                  const adminUserId = adminUser?.id;
+
+                  if (adminUserId) {
+                    const emailLower = customerEmail.toLowerCase();
+                    const customerRow = {
+                      user_id: adminUserId,
+                      email: emailLower,
+                      name: session.customer_details?.name || session.shipping_details?.name || null,
+                      phone: session.customer_details?.phone || null,
+                      address: shippingAddress.line1 || null,
+                      city: shippingAddress.city || null,
+                      state: shippingAddress.state || null,
+                      zip: shippingAddress.postal_code || null,
+                      stripe_customer_id: session.customer || null,
+                      source: 'store_checkout',
+                      notes: `Last order: ${orderNumber} ($${total.toFixed(2)})`,
+                      updated_at: new Date().toISOString()
+                    };
+
+                    const { data: existingCustomer } = await supabase
+                      .from('customers')
+                      .select('id')
+                      .eq('user_id', adminUserId)
+                      .eq('email', emailLower)
+                      .limit(1)
+                      .single();
+
+                    if (existingCustomer) {
+                      await supabase.from('customers').update(customerRow).eq('id', existingCustomer.id);
+                      logger.info('Customer updated in CRM:', emailLower);
+                    } else {
+                      await supabase.from('customers').insert(customerRow);
+                      logger.info('Customer created in CRM:', emailLower);
+                    }
+                  } else {
+                    logger.warn('No admin user found; skipping CRM customer upsert');
+                  }
+                }
+              } catch (custAutoErr) {
+                logger.warn('Could not auto-upsert customer from checkout:', custAutoErr.message);
+              }
             }
           } catch (dbErr) {
             logger.error('Database error creating order:', dbErr.message);

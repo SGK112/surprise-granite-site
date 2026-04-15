@@ -3442,49 +3442,61 @@
       let actionsHtml = '';
       if (isStore) {
         actionsHtml = `
-          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
-            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--gold-primary);">Manage Order</div>
+          <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 14px;">Order Management</div>
+
+            <!-- Quick Actions Row -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+              <button onclick="printVendorPO('${orderId}')" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print Vendor PO
+              </button>
+              <button onclick="saveCustomerToCRM('${orderId}')" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Save to CRM
+              </button>
+            </div>
 
             <!-- Status Update -->
-            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Update Status</div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <select id="modal-status-${orderId}" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+            <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600;">Status</div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <select id="modal-status-${orderId}" style="flex:1;min-width:150px;padding:9px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
                   ${['pending','confirmed','processing','shipped','delivered','completed','cancelled','refunded'].map(s =>
                     `<option value="${s}" ${s === orderStatus ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
                   ).join('')}
                 </select>
-                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                  <input type="checkbox" id="modal-status-notify-${orderId}"> Email customer
+                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap;">
+                  <input type="checkbox" id="modal-status-notify-${orderId}"> Notify
                 </label>
-                <button onclick="orderAction_updateStatus('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--info, #3b82f6);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Update</button>
+                <button onclick="orderAction_updateStatus('${orderId}')" style="padding:9px 18px;border-radius:6px;border:none;background:var(--info, #3b82f6);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Update</button>
               </div>
             </div>
 
             <!-- Tracking -->
-            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Shipping & Tracking</div>
+            <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600;">Shipping &amp; Tracking</div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <select id="modal-carrier-${orderId}" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+                <select id="modal-carrier-${orderId}" style="padding:9px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
                   <option value="">Carrier</option>
                   ${['UPS','FedEx','USPS','DHL','Other'].map(c =>
                     `<option value="${c}" ${order.tracking_carrier === c ? 'selected' : ''}>${c}</option>`
                   ).join('')}
                 </select>
-                <input type="text" id="modal-tracking-${orderId}" value="${escapeHtml(order.tracking_number || '')}" placeholder="Tracking number" style="flex:1;min-width:150px;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
-                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                  <input type="checkbox" id="modal-tracking-notify-${orderId}"> Email customer
+                <input type="text" id="modal-tracking-${orderId}" value="${escapeHtml(order.tracking_number || '')}" placeholder="Tracking number" style="flex:1;min-width:150px;padding:9px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;">
+                <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap;">
+                  <input type="checkbox" id="modal-tracking-notify-${orderId}"> Notify
                 </label>
-                <button onclick="orderAction_addTracking('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--success, #22c55e);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Ship</button>
+                <button onclick="orderAction_addTracking('${orderId}')" style="padding:9px 18px;border-radius:6px;border:none;background:var(--success, #22c55e);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Save</button>
               </div>
             </div>
 
             <!-- Message Customer -->
-            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
-              <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Message Customer</div>
-              <textarea id="modal-message-${orderId}" placeholder="Type a message to email the customer..." style="width:100%;min-height:60px;padding:8px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+            <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600;">Message Customer</div>
+              <textarea id="modal-message-${orderId}" placeholder="Type a message to email the customer..." style="width:100%;min-height:64px;padding:10px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
               <div style="margin-top:8px;text-align:right;">
-                <button onclick="orderAction_sendMessage('${orderId}')" style="padding:8px 16px;border-radius:8px;border:none;background:var(--gold-primary, #f9cb00);color:var(--dark-surface, #1a1a2e);font-size:13px;font-weight:600;cursor:pointer;">Send Email</button>
+                <button onclick="orderAction_sendMessage('${orderId}')" style="padding:9px 18px;border-radius:6px;border:none;background:var(--gold-primary, #f9cb00);color:var(--dark-surface, #1a1a2e);font-size:13px;font-weight:600;cursor:pointer;">Send Email</button>
               </div>
             </div>
           </div>
@@ -3503,25 +3515,36 @@
             <button onclick="this.closest('.order-detail-modal').remove()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
           </div>
           <div style="padding: 24px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; margin-bottom: 24px;">
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Date</div>
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;">Order Date</div>
                 <div style="font-weight: 500;">${orderDate}</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Payment</div>
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;">Payment</div>
                 <div><span class="status-badge ${payStatus}">${escapeHtml(payStatus)}</span></div>
               </div>
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Customer</div>
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;">Customer</div>
                 <div style="font-weight: 500;">${escapeHtml(order.customer_name || 'Guest')}</div>
                 <div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(order.customer_email || '')}</div>
                 ${order.customer_phone ? `<div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(order.customer_phone)}</div>` : ''}
               </div>
               <div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Status</div>
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;">Fulfillment</div>
                 <div><span class="status-badge ${orderStatus}">${escapeHtml(orderStatus)}</span></div>
-                ${order.tracking_number ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">📦 ${escapeHtml(order.tracking_carrier || '')} ${escapeHtml(order.tracking_number)}</div>` : ''}
+                ${order.tracking_number ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">${escapeHtml(order.tracking_carrier || '')} ${escapeHtml(order.tracking_number)}</div>` : ''}
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600;">Ship To</div>
+                <div style="font-size: 13px; line-height: 1.5;">
+                  ${(order.shipping_address_line1 || order.shipping_city) ? `
+                    ${escapeHtml(order.customer_name || '')}<br>
+                    ${escapeHtml(order.shipping_address_line1 || '')}${order.shipping_address_line2 ? '<br>' + escapeHtml(order.shipping_address_line2) : ''}<br>
+                    ${escapeHtml(order.shipping_city || '')}${order.shipping_city && order.shipping_state ? ', ' : ''}${escapeHtml(order.shipping_state || '')} ${escapeHtml(order.shipping_zip || '')}<br>
+                    ${escapeHtml(order.shipping_country || '')}
+                  ` : '<span style="color: var(--text-muted);">No shipping address on file</span>'}
+                </div>
               </div>
             </div>
 
@@ -3550,16 +3573,6 @@
             </div>
 
             ${actionsHtml}
-
-            <!-- Close Order -->
-            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--text-muted);">${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'This order is closed.' : 'Mark as done when fulfilled.'}</span>
-              <button onclick="orderAction_close('${order.id}', '${order._source}')"
-                style="padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border-subtle); background: ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'var(--dark-elevated)' : 'var(--success, #22c55e)'}; color: ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'var(--text-muted)' : '#fff'}; font-size: 13px; font-weight: 600; cursor: pointer;"
-                ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'disabled' : ''}>
-                ${orderStatus === 'completed' || orderStatus === 'delivered' || (order.fulfillment_status || '').toLowerCase() === 'fulfilled' ? 'Closed' : 'Close Order'}
-              </button>
-            </div>
           </div>
         </div>
       `;
@@ -3638,6 +3651,188 @@
         showToast(result.email_sent ? 'Message sent to customer' : 'Message saved but email failed', result.email_sent ? 'success' : 'error');
         document.getElementById('modal-message-' + orderId).value = '';
       } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    // Save order's customer to the CRM (upserts into customers table + Stripe)
+    async function saveCustomerToCRM(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) { showToast('Order not found', 'error'); return; }
+      if (!order.customer_email) { showToast('No customer email on order', 'error'); return; }
+      const addressParts = [
+        order.shipping_address_line1,
+        order.shipping_address_line2,
+        order.shipping_city,
+        order.shipping_state,
+        order.shipping_zip,
+        order.shipping_country
+      ].filter(Boolean).join(', ');
+      try {
+        const res = await fetch(SG_API_BASE + '/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: order.customer_email,
+            name: order.customer_name || '',
+            phone: order.customer_phone || '',
+            address: addressParts,
+            metadata: {
+              source: 'order_' + (order.order_number || order.id),
+              last_order_id: order.id,
+              last_order_total: order.total
+            }
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        showToast(data.data?.created ? 'Customer added to CRM' : 'Customer updated in CRM', 'success');
+      } catch (err) {
+        showToast('CRM save failed: ' + err.message, 'error');
+      }
+    }
+
+    // Open a printable Vendor Purchase Order in a new window — drop-ship to the customer
+    function printVendorPO(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) { showToast('Order not found', 'error'); return; }
+
+      const items = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+      const orderDate = order.created_at
+        ? new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const poNumber = 'PO-' + (order.order_number || order.id || '').toString().replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+
+      const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+      const rowsHtml = items.map(it => {
+        const name = it.title || it.name || it.product_name || 'Product';
+        const sku = it.sku || it.product_sku || '';
+        const qty = Number(it.quantity || 1);
+        const unit = Number(it.originalUnitPrice?.amount || it.unit_price || it.price || 0);
+        const lineTotal = Number(it.line_total || it.total || (unit * qty) || 0);
+        return `<tr>
+          <td>${esc(name)}${sku ? '<div class="sku">SKU: ' + esc(sku) + '</div>' : ''}</td>
+          <td class="num">${qty}</td>
+          <td class="num">${unit ? '$' + unit.toFixed(2) : '—'}</td>
+          <td class="num">${lineTotal ? '$' + lineTotal.toFixed(2) : '—'}</td>
+        </tr>`;
+      }).join('');
+
+      const shipToHtml = (order.shipping_address_line1 || order.shipping_city)
+        ? `${esc(order.customer_name || '')}<br>
+           ${esc(order.shipping_address_line1 || '')}${order.shipping_address_line2 ? '<br>' + esc(order.shipping_address_line2) : ''}<br>
+           ${esc(order.shipping_city || '')}${order.shipping_city && order.shipping_state ? ', ' : ''}${esc(order.shipping_state || '')} ${esc(order.shipping_zip || '')}<br>
+           ${esc(order.shipping_country || 'US')}<br>
+           ${order.customer_phone ? 'Phone: ' + esc(order.customer_phone) : ''}`
+        : '<em>No shipping address on file</em>';
+
+      const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${esc(poNumber)} — Purchase Order</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 40px; background: #fff; font-size: 13px; line-height: 1.5; }
+  .sheet { max-width: 780px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #f9cb00; padding-bottom: 20px; margin-bottom: 28px; }
+  .brand h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: 0.02em; }
+  .brand .meta { font-size: 12px; color: #555; line-height: 1.5; }
+  .po-title { text-align: right; }
+  .po-title h2 { margin: 0 0 8px; font-size: 26px; font-weight: 700; color: #1a1a2e; letter-spacing: 0.02em; }
+  .po-title .po-num { font-size: 14px; color: #555; font-weight: 600; }
+  .po-title .po-date { font-size: 12px; color: #777; margin-top: 2px; }
+  .addr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  .addr-box { border: 1px solid #e5e5e5; border-radius: 6px; padding: 14px 16px; }
+  .addr-box h3 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #888; font-weight: 700; }
+  .addr-box .body { font-size: 13px; line-height: 1.55; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  thead th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; border-bottom: 2px solid #1a1a2e; padding: 10px 8px; font-weight: 700; }
+  thead th.num { text-align: right; }
+  tbody td { padding: 12px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody .sku { font-size: 11px; color: #888; margin-top: 2px; }
+  .totals { width: 260px; margin-left: auto; font-size: 13px; }
+  .totals .row { display: flex; justify-content: space-between; padding: 6px 0; }
+  .totals .row.grand { border-top: 2px solid #1a1a2e; margin-top: 6px; padding-top: 10px; font-size: 15px; font-weight: 700; }
+  .notes { margin-top: 36px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #555; }
+  .notes h3 { margin: 0 0 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #888; font-weight: 700; }
+  .actions { text-align: center; margin-top: 28px; }
+  .actions button { background: #1a1a2e; color: #fff; border: none; padding: 12px 32px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  @media print {
+    body { padding: 0; }
+    .actions { display: none; }
+  }
+</style>
+</head><body>
+  <div class="sheet">
+    <header>
+      <div class="brand">
+        <h1>Surprise Granite</h1>
+        <div class="meta">
+          11175 W Bell Rd, Ste 117<br>
+          Surprise, AZ 85378<br>
+          (602) 833-3189 &middot; info@surprisegranite.com<br>
+          www.surprisegranite.com
+        </div>
+      </div>
+      <div class="po-title">
+        <h2>PURCHASE ORDER</h2>
+        <div class="po-num">${esc(poNumber)}</div>
+        <div class="po-date">${esc(orderDate)}</div>
+      </div>
+    </header>
+
+    <div class="addr-grid">
+      <div class="addr-box">
+        <h3>Vendor</h3>
+        <div class="body">
+          <strong>MSI Surfaces</strong><br>
+          <em>Please fulfill &amp; drop-ship to customer below.</em><br>
+          <span style="color:#888; font-size: 11px;">Update vendor details before sending.</span>
+        </div>
+      </div>
+      <div class="addr-box">
+        <h3>Ship To (Drop-Ship)</h3>
+        <div class="body">${shipToHtml}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th class="num">Qty</th>
+          <th class="num">Unit</th>
+          <th class="num">Line Total</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml || '<tr><td colspan="4" style="text-align:center;color:#888;padding:24px;">No line items</td></tr>'}</tbody>
+    </table>
+
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>$${Number(order.subtotal || 0).toFixed(2)}</span></div>
+      <div class="row"><span>Shipping</span><span>$${Number(order.shipping_amount || 0).toFixed(2)}</span></div>
+      ${Number(order.tax_amount) > 0 ? `<div class="row"><span>Tax</span><span>$${Number(order.tax_amount).toFixed(2)}</span></div>` : ''}
+      <div class="row grand"><span>Order Total</span><span>$${Number(order.total || 0).toFixed(2)}</span></div>
+    </div>
+
+    <div class="notes">
+      <h3>Notes</h3>
+      <div>
+        Ship directly to the customer address above. Please include a packing slip with PO <strong>${esc(poNumber)}</strong>
+        and provide tracking to orders@surprisegranite.com once shipped.
+        ${order.customer_notes ? '<br><br><strong>Customer notes:</strong> ' + esc(order.customer_notes) : ''}
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="window.print()">Print</button>
+    </div>
+  </div>
+</body></html>`;
+
+      const win = window.open('', '_blank', 'width=900,height=1100');
+      if (!win) { showToast('Popup blocked — allow popups to print PO', 'error'); return; }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
     }
 
     function exportOrdersCSV() {
