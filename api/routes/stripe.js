@@ -235,6 +235,7 @@ router.post('/checkout', async (req, res) => {
       shipping_address_collection: {
         allowed_countries: ['US']
       },
+      phone_number_collection: { enabled: true },
       metadata: {
         order_source: 'website_cart',
         validated_total: validation.calculatedTotals.total,

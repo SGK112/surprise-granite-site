@@ -82,6 +82,19 @@ async function deductForOrder(supabase, { order, items }) {
     const qty = Number(item.quantity || 1);
     if (!sku || qty <= 0) continue;
     try {
+      // Prefer atomic RPC (migration 013) — uses FOR UPDATE row lock
+      // so concurrent checkouts can't double-deduct.
+      const { data: newQty, error: rpcErr } = await supabase.rpc('decrement_inventory', {
+        p_sku: sku,
+        p_qty: qty,
+        p_order_id: order?.id || null,
+        p_note: `Order ${order?.order_number || order?.id || ''}`.trim()
+      });
+      if (!rpcErr && newQty !== -1) continue; // success via RPC
+
+      // Fallback: read-modify-write (races possible, but works before
+      // migration 013 is applied).
+      if (rpcErr) logger.warn(`Inventory RPC unavailable for ${sku}, falling back:`, rpcErr.message);
       const { data: row } = await supabase
         .from('product_inventory')
         .select('id, qty_on_hand, track_inventory')
@@ -96,9 +109,7 @@ async function deductForOrder(supabase, { order, items }) {
         })
         .eq('id', row.id);
       await supabase.from('inventory_movements').insert({
-        sku,
-        delta: -qty,
-        reason: 'order',
+        sku, delta: -qty, reason: 'order',
         order_id: order?.id || null,
         note: `Deducted on order ${order?.order_number || order?.id || ''}`.trim()
       });
@@ -119,6 +130,18 @@ async function restockForOrder(supabase, { order, items, reason = 'refund' }) {
     const qty = Number(item.quantity || 1);
     if (!sku || qty <= 0) continue;
     try {
+      // Prefer atomic RPC (migration 013).
+      const { data: newQty, error: rpcErr } = await supabase.rpc('increment_inventory', {
+        p_sku: sku,
+        p_qty: qty,
+        p_reason: reason,
+        p_order_id: order?.id || null,
+        p_note: `Restocked via ${reason} for order ${order?.order_number || order?.id || ''}`.trim()
+      });
+      if (!rpcErr && newQty !== -1) continue;
+
+      // Fallback: read-modify-write.
+      if (rpcErr) logger.warn(`Inventory RPC unavailable for ${sku}, falling back:`, rpcErr.message);
       const { data: row } = await supabase
         .from('product_inventory')
         .select('id, qty_on_hand, track_inventory')
@@ -133,9 +156,7 @@ async function restockForOrder(supabase, { order, items, reason = 'refund' }) {
         })
         .eq('id', row.id);
       await supabase.from('inventory_movements').insert({
-        sku,
-        delta: qty,
-        reason,
+        sku, delta: qty, reason,
         order_id: order?.id || null,
         note: `Restocked via ${reason} for order ${order?.order_number || order?.id || ''}`.trim()
       });

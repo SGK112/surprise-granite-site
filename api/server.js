@@ -2472,29 +2472,35 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 logger.warn('Inventory deduction failed:', invErr.message);
               }
 
-              // Record promo redemption if one was applied at checkout.
+              // Record promo redemption atomically (migration 013 RPC).
               try {
                 const promoId = session.metadata?.promo_id;
                 const promoDiscount = Number(session.metadata?.promo_discount || 0);
                 if (promoId) {
-                  await supabase.from('promotion_redemptions').insert({
-                    promotion_id: promoId,
-                    order_id: order.id,
-                    customer_email: session.customer_details?.email?.toLowerCase() || null,
-                    discount_amount: promoDiscount
+                  // Prefer atomic RPC — does FOR UPDATE lock, increments
+                  // current_uses, inserts redemption row, checks max_uses.
+                  const { data: redeemed, error: rpcErr } = await supabase.rpc('redeem_promotion', {
+                    p_promotion_id: promoId,
+                    p_order_id: order.id,
+                    p_customer_email: session.customer_details?.email || null,
+                    p_discount_amount: promoDiscount
                   });
-                  // Atomic counter increment via RPC isn't set up; use a
-                  // read-modify-write which is fine for non-racy volumes.
-                  const { data: promoRow } = await supabase
-                    .from('promotions')
-                    .select('current_uses')
-                    .eq('id', promoId)
-                    .single();
-                  if (promoRow) {
-                    await supabase
-                      .from('promotions')
-                      .update({ current_uses: (promoRow.current_uses || 0) + 1 })
-                      .eq('id', promoId);
+                  if (rpcErr) {
+                    // Fallback: non-atomic (pre-migration 013).
+                    logger.warn('Promo RPC unavailable, falling back:', rpcErr.message);
+                    await supabase.from('promotion_redemptions').insert({
+                      promotion_id: promoId,
+                      order_id: order.id,
+                      customer_email: session.customer_details?.email?.toLowerCase() || null,
+                      discount_amount: promoDiscount
+                    });
+                    const { data: promoRow } = await supabase
+                      .from('promotions').select('current_uses').eq('id', promoId).single();
+                    if (promoRow) {
+                      await supabase.from('promotions')
+                        .update({ current_uses: (promoRow.current_uses || 0) + 1 })
+                        .eq('id', promoId);
+                    }
                   }
                   logger.info('Promo redeemed:', session.metadata?.promo_code, 'order:', order.order_number);
                 }

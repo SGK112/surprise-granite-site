@@ -52,12 +52,15 @@ verifySmtp();
 // Re-check every 5 minutes so updating the password on Render auto-recovers after restart
 setInterval(verifySmtp, 5 * 60 * 1000);
 
-// Company info
+// Company info — always use the emailService.COMPANY object so address
+// stays consistent across all email templates. The Peoria address that
+// was hardcoded here was outdated and conflicted with the real address
+// in server.js and emailService.js.
 const COMPANY = emailService.COMPANY || {
   name: 'Surprise Granite',
   email: 'info@surprisegranite.com',
   phone: '(602) 833-3189',
-  address: '14050 N 83rd Ave Suite 290, Peoria AZ 85381'
+  address: '15464 W Aster Dr, Surprise, AZ 85379'
 };
 
 /**
