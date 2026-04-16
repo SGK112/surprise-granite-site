@@ -2239,7 +2239,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Generate order number
         const orderNumber = `SG-${session.id.slice(-8).toUpperCase()}`;
 
-        // Create order record in database
+        // ---- CRITICAL PATH: order creation ----
+        // If this fails, we return 500 so Stripe retries the webhook.
+        // Non-critical side-effects (emails, CRM, inventory, promo)
+        // are individually try-caught so they never block the 200.
+        let orderCreated = false;
         if (supabase) {
           try {
             // Retrieve line items from Stripe session
@@ -2351,9 +2355,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               .single();
 
             if (orderErr) {
-              logger.error('Error creating order record:', orderErr.message);
-            } else {
-              logger.info('Order created:', order.order_number, 'ID:', order.id);
+              logger.error('CRITICAL: Error creating order record:', orderErr.message);
+              // Don't swallow — throw so the outer catch returns 500 to Stripe.
+              throw new Error('Order creation failed: ' + orderErr.message);
+            }
+            orderCreated = true;
+            logger.info('Order created:', order.order_number, 'ID:', order.id);
+            {
+              // Non-critical side-effects below. Each is individually
+              // try-caught — they MUST NOT throw past this block.
 
               // Insert individual order items
               if (orderItems.length > 0) {
@@ -2507,17 +2517,32 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               } catch (promoErr) {
                 logger.warn('Could not record promo redemption:', promoErr.message);
               }
-            }
+            } // end non-critical side-effects block
           } catch (dbErr) {
-            logger.error('Database error creating order:', dbErr.message);
+            logger.error('Database error in checkout webhook:', dbErr.message);
+            if (!orderCreated) {
+              // Critical failure — tell Stripe to retry.
+              return res.status(500).json({ error: 'Order creation failed — please retry' });
+            }
+            // If order WAS created but a non-critical step re-threw
+            // (shouldn't happen with the try-catches above, but defensive),
+            // we still return 200 so Stripe doesn't re-create the order.
+            logger.warn('Non-critical webhook step failed post-order:', dbErr.message);
           }
         }
 
-        // Send order confirmation to customer
-        if (session.customer_details?.email) {
-          const orderEmail = {
-            subject: `Order Confirmed - Surprise Granite #SG-${session.id.slice(-8).toUpperCase()}`,
-            html: `
+        // ---- EMAIL NOTIFICATIONS (non-critical, wrapped) ----
+        // Guard against null/NaN in amount fields before templates.
+        const safeTotal = Number.isFinite(session.amount_total)
+          ? (session.amount_total / 100).toFixed(2) : '0.00';
+        const safeOrderNum = session.id?.slice(-8)?.toUpperCase() || 'UNKNOWN';
+
+        // Customer confirmation
+        try {
+          if (session.customer_details?.email) {
+            const orderEmail = {
+              subject: `Order Confirmed - Surprise Granite #SG-${safeOrderNum}`,
+              html: `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -2536,11 +2561,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 <span style="font-size: 40px; color: #fff; line-height: 80px;">✓</span>
               </div>
               <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
-              <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #SG-${session.id.slice(-8).toUpperCase()}</p>
+              <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #SG-${safeOrderNum}</p>
               <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Thank you for your purchase!</p>
               <div style="background: #f8f8f8; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e5e5;">
                 <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order Total</p>
-                <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${(session.amount_total / 100).toFixed(2)}</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${safeTotal}</p>
               </div>
               <p style="margin: 0 0 20px; color: #666; font-size: 14px;">We're preparing your order and will send you shipping information once it's on its way.</p>
               <a href="https://www.surprisegranite.com/shop" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 15px 35px; border-radius: 8px; font-weight: 600;">Continue Shopping</a>
@@ -2559,31 +2584,38 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
   </table>
 </body>
 </html>`
-          };
-          await sendNotification(session.customer_details.email, orderEmail.subject, orderEmail.html);
+            };
+            await sendNotification(session.customer_details.email, orderEmail.subject, orderEmail.html);
+          }
+        } catch (custEmailErr) {
+          logger.warn('Customer order confirmation email failed:', custEmailErr.message);
         }
 
-        // Notify admin of new order
-        const adminOrderEmail = {
-          subject: `New Order Received - #SG-${session.id.slice(-8).toUpperCase()} - $${(session.amount_total / 100).toFixed(2)}`,
-          html: `
+        // Admin notification
+        try {
+          const adminOrderEmail = {
+            subject: `New Order Received - #SG-${safeOrderNum} - $${safeTotal}`,
+            html: `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
   <h2 style="color: #1a1a2e;">New Order Received!</h2>
   <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    <p><strong>Order ID:</strong> #SG-${session.id.slice(-8).toUpperCase()}</p>
+    <p><strong>Order ID:</strong> #SG-${safeOrderNum}</p>
     <p><strong>Session ID:</strong> ${session.id}</p>
     <p><strong>Customer:</strong> ${session.customer_details?.name || 'N/A'}</p>
     <p><strong>Email:</strong> ${session.customer_details?.email || 'N/A'}</p>
-    <p><strong>Amount:</strong> $${(session.amount_total / 100).toFixed(2)}</p>
+    <p><strong>Amount:</strong> $${safeTotal}</p>
     <p><strong>Payment Status:</strong> ${session.payment_status}</p>
   </div>
   <p>View details in your <a href="https://dashboard.stripe.com/payments/${session.payment_intent}">Stripe Dashboard</a></p>
 </body>
 </html>`
-        };
-        await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
+          };
+          await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
+        } catch (adminEmailErr) {
+          logger.warn('Admin order notification email failed:', adminEmailErr.message);
+        }
         break;
       }
 
@@ -2591,9 +2623,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const invoice = event.data.object;
         logger.info('Invoice paid:', invoice.id);
 
-        // Send admin notification
-        const paidEmail = emailTemplates.paymentReceived(invoice);
-        await sendNotification(ADMIN_EMAIL, paidEmail.subject, paidEmail.html);
+        // Send admin notification (non-critical — don't crash webhook)
+        try {
+          const paidEmail = emailTemplates.paymentReceived(invoice);
+          await sendNotification(ADMIN_EMAIL, paidEmail.subject, paidEmail.html);
+        } catch (emailErr) {
+          logger.warn('Invoice paid admin notification failed:', emailErr.message);
+        }
 
         // Auto-create customer and job record in Supabase
         if (supabase && invoice.customer_email) {
@@ -2867,8 +2903,12 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
         logger.info('Invoice payment failed:', invoice.id);
-        const failedEmail = emailTemplates.paymentFailed(invoice);
-        await sendNotification(ADMIN_EMAIL, failedEmail.subject, failedEmail.html);
+        try {
+          const failedEmail = emailTemplates.paymentFailed(invoice);
+          await sendNotification(ADMIN_EMAIL, failedEmail.subject, failedEmail.html);
+        } catch (emailErr) {
+          logger.warn('Payment failed admin notification failed:', emailErr.message);
+        }
         break;
       }
 
@@ -2992,6 +3032,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email;
 
         if (receiptEmail) {
+          try {
           const orderDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           const orderEmail = {
             subject: `Order Confirmed - Surprise Granite #SG-${paymentIntent.id.slice(-8).toUpperCase()}`,
@@ -3210,11 +3251,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
           };
           await sendNotification(receiptEmail, orderEmail.subject, orderEmail.html);
+        } catch (emailErr) { logger.warn('Payment receipt email failed:', emailErr.message); }
         }
 
         // Notify admin
+        try {
         const adminOrderEmail = {
-          subject: `New Order - #SG-${paymentIntent.id.slice(-8).toUpperCase()} - $${(paymentIntent.amount / 100).toFixed(2)}`,
+          subject: `New Order - #SG-${paymentIntent.id?.slice(-8)?.toUpperCase() || 'UNKNOWN'} - $${Number.isFinite(paymentIntent.amount) ? (paymentIntent.amount / 100).toFixed(2) : '0.00'}`,
           html: `
 <!DOCTYPE html>
 <html>
@@ -3240,6 +3283,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
         };
         await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
+        } catch (emailErr) { logger.warn('Payment admin notification failed:', emailErr.message); }
         break;
       }
 
@@ -3429,6 +3473,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           }
 
           // Notify admin of new Pro subscriber
+          try {
           const proEmail = {
             subject: `New Pro Subscription - ${accountType.charAt(0).toUpperCase() + accountType.slice(1)} Plan`,
             html: `
@@ -3450,11 +3495,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
           };
           await sendNotification(ADMIN_EMAIL, proEmail.subject, proEmail.html);
+        } catch (emailErr) { logger.warn('Pro subscription admin notification failed:', emailErr.message); }
         }
         // Handle Vendor subscription
         else if (vendorId) {
           logger.info('Vendor subscription created:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of new vendor subscription
+          try {
           const subEmail = {
             subject: `New Vendor Subscription - ${subscription.metadata?.plan || 'Unknown'} Plan`,
             html: `
@@ -3477,6 +3524,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
           };
           await sendNotification(ADMIN_EMAIL, subEmail.subject, subEmail.html);
+        } catch (emailErr) { logger.warn('Vendor subscription admin notification failed:', emailErr.message); }
         }
         break;
       }
@@ -3552,6 +3600,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           }
 
           // Notify admin of cancellation
+          try {
           const cancelProEmail = {
             subject: `Pro Subscription Canceled - ${previousPlan.charAt(0).toUpperCase() + previousPlan.slice(1)} Plan`,
             html: `
@@ -3571,11 +3620,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
           };
           await sendNotification(ADMIN_EMAIL, cancelProEmail.subject, cancelProEmail.html);
+        } catch (emailErr) { logger.warn('Pro cancel admin notification failed:', emailErr.message); }
         }
         // Handle Vendor subscription cancellation
         else if (vendorId) {
           logger.info('Vendor subscription canceled:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of cancellation
+          try {
           const cancelEmail = {
             subject: `Vendor Subscription Canceled - ${subscription.metadata?.plan || 'Unknown'} Plan`,
             html: `
@@ -3595,6 +3646,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 </html>`
           };
           await sendNotification(ADMIN_EMAIL, cancelEmail.subject, cancelEmail.html);
+        } catch (emailErr) { logger.warn('Vendor cancel admin notification failed:', emailErr.message); }
         }
         break;
       }
