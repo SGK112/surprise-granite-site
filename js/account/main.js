@@ -3082,11 +3082,12 @@
     let ordersSearchTerm = '';
     let ordersSourceFilter = 'all';
 
-    async function loadOrders() {
-      console.log('[Orders] loadOrders called, ordersLoaded:', ordersLoaded);
-      if (ordersLoaded) {
+    async function loadOrders(opts = {}) {
+      console.log('[Orders] loadOrders called, ordersLoaded:', ordersLoaded, 'force:', !!opts.force);
+      if (ordersLoaded && !opts.force) {
         return;
       }
+      if (opts.force) ordersLoaded = false;
 
       const loadingEl = document.getElementById('orders-loading');
       const emptyEl = document.getElementById('orders-empty');
@@ -8682,11 +8683,16 @@
     let shopifyCustomerCount = 0;
     let importedCustomerCount = 0;
 
-    async function loadCustomers() {
-      if (customersLoaded) {
+    async function loadCustomers(opts = {}) {
+      // Force a fresh fetch if caller asks, or if the cached flag is stale.
+      // Callers: showPage() resets flags before calling (fresh fetch on tab nav).
+      //          Mutators (save/delete/create) should call loadCustomers({ force: true })
+      //          so they don't re-render stale cache.
+      if (customersLoaded && !opts.force) {
         renderCustomers();
         return;
       }
+      if (opts.force) customersLoaded = false;
 
       const loadingEl = document.getElementById('customers-loading');
       const emptyEl = document.getElementById('customers-empty');
@@ -9707,7 +9713,8 @@
         // Sync customer to VoiceNow CRM
         if (result.data) syncCustomerToCRM(result.data);
 
-        await loadCustomers();
+        // Force a fresh fetch — the cached list is stale after this insert/update.
+        await loadCustomers({ force: true });
 
         // If we were viewing this customer, refresh the view
         if (selectedCustomer) {
@@ -9739,6 +9746,7 @@
         closeCustomerModal();
         allCustomers = allCustomers.filter(c => c.id !== selectedCustomer.id);
         updateCustomersCount();
+        updateCustomerStats(); // keep the stat cards in sync with the list
         renderCustomers();
         showToast('Customer deleted');
       } catch (err) {
@@ -9990,8 +9998,9 @@
     let productsLoaded = false;
     let editingProduct = null;
 
-    async function loadProducts() {
-      if (productsLoaded) return;
+    async function loadProducts(opts = {}) {
+      if (productsLoaded && !opts.force) return;
+      if (opts.force) productsLoaded = false;
 
       const loadingEl = document.getElementById('products-loading');
       const emptyEl = document.getElementById('products-empty');
