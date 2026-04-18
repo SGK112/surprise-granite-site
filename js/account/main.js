@@ -17787,6 +17787,18 @@
 
     // Inline status update for estimates - no modal needed
     async function inlineUpdateEstimateStatus(estimateId, newStatus) {
+      // Confirm irreversible-feeling transitions. An accidental scroll or arrow-key
+      // on the inline dropdown shouldn't flip a draft to "sent" / "approved" silently.
+      const estimate = allEstimates.find(e => e.id === estimateId);
+      const currentStatus = estimate?.status || 'draft';
+      if (newStatus === currentStatus) return;
+      const needsConfirm = newStatus === 'sent' || newStatus === 'approved' || newStatus === 'rejected';
+      if (needsConfirm && !confirm(`Change status from "${currentStatus}" to "${newStatus}"?\n\nThis does NOT send an email — use the Send button for that.`)) {
+        // Revert the <select> visually.
+        const sel = document.querySelector(`select[onchange*="${estimateId}"]`);
+        if (sel) sel.value = currentStatus;
+        return;
+      }
       try {
         const { error } = await supabaseClient
           .from('estimates')
@@ -17796,7 +17808,6 @@
         if (error) throw error;
 
         // Update local data
-        const estimate = allEstimates.find(e => e.id === estimateId);
         if (estimate) estimate.status = newStatus;
 
         showToast(`Estimate → ${newStatus}`, 'success');
