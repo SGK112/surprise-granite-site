@@ -989,8 +989,23 @@
               </div>
 
               <div class="floating-label">
-                <input type="text" name="zipCode" id="zipCode" placeholder=" " pattern="[0-9]{5}" maxlength="5" required>
-                <label>ZIP Code *</label>
+                <input type="text" name="street" id="street" placeholder=" " autocomplete="street-address">
+                <label>Street Address</label>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="floating-label" style="margin-bottom: 0;">
+                  <input type="text" name="city" id="city" placeholder=" " autocomplete="address-level2">
+                  <label>City</label>
+                </div>
+                <div class="floating-label" style="margin-bottom: 0;">
+                  <input type="text" name="state" id="state" placeholder=" " value="AZ" maxlength="2" autocomplete="address-level1">
+                  <label>State</label>
+                </div>
+                <div class="floating-label" style="margin-bottom: 0;">
+                  <input type="text" name="zipCode" id="zipCode" placeholder=" " pattern="[0-9]{5}" maxlength="5" required autocomplete="postal-code">
+                  <label>ZIP *</label>
+                </div>
               </div>
 
               <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 16px;">How should we contact you?</p>
@@ -1335,13 +1350,21 @@
       const appointmentDateValue = document.getElementById('appointmentDate').value;
       const appointmentTimeValue = document.getElementById('appointmentTime').value;
 
+      const streetVal = (document.getElementById('street')?.value || '').trim();
+      const cityVal = (document.getElementById('city')?.value || '').trim();
+      const stateVal = (document.getElementById('state')?.value || 'AZ').trim().toUpperCase();
+      const zipVal = document.getElementById('zipCode').value.trim();
+
       const formData = {
         firstName: document.getElementById('firstName').value.trim(),
         lastName: document.getElementById('lastName').value.trim(),
         name: document.getElementById('firstName').value.trim() + ' ' + document.getElementById('lastName').value.trim(),
         email: document.getElementById('email').value.trim().toLowerCase(),
         phone: document.getElementById('phone').value.trim(),
-        zipCode: document.getElementById('zipCode').value.trim(),
+        street: streetVal,
+        city: cityVal,
+        state: stateVal,
+        zipCode: zipVal,
         projectType: document.getElementById('projectType').value,
         bathroomSubType: document.getElementById('bathroomSubType').value,
         contactMethod: document.getElementById('contactMethod').value,
@@ -1354,6 +1377,15 @@
         source: 'website-estimate-form-v3',
         timestamp: new Date().toISOString()
       };
+
+      // Pack address into the JSONB columns the rest of the app reads.
+      const addressObj = streetVal || cityVal ? {
+        street: streetVal || null,
+        street2: null,
+        city: cityVal || null,
+        state: stateVal || 'AZ',
+        zip: zipVal || null
+      } : null;
 
       // Submit to Supabase ONLY (powers /account page leads tab)
       try {
@@ -1374,6 +1406,9 @@
             email: formData.email,
             phone: formData.phone,
             zip_code: formData.zipCode,
+            billing_address: addressObj,
+            service_address: addressObj,
+            address_same: true,
             project_type: formData.projectType,
             project_details: formData.bathroomSubType || null,
             timeline: formData.timeline,
