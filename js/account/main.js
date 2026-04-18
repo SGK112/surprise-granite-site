@@ -17916,9 +17916,9 @@
               <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
                   <span style="font-size: 18px; font-weight: 600;">${estimate.estimate_number || 'Draft'}</span>
-                  <select onchange="inlineUpdateEstimateStatus('${estimate.id}', this.value)" style="padding: 4px 8px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer;">
+                  <select onchange="inlineUpdateEstimateStatus('${estimate.id}', this.value)" style="padding: 4px 8px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer;" title="Status only — use the Send button to actually email the estimate">
                     <option value="draft" ${estimate.status === 'draft' ? 'selected' : ''}>Draft</option>
-                    <option value="sent" ${estimate.status === 'sent' ? 'selected' : ''}>Sent</option>
+                    ${estimate.status === 'sent' ? `<option value="sent" selected>Sent</option>` : ''}
                     <option value="approved" ${estimate.status === 'approved' ? 'selected' : ''}>Approved</option>
                     <option value="rejected" ${estimate.status === 'rejected' ? 'selected' : ''}>Rejected</option>
                   </select>
