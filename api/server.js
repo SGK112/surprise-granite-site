@@ -2645,14 +2645,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             const adminUserId = adminUser?.id;
 
             if (adminUserId) {
-              // Create or find customer
+              // Create or find customer (case-insensitive email match so legacy mixed-case data links up).
               let customerId = null;
               const { data: existingCustomer } = await supabase
                 .from('customers')
                 .select('id')
                 .eq('user_id', adminUserId)
-                .eq('email', invoice.customer_email)
-                .single();
+                .ilike('email', (invoice.customer_email || '').trim())
+                .limit(1)
+                .maybeSingle();
 
               if (existingCustomer) {
                 customerId = existingCustomer.id;
@@ -2942,14 +2943,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 .single();
 
               if (!existingInvoice) {
-                // Find or create customer
+                // Find or create customer (case-insensitive).
                 let customerId = null;
                 const { data: existingCustomer } = await supabase
                   .from('customers')
                   .select('id')
                   .eq('user_id', adminUserId)
-                  .eq('email', invoice.customer_email)
-                  .single();
+                  .ilike('email', (invoice.customer_email || '').trim())
+                  .limit(1)
+                  .maybeSingle();
 
                 if (existingCustomer) {
                   customerId = existingCustomer.id;
@@ -3979,6 +3981,12 @@ app.get('/api/admin/me', adminAccess, (req, res) => {
 
 const promotionsRouter = require('./routes/promotions');
 app.use('/api/promotions', promotionsRouter);
+
+// ============ DEDUP ROUTES (admin-only) ============
+// Finds and merges duplicate leads/customers that accumulated before
+// client-side and server-side dedup were in place. Dry-run by default.
+const dedupRouter = require('./routes/dedup');
+app.use('/api/admin/dedup', dedupRouter);
 const inventoryRouter = require('./routes/inventory');
 app.use('/api/inventory', inventoryRouter);
 
@@ -4010,11 +4018,17 @@ app.use('/api/contractor/respond', (req, res, next) => { req.url = '/contractor/
 
 function syncToCRM(endpoint, data, attempt = 1) {
   const url = `${VOICENOW_CRM_URL}/api/surprise-granite/${endpoint}`;
+  // AbortController timeout — Node's fetch ignores the `timeout` option. Without this,
+  // a slow CRM leaks hanging fetch promises (3 retries × every lead).
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
   fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
+    signal: controller.signal
   }).then(r => {
+    clearTimeout(timeoutId);
     if (r.ok) {
       logger.info(`[CRM] Synced to ${endpoint}:`, data.email || data.id || 'unknown');
     } else if (attempt < 3) {
@@ -4024,6 +4038,7 @@ function syncToCRM(endpoint, data, attempt = 1) {
       logger.error(`[CRM] ${endpoint} failed after 3 attempts:`, r.status);
     }
   }).catch(err => {
+    clearTimeout(timeoutId);
     if (attempt < 3) {
       logger.warn(`[CRM] ${endpoint} attempt ${attempt} error, retrying...`, err.message);
       setTimeout(() => syncToCRM(endpoint, data, attempt + 1), attempt * 3000);
@@ -4035,6 +4050,18 @@ function syncToCRM(endpoint, data, attempt = 1) {
 
 // ============ BATCH SYNC RECENT LEADS TO CRM ============
 const CRM_SYNC_KEY = process.env.CRM_SYNC_KEY || 'sg_crm_sync_2026';
+// Abort-based fetch for server-side calls. Node's fetch silently ignores the `timeout` option —
+// this uses AbortController (see Josh memory note).
+async function fetchWithAbort(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 app.post('/api/crm-sync/leads', async (req, res) => {
   const authKey = req.headers['x-sync-key'] || req.body.key;
   if (authKey !== CRM_SYNC_KEY) {
@@ -4043,22 +4070,24 @@ app.post('/api/crm-sync/leads', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   try {
     const since = req.body.since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    // Cap batch size so one giant sync can't spin for hours.
     const { data: leads, error } = await supabase
       .from('leads')
       .select('*')
       .gte('created_at', since)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(500);
     if (error) throw error;
     let synced = 0;
     for (const lead of leads) {
       try {
-        const r = await fetch(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
+        const r = await fetchWithAbort(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(lead)
-        });
+        }, 10000);
         if (r.ok) synced++;
-      } catch (e) { /* continue */ }
+      } catch (e) { /* continue — one slow lead must not freeze the batch */ }
     }
     logger.info(`[CRM Batch Sync] Synced ${synced}/${leads.length} leads since ${since}`);
     res.json({ success: true, total: leads.length, synced });
@@ -4077,16 +4106,17 @@ if (supabase) {
         .from('leads')
         .select('*')
         .gte('created_at', since)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(200);
       if (error || !leads?.length) return;
       let synced = 0;
       for (const lead of leads) {
         try {
-          const r = await fetch(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
+          const r = await fetchWithAbort(`${VOICENOW_CRM_URL}/api/surprise-granite/webhook/new-lead`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(lead)
-          });
+          }, 10000);
           if (r.ok) synced++;
         } catch (e) { /* continue */ }
       }
@@ -4110,21 +4140,23 @@ app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    // Safety net: also save to Supabase in case client-side save failed
+    // Safety net: also save to Supabase in case client-side save failed.
+    // Dedup window bumped to 10 minutes to match /api/leads so the two paths agree.
     if (supabase) {
       try {
-        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const normalizedEmail = email.toLowerCase().trim();
         const { data: existing } = await supabase
           .from('leads')
           .select('id')
-          .eq('email', email.toLowerCase().trim())
-          .gte('created_at', twoMinAgo)
+          .eq('email', normalizedEmail)
+          .gte('created_at', tenMinAgo)
           .limit(1);
 
         if (!existing || existing.length === 0) {
           await supabase.from('leads').insert([{
             full_name: name || '',
-            email: email.toLowerCase().trim(),
+            email: normalizedEmail,
             phone: phone || null,
             project_type: project_type || null,
             message: message || details || null,
@@ -5982,7 +6014,7 @@ app.post('/api/estimates/:id/send', authenticateJWT, async (req, res) => {
         // Fetch actual files for email attachment
         for (const att of atts) {
           try {
-            const response = await fetch(att.file_url);
+            const response = await fetchWithAbort(att.file_url, {}, 15000);
             if (response.ok) {
               const buffer = await response.buffer();
               attachments.push({
@@ -6121,7 +6153,7 @@ app.post('/api/invoices/:id/send', authenticateJWT, async (req, res) => {
         attachmentData = atts;
         for (const att of atts) {
           try {
-            const response = await fetch(att.file_url);
+            const response = await fetchWithAbort(att.file_url, {}, 15000);
             if (response.ok) {
               const buffer = await response.buffer();
               attachments.push({
@@ -6527,15 +6559,17 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
 
     logger.info('New lead received:', leadData);
 
-    // Save to Supabase (server-side backup — client also saves directly)
+    // Save to Supabase (server-side backup — client also saves directly).
+    // 10-minute dedup window matches the other paths so a parallel submit
+    // from the direct Supabase client doesn't get duplicated here.
     if (supabase) {
       try {
-        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data: existing } = await supabase
           .from('leads')
           .select('id')
           .eq('email', homeowner_email.toLowerCase().trim())
-          .gte('created_at', twoMinAgo)
+          .gte('created_at', tenMinAgo)
           .limit(1);
 
         if (!existing || existing.length === 0) {
@@ -7174,16 +7208,17 @@ app.post('/api/leads/with-images', leadRateLimiter, async (req, res) => {
       images: image_urls.length
     });
 
-    // Save to Supabase (server-side backup — client also saves directly)
+    // Save to Supabase (server-side backup — client also saves directly).
+    // 10-minute dedup window consistent with /api/leads and /api/notify-lead.
     let savedLeadId = null;
     if (supabase) {
       try {
-        const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data: existing } = await supabase
           .from('leads')
           .select('id')
           .eq('email', homeowner_email.toLowerCase().trim())
-          .gte('created_at', twoMinAgo)
+          .gte('created_at', tenMinAgo)
           .limit(1);
 
         if (!existing || existing.length === 0) {
@@ -7551,8 +7586,8 @@ app.post('/api/price-sheets/parse', authenticateJWT, async (req, res) => {
       };
     }
 
-    // Call OpenAI GPT-4 Vision to extract price data
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call OpenAI GPT-4 Vision to extract price data (60s cap — vision requests can be slow).
+    const response = await fetchWithAbort('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -7603,7 +7638,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
         max_tokens: 4000,
         temperature: 0.1
       })
-    });
+    }, 60000);
 
     if (!response.ok) {
       const error = await response.text();
@@ -8279,10 +8314,12 @@ app.get('/api/customers-list', authenticateJWT, async (req, res) => {
       return res.status(403).json({ error: 'Admin access required to view customer list' });
     }
 
+    const limit = Math.min(parseInt(req.query.limit) || 2000, 5000);
     const { data: customers, error } = await supabase
       .from('customers')
       .select('*, jobs(id, job_number, status)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) throw error;
 

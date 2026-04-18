@@ -175,11 +175,12 @@
 
         console.log('SG Auth: Creating new profile, account_type:', accountType);
 
+        const canonicalEmail = (currentUser.email || '').trim().toLowerCase();
         const { data: newProfile } = await supabaseClient
           .from('sg_users')
           .insert([{
             id: currentUser.id,
-            email: currentUser.email,
+            email: canonicalEmail,
             full_name: currentUser.user_metadata?.full_name || '',
             account_type: accountType
           }])
@@ -189,7 +190,7 @@
         userProfile = newProfile;
 
         // Try to link Shopify customer by email (trigger will do this, but also try here)
-        await linkShopifyCustomerByEmail(currentUser.email);
+        await linkShopifyCustomerByEmail(canonicalEmail);
       }
     } catch (e) {
       console.error('SG Auth: Error loading profile', e);
@@ -230,12 +231,13 @@
     if (!supabaseClient || !currentUser || !email) return false;
 
     try {
-      // Find Shopify customer by email
+      // Find Shopify customer by email (case-insensitive, tolerate case variants).
       const { data: shopifyCustomer } = await supabaseClient
         .from('shopify_customers')
         .select('id')
         .ilike('email', email)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (shopifyCustomer) {
         // Update sg_users with the link
@@ -330,6 +332,9 @@
   async function signIn(email, password) {
     if (!supabaseClient) await init();
 
+    // Supabase auth normalizes email internally, but for our sg_users row keyed
+    // on email (used by loadUserProfile etc.) we need the same canonical form.
+    email = (email || '').trim().toLowerCase();
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password
@@ -348,6 +353,8 @@
   async function signUp(email, password, metadata = {}) {
     if (!supabaseClient) await init();
 
+    // Canonicalize email for both the auth record and the sg_users row we create below.
+    email = (email || '').trim().toLowerCase();
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
@@ -611,19 +618,34 @@
       headers['X-User-ID'] = currentUser.id;
     }
 
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers
-    });
+    // Abort after 20s — Render cold starts tolerated, but not indefinite hangs.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    let response;
+    try {
+      response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     // Handle 401 - try to refresh token
     if (response.status === 401 && supabaseClient) {
       const { data: { session }, error } = await supabaseClient.auth.refreshSession();
 
       if (session && !error) {
-        // Retry with new token
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        return fetch(`${API_BASE}${path}`, { ...options, headers });
+        // Retry with new token (also time-bounded)
+        const retryCtrl = new AbortController();
+        const retryTid = setTimeout(() => retryCtrl.abort(), 20000);
+        try {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+          return await fetch(`${API_BASE}${path}`, { ...options, headers, signal: retryCtrl.signal });
+        } finally {
+          clearTimeout(retryTid);
+        }
       }
 
       // Refresh failed - dispatch event for UI to handle

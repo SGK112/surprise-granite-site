@@ -265,7 +265,7 @@
    */
   function getFormData() {
     return {
-      email: document.getElementById('email')?.value || '',
+      email: (document.getElementById('email')?.value || '').trim().toLowerCase(),
       firstName: document.getElementById('firstName')?.value || '',
       lastName: document.getElementById('lastName')?.value || '',
       phone: document.getElementById('phone')?.value || '',
@@ -369,21 +369,32 @@
         if (cached?.code) promoCode = cached.code;
       } catch (_) {}
 
-      // Create checkout session
-      const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          items: lineItems,
-          customer_email: formData.email,
-          shipping_state: document.getElementById('state')?.value || '',
-          promo_code: promoCode,
-          success_url: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/checkout/`
-        })
-      });
+      // Create checkout session (30s cap — Render cold-start tolerated, but not indefinite)
+      const _coCtrl = new AbortController();
+      const _coTid = setTimeout(() => _coCtrl.abort(), 30000);
+      let response;
+      try {
+        response = await fetch(`${API_BASE}/api/create-checkout-session`, {
+          method: 'POST',
+          signal: _coCtrl.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            items: lineItems,
+            customer_email: formData.email,
+            shipping_state: document.getElementById('state')?.value || '',
+            promo_code: promoCode,
+            success_url: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${window.location.origin}/checkout/`
+          })
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') throw new Error('Checkout is taking too long. Please try again.');
+        throw err;
+      } finally {
+        clearTimeout(_coTid);
+      }
 
       const data = await response.json();
 
@@ -391,11 +402,9 @@
         throw new Error(data.error);
       }
 
-      // Clear cart before redirect
-      localStorage.removeItem(CART_KEY);
-      localStorage.removeItem('sg_promo');
-
-      // Redirect to Stripe Checkout
+      // Do NOT clear cart here — /checkout/success clears it on successful payment.
+      // Clearing before redirect risks losing the cart if the redirect silently fails
+      // (popup/ad blockers, network drop mid-nav).
       if (data.url) {
         window.location.href = data.url;
       } else if (data.sessionId) {

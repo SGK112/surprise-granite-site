@@ -1247,13 +1247,15 @@
 
       console.log('[findOrCreateCustomerFromLead] Processing lead:', lead.id, lead.email);
 
-      // Check if customer already exists with this email
+      // Check if customer already exists with this email. Normalize at query time —
+      // old leads may have uppercase emails in the DB that wouldn't match lowercased customers.
       if (lead.email) {
+        const normalizedLeadEmail = lead.email.toLowerCase().trim();
         const { data: existing, error: findError } = await supabaseClient
           .from('customers')
           .select('*')
           .eq('user_id', user.id)
-          .eq('email', lead.email)
+          .ilike('email', normalizedLeadEmail)
           .maybeSingle();
 
         if (findError) {
@@ -1360,14 +1362,14 @@
       const user = await getAuthUser();
       if (!user) return null;
 
-      // Check if customer exists with this email
+      // Check if customer exists with this email (case-insensitive — old data has mixed case).
       if (formData.customerEmail) {
         const { data: existing } = await supabaseClient
           .from('customers')
           .select('*')
           .eq('user_id', user.id)
-          .eq('email', formData.customerEmail)
-          .single();
+          .ilike('email', formData.customerEmail.trim())
+          .maybeSingle();
 
         if (existing) return existing;
       }
@@ -2995,7 +2997,8 @@
           .from('user_favorites')
           .select('*')
           .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(500);
 
         if (error) throw error;
 
@@ -3109,10 +3112,13 @@
         const token = session?.data?.session?.access_token;
 
         const [storeRes, shopifyRes] = await Promise.all([
-          fetch(API_BASE + '/api/admin/orders?source=store', {
+          fetchWithTimeout(API_BASE + '/api/admin/orders?source=store', {
             headers: { 'Authorization': 'Bearer ' + token }
-          }).then(r => r.json()).catch(() => ({ orders: [] })),
-          supabaseClient.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false })
+          }, 10000).then(r => r.json()).catch(err => {
+            console.warn('[Orders] Store orders fetch failed:', err.message);
+            return { orders: [] };
+          }),
+          supabaseClient.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000)
         ]);
 
         const storeOrders = (storeRes.orders || []);
@@ -3168,20 +3174,21 @@
         return o.payment_status === 'paid' && !['shipped', 'delivered'].includes(s);
       }).length;
 
-      document.getElementById('stat-total-orders').textContent = total.toLocaleString();
-      document.getElementById('stat-store-orders').textContent = storeOrders.length.toLocaleString();
-      document.getElementById('stat-orders-revenue').textContent = '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      document.getElementById('stat-paid-orders').textContent = paid.toLocaleString();
-      document.getElementById('stat-fulfilled-orders').textContent = fulfilled.toLocaleString();
-      document.getElementById('stat-needs-action').textContent = needsAction.toLocaleString();
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setText('stat-total-orders', total.toLocaleString());
+      setText('stat-store-orders', storeOrders.length.toLocaleString());
+      setText('stat-orders-revenue', '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setText('stat-paid-orders', paid.toLocaleString());
+      setText('stat-fulfilled-orders', fulfilled.toLocaleString());
+      setText('stat-needs-action', needsAction.toLocaleString());
 
       // Render action-required banner for unfulfilled store orders
       renderActionRequired(storeOrders);
 
       // Update tab counts
-      document.getElementById('tab-all').textContent = 'All (' + total + ')';
-      document.getElementById('tab-store').textContent = 'Store (' + storeOrders.length + ')';
-      document.getElementById('tab-shopify').textContent = 'Shopify (' + (total - storeOrders.length) + ')';
+      setText('tab-all', 'All (' + total + ')');
+      setText('tab-store', 'Store (' + storeOrders.length + ')');
+      setText('tab-shopify', 'Shopify (' + (total - storeOrders.length) + ')');
     }
 
     function renderActionRequired(storeOrders) {
@@ -3591,11 +3598,11 @@
       const API_BASE = SG_API_BASE;
       const session = await supabaseClient.auth.getSession();
       const token = session?.data?.session?.access_token;
-      const res = await fetch(API_BASE + path, {
+      const res = await fetchWithTimeout(API_BASE + path, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: body ? JSON.stringify(body) : undefined
-      });
+      }, 15000);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       return data;
@@ -3705,7 +3712,7 @@
       try {
         const session = await supabaseClient.auth.getSession();
         const token = session?.data?.session?.access_token;
-        const res = await fetch(SG_API_BASE + '/api/customers', {
+        const res = await fetchWithTimeout(SG_API_BASE + '/api/customers', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3722,7 +3729,7 @@
               last_order_total: order.total
             }
           })
-        });
+        }, 15000);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Request failed');
         showToast(data.isNew ? 'Customer added to CRM' : 'Customer updated in CRM', 'success');
@@ -4139,7 +4146,8 @@
           .from('room_designs')
           .select('*')
           .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
+          .order('updated_at', { ascending: false })
+          .limit(500);
 
         if (error) throw error;
 
@@ -4473,12 +4481,13 @@
       try {
         // If only email provided, try to find or we'll store the email
         if (!leadId && customerEmail) {
-          // Check if lead exists with this email
+          // Check if lead exists with this email (case-insensitive — handles legacy mixed-case data).
           const { data: existingLead } = await supabaseClient
             .from('leads')
             .select('id, full_name')
-            .eq('email', customerEmail)
-            .single();
+            .ilike('email', customerEmail.trim())
+            .limit(1)
+            .maybeSingle();
 
           if (existingLead) {
             leadId = existingLead.id;
@@ -6023,7 +6032,8 @@
         const { data, error } = await supabaseClient
           .from('leads')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(1000);
 
         if (error) throw error;
 
@@ -7665,7 +7675,7 @@
         const firstName = document.getElementById('new-lead-first-name').value.trim();
         const lastName = document.getElementById('new-lead-last-name').value.trim();
         const fullName = `${firstName} ${lastName}`.trim();
-        const email = document.getElementById('new-lead-email').value.trim();
+        const email = document.getElementById('new-lead-email').value.trim().toLowerCase();
         const phone = document.getElementById('new-lead-phone').value.trim() || null;
         const projectType = document.getElementById('new-lead-project-type').value || null;
 
@@ -7960,7 +7970,7 @@
         // Validate required fields
         const firstName = document.getElementById('new-lead-first-name').value.trim();
         const lastName = document.getElementById('new-lead-last-name').value.trim();
-        const email = document.getElementById('new-lead-email').value.trim();
+        const email = document.getElementById('new-lead-email').value.trim().toLowerCase();
 
         if (!firstName || !lastName || !email) {
           showToast('Please fill in required fields (First Name, Last Name, Email)', 'error');
@@ -8071,7 +8081,7 @@
         // Validate required fields
         const firstName = document.getElementById('new-lead-first-name').value.trim();
         const lastName = document.getElementById('new-lead-last-name').value.trim();
-        const email = document.getElementById('new-lead-email').value.trim();
+        const email = document.getElementById('new-lead-email').value.trim().toLowerCase();
 
         if (!firstName || !lastName || !email) {
           showToast('Please fill in required fields (First Name, Last Name, Email)', 'error');
@@ -8358,13 +8368,14 @@
         const user = await getAuthUser();
         if (!user) throw new Error('Not logged in');
 
-        // Check if customer already exists with this email
+        // Check if customer already exists with this email (case-insensitive).
         if (selectedLead.email) {
           const { data: existing, error: checkError } = await supabaseClient
             .from('customers')
             .select('id')
-            .eq('email', selectedLead.email)
+            .ilike('email', selectedLead.email.trim())
             .eq('user_id', user.id)
+            .limit(1)
             .maybeSingle();
 
           // Ignore 406 errors (no rows found)
@@ -8692,7 +8703,8 @@
         const { data: customers, error } = await supabaseClient
           .from('customers')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(2000);
 
         if (error) throw error;
 
@@ -8746,20 +8758,27 @@
       }
     }
 
-    // Consolidate records from sg_users and shopify_customers into the unified customers table
+    // Consolidate records from sg_users and shopify_customers into the unified customers table.
+    // Throttled to at most once every 10 minutes — opening the Customers tab should not re-scan
+    // every source table on each click, but new Shopify/signup customers should still appear without a refresh.
+    let _lastConsolidateAt = 0;
     async function consolidateCustomerSources(user) {
+      const now = Date.now();
+      if (now - _lastConsolidateAt < 10 * 60 * 1000) return;
+      _lastConsolidateAt = now;
       try {
         // Get existing customer emails for deduplication
         const { data: existingCustomers } = await supabaseClient
           .from('customers')
-          .select('email');
+          .select('email')
+          .limit(5000);
 
         const existingEmails = new Set((existingCustomers || []).map(c => c.email?.toLowerCase()).filter(Boolean));
 
         // Fetch from sg_users and shopify_customers in parallel
         const [subscribersResult, shopifyResult] = await Promise.all([
-          supabaseClient.from('sg_users').select('id, email, full_name, phone, created_at, account_type, avatar_url'),
-          supabaseClient.from('shopify_customers').select('*').order('created_at', { ascending: false })
+          supabaseClient.from('sg_users').select('id, email, full_name, phone, created_at, account_type, avatar_url').limit(5000),
+          supabaseClient.from('shopify_customers').select('*').order('created_at', { ascending: false }).limit(5000)
         ]);
 
         const toInsert = [];
@@ -8816,17 +8835,18 @@
       const recentCount = allCustomers.filter(c => new Date(c.created_at) > thirtyDaysAgo).length;
       const vipCount = allCustomers.filter(c => (parseFloat(c.total_spent) || 0) >= 1000).length;
 
-      document.getElementById('stat-total-customers').textContent = total.toLocaleString();
-      document.getElementById('stat-subscribers').textContent = subscriberCount.toLocaleString();
-      document.getElementById('stat-shopify-customers').textContent = shopifyCustomerCount.toLocaleString();
-      document.getElementById('stat-imported-customers').textContent = importedCustomerCount.toLocaleString();
-      document.getElementById('stat-customer-revenue').textContent = '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setText('stat-total-customers', total.toLocaleString());
+      setText('stat-subscribers', subscriberCount.toLocaleString());
+      setText('stat-shopify-customers', shopifyCustomerCount.toLocaleString());
+      setText('stat-imported-customers', importedCustomerCount.toLocaleString());
+      setText('stat-customer-revenue', '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }));
 
       // Update filter counts
-      document.getElementById('count-all-customers').textContent = total;
-      document.getElementById('count-active-customers').textContent = activeCount;
-      document.getElementById('count-recent-customers').textContent = recentCount;
-      document.getElementById('count-vip-customers').textContent = vipCount;
+      setText('count-all-customers', total);
+      setText('count-active-customers', activeCount);
+      setText('count-recent-customers', recentCount);
+      setText('count-vip-customers', vipCount);
 
       // Update nav badge
       const countEl = document.getElementById('customers-count');
@@ -9119,7 +9139,12 @@
         // Insert into customers table (for imported clients)
         const user = await getAuthUser();
         if (user) {
-          const toInsert = customers.map(c => ({ ...c, user_id: user.id }));
+          // Normalize emails so dedup/join paths match.
+          const toInsert = customers.map(c => ({
+            ...c,
+            email: (c.email || '').toLowerCase().trim() || null,
+            user_id: user.id
+          }));
           const { error } = await supabaseClient.from('customers').insert(toInsert);
           if (error) {
             console.error('Import error:', error);
@@ -9381,13 +9406,14 @@
           // Load customer's favorites if they have a user account
           let favorites = [];
 
-          // Try to find user by email
+          // Try to find user by email (case-insensitive — legacy sg_users can be mixed case).
           if (selectedCustomer.email) {
             const { data: userData } = await supabaseClient
               .from('sg_users')
               .select('id')
-              .eq('email', selectedCustomer.email)
-              .single();
+              .ilike('email', selectedCustomer.email.trim())
+              .limit(1)
+              .maybeSingle();
 
             if (userData) {
               const { data: favData } = await supabaseClient
@@ -9644,7 +9670,7 @@
         const customerData = {
           user_id: user.id,
           name: document.getElementById('customer-name').value.trim(),
-          email: document.getElementById('customer-email').value.trim() || null,
+          email: document.getElementById('customer-email').value.trim().toLowerCase() || null,
           phone: document.getElementById('customer-phone').value.trim() || null,
           source: document.getElementById('customer-source').value || null,
           address: document.getElementById('customer-address').value.trim() || null,
@@ -9839,7 +9865,8 @@
       }
 
       try {
-        const { data: existing } = await supabaseClient.from('sg_users').select('*').eq('email', email).single();
+        // Case-insensitive lookup — sg_users may have mixed-case emails from legacy signups.
+        const { data: existing } = await supabaseClient.from('sg_users').select('*').ilike('email', email).limit(1).maybeSingle();
 
         if (existing) {
           await supabaseClient.from('sg_users').update({ account_type: 'admin' }).eq('id', existing.id);
@@ -11183,7 +11210,8 @@
             .from('invoices')
             .select('*, invoice_items(*)')
             .eq('user_id', user?.id)
-            .order('created_at', { ascending: false }),
+            .order('created_at', { ascending: false })
+            .limit(1000),
           apiCall('/api/invoices?limit=100')
             .then(r => r.ok ? r.json() : { invoices: [] })
             .catch(err => {
@@ -11790,15 +11818,16 @@
 
           console.log('[Sync] Processing:', inv.customer_name, inv.customer_email);
 
-          // Step 1: Check/create customer (always do this)
+          // Step 1: Check/create customer (always do this). Case-insensitive email match.
           let customerId = null;
           try {
             const { data: existingCustomer } = await supabaseClient
               .from('customers')
               .select('id')
               .eq('user_id', user.id)
-              .eq('email', inv.customer_email)
-              .single();
+              .ilike('email', (inv.customer_email || '').trim())
+              .limit(1)
+              .maybeSingle();
 
             if (existingCustomer) {
               customerId = existingCustomer.id;
@@ -15884,7 +15913,8 @@
           .from('stone_listings')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(500);
 
         if (error) throw error;
 
@@ -16585,7 +16615,8 @@
         await supabaseClient.from('leads').insert({
           user_id: user.id,
           full_name: notif.sender?.name || '',
-          email: notif.sender?.email || '',
+          // Lowercase email so dedup elsewhere matches.
+          email: (notif.sender?.email || '').toLowerCase().trim(),
           phone: notif.sender?.phone || '',
           source: 'marketplace_inquiry',
           notes: notif.message,
@@ -17418,7 +17449,7 @@
 
       try {
         const name = document.getElementById('qp-name').value.trim();
-        const email = document.getElementById('qp-email').value.trim();
+        const email = document.getElementById('qp-email').value.trim().toLowerCase();
         const phone = document.getElementById('qp-phone').value.trim();
         const amount = parseFloat(document.getElementById('qp-amount').value);
         const description = document.getElementById('qp-description').value.trim() || 'Payment to Surprise Granite';
@@ -17791,48 +17822,53 @@
           return;
         }
 
-        let query = supabaseClient
+        const { data: allEstimatesData, error } = await supabaseClient
           .from('estimates')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        // Filter by status
-        if (currentEstimateFilter === 'archived') {
-          query = query.not('archived_at', 'is', null);
-        } else {
-          // By default, hide archived estimates
-          query = query.is('archived_at', null);
-          if (currentEstimateFilter !== 'all') {
-            query = query.eq('status', currentEstimateFilter);
-          }
-        }
-
-        const { data: estimates, error } = await query;
+          .order('created_at', { ascending: false })
+          .limit(1000);
 
         if (error) throw error;
 
-        // Update global estimates array with full data
-        const { data: allEstimatesData } = await supabaseClient
-          .from('estimates')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        allEstimates = allEstimatesData || [];
 
-        if (allEstimatesData) {
-          allEstimates = allEstimatesData; // Update global array
-          const stats = {
-            draft: allEstimates.filter(e => e.status === 'draft').length,
-            sent: allEstimates.filter(e => e.status === 'sent').length,
-            approved: allEstimates.filter(e => e.status === 'approved').length,
-            rejected: allEstimates.filter(e => e.status === 'rejected').length
-          };
-          document.getElementById('stat-draft-estimates').textContent = stats.draft;
-          document.getElementById('stat-sent-estimates').textContent = stats.sent;
-          document.getElementById('stat-approved-estimates').textContent = stats.approved;
-          document.getElementById('stat-rejected-estimates').textContent = stats.rejected;
-          document.getElementById('estimates-count').textContent = allEstimates.length;
-          document.getElementById('estimates-count').dataset.count = allEstimates.length;
+        // Stats reflect ACTIVE (non-archived) estimates so the cards agree with the list
+        // views that sit next to them. Archived count is shown separately on the Archived
+        // filter pill so nothing is hidden — it's just clearly labeled.
+        const activeEstimates = allEstimates.filter(e => !e.archived_at);
+        const archivedEstimates = allEstimates.filter(e => e.archived_at);
+        const stats = {
+          draft: activeEstimates.filter(e => e.status === 'draft').length,
+          sent: activeEstimates.filter(e => e.status === 'sent').length,
+          approved: activeEstimates.filter(e => e.status === 'approved').length,
+          rejected: activeEstimates.filter(e => e.status === 'rejected').length
+        };
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setText('stat-draft-estimates', stats.draft);
+        setText('stat-sent-estimates', stats.sent);
+        setText('stat-approved-estimates', stats.approved);
+        setText('stat-rejected-estimates', stats.rejected);
+        // Archived count goes on the "Archived" filter pill so the user can see
+        // at a glance whether there's history to browse.
+        setText('estimate-archived-count', archivedEstimates.length > 0 ? `(${archivedEstimates.length})` : '');
+
+        const countEl = document.getElementById('estimates-count');
+        if (countEl) {
+          // Nav badge shows ACTIVE only — matching the stat cards and default view.
+          countEl.textContent = activeEstimates.length;
+          countEl.dataset.count = activeEstimates.length;
+        }
+
+        // Client-side filter for the list view
+        let estimates = allEstimates;
+        if (currentEstimateFilter === 'archived') {
+          estimates = estimates.filter(e => e.archived_at);
+        } else {
+          estimates = estimates.filter(e => !e.archived_at);
+          if (currentEstimateFilter !== 'all') {
+            estimates = estimates.filter(e => e.status === currentEstimateFilter);
+          }
         }
 
         if (!estimates || estimates.length === 0) {
@@ -20879,7 +20915,8 @@
           .from('projects')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(1000);
 
         if (error) throw error;
 
@@ -21502,14 +21539,14 @@
 
             // Auto-create customer if not already linked
             if (!customerId && projectData.customer_name) {
-              // Check if customer with this email already exists
+              // Check if customer with this email already exists (case-insensitive).
               let existingCustomer = null;
               if (projectData.customer_email) {
                 const { data: existing } = await supabaseClient
                   .from('customers')
                   .select('id')
                   .eq('user_id', user.id)
-                  .eq('email', projectData.customer_email)
+                  .ilike('email', projectData.customer_email.trim())
                   .limit(1);
                 existingCustomer = existing?.[0];
               }
@@ -22780,7 +22817,8 @@
             )
           `)
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(1000);
 
         if (error) throw error;
 
@@ -28914,7 +28952,8 @@
           .from('general_collaborators')
           .select('id, name, company, email, phone, role, status')
           .eq('invited_by', user.id)
-          .order('name');
+          .order('name')
+          .limit(500);
 
         if (error) {
           console.warn('Could not load contractors:', error.message);
@@ -28922,7 +28961,8 @@
           const { data: teamUsers, error: teamError } = await supabaseClient
             .from('sg_users')
             .select('id, full_name, email, phone, account_type')
-            .in('account_type', ['contractor', 'fabricator', 'installer', 'admin', 'staff']);
+            .in('account_type', ['contractor', 'fabricator', 'installer', 'admin', 'staff'])
+            .limit(500);
 
           if (!teamError && teamUsers) {
             allContractors = teamUsers.map(u => ({
@@ -30687,7 +30727,8 @@
           .from('general_collaborators')
           .select('*')
           .eq('invited_by', user.id)
-          .order('name');
+          .order('name')
+          .limit(500);
 
         if (error) throw error;
 
@@ -31897,7 +31938,8 @@
           .from('projects')
           .select('id, job_number, customer_name, name, description, status, estimated_start_date, field_measure_date, install_date')
           .eq('user_id', user.id)
-          .not('status', 'in', '("completed","cancelled")');
+          .not('status', 'in', '("completed","cancelled")')
+          .limit(1000);
 
         if (error) throw error;
 
@@ -33979,6 +34021,8 @@ Surprise Granite</textarea>
     // Unified Customer Profile Modal
     async function godViewUnifiedProfile(email) {
       if (!email) return;
+      // Lowercase to match how leads/customers are stored.
+      email = email.toLowerCase().trim();
 
       showToast('Loading profile...', 'info');
 
@@ -33992,7 +34036,7 @@ Surprise Granite</textarea>
           safeQuery(supabaseClient.from('sg_users').select('*').eq('email', email).single()),
           safeQuery(supabaseClient.from('shopify_customers').select('*').eq('email', email).single()),
           safeQuery(supabaseClient.from('shopify_orders').select('*').eq('email', email).order('created_at', { ascending: false }).limit(5)),
-          safeQuery(supabaseClient.from('leads').select('*').eq('email', email))
+          safeQuery(supabaseClient.from('leads').select('*').eq('email', email).limit(50))
         ]);
 
         const profile = {

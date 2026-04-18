@@ -1529,19 +1529,28 @@
 
       try {
         // Submit to email API (which also pushes to VoiceNow CRM webhook)
-        var response = await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadPayload)
-        });
+        var _refCtrl = new AbortController();
+        var _refTid = setTimeout(function() { _refCtrl.abort(); }, 20000);
+        var response;
+        try {
+          response = await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+            method: 'POST',
+            signal: _refCtrl.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(leadPayload)
+          });
+        } finally { clearTimeout(_refTid); }
 
         if (!response.ok) {
           throw new Error('Server returned ' + response.status);
         }
 
-        // Also fire to n8n webhook (fire-and-forget)
+        // Also fire to n8n webhook (fire-and-forget, time-bounded so it can't leak)
+        var _n8nCtrl = new AbortController();
+        setTimeout(function() { _n8nCtrl.abort(); }, 15000);
         fetch('https://remodely.app.n8n.cloud/webhook/surprise-granite-hero-lead', {
           method: 'POST',
+          signal: _n8nCtrl.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(leadPayload)
         }).catch(function() { /* silent */ });

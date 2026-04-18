@@ -968,7 +968,8 @@
         const { data, error } = await db
           .from('shopify_products')
           .select('*')
-          .order('name');
+          .order('name')
+          .limit(5000);
 
         if (error) throw error;
 
@@ -990,11 +991,12 @@
       const lowStock = allProducts.filter(p => p.inventory_quantity !== null && p.inventory_quantity <= 5).length;
       const dropship = allProducts.filter(p => p.is_dropship).length;
 
-      document.getElementById('statTotal').textContent = total.toLocaleString();
-      document.getElementById('statActive').textContent = active.toLocaleString();
-      document.getElementById('statDiscontinued').textContent = discontinued.toLocaleString();
-      document.getElementById('statLowStock').textContent = lowStock.toLocaleString();
-      document.getElementById('statDropship').textContent = dropship.toLocaleString();
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setText('statTotal', total.toLocaleString());
+      setText('statActive', active.toLocaleString());
+      setText('statDiscontinued', discontinued.toLocaleString());
+      setText('statLowStock', lowStock.toLocaleString());
+      setText('statDropship', dropship.toLocaleString());
 
       // Update filter counts
       document.getElementById('countAll').textContent = total;

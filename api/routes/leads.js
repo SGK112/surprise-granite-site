@@ -56,6 +56,19 @@ const upload = multer({
   }
 });
 
+// Map client-declared mimetype → extension. Extension MUST come from the server,
+// not from file.originalname (which is user-controlled and can contain traversal or
+// double-extensions like "evil.html;jpg" that trick downstream consumers).
+const MIME_TO_EXT = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/heic': 'heic',
+  'image/heif': 'heif'
+};
+
 router.post('/upload-images', upload.array('images', 5), asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) return res.status(500).json({ error: 'Storage not available' });
@@ -63,7 +76,12 @@ router.post('/upload-images', upload.array('images', 5), asyncHandler(async (req
 
   const urls = [];
   for (const file of req.files) {
-    const ext = file.originalname.split('.').pop() || 'jpg';
+    const ext = MIME_TO_EXT[file.mimetype];
+    if (!ext) {
+      logger.warn('Rejected non-image upload', { mimetype: file.mimetype });
+      continue;
+    }
+    // Allocated filename contains only server-generated characters — no user input.
     const path = `lead-photos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
     const { error } = await supabase.storage
@@ -164,6 +182,59 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
 
   if (supabase) {
     try {
+      // Backend dedup — if a lead with this email was created in the last 10 minutes,
+      // MERGE into it instead of inserting a new row. Catches the direct-to-Supabase
+      // client path + the fallback path hitting this endpoint, tab-refresh resubmits,
+      // and any form that fires both paths in parallel.
+      const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: recent } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('email', leadData.email)
+        .gte('created_at', tenMinAgo)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (recent && recent.length > 0) {
+        const existing = recent[0];
+        // Merge newer non-empty fields into the existing row so nothing is lost.
+        const mergedMessage = leadData.project_details && leadData.project_details !== existing.project_details
+          ? [existing.project_details, `\n--- (dedup ${new Date().toISOString()})\n`, leadData.project_details].filter(Boolean).join('')
+          : existing.project_details;
+
+        const updates = {
+          full_name: existing.full_name || leadData.full_name,
+          phone: existing.phone || leadData.phone,
+          project_type: existing.project_type || leadData.project_type,
+          budget: existing.budget || leadData.budget,
+          timeline: existing.timeline || leadData.timeline,
+          zip_code: existing.zip_code || leadData.zip_code,
+          project_details: mergedMessage,
+          image_urls: Array.from(new Set([...(existing.image_urls || []), ...(leadData.image_urls || [])])),
+          raw_data: {
+            ...(existing.raw_data || {}),
+            ...(leadData.raw_data || {}),
+            _dedup_merged_at: new Date().toISOString()
+          },
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: merged } = await supabase
+          .from('leads')
+          .update(updates)
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        logger.info('[Dedup] Merged into existing lead', { leadId: existing.id, email: leadData.email });
+        return res.json({
+          success: true,
+          lead: merged || existing,
+          deduped: true,
+          message: 'Lead merged with recent submission'
+        });
+      }
+
       const { data: lead, error } = await supabase
         .from('leads')
         .insert([leadData])
@@ -175,12 +246,16 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
       } else {
         savedLead = lead;
 
-        // Push to VoiceNow CRM (fire-and-forget)
+        // Push to VoiceNow CRM (fire-and-forget, but time-bounded — Node's fetch has no
+        // implicit timeout; without this we leak a promise per lead when the CRM is slow).
         const crmWebhookUrl = process.env.VOICENOW_CRM_URL || 'https://www.voicenowcrm.com';
+        const crmCtrl = new AbortController();
+        setTimeout(() => crmCtrl.abort(), 10000);
         fetch(`${crmWebhookUrl}/api/surprise-granite/webhook/new-lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(lead)
+          body: JSON.stringify(lead),
+          signal: crmCtrl.signal
         }).then(r => {
           if (r.ok) logger.info('Lead pushed to VoiceNow CRM', { leadId: lead.id });
           else logger.warn('VoiceNow CRM webhook failed', { status: r.status, leadId: lead.id });
@@ -195,7 +270,8 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
             .insert([{
               lead_id: lead.id,
               owner_id: lead.assigned_to || lead.user_id || '00000000-0000-0000-0000-000000000000', // System user if no owner
-              email: homeowner_email,
+              // Normalize email to match how we stored it on the lead — keeps portal lookups consistent.
+              email: homeowner_email.toLowerCase().trim(),
               phone: homeowner_phone,
               permissions: {
                 view_project: true,

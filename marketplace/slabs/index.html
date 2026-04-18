@@ -2731,18 +2731,29 @@
 
       const inquiryData = {
         customer_name: document.getElementById('inquiryName').value,
-        customer_email: document.getElementById('inquiryEmail').value,
+        customer_email: (document.getElementById('inquiryEmail').value || '').trim().toLowerCase(),
         customer_phone: document.getElementById('inquiryPhone').value || null,
         company_name: document.getElementById('inquiryCompany').value || null,
         message: document.getElementById('inquiryMessage').value || null
       };
 
       try {
-        const response = await fetch(`${API_BASE}/api/marketplace/slabs/${selectedSlab.id}/inquiry`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(inquiryData)
-        });
+        const _inqCtrl = new AbortController();
+        const _inqTid = setTimeout(() => _inqCtrl.abort(), 20000);
+        let response;
+        try {
+          response = await fetch(`${API_BASE}/api/marketplace/slabs/${selectedSlab.id}/inquiry`, {
+            method: 'POST',
+            signal: _inqCtrl.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(inquiryData)
+          });
+        } catch (err) {
+          if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+          throw err;
+        } finally {
+          clearTimeout(_inqTid);
+        }
 
         if (!response.ok) {
           const result = await response.json();

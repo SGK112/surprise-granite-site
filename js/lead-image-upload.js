@@ -247,21 +247,33 @@ class LeadImageUpload {
 
     // Resize image if needed (max 2000px)
     const resizedBlob = await this.resizeImage(imageData.file, 2000);
+    if (!resizedBlob) throw new Error('Could not prepare image for upload');
 
-    // Upload to Supabase Storage
-    const response = await fetch(
-      `${this.supabaseUrl}/storage/v1/object/${this.storageBucket}/${filePath}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.supabaseKey}`,
-          'apikey': this.supabaseKey,
-          'Content-Type': resizedBlob.type,
-          'x-upsert': 'true'
-        },
-        body: resizedBlob
-      }
-    );
+    // Upload to Supabase Storage with timeout (60s — covers large files on slow links)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    let response;
+    try {
+      response = await fetch(
+        `${this.supabaseUrl}/storage/v1/object/${this.storageBucket}/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.supabaseKey}`,
+            'apikey': this.supabaseKey,
+            'Content-Type': resizedBlob.type,
+            'x-upsert': 'true'
+          },
+          body: resizedBlob,
+          signal: controller.signal
+        }
+      );
+    } catch (err) {
+      if (err.name === 'AbortError') throw new Error('Upload timed out — check your connection');
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
@@ -302,11 +314,12 @@ class LeadImageUpload {
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob(
-          (blob) => resolve(blob),
+          (blob) => resolve(blob || file),
           'image/jpeg',
           0.85
         );
       };
+      img.onerror = () => resolve(file); // fall back to original on decode failure
       img.src = URL.createObjectURL(file);
     });
   }

@@ -9,7 +9,7 @@
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/mobile-optimizations.css">
-  <script src="/js/lead-image-upload.js?v=20260110"></script>
+  <script src="/js/lead-image-upload.js?v=20260417"></script>
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
   <script defer src="/js/unified-nav.js?v=20260401"></script>
 
@@ -800,7 +800,7 @@
         firstName: document.getElementById('firstName').value.trim(),
         lastName: document.getElementById('lastName').value.trim(),
         name: document.getElementById('firstName').value.trim() + ' ' + document.getElementById('lastName').value.trim(),
-        email: document.getElementById('email').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
         phone: document.getElementById('phone').value.trim(),
         zipCode: document.getElementById('zipCode').value.trim(),
         city: document.getElementById('city').value.trim(),
@@ -815,8 +815,14 @@
       };
 
       // Submit to leads API with images
+      const _srFwt = (url, opts, ms) => {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), ms || 20000);
+        return fetch(url, Object.assign({}, opts || {}, { signal: c.signal }))
+          .finally(() => clearTimeout(t));
+      };
       try {
-        await fetch('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
+        await _srFwt('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -833,14 +839,14 @@
             image_urls: imageUrls,
             source: 'service-request-form'
           })
-        });
+        }, 20000);
       } catch (error) {
         console.log('API error:', error);
       }
 
-      // Submit to Supabase
+      // Submit to Supabase — lowercase email so server-side dedup matches.
       try {
-        await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        await _srFwt('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -851,7 +857,7 @@
             first_name: formData.firstName,
             last_name: formData.lastName,
             full_name: formData.name,
-            email: formData.email,
+            email: (formData.email || '').toLowerCase().trim(),
             phone: formData.phone,
             zip_code: formData.zipCode,
             project_type: formData.serviceType,
@@ -864,7 +870,7 @@
             page_url: window.location.href,
             raw_data: formData
           })
-        });
+        }, 15000);
       } catch (error) {
         console.log('Supabase error:', error);
       }

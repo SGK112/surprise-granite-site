@@ -346,8 +346,8 @@
       try {
         // Load from both tables directly via Supabase
         const [storeRes, shopifyRes] = await Promise.all([
-          db.from('orders').select('*').order('created_at', { ascending: false }),
-          db.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false })
+          db.from('orders').select('*').order('created_at', { ascending: false }).limit(1000),
+          db.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000)
         ]);
 
         const storeOrders = (storeRes.data || []).map(o => ({ ...o, _source: 'store' }));
@@ -693,14 +693,25 @@
     // ========== Actions ==========
 
     async function apiCall(method, path, body) {
-      const res = await fetch(API_BASE + path, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + authToken
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 15000);
+      let res;
+      try {
+        res = await fetch(API_BASE + path, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') throw new Error('Request timed out — please try again');
+        throw err;
+      } finally {
+        clearTimeout(t);
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       return data;

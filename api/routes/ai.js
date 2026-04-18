@@ -30,6 +30,33 @@ function validateImageFormat(dataUrl) {
 // Import blueprint analyzer
 const { analyzeBlueprint, parseBluebeamBAX } = require('../lib/takeoff/blueprint-analyzer');
 
+// Shadow the global fetch in this module so every call gets a default abort timeout.
+// Node's fetch silently ignores the `timeout` option — without this, a stuck
+// Replicate/OpenAI call leaves the HTTP handler hanging until the client disconnects.
+// Callers that pass their own `signal` are respected untouched.
+const _nativeFetch = globalThis.fetch;
+const DEFAULT_FETCH_TIMEOUT_MS = 90000;
+async function fetch(url, options = {}) {
+  if (options && options.signal) return _nativeFetch(url, options);
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), DEFAULT_FETCH_TIMEOUT_MS);
+  try {
+    return await _nativeFetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+  } finally {
+    clearTimeout(t);
+  }
+}
+// Back-compat alias for the two call sites that already explicitly request a short timeout.
+async function fetchWithAbort(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await _nativeFetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 // ============ AI VISUALIZER ============
 
 /**
@@ -56,8 +83,8 @@ router.post('/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
       });
     }
 
-    // Use Flux model for image-to-image transformation
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    // Use Flux model for image-to-image transformation (30s cap on the initial call)
+    const response = await fetchWithAbort('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${REPLICATE_API_TOKEN}`,
@@ -73,7 +100,7 @@ router.post('/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
           guidance_scale: 3.5
         }
       })
-    });
+    }, 30000);
 
     const prediction = await response.json();
 
@@ -90,11 +117,12 @@ router.post('/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
     while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+      // 10s cap per poll — keep the loop responsive even if one request hangs.
+      const pollResponse = await fetchWithAbort(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${REPLICATE_API_TOKEN}`
         }
-      });
+      }, 10000);
 
       result = await pollResponse.json();
       attempts++;
@@ -530,8 +558,8 @@ Be thorough but realistic. If you can't determine something, use standard dimens
 
     logger.info(`[Room-Scan] Mode: ${scanMode}, Project: ${projectType}`);
 
-    // Call GPT-4 Vision
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call GPT-4 Vision (60s cap — vision requests are slow, but must not hang forever)
+    const response = await fetchWithAbort('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -558,7 +586,7 @@ Be thorough but realistic. If you can't determine something, use standard dimens
         max_tokens: 8192,
         temperature: 0.2
       })
-    });
+    }, 60000);
 
     const data = await response.json();
 

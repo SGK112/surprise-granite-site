@@ -799,7 +799,9 @@
       event.preventDefault();
       hideMessages();
 
-      const email = document.getElementById('email').value;
+      // Canonicalize email — Supabase auth is case-sensitive on the email field
+      // unless told otherwise, and our sg_users lookups now normalize to lowercase.
+      const email = (document.getElementById('email').value || '').trim().toLowerCase();
       const password = document.getElementById('password').value;
       const loginBtn = document.getElementById('login-btn');
 

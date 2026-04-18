@@ -14,6 +14,14 @@
 (function() {
   'use strict';
 
+  // Aborting fetch — never let a slow network freeze the form.
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+      .finally(() => clearTimeout(t));
+  }
+
   // US States list
   const US_STATES = [
     { code: 'AZ', name: 'Arizona' },
@@ -198,7 +206,7 @@
 
       try {
         const apiBase = (window.SG_CONFIG?.API_URL || '') + '/api/leads/upload-images';
-        const resp = await fetch(apiBase, { method: 'POST', body: formData });
+        const resp = await fetchWithTimeout(apiBase, { method: 'POST', body: formData }, 60000);
         const result = await resp.json();
 
         if (result.success && result.urls?.length) {
@@ -513,7 +521,7 @@
         const supabaseKey = sgConfig.SUPABASE_ANON_KEY || '';
 
         try {
-          const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+          const response = await fetchWithTimeout(`${supabaseUrl}/rest/v1/leads`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -522,7 +530,8 @@
             },
             body: JSON.stringify({
               full_name: data.full_name,
-              email: data.email,
+              // Lowercase email so server-side dedup matches — prevents Josh@x.com and josh@x.com becoming two leads.
+              email: (data.email || '').toLowerCase().trim(),
               phone: data.phone,
               project_type: data.project_type,
               message: data.message,
@@ -531,7 +540,7 @@
               page_url: window.location.href,
               image_urls: data.image_urls || []
             })
-          });
+          }, 15000);
           results.push({ endpoint: 'supabase', success: response.ok, status: response.status });
         } catch (err) {
           results.push({ endpoint: 'supabase', success: false, error: err.message });

@@ -361,15 +361,21 @@ document.getElementById('quote-form')?.addEventListener('submit', async function
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
   try {
+    const _ctrl = new AbortController();
+    const _tid = setTimeout(() => _ctrl.abort(), 15000);
     await fetch(SUPABASE_URL + '/rest/v1/leads', {
       method: 'POST',
+      signal: _ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
       body: JSON.stringify({
-        full_name: data.name, email: data.email, phone: data.phone,
+        full_name: data.name,
+        email: (data.email || '').toLowerCase().trim(),
+        phone: data.phone,
         message: (data.message || '') + (listingTitle ? ' [Listing: ' + listingTitle + ']' : ''),
         source: 'website', form_name: 'marketplace-listing-inquiry', page_url: window.location.href
       })
     });
+    clearTimeout(_tid);
     if (window.SG_notifyNewLead) SG_notifyNewLead({ name: data.name, email: data.email, phone: data.phone, form_name: 'marketplace-listing-inquiry', message: 'Inquiry about: ' + listingTitle });
   } catch (err) { console.log('Submit error:', err); }
 

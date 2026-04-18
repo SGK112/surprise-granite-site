@@ -1311,8 +1311,11 @@
         // Send email notification to seller
         if (currentListing?.sg_users?.email) {
           try {
+            const _remCtrl = new AbortController();
+            setTimeout(() => _remCtrl.abort(), 15000);
             await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
               method: 'POST',
+              signal: _remCtrl.signal,
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 email: currentListing.sg_users.email,

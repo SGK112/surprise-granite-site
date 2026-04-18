@@ -895,18 +895,29 @@
           return;
         }
 
-        // For paid plans, create Stripe checkout
-        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/create-vendor-subscription', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vendor_id: vendorId,
-            plan_name: planName,
-            billing_cycle: billingCycle,
-            success_url: window.location.origin + '/vendor/dashboard/?subscription=success',
-            cancel_url: window.location.origin + '/vendor/select-plan/?canceled=true'
-          })
-        });
+        // For paid plans, create Stripe checkout (30s cap so a hung API doesn't lock the page)
+        const _subCtrl = new AbortController();
+        const _subTid = setTimeout(() => _subCtrl.abort(), 30000);
+        let response;
+        try {
+          response = await fetch('https://surprise-granite-email-api.onrender.com/api/create-vendor-subscription', {
+            method: 'POST',
+            signal: _subCtrl.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vendor_id: vendorId,
+              plan_name: planName,
+              billing_cycle: billingCycle,
+              success_url: window.location.origin + '/vendor/dashboard/?subscription=success',
+              cancel_url: window.location.origin + '/vendor/select-plan/?canceled=true'
+            })
+          });
+        } catch (err) {
+          if (err.name === 'AbortError') throw new Error('Subscription request timed out. Please try again.');
+          throw err;
+        } finally {
+          clearTimeout(_subTid);
+        }
 
         const data = await response.json();
 

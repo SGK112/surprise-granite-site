@@ -1678,7 +1678,8 @@ END:VCALENDAR`;
       try {
         const name = document.getElementById('inputName').value.trim();
         const phone = document.getElementById('inputPhone').value.trim();
-        const email = document.getElementById('inputEmail').value.trim();
+        // Lowercase email so server-side dedup matches.
+        const email = document.getElementById('inputEmail').value.trim().toLowerCase();
         const address = document.getElementById('inputAddress').value.trim();
         const details = document.getElementById('inputDetails').value.trim();
 
@@ -1716,9 +1717,17 @@ END:VCALENDAR`;
           if (error) console.log('Supabase insert error:', error);
         }
 
+        // Helper: fetch with abort timeout so a slow API never freezes the form.
+        const _fwt = (url, opts, ms) => {
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), ms || 20000);
+          return fetch(url, Object.assign({}, opts || {}, { signal: c.signal }))
+            .finally(() => clearTimeout(t));
+        };
+
         // Also submit to /api/leads endpoint
         try {
-          await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+          await _fwt('https://surprise-granite-email-api.onrender.com/api/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1732,7 +1741,7 @@ END:VCALENDAR`;
               appointment_date: appointmentDate,
               appointment_time: selectedTime
             })
-          });
+          }, 20000);
         } catch (e) {
           console.log('API submit error:', e);
         }
@@ -1740,7 +1749,7 @@ END:VCALENDAR`;
         // Sync to CRM with retry
         (function syncCRM(attempt) {
           attempt = attempt || 1;
-          fetch('https://www.voicenowcrm.com/api/surprise-granite/webhook/new-lead', {
+          _fwt('https://www.voicenowcrm.com/api/surprise-granite/webhook/new-lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1751,7 +1760,7 @@ END:VCALENDAR`;
               source: 'Appointment Booking Page',
               message: leadData.message
             })
-          }).then(function(r) {
+          }, 15000).then(function(r) {
             if (!r.ok && attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
           }).catch(function() {
             if (attempt < 3) setTimeout(function() { syncCRM(attempt + 1); }, attempt * 3000);
@@ -1768,7 +1777,7 @@ END:VCALENDAR`;
           if (ampm === 'AM' && hours === 12) hours = 0;
           const time24 = `${hours.toString().padStart(2, '0')}:${minutes}`;
 
-          await fetch('https://surprise-granite-email-api.onrender.com/api/calendar/book', {
+          await _fwt('https://surprise-granite-email-api.onrender.com/api/calendar/book', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1782,7 +1791,7 @@ END:VCALENDAR`;
               address: address,
               notes: details
             })
-          });
+          }, 20000);
         } catch (e) {
           console.log('Local calendar booking error:', e);
         }
@@ -1920,7 +1929,8 @@ END:VCALENDAR`;
       document.getElementById('toStep5').addEventListener('click', () => {
         const name = document.getElementById('inputName').value.trim();
         const phone = document.getElementById('inputPhone').value.trim();
-        const email = document.getElementById('inputEmail').value.trim();
+        // Lowercase email so server-side dedup matches.
+        const email = document.getElementById('inputEmail').value.trim().toLowerCase();
         const address = document.getElementById('inputAddress').value.trim();
 
         if (!name || !phone || !email || !address) {

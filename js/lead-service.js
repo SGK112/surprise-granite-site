@@ -9,13 +9,20 @@
 
   const CRM_WEBHOOK = 'https://www.voicenowcrm.com/api/surprise-granite/webhook/new-lead';
 
+  function fetchWithTimeout(url, options, timeoutMs) {
+    var controller = new AbortController();
+    var t = setTimeout(function() { controller.abort(); }, timeoutMs);
+    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+      .finally(function() { clearTimeout(t); });
+  }
+
   function syncToCRMWithRetry(leadData, attempt) {
     attempt = attempt || 1;
-    fetch(CRM_WEBHOOK, {
+    fetchWithTimeout(CRM_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leadData)
-    }).then(function(r) {
+    }, 15000).then(function(r) {
       if (r.ok) {
         console.log('[LeadService] Lead synced to CRM');
       } else if (attempt < 3) {
@@ -38,23 +45,75 @@
   const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
   const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
+  // Client-side dedup — 5-minute window per (email, form_name). Catches
+  // double-clicks, multi-tab submits, and page-refresh resubmits.
+  // Uses localStorage so it survives tab closes.
+  const DEDUP_WINDOW_MS = 5 * 60 * 1000;
+  const DEDUP_STORE_KEY = 'sg_lead_dedup';
+
+  function loadDedupStore() {
+    try {
+      const raw = localStorage.getItem(DEDUP_STORE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      // GC old entries so the store doesn't grow forever.
+      const cutoff = Date.now() - DEDUP_WINDOW_MS;
+      for (const k of Object.keys(parsed)) {
+        if (!parsed[k] || parsed[k] < cutoff) delete parsed[k];
+      }
+      return parsed;
+    } catch (_) {
+      return {};
+    }
+  }
+  function saveDedupStore(store) {
+    try { localStorage.setItem(DEDUP_STORE_KEY, JSON.stringify(store)); } catch (_) {}
+  }
+  function dedupKey(email, formName) {
+    return `${(email || '').toLowerCase().trim()}|${formName || 'website'}`;
+  }
+  function hasRecentSubmission(email, formName) {
+    if (!email) return false;
+    const store = loadDedupStore();
+    const ts = store[dedupKey(email, formName)];
+    return ts && (Date.now() - ts) < DEDUP_WINDOW_MS;
+  }
+  function markSubmitted(email, formName) {
+    if (!email) return;
+    const store = loadDedupStore();
+    store[dedupKey(email, formName)] = Date.now();
+    saveDedupStore(store);
+  }
+
   /**
    * Submit a lead to Supabase
    * @param {Object} leadData - Lead information
    * @returns {Promise<Object>} - Result with success/error
    */
   async function submitLead(leadData) {
-    // Normalize the data
+    // Normalize the data. Lowercase email so server-side dedup (which lowercases)
+    // matches client-side inserts — otherwise JOSH@x.com and josh@x.com become two leads.
+    const rawEmail = leadData.email || '';
+    const normalizedEmail = rawEmail.toLowerCase().trim();
+    const formName = leadData.formName || leadData.form_name || leadData.source || 'website-form';
+
+    // Bail early if this (email, form) submitted in the last 5 minutes — stops
+    // the double-submit + page-refresh-resubmit pattern from creating dupes.
+    if (hasRecentSubmission(normalizedEmail, formName)) {
+      console.log('[LeadService] Duplicate submission prevented (dedup window):', normalizedEmail, formName);
+      return { success: true, data: null, deduped: true };
+    }
+
     const lead = {
       full_name: leadData.name || leadData.full_name || '',
-      email: leadData.email || '',
+      email: normalizedEmail,
       phone: cleanPhone(leadData.phone || ''),
       project_type: leadData.projectType || leadData.project_type || leadData.service || '',
       timeline: leadData.timeline || '',
       budget: leadData.budget || '',
       message: leadData.message || leadData.notes || '',
       source: 'website',
-      form_name: leadData.formName || leadData.form_name || leadData.source || 'website-form',
+      form_name: formName,
       page_url: leadData.page_url || window.location.href,
       raw_data: leadData
     };
@@ -74,7 +133,7 @@
     }
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+      const response = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +141,7 @@
           'Prefer': 'return=representation'
         },
         body: JSON.stringify(lead)
-      });
+      }, 15000);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -90,6 +149,9 @@
       }
 
       const result = await response.json();
+
+      // Mark as submitted so a rapid retry within the dedup window is blocked.
+      markSubmitted(normalizedEmail, formName);
 
       // Track in analytics if available
       if (window.sgTrackEvent) {
@@ -204,7 +266,11 @@
   // Expose globally
   window.SG_LeadService = {
     submitLead,
-    submitForm
+    submitForm,
+    // Exposed so inline-HTML forms (book/, book-appointment, etc.) can also
+    // gate their direct-to-Supabase inserts behind the same dedup window.
+    hasRecentSubmission,
+    markSubmitted
   };
 
 })();
