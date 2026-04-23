@@ -114,6 +114,7 @@
     .source-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
     .source-store { background: rgba(249,203,0,0.15); color: var(--gold); }
     .source-shopify { background: rgba(150,191,72,0.15); color: #96bf48; }
+    .source-job { background: rgba(59,130,246,0.15); color: #60a5fa; }
 
     /* Loading */
     .loading { text-align: center; padding: 60px; color: var(--text-muted); }
@@ -236,6 +237,7 @@
       <button class="tab-btn active" data-source="all" onclick="switchSource('all')">All<span class="count" id="countAll"></span></button>
       <button class="tab-btn" data-source="store" onclick="switchSource('store')">Store<span class="count" id="countStore"></span></button>
       <button class="tab-btn" data-source="shopify" onclick="switchSource('shopify')">Shopify<span class="count" id="countShopify"></span></button>
+      <button class="tab-btn" data-source="job" onclick="switchSource('job')">Jobs<span class="count" id="countJob"></span></button>
     </div>
 
     <!-- Filters -->
@@ -344,24 +346,42 @@
 
     async function loadOrders() {
       try {
-        // Load from both tables directly via Supabase
-        const [storeRes, shopifyRes] = await Promise.all([
+        // Load online orders + in-person jobs in parallel.
+        // Projects table = jobs that went through estimate/invoice (not ecommerce).
+        const [storeRes, shopifyRes, jobsRes] = await Promise.all([
           db.from('orders').select('*').order('created_at', { ascending: false }).limit(1000),
-          db.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000)
+          db.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000),
+          db.from('projects')
+            .select('id,name,description,status,priority,customer_name,customer_email,customer_phone,address,city,state,zip,value,contract_amount,deposit_amount,balance_due,estimate_id,invoice_id,scheduled_date,completion_date,tracking_number,tracking_carrier,tracking_url,last_customer_update_at,created_at')
+            .order('created_at', { ascending: false }).limit(1000)
         ]);
 
         const storeOrders = (storeRes.data || []).map(o => ({ ...o, _source: 'store' }));
         const shopifyOrders = (shopifyRes.data || []).map(o => ({ ...o, _source: 'shopify' }));
 
-        allOrders = [...storeOrders, ...shopifyOrders].sort((a, b) => {
+        // Normalize projects so they render in the same table as orders.
+        const jobs = (jobsRes.data || []).map(p => ({
+          ...p,
+          _source: 'job',
+          order_number: p.name,                                   // displayed in the Order column
+          total: p.value || p.contract_amount || 0,               // so revenue math works
+          status: p.status || 'pending',                          // reuse same badge system
+          payment_status: p.balance_due && p.balance_due > 0 ? 'unpaid' : 'paid',
+          // items preview: description or project name
+          line_items: p.description ? [{ title: p.description.slice(0, 80) }] : []
+        }));
+
+        allOrders = [...storeOrders, ...shopifyOrders, ...jobs].sort((a, b) => {
           const da = new Date(a.created_at || a.shopify_created_at);
-          const db2 = new Date(b.created_at || b.shopify_created_at);
-          return db2 - da;
+          const dbd = new Date(b.created_at || b.shopify_created_at);
+          return dbd - da;
         });
 
         document.getElementById('countAll').textContent = ` (${allOrders.length})`;
         document.getElementById('countStore').textContent = ` (${storeOrders.length})`;
         document.getElementById('countShopify').textContent = ` (${shopifyOrders.length})`;
+        const jobCountEl = document.getElementById('countJob');
+        if (jobCountEl) jobCountEl.textContent = ` (${jobs.length})`;
 
         applyFilters();
         updateStats();
@@ -520,6 +540,13 @@
     async function viewOrder(orderId, source) {
       const order = allOrders.find(o => o.id === orderId);
       if (!order) return;
+
+      // Jobs live in the account dashboard — hand off there so status/tracking
+      // edits use the full project modal (with customer update + invoice links).
+      if (source === 'job') {
+        window.location.href = '/account/?project=' + encodeURIComponent(orderId);
+        return;
+      }
 
       const items = getOrderItems(order);
       const shipping = order.shipping_address || {};

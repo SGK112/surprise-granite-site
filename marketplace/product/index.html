@@ -3141,24 +3141,50 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       const estimateProduct = document.getElementById('estimate-product');
       if (estimateProduct) estimateProduct.value = title;
 
-      // Update Order Sample button — add to own cart
+      // Update Order Sample button — add to own cart.
+      // Samples are OFFERED by default (quartz, marble, quartzite, dekton, etc.).
+      // Samples are NOT OFFERED when:
+      //   1. Material is granite — we never sample granite.
+      //   2. Product is explicitly flagged: tag `no-sample`/`no-samples`/`samples-unavailable`,
+      //      or `no_sample: true` / `has_sample: false` in the product record.
+      //      (Use this for specific tile SKUs without samples.)
       const sampleBtn = document.getElementById('btn-order-sample');
-      if (sampleBtn && window.SgCart) {
-        sampleBtn.href = 'javascript:void(0)';
-        sampleBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          window.SgCart.addToCart({
-            id: product.handle || product.id,
-            name: title + ' (Sample)',
-            price: parseFloat(product.variants?.[0]?.price) || 0,
-            image: (product.images && product.images[0]) || '',
-            quantity: 1,
-            variant: 'Sample',
-            category: category || '',
-            href: window.location.href
+      const tags = Array.isArray(product.tags) ? product.tags.map(t => String(t).toLowerCase()) : [];
+      const isGranite = /granite/i.test(material || '')
+        || /granite/i.test(product.productType || '')
+        || /granite/i.test(product.type || '')
+        || /\bgranite\b/i.test(title || '')
+        || tags.some(t => /granite/.test(t));
+      // Cambria — samples and pricing pulled site-wide (2026-04-22).
+      const isCambria = /cambria/i.test(product.brand || '')
+        || /cambria/i.test(product.vendor || '')
+        || /cambria/i.test(product.brandDisplay || '')
+        || /\bcambria\b/i.test(title || '')
+        || tags.some(t => /cambria/.test(t));
+      const sampleBlockedByFlag = product.no_sample === true
+        || product.has_sample === false
+        || product.samples_available === false
+        || tags.some(t => ['no-sample','no-samples','no_sample','samples-unavailable','no_samples'].includes(t));
+      if (sampleBtn) {
+        if (isGranite || isCambria || sampleBlockedByFlag) {
+          sampleBtn.style.display = 'none';
+        } else if (window.SgCart) {
+          sampleBtn.href = 'javascript:void(0)';
+          sampleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.SgCart.addToCart({
+              id: product.handle || product.id,
+              name: title + ' (Sample)',
+              price: parseFloat(product.variants?.[0]?.price) || 0,
+              image: (product.images && product.images[0]) || '',
+              quantity: 1,
+              variant: 'Sample',
+              category: category || '',
+              href: window.location.href
+            });
+            if (window.openCartDrawer) window.openCartDrawer();
           });
-          if (window.openCartDrawer) window.openCartDrawer();
-        });
+        }
       }
 
       // --- Add to Cart for purchasable products ---

@@ -53,6 +53,40 @@ button, .btn, .btn-modern, .toolbar-btn, .nav-item, .filter-pill, .view-btn {
 /* Smooth scroll behavior */
 html {
       scroll-behavior: smooth;
+      /* Kill horizontal slide on iPhone — any child overflow stays contained.
+         Before this, any element wider than viewport dragged the whole page sideways. */
+      overflow-x: hidden;
+      max-width: 100vw;
+      -webkit-text-size-adjust: 100%;
+}
+
+body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      /* Prevent iOS pull-to-refresh fighting with internal scrolling */
+      overscroll-behavior-y: contain;
+}
+
+/* iOS: make every interactive element actually respond to taps.
+   Without this, buttons inside modals sometimes require a long-press
+   because Safari treats the 300ms click delay + tap-highlight as a gesture. */
+button, .btn-modern, .btn, [onclick], a[role="button"], input[type="submit"] {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+}
+
+/* Hard stop on anything that tries to be wider than the screen on mobile */
+@media (max-width: 768px) {
+      .modal-overlay,
+      .modal,
+      .modal-body,
+      .page-content,
+      main,
+      .main-content {
+            max-width: 100vw;
+      }
+      /* Forms default to their container width — no sideways overflow */
+      .modal form { max-width: 100%; }
 }
 
 /* Focus visible styling for accessibility */

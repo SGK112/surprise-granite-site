@@ -15,6 +15,58 @@
     let userProfile = null;
     let isAdmin = false;
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Global double-submit guard.
+    //
+    // iPhone Safari fires two click events on a single tap when the handler
+    // is slow to disable the button (the tap lands before the JS disables it,
+    // then a queued second tap lands because Safari retries on :active).
+    // Result we saw in prod: duplicate leads and duplicate estimates.
+    //
+    // This intercepts <form onsubmit=...> at the document level and:
+    //   1) rejects any submit that arrives within 1500ms of the last one,
+    //   2) marks the form with data-submitting while the handler runs,
+    //   3) clears the flag when the returned promise resolves or rejects.
+    //
+    // Handlers don't need to change — this runs before their code.
+    // ═══════════════════════════════════════════════════════════════════════
+    (function installSubmitGuard(){
+      if (window.__sg_submit_guard_installed) return;
+      window.__sg_submit_guard_installed = true;
+      document.addEventListener('submit', function(ev){
+        const form = ev.target;
+        if (!form || form.tagName !== 'FORM') return;
+        const now = Date.now();
+        const last = Number(form.dataset.lastSubmit || 0);
+        if (form.dataset.submitting === '1' || (now - last) < 1500) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          console.warn('[submit-guard] blocked duplicate submit on', form.id || form.name || form);
+          return false;
+        }
+        form.dataset.submitting = '1';
+        form.dataset.lastSubmit = String(now);
+        // Clear the flag on the next tick — handlers that call preventDefault
+        // keep their disabled button; async handlers will finish and re-enable.
+        setTimeout(() => { delete form.dataset.submitting; }, 1500);
+      }, true); // capture phase — runs before the form's onsubmit handler
+    })();
+
+    // Same logic for non-form action buttons like "Send", "Convert to Invoice",
+    // "Mark Paid" etc. — they're <button onclick=...> outside a form.
+    // Call sgTapGuard(btn, handler) wrapping to dedupe double-taps on iOS.
+    window.sgTapGuard = function(el, fn) {
+      if (!el || el.__sgGuarded) return;
+      el.__sgGuarded = true;
+      let busy = false;
+      el.addEventListener('click', async function(e){
+        if (busy) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+        busy = true;
+        try { await fn.call(el, e); }
+        finally { setTimeout(() => { busy = false; }, 800); }
+      });
+    };
+
     // Helper: get current user — NO Supabase auth calls (they deadlock with auto-refresh lock)
     // Uses the in-memory currentUser which is set on page load and updated by onAuthStateChange
     function getAuthUser() {
@@ -17956,11 +18008,16 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 Schedule
               </button>
-              ${estimate.status === 'draft' ? `
-                <button class="btn-modern primary small" onclick="sendEstimate('${estimate.id}')">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                  Send
+              ${!estimate.converted_to_invoice_id ? `
+                <button class="btn-modern primary small" onclick="event.stopPropagation(); sendEstimate('${estimate.id}')" title="Email the estimate (or re-send)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  ${estimate.status === 'sent' ? 'Re-send' : 'Send'} Email
                 </button>
+                ${estimate.customer_phone ? `
+                <button class="btn-modern secondary small" onclick="event.stopPropagation(); sendEstimateSMS('${estimate.id}')" title="Text the estimate link to the customer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  Send SMS
+                </button>` : ''}
               ` : ''}
               ${estimate.converted_to_invoice_id ? `
                 <button class="btn-modern secondary small" onclick="viewSupabaseInvoice('${estimate.converted_to_invoice_id}')" style="color: #22c55e;">
@@ -19000,10 +19057,18 @@
             customerCity: document.getElementById('estimate-customer-city').value.trim(),
             customerState: document.getElementById('estimate-customer-state').value.trim()
           };
-          const newCustomer = await createCustomerFromEstimateForm(formData);
-          if (newCustomer) {
-            customerId = newCustomer.id;
-            console.log('[Estimate] Auto-created customer:', customerId);
+          try {
+            const newCustomer = await withTimeout(
+              createCustomerFromEstimateForm(formData),
+              10000,
+              'Customer auto-create timed out'
+            );
+            if (newCustomer) {
+              customerId = newCustomer.id;
+              console.log('[Estimate] Auto-created customer:', customerId);
+            }
+          } catch (custErr) {
+            console.warn('[Estimate] Customer auto-create failed, continuing:', custErr.message);
           }
         }
 
@@ -19068,7 +19133,12 @@
           if (updated) syncEstimateToCRM(updated);
 
           // Replace line items: delete old, insert new
-          await supabaseClient.from('estimate_items').delete().eq('estimate_id', isEditing);
+          const { error: delItemsErr } = await withTimeout(
+            supabaseClient.from('estimate_items').delete().eq('estimate_id', isEditing),
+            15000,
+            'Line items delete timed out'
+          );
+          if (delItemsErr) throw delItemsErr;
         } else {
           // INSERT new estimate
           console.log('[Estimate] Inserting estimate with data:', JSON.stringify(estimateData, null, 2));
@@ -19139,7 +19209,11 @@
 
         // Close modal and refresh list
         closeCreateEstimateModal();
-        await loadEstimates();
+        try {
+          await withTimeout(loadEstimates(), 15000, 'Reload timed out');
+        } catch (reloadErr) {
+          console.warn('[Estimate] loadEstimates after save:', reloadErr.message);
+        }
 
         if (isEditing) {
           showToast('Estimate updated successfully!', 'success');
@@ -19375,22 +19449,28 @@
     async function sendEstimate(estimateId) {
       if (!confirm('Send this estimate to the customer?')) return;
 
-      // Show loading state
-      const btn = event?.target || document.querySelector(`button[onclick*="sendEstimate('${estimateId}')"]`);
+      // iPhone: event.target can be the SVG child of the button, not the button itself.
+      // closest('button') normalizes to the actual button so disabled/innerHTML work.
+      const btn = (typeof event !== 'undefined' && event?.target?.closest?.('button'))
+        || document.querySelector(`button[onclick*="sendEstimate('${estimateId}')"]`);
       const originalText = btn?.innerHTML;
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '⏳ Sending...';
+        btn.innerHTML = '⏳ Sending…';
       }
-      showToast('Preparing estimate...', 'info');
+      showToast('Preparing estimate…', 'info');
 
       try {
         // Fetch estimate with items
-        const { data: estimate, error: fetchErr } = await supabaseClient
-          .from('estimates')
-          .select('*, estimate_items(*)')
-          .eq('id', estimateId)
-          .single();
+        const { data: estimate, error: fetchErr } = await withTimeout(
+          supabaseClient
+            .from('estimates')
+            .select('*, estimate_items(*)')
+            .eq('id', estimateId)
+            .single(),
+          15000,
+          'Estimate fetch timed out'
+        );
 
         if (fetchErr) throw fetchErr;
 
@@ -19399,22 +19479,19 @@
           return;
         }
 
-        // Update status to sent
-        const { error: sentErr } = await supabaseClient
-          .from('estimates')
-          .update({ status: 'sent', sent_at: new Date().toISOString() })
-          .eq('id', estimateId);
-        if (sentErr) throw sentErr;
-
-        // Generate token
+        // Generate token up front (email needs the view link)
         const token = crypto.randomUUID();
-        const { error: tokenErr } = await supabaseClient
-          .from('estimate_tokens')
-          .insert([{
-            estimate_id: estimateId,
-            token: token,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          }]);
+        const { error: tokenErr } = await withTimeout(
+          supabaseClient
+            .from('estimate_tokens')
+            .insert([{
+              estimate_id: estimateId,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }]),
+          15000,
+          'Token creation timed out'
+        );
         if (tokenErr) throw tokenErr;
 
         const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
@@ -19465,20 +19542,18 @@
         }
 
         // Try to send email via API with timeout
+        let emailDelivered = false;
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
           const response = await fetchWithTimeout(SG_API_BASE + '/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
             body: JSON.stringify(emailData)
-          });
-          clearTimeout(timeout);
+          }, 15000);
 
           const result = await response.json();
 
           if (response.ok && result.success) {
+            emailDelivered = true;
             showToast(result.pdf_attached ? 'Estimate sent with PDF!' : 'Estimate sent!');
 
             // Send SMS notification (email already sent by API)
@@ -19492,7 +19567,7 @@
           }
         } catch (emailErr) {
           console.log('Email API error:', emailErr.message);
-          // Fallback to email client
+          // Fallback to email client — user must complete the send manually.
           const subject = encodeURIComponent(`Your Estimate from ${businessSettings?.company_name || 'Surprise Granite'}`);
           const body = encodeURIComponent(
             `Hi ${estimate.customer_name},\n\n` +
@@ -19500,10 +19575,25 @@
             `Thank you,\n${businessSettings?.company_name || 'Surprise Granite'}`
           );
           window.open(`mailto:${estimate.customer_email}?subject=${subject}&body=${body}`);
-          showToast('Email client opened with estimate link');
+          showToast('Email server unavailable — sending via your email client. Estimate will stay pending until re-sent from the list.', 'warning');
         }
 
-        await loadEstimates();
+        // Only mark as 'sent' if the email API confirmed delivery.
+        // Mailto fallback can't be verified, so leave the estimate in its prior state
+        // and let the user retry from the list — no phantom "sent" status.
+        if (emailDelivered) {
+          const { error: sentErr } = await withTimeout(
+            supabaseClient
+              .from('estimates')
+              .update({ status: 'sent', sent_at: new Date().toISOString() })
+              .eq('id', estimateId),
+            15000,
+            'Estimate status update timed out'
+          );
+          if (sentErr) console.warn('[sendEstimate] status update failed:', sentErr.message);
+        }
+
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates after send:', e.message); }
       } catch (err) {
         console.error('Send estimate error:', err);
         showToast('Error sending estimate: ' + err.message, 'error');
@@ -19516,16 +19606,128 @@
       }
     }
 
-    async function editEstimate(estimateId) {
+    // Send an estimate to the customer as an SMS with a view-link.
+    // Mirrors sendEstimate but via /api/sms/send on the main backend.
+    // Falls back to opening the native SMS composer (sms: URL) if the API is unreachable,
+    // so the user can always get the message out.
+    async function sendEstimateSMS(estimateId) {
+      if (!confirm('Text this estimate to the customer?')) return;
+
+      const btn = (typeof event !== 'undefined' && event?.target?.closest?.('button')) || null;
+      const originalText = btn?.innerHTML;
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Sending…'; }
+
       try {
-        const { data: estimate, error } = await supabaseClient
-          .from('estimates')
-          .select('*, estimate_items(*)')
-          .eq('id', estimateId)
-          .single();
+        const { data: estimate, error: fetchErr } = await withTimeout(
+          supabaseClient.from('estimates').select('*').eq('id', estimateId).single(),
+          15000, 'Estimate fetch timed out'
+        );
+        if (fetchErr) throw fetchErr;
+        if (!estimate.customer_phone) { showToast('No customer phone on this estimate', 'warning'); return; }
+
+        // Reuse an existing live token if we have one so we don't keep
+        // minting new links (and new DB rows) every time the user re-sends.
+        let token;
+        try {
+          const { data: existing, error: lookupErr } = await withTimeout(
+            supabaseClient.from('estimate_tokens').select('token,expires_at')
+              .eq('estimate_id', estimateId)
+              .gte('expires_at', new Date().toISOString())
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single(),
+            10000, 'token lookup timed out'
+          );
+          // PGRST116 = "0 rows returned" — that's fine, we'll mint one below.
+          // Anything else gets logged so it isn't swallowed silently.
+          if (lookupErr && lookupErr.code !== 'PGRST116') {
+            console.warn('[sendEstimateSMS] token lookup warning:', lookupErr.message);
+          }
+          if (existing?.token) token = existing.token;
+        } catch (lookupErr) {
+          console.warn('[sendEstimateSMS] token lookup failed, will mint fresh:', lookupErr.message);
+        }
+
+        if (!token) {
+          token = crypto.randomUUID();
+          const { error: tokErr } = await withTimeout(
+            supabaseClient.from('estimate_tokens').insert([{
+              estimate_id: estimateId,
+              token,
+              expires_at: new Date(Date.now() + 30 * 86400000).toISOString()
+            }]),
+            10000, 'Token creation timed out'
+          );
+          if (tokErr) throw tokErr;
+        }
+
+        const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
+        const biz = businessSettings?.company_name || 'Surprise Granite';
+        const msg = `Hi ${estimate.customer_name || 'there'}, here's your estimate${estimate.estimate_number ? ' ' + estimate.estimate_number : ''} from ${biz}: ${viewLink}`;
+
+        let delivered = false;
+        let apiErr = null;
+        try {
+          const res = await fetchWithTimeout(SG_API_BASE + '/api/sms/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: estimate.customer_phone,
+              body: msg,
+              estimate_id: estimateId
+            })
+          }, 15000);
+          let json = {};
+          try {
+            json = await res.json();
+          } catch (parseErr) {
+            // Non-JSON response body (HTML error page, empty 204, etc.).
+            // Don't hide it — surface to the caller via apiErr.
+            apiErr = 'SMS API returned non-JSON (' + parseErr.message + ', HTTP ' + res.status + ')';
+          }
+          if (!apiErr && res.ok && (json.success || json.sid || json.delivered)) {
+            delivered = true;
+          } else if (!apiErr) {
+            apiErr = (json && json.error) || ('HTTP ' + res.status);
+          }
+        } catch (e) { apiErr = e.message; }
+
+        if (delivered) {
+          showToast('Text sent to ' + estimate.customer_phone, 'success');
+        } else {
+          // Fallback: open the phone's native SMS app pre-filled. The user
+          // still has to tap Send in their messages app, but nothing is dropped.
+          // We surface the *actual* reason so no failure is hidden.
+          const reason = /404|not found|endpoint/i.test(apiErr || '')
+            ? 'automated SMS not wired up yet'
+            : (apiErr || 'unknown');
+          const smsHref = `sms:${encodeURIComponent(estimate.customer_phone)}?&body=${encodeURIComponent(msg)}`;
+          window.location.href = smsHref;
+          showToast('Opening your phone\'s text app (' + reason + '). Tap Send there to deliver.', 'warning');
+        }
+      } catch (err) {
+        console.error('[sendEstimateSMS]', err);
+        showToast('Could not send SMS: ' + err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText || 'Send SMS'; }
+      }
+    }
+
+    async function editEstimate(estimateId) {
+      showToast('Loading estimate…', 'info');
+      try {
+        const { data: estimate, error } = await withTimeout(
+          supabaseClient
+            .from('estimates')
+            .select('*, estimate_items(*)')
+            .eq('id', estimateId)
+            .single(),
+          15000,
+          'Estimate load timed out — check your connection'
+        );
 
         if (error || !estimate) {
-          showToast('Could not load estimate for editing', 'error');
+          showToast('Could not load estimate: ' + (error?.message || 'not found'), 'error');
           return;
         }
 
@@ -19670,44 +19872,46 @@
       if (!confirm('Delete this draft estimate?')) return;
 
       try {
-        await supabaseClient.from('estimates').delete().eq('id', estimateId);
-        await loadEstimates();
+        const { error } = await withTimeout(
+          supabaseClient.from('estimates').delete().eq('id', estimateId),
+          15000, 'Delete timed out'
+        );
+        if (error) throw error;
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates:', e.message); }
         showToast('Estimate deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
-        showToast('Error deleting estimate', 'error');
+        showToast('Error deleting estimate: ' + err.message, 'error');
       }
     }
 
     async function archiveEstimate(estimateId) {
       try {
-        const { error } = await supabaseClient
-          .from('estimates')
-          .update({ archived_at: new Date().toISOString() })
-          .eq('id', estimateId);
-
+        const { error } = await withTimeout(
+          supabaseClient.from('estimates').update({ archived_at: new Date().toISOString() }).eq('id', estimateId),
+          15000, 'Archive timed out'
+        );
         if (error) throw error;
-        await loadEstimates();
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates:', e.message); }
         showToast('Estimate archived');
       } catch (err) {
         console.error('Archive estimate error:', err);
-        showToast('Error archiving estimate', 'error');
+        showToast('Error archiving estimate: ' + err.message, 'error');
       }
     }
 
     async function unarchiveEstimate(estimateId) {
       try {
-        const { error } = await supabaseClient
-          .from('estimates')
-          .update({ archived_at: null })
-          .eq('id', estimateId);
-
+        const { error } = await withTimeout(
+          supabaseClient.from('estimates').update({ archived_at: null }).eq('id', estimateId),
+          15000, 'Unarchive timed out'
+        );
         if (error) throw error;
-        await loadEstimates();
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates:', e.message); }
         showToast('Estimate restored');
       } catch (err) {
         console.error('Unarchive estimate error:', err);
-        showToast('Error restoring estimate', 'error');
+        showToast('Error restoring estimate: ' + err.message, 'error');
       }
     }
 
@@ -19715,25 +19919,30 @@
       if (!confirm('Permanently delete this estimate? This cannot be undone.')) return;
 
       try {
-        // Delete line items first
-        await supabaseClient.from('estimate_items').delete().eq('estimate_id', estimateId);
-        // Delete the estimate
-        await supabaseClient.from('estimates').delete().eq('id', estimateId);
-        await loadEstimates();
+        const { error: itemsErr } = await withTimeout(
+          supabaseClient.from('estimate_items').delete().eq('estimate_id', estimateId),
+          15000, 'Items delete timed out'
+        );
+        if (itemsErr) throw itemsErr;
+        const { error: estErr } = await withTimeout(
+          supabaseClient.from('estimates').delete().eq('id', estimateId),
+          15000, 'Estimate delete timed out'
+        );
+        if (estErr) throw estErr;
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates:', e.message); }
         showToast('Estimate permanently deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
-        showToast('Error deleting estimate', 'error');
+        showToast('Error deleting estimate: ' + err.message, 'error');
       }
     }
 
     async function duplicateEstimate(estimateId) {
       try {
-        const { data: original } = await supabaseClient
-          .from('estimates')
-          .select('*, estimate_items(*)')
-          .eq('id', estimateId)
-          .single();
+        const { data: original } = await withTimeout(
+          supabaseClient.from('estimates').select('*, estimate_items(*)').eq('id', estimateId).single(),
+          15000, 'Source fetch timed out'
+        );
 
         if (!original) throw new Error('Estimate not found');
 
@@ -19750,7 +19959,8 @@
           customer_state: original.customer_state,
           customer_zip: original.customer_zip,
           project_name: original.project_name ? original.project_name + ' (Copy)' : null,
-          description: original.description,
+          project_description: original.project_description,
+          project_type: original.project_type,
           valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           subtotal: original.subtotal,
           tax_rate: original.tax_rate,
@@ -19762,17 +19972,22 @@
           deposit_percent: original.deposit_percent,
           deposit_amount: original.deposit_amount,
           payment_terms: original.payment_terms,
+          terms_conditions: original.terms_conditions,
+          inclusions: original.inclusions,
+          exclusions: original.exclusions,
+          estimated_timeline: original.estimated_timeline,
           warranty_terms: original.warranty_terms,
           notes: original.notes,
           internal_notes: original.internal_notes,
+          customer_id: original.customer_id,
+          lead_id: original.lead_id,
           status: 'draft'
         };
 
-        const { data: newEst, error } = await supabaseClient
-          .from('estimates')
-          .insert([newEstimate])
-          .select()
-          .single();
+        const { data: newEst, error } = await withTimeout(
+          supabaseClient.from('estimates').insert([newEstimate]).select().single(),
+          15000, 'Duplicate insert timed out'
+        );
 
         if (error) throw error;
 
@@ -19782,20 +19997,28 @@
             estimate_id: newEst.id,
             name: item.name,
             description: item.description,
-            unit_type: item.unit,
+            unit_type: item.unit_type,
             quantity: item.quantity,
             unit_price: item.unit_price,
-            total: item.total
+            total: item.total,
+            category: item.category
           }));
 
-          await supabaseClient.from('estimate_items').insert(items);
+          try {
+            await withTimeout(
+              supabaseClient.from('estimate_items').insert(items),
+              15000, 'Items copy timed out'
+            );
+          } catch (itemsErr) {
+            console.warn('[duplicateEstimate] items insert failed:', itemsErr.message);
+          }
         }
 
-        await loadEstimates();
+        try { await withTimeout(loadEstimates(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadEstimates:', e.message); }
         showToast('Estimate duplicated!');
       } catch (err) {
         console.error('Duplicate estimate error:', err);
-        showToast('Error duplicating estimate', 'error');
+        showToast('Error duplicating estimate: ' + err.message, 'error');
       }
     }
 
@@ -19911,15 +20134,28 @@
       }, 300);
     }
 
-    async function convertToInvoice(estimateId) {
+    async function convertToInvoice(estimateId, opts = {}) {
+      // opts.alsoCreateProject — bool, default: ask the user
       if (!confirm('Convert this estimate to an invoice?')) return;
 
+      const createProjectToo = opts.alsoCreateProject
+        ?? confirm('Also start a job (project) from this estimate? You can track schedule, installer, and customer updates in one place.');
+
+      // Resolve the actual <button> even when event.target is the SVG child (iPhone).
+      const convertBtn = (typeof event !== 'undefined' && event?.target?.closest?.('button')) || null;
+      const convertBtnOriginal = convertBtn?.innerHTML;
+      if (convertBtn) { convertBtn.disabled = true; convertBtn.innerHTML = '⏳ Converting…'; }
+
       try {
-        const { data: estimate } = await supabaseClient
-          .from('estimates')
-          .select('*, estimate_items(*)')
-          .eq('id', estimateId)
-          .single();
+        const { data: estimate } = await withTimeout(
+          supabaseClient
+            .from('estimates')
+            .select('*, estimate_items(*)')
+            .eq('id', estimateId)
+            .single(),
+          15000,
+          'Estimate fetch timed out'
+        );
 
         if (!estimate) throw new Error('Estimate not found');
 
@@ -19937,60 +20173,197 @@
         const random = Math.random().toString(36).substring(2, 5).toUpperCase();
         const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
-        // Create invoice - only use columns that definitely exist
+        // Carry EVERY relevant field from the estimate onto the invoice so nothing is lost.
+        const total = Number(estimate.total) || 0;
+        const depositAmount = Number(estimate.deposit_amount) || 0;
         const invoiceData = {
           user_id: user.id,
           invoice_number: invoiceNumber,
+          estimate_id: estimateId,
+          customer_id: estimate.customer_id || null,
+          lead_id: estimate.lead_id || null,
           customer_name: estimate.customer_name || 'Customer',
-          customer_email: estimate.customer_email,
+          customer_email: estimate.customer_email || null,
           customer_phone: estimate.customer_phone || null,
-          total: estimate.total,
+          customer_address: estimate.customer_address || null,
+          customer_city: estimate.customer_city || null,
+          customer_state: estimate.customer_state || null,
+          customer_zip: estimate.customer_zip || null,
+          project_name: estimate.project_name || null,
+          project_description: estimate.project_description || null,
+          project_type: estimate.project_type || null,
+          subtotal: Number(estimate.subtotal) || total,
+          tax_rate: Number(estimate.tax_rate) || 0,
+          tax_amount: Number(estimate.tax_amount) || 0,
+          discount_type: estimate.discount_type || null,
+          discount_value: Number(estimate.discount_value) || 0,
+          discount_amount: Number(estimate.discount_amount) || 0,
+          total: total,
+          amount_due: total,
           amount_paid: 0,
           status: 'sent',
-          notes: estimate.notes || null
+          notes: estimate.notes || null,
+          internal_notes: estimate.internal_notes || null,
+          terms_conditions: estimate.terms_conditions || null,
+          inclusions: estimate.inclusions || null,
+          exclusions: estimate.exclusions || null,
+          estimated_timeline: estimate.estimated_timeline || null,
+          warranty_terms: estimate.warranty_terms || null,
+          due_date: estimate.valid_until || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         };
 
-        // Add optional columns that likely exist
-        try {
-          invoiceData.subtotal = estimate.subtotal || estimate.total;
-          invoiceData.due_date = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          if (estimate.customer_id) invoiceData.customer_id = estimate.customer_id;
-          if (estimateId) invoiceData.estimate_id = estimateId;
-        } catch (e) {
-          console.warn('[Invoices] Some optional fields may not exist');
+        if (depositAmount > 0) {
+          invoiceData.deposit_requested = depositAmount;
+          invoiceData.deposit_percent = Number(estimate.deposit_percent) || null;
         }
 
-        const { data: invoice, error } = await supabaseClient
-          .from('invoices')
-          .insert([invoiceData])
-          .select()
-          .single();
+        // Try the full insert first. If the schema rejects an optional column,
+        // strip unknown fields and retry so data loss is minimized, not total.
+        let invoice;
+        let insertErr;
+        {
+          const first = await withTimeout(
+            supabaseClient.from('invoices').insert([invoiceData]).select().single(),
+            15000,
+            'Invoice creation timed out'
+          );
+          invoice = first.data;
+          insertErr = first.error;
+        }
 
-        if (error) throw error;
+        if (insertErr && /column|schema|does not exist/i.test(insertErr.message || '')) {
+          // Schema is missing one of the rich columns (migration 012 not yet run).
+          // Pack the lost fields into notes so NOTHING is dropped from the invoice.
+          console.warn('[ConvertToInvoice] Full insert rejected, retrying with safe columns + notes merge:', insertErr.message);
+          const extras = [];
+          if (estimate.project_description) extras.push('Project: ' + estimate.project_description);
+          if (estimate.project_type) extras.push('Project type: ' + estimate.project_type);
+          if (estimate.estimated_timeline) extras.push('Timeline: ' + estimate.estimated_timeline);
+          if (estimate.inclusions) extras.push('Includes:\n' + estimate.inclusions);
+          if (estimate.exclusions) extras.push('Excludes:\n' + estimate.exclusions);
+          if (estimate.terms_conditions) extras.push('Terms:\n' + estimate.terms_conditions);
+          if (estimate.warranty_terms) extras.push('Warranty:\n' + estimate.warranty_terms);
+          if (estimate.internal_notes) extras.push('Internal: ' + estimate.internal_notes);
+          const mergedNotes = [invoiceData.notes, extras.join('\n\n')].filter(Boolean).join('\n\n---\n\n');
 
-        // Copy line items to invoice
+          const core = {
+            user_id: invoiceData.user_id,
+            invoice_number: invoiceData.invoice_number,
+            estimate_id: invoiceData.estimate_id,
+            customer_id: invoiceData.customer_id,
+            lead_id: invoiceData.lead_id,
+            customer_name: invoiceData.customer_name,
+            customer_email: invoiceData.customer_email,
+            customer_phone: invoiceData.customer_phone,
+            customer_address: invoiceData.customer_address,
+            customer_city: invoiceData.customer_city,
+            customer_state: invoiceData.customer_state,
+            customer_zip: invoiceData.customer_zip,
+            project_name: invoiceData.project_name,
+            subtotal: invoiceData.subtotal,
+            tax_rate: invoiceData.tax_rate,
+            tax_amount: invoiceData.tax_amount,
+            discount_type: invoiceData.discount_type,
+            discount_value: invoiceData.discount_value,
+            discount_amount: invoiceData.discount_amount,
+            total: invoiceData.total,
+            amount_due: invoiceData.amount_due,
+            amount_paid: 0,
+            status: 'sent',
+            notes: mergedNotes || null,
+            due_date: invoiceData.due_date
+          };
+          if (depositAmount > 0) {
+            core.deposit_requested = depositAmount;
+            core.deposit_percent = invoiceData.deposit_percent;
+          }
+          const retry = await withTimeout(
+            supabaseClient.from('invoices').insert([core]).select().single(),
+            15000,
+            'Invoice creation timed out (retry)'
+          );
+          invoice = retry.data;
+          insertErr = retry.error;
+        }
+
+        if (insertErr) throw insertErr;
+        if (!invoice) throw new Error('Invoice insert returned no row (check RLS policy)');
+
+        // Copy line items to invoice — include category when schema has it
         if (estimate.estimate_items && estimate.estimate_items.length > 0) {
-          const items = estimate.estimate_items.map(item => ({
-            invoice_id: invoice.id,
-            name: item.name,
-            description: item.description,
-            unit_type: item.unit_type,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total: item.total
-          }));
+          const buildItems = (withCategory) => estimate.estimate_items.map(item => {
+            const row = {
+              invoice_id: invoice.id,
+              name: item.name,
+              description: item.description,
+              unit_type: item.unit_type,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total: item.total
+            };
+            if (withCategory && item.category) row.category = item.category;
+            return row;
+          });
 
-          await supabaseClient.from('invoice_items').insert(items);
+          let itemsErr;
+          try {
+            const res = await withTimeout(
+              supabaseClient.from('invoice_items').insert(buildItems(true)),
+              15000,
+              'Invoice items insert timed out'
+            );
+            itemsErr = res?.error;
+          } catch (e) { itemsErr = e; }
+
+          if (itemsErr && /category|column|does not exist/i.test(itemsErr.message || '')) {
+            console.warn('[ConvertToInvoice] items insert rejected category, retrying without:', itemsErr.message);
+            try {
+              await withTimeout(
+                supabaseClient.from('invoice_items').insert(buildItems(false)),
+                15000,
+                'Invoice items insert timed out (retry)'
+              );
+            } catch (e2) {
+              console.warn('[ConvertToInvoice] invoice_items insert failed:', e2.message);
+            }
+          } else if (itemsErr) {
+            console.warn('[ConvertToInvoice] invoice_items insert failed:', itemsErr.message);
+          }
         }
 
         // Update estimate status
-        const { error: convertErr } = await supabaseClient
-          .from('estimates')
-          .update({ status: 'converted', converted_to_invoice_id: invoice.id })
-          .eq('id', estimateId);
+        const { error: convertErr } = await withTimeout(
+          supabaseClient
+            .from('estimates')
+            .update({ status: 'converted', converted_to_invoice_id: invoice.id })
+            .eq('id', estimateId),
+          15000,
+          'Estimate status update timed out'
+        );
         if (convertErr) throw convertErr;
 
-        // Optionally create Stripe invoice for payment processing (non-blocking)
+        // Create a shareable invoice_tokens row so /invoice/view/ can render it.
+        // Without this, the customer-facing link 404s.
+        const invoiceToken = crypto.randomUUID();
+        try {
+          const { error: tokErr } = await withTimeout(
+            supabaseClient.from('invoice_tokens').insert([{
+              invoice_id: invoice.id,
+              token: invoiceToken,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              created_by: user.id
+            }]),
+            10000,
+            'Invoice token creation timed out'
+          );
+          if (tokErr) throw tokErr;
+          window._lastInvoiceViewUrl = `${window.location.origin}/invoice/view/?token=${invoiceToken}`;
+        } catch (tokErr) {
+          console.error('[ConvertToInvoice] Invoice token insert failed:', tokErr.message);
+          showToast('Invoice created but share link failed — open invoice from the list to retry.', 'warning');
+        }
+
+        // Optionally create Stripe invoice for payment processing (non-blocking, short timeout)
         try {
           const stripeItems = (estimate.estimate_items || []).map(item => ({
             description: item.name || item.description,
@@ -19999,30 +20372,38 @@
           }));
 
           if (stripeItems.length > 0 && estimate.customer_email) {
-            const response = await apiCall('/api/invoices', {
-              method: 'POST',
-              body: JSON.stringify({
-                customer_email: estimate.customer_email,
-                customer_name: estimate.customer_name,
-                customer_phone: estimate.customer_phone,
-                items: stripeItems,
-                due_days: 30,
-                notes: estimate.notes || '',
-                auto_send: false
-              })
-            });
+            const response = await withTimeout(
+              apiCall('/api/invoices', {
+                method: 'POST',
+                body: JSON.stringify({
+                  customer_email: estimate.customer_email,
+                  customer_name: estimate.customer_name,
+                  customer_phone: estimate.customer_phone,
+                  items: stripeItems,
+                  due_days: 30,
+                  notes: estimate.notes || '',
+                  auto_send: false
+                })
+              }),
+              10000,
+              'Stripe invoice API timed out'
+            );
 
             if (response.ok) {
               const stripeData = await response.json();
               if (stripeData.invoice?.id) {
-                await supabaseClient
-                  .from('invoices')
-                  .update({
-                    stripe_invoice_id: stripeData.invoice.id,
-                    stripe_hosted_url: stripeData.invoice.hosted_invoice_url,
-                    stripe_pdf_url: stripeData.invoice.pdf
-                  })
-                  .eq('id', invoice.id);
+                await withTimeout(
+                  supabaseClient
+                    .from('invoices')
+                    .update({
+                      stripe_invoice_id: stripeData.invoice.id,
+                      stripe_hosted_url: stripeData.invoice.hosted_invoice_url,
+                      stripe_pdf_url: stripeData.invoice.pdf
+                    })
+                    .eq('id', invoice.id),
+                  10000,
+                  'Stripe link update timed out'
+                );
               }
             }
           }
@@ -20030,25 +20411,85 @@
           console.warn('[ConvertToInvoice] Stripe invoice creation failed (Supabase record saved):', stripeErr.message);
         }
 
-        // Bridge: Link invoice back to project if one references this estimate
+        // Bridge: Link existing project to the new invoice, OR create one now.
+        // This is the "flow together" glue: one action yields estimate → invoice → job.
+        let linkedProject = null;
         try {
-          var projResult = await supabaseClient.from('projects')
-            .select('id')
-            .eq('estimate_id', estimateId)
-            .single();
-          if (projResult.data) {
-            await supabaseClient.from('projects')
-              .update({ invoice_id: invoice.id })
-              .eq('id', projResult.data.id);
+          const existing = await withTimeout(
+            supabaseClient.from('projects')
+              .select('id,name,status')
+              .eq('estimate_id', estimateId)
+              .limit(1)
+              .single(),
+            10000,
+            'Project lookup timed out'
+          );
+          if (existing.data) {
+            linkedProject = existing.data;
+            await withTimeout(
+              supabaseClient.from('projects')
+                .update({ invoice_id: invoice.id })
+                .eq('id', existing.data.id),
+              10000,
+              'Project link update timed out'
+            );
           }
-        } catch (e) { /* non-blocking */ }
+        } catch (e) { /* no existing project — fall through */ }
 
-        showToast('Invoice created successfully!');
+        if (!linkedProject && createProjectToo) {
+          try {
+            const projectRow = {
+              user_id: user.id,
+              name: estimate.project_name || ('Job — ' + (estimate.customer_name || 'Customer')),
+              description: estimate.project_description || null,
+              project_type: estimate.project_type || null,
+              status: 'approved',
+              priority: 'medium',
+              customer_id: estimate.customer_id || null,
+              lead_id: estimate.lead_id || null,
+              customer_name: estimate.customer_name || null,
+              customer_email: estimate.customer_email || null,
+              customer_phone: estimate.customer_phone || null,
+              address: estimate.customer_address || null,
+              city: estimate.customer_city || null,
+              state: estimate.customer_state || null,
+              zip: estimate.customer_zip || null,
+              value: Number(estimate.total) || 0,
+              contract_amount: Number(estimate.total) || 0,
+              deposit_amount: Number(estimate.deposit_amount) || 0,
+              balance_due: Math.max(0, (Number(estimate.total) || 0) - (Number(estimate.deposit_amount) || 0)),
+              estimate_id: estimateId,
+              invoice_id: invoice.id,
+              notes: estimate.internal_notes || null,
+              customer_notes: estimate.notes || null
+            };
+            const { data: newProj, error: projErr } = await withTimeout(
+              supabaseClient.from('projects').insert([projectRow]).select().single(),
+              15000,
+              'Project create timed out'
+            );
+            if (projErr) throw projErr;
+            linkedProject = newProj;
+            // Mark the estimate's project_id so every surface resolves to one job.
+            await withTimeout(
+              supabaseClient.from('estimates').update({ project_id: newProj.id }).eq('id', estimateId),
+              10000,
+              'Estimate project link timed out'
+            );
+          } catch (projErr) {
+            console.warn('[ConvertToInvoice] project auto-create failed:', projErr.message);
+            showToast('Invoice saved, but creating the job failed: ' + projErr.message + ' — you can add it manually.', 'warning');
+          }
+        }
+
+        showToast(linkedProject ? 'Invoice + job created!' : 'Invoice created successfully!');
         showPage('invoices');
-        await loadInvoices();
+        try { await withTimeout(loadInvoices(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadInvoices after convert:', e.message); }
       } catch (err) {
         console.error('Convert to invoice error:', err);
         showToast('Error converting to invoice: ' + err.message, 'error');
+      } finally {
+        if (convertBtn) { convertBtn.disabled = false; convertBtn.innerHTML = convertBtnOriginal || 'Invoice'; }
       }
     }
 
@@ -20948,6 +21389,20 @@
 
         // Bridge: Check for design-to-project handoff
         checkDesignToProjectBridge();
+
+        // Deep-link: /account/?project=<id> opens the detail modal after load.
+        // This is how the orders admin page hands off job rows to the dashboard.
+        try {
+          const qs = new URLSearchParams(window.location.search);
+          const target = qs.get('project');
+          if (target && allProjects.some(p => p.id === target)) {
+            // Strip query so refreshes don't re-trigger
+            const clean = new URL(window.location);
+            clean.searchParams.delete('project');
+            history.replaceState(null, '', clean.toString());
+            setTimeout(() => openProjectDetail(target), 150);
+          }
+        } catch (e) { /* URL parsing is best-effort */ }
       } catch (err) {
         console.error('Error loading projects:', err);
         listEl.innerHTML = '<div class="empty-state"><h3>Error loading projects</h3><p>' + (err.message || 'Please try again') + '</p></div>';
@@ -21504,7 +21959,6 @@
         cost: parseFloat(g('proj-cost')?.value) || 0,
         contract_amount: parseFloat(g('proj-contract-amount')?.value) || 0,
         deposit_amount: parseFloat(g('proj-deposit-amount')?.value) || 0,
-        has_deposit: (parseFloat(g('proj-deposit-amount')?.value) || 0) > 0,
         balance_due: Math.max(0, (parseFloat(g('proj-contract-amount')?.value) || 0) - (parseFloat(g('proj-value')?.value) || 0)),
         start_date: g('proj-start-date')?.value || null,
         end_date: g('proj-end-date')?.value || null,
@@ -21662,6 +22116,196 @@
       }
     }
 
+    // ===== Cross-entity links (estimate ↔ invoice ↔ project ↔ order) =====
+    // One-line badge row that lives on the project detail, estimate row, and invoice row.
+    // Clicking a badge jumps straight to that entity — so the three tabs feel like one flow.
+    function renderProjectLinks(project, linkedEstimates = [], linkedInvoices = []) {
+      const chips = [];
+      if (project.estimate_id) {
+        chips.push(`<button onclick="openEstimateFromProject('${project.estimate_id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;">📄 Estimate</button>`);
+      } else if (linkedEstimates.length) {
+        chips.push(`<button onclick="openEstimateFromProject('${linkedEstimates[0].id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;" title="Most recent estimate for this customer">📄 ${linkedEstimates[0].estimate_number || 'Estimate'}</button>`);
+      }
+      if (project.invoice_id) {
+        chips.push(`<button onclick="openInvoiceFromProject('${project.invoice_id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;">🧾 Invoice</button>`);
+      } else if (linkedInvoices.length) {
+        chips.push(`<button onclick="openInvoiceFromProject('${linkedInvoices[0].id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;" title="Most recent invoice for this customer">🧾 ${linkedInvoices[0].invoice_number || 'Invoice'}</button>`);
+      }
+      if (project.order_id) {
+        chips.push(`<button onclick="openOrderFromProject('${project.order_id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;">🛒 Order</button>`);
+      }
+      if (project.tracking_number) {
+        const carrier = project.tracking_carrier ? project.tracking_carrier + ' ' : '';
+        const inner = `🚚 ${carrier}${project.tracking_number}`;
+        chips.push(project.tracking_url
+          ? `<a href="${escapeHtml(project.tracking_url)}" target="_blank" rel="noopener" class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px; text-decoration:none;">${inner}</a>`
+          : `<span class="btn-modern ghost" style="font-size: 11px; padding: 4px 10px;">${inner}</span>`);
+      }
+      if (!chips.length) return '';
+      return `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">${chips.join('')}</div>`;
+    }
+
+    function openEstimateFromProject(estimateId) {
+      document.getElementById('project-detail-modal')?.classList.remove('active');
+      showPage('estimates');
+      setTimeout(() => { if (typeof editEstimate === 'function') editEstimate(estimateId); }, 250);
+    }
+    function openInvoiceFromProject(invoiceId) {
+      document.getElementById('project-detail-modal')?.classList.remove('active');
+      showPage('invoices');
+      setTimeout(() => {
+        if (typeof showInvoiceBuilder === 'function') showInvoiceBuilder(invoiceId);
+        else if (typeof editInvoice === 'function') editInvoice(invoiceId);
+      }, 250);
+    }
+    function openOrderFromProject(orderId) {
+      window.open('/admin/orders/?highlight=' + encodeURIComponent(orderId), '_blank');
+    }
+
+    // ===== Customer updates on jobs =====
+    // Sends a plain text email to the customer, logs it to project_updates,
+    // and stamps projects.last_customer_update_at so every touchpoint is auditable.
+    async function sendProjectUpdate(projectId, kindOverride) {
+      try {
+        const { data: project, error: pErr } = await withTimeout(
+          supabaseClient.from('projects').select('*').eq('id', projectId).single(),
+          15000, 'Project fetch timed out'
+        );
+        if (pErr) throw pErr;
+        if (!project) throw new Error('Project not found');
+        if (!project.customer_email) {
+          showToast('This job has no customer email. Add one first.', 'warning');
+          return;
+        }
+
+        const kind = kindOverride || 'message';
+        const kindLabel = { message:'Update', tracking:'Shipping update', schedule:'Scheduling update', status_change:'Status update', payment:'Payment update', note:'Note' }[kind] || 'Update';
+        const defaultSubject = `${kindLabel} on your ${project.name || 'project'}`;
+        const defaultBody =
+          `Hi ${project.customer_name || 'there'},\n\n` +
+          `A quick update on "${project.name || 'your project'}":\n\n` +
+          (project.status ? `Current status: ${project.status.replace(/_/g,' ')}\n` : '') +
+          (project.scheduled_date ? `Scheduled: ${new Date(project.scheduled_date).toLocaleDateString()}\n` : '') +
+          (project.tracking_number ? `Tracking: ${project.tracking_carrier || ''} ${project.tracking_number}\n` : '') +
+          `\nReply to this email if you have any questions.\n\nThank you,\n${businessSettings?.company_name || 'Surprise Granite'}`;
+
+        const subject = prompt('Subject:', defaultSubject);
+        if (subject === null) return;
+        const body = prompt('Message:', defaultBody);
+        if (body === null) return;
+
+        const user = await getAuthUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Insert log first so we have an audit trail even if the mail server is down.
+        const { data: logRow, error: logErr } = await withTimeout(
+          supabaseClient.from('project_updates').insert([{
+            project_id: projectId,
+            user_id: user.id,
+            kind,
+            from_status: null,
+            to_status: project.status || null,
+            subject,
+            body,
+            sent_to_customer: true
+          }]).select().single(),
+          10000, 'Update log write timed out'
+        );
+        if (logErr) console.warn('[sendProjectUpdate] log insert warning:', logErr.message);
+
+        let delivered = false;
+        let deliveryError = null;
+        try {
+          const res = await fetchWithTimeout(SG_API_BASE + '/api/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: project.customer_email, subject, body, customer_id: project.customer_id || null })
+          }, 15000);
+          const json = await res.json();
+          if (res.ok && json.success) delivered = true;
+          else deliveryError = json.error || ('HTTP ' + res.status);
+        } catch (mailErr) {
+          deliveryError = mailErr.message;
+        }
+
+        if (logRow) {
+          await withTimeout(
+            supabaseClient.from('project_updates').update({
+              delivered_at: delivered ? new Date().toISOString() : null,
+              delivery_error: delivered ? null : deliveryError
+            }).eq('id', logRow.id),
+            10000, 'Update log finalize timed out'
+          );
+        }
+
+        await withTimeout(
+          supabaseClient.from('projects').update({
+            last_customer_update_at: new Date().toISOString()
+          }).eq('id', projectId),
+          10000, 'Project stamp timed out'
+        );
+
+        if (delivered) {
+          showToast('Customer update sent.', 'success');
+        } else {
+          showToast('Logged, but email failed: ' + (deliveryError || 'unknown') + ' — retry from the job.', 'warning');
+        }
+      } catch (err) {
+        console.error('[sendProjectUpdate]', err);
+        showToast('Couldn’t send update: ' + err.message, 'error');
+      }
+    }
+
+    // Change project status and notify customer in one action.
+    async function changeProjectStatus(projectId, newStatus, { notify = true } = {}) {
+      if (!newStatus) return;
+      try {
+        const { data: before, error: fErr } = await withTimeout(
+          supabaseClient.from('projects').select('status,name,customer_email,customer_name').eq('id', projectId).single(),
+          10000, 'Status fetch timed out'
+        );
+        if (fErr) throw fErr;
+        const fromStatus = before?.status || null;
+        if (fromStatus === newStatus) { showToast('Already in that status.', 'info'); return; }
+
+        const patch = { status: newStatus };
+        if (newStatus === 'completed') patch.completion_date = new Date().toISOString().split('T')[0];
+
+        const { error: uErr } = await withTimeout(
+          supabaseClient.from('projects').update(patch).eq('id', projectId),
+          10000, 'Status update timed out'
+        );
+        if (uErr) throw uErr;
+
+        const user = await getAuthUser();
+        await withTimeout(
+          supabaseClient.from('project_updates').insert([{
+            project_id: projectId,
+            user_id: user.id,
+            kind: 'status_change',
+            from_status: fromStatus,
+            to_status: newStatus,
+            subject: null,
+            body: null,
+            sent_to_customer: false
+          }]),
+          10000, 'Status log write timed out'
+        );
+
+        showToast('Job moved to ' + newStatus.replace(/_/g,' '), 'success');
+        try { await withTimeout(loadProjects(), 15000, 'Reload timed out'); } catch (e) { console.warn('loadProjects:', e.message); }
+
+        if (notify && before?.customer_email) {
+          if (confirm('Send a status update to ' + before.customer_email + '?')) {
+            await sendProjectUpdate(projectId, 'status_change');
+          }
+        }
+      } catch (err) {
+        console.error('[changeProjectStatus]', err);
+        showToast('Could not update status: ' + err.message, 'error');
+      }
+    }
+
     async function openProjectDetail(projectId) {
       currentProjectId = projectId;
       const modal = document.getElementById('project-detail-modal');
@@ -21709,14 +22353,18 @@
           <!-- Workflow Status Bar -->
           ${renderWorkflowStatusBar(project)}
 
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
             <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: ${statusColor}20; color: ${statusColor};">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
             <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: ${priorityColor}15; color: ${priorityColor}; text-transform: capitalize;">${project.priority || 'medium'} priority</span>
-            <select onchange="quickUpdateProjectStatus('${project.id}', this.value)" style="font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-elevated); color: var(--text-primary); cursor: pointer;">
-              <option value="" disabled selected>Change Status...</option>
+            <select onchange="changeProjectStatus('${project.id}', this.value); this.value='';" style="font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-elevated); color: var(--text-primary); cursor: pointer;">
+              <option value="" disabled selected>Change Status…</option>
               ${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${project.status === k ? 'disabled' : ''}>${v}</option>`).join('')}
             </select>
+            ${project.customer_email ? `<button onclick="sendProjectUpdate('${project.id}','message')" class="btn-modern ghost" style="font-size: 12px; padding: 6px 12px;" title="Email the customer">✉ Send Update</button>` : ''}
+            ${project.customer_email ? `<button onclick="sendProjectUpdate('${project.id}','schedule')" class="btn-modern ghost" style="font-size: 12px; padding: 6px 12px;" title="Email a scheduling update">🗓 Notify Schedule</button>` : ''}
+            ${project.last_customer_update_at ? `<span style="font-size: 11px; color: var(--text-muted);">Last update: ${new Date(project.last_customer_update_at).toLocaleString()}</span>` : ''}
           </div>
+          ${renderProjectLinks(project, linkedEstimates, linkedInvoices)}
 
           <!-- Progress Bar -->
           <div style="margin-bottom: 20px;">
