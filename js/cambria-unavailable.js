@@ -1,19 +1,19 @@
 /**
- * Cambria - Not Available + Site-Wide Warning
- * - Injects a red site-wide banner: "DO NOT ORDER CAMBRIA — Contact us for alternatives"
+ * Cambria - Not Available badges + price hiding
  * - Adds "Not Available" badges to all Cambria product cards
  * - Hides pricing and disables order/quote buttons on Cambria products
  * - Works on all screens: mobile, tablet, desktop
  *
- * To remove: delete the <script src="/js/cambria-unavailable.js"></script> tag from pages.
+ * The "DO NOT ORDER CAMBRIA" banner is rendered as static HTML in
+ * /vendors/cambria/index.html (below the hero) — not injected here.
+ *
+ * To remove: delete the <script src="/js/cambria-unavailable.js"></script> tags.
  */
 
 (function() {
   'use strict';
 
   const BRAND = 'cambria';
-  const BANNER_ID = 'sg-cambria-warning-banner';
-  const BANNER_TEXT = 'DO NOT ORDER CAMBRIA — Contact us for alternatives';
 
   function addStyles() {
     if (document.getElementById('cambria-unavailable-styles')) return;
@@ -21,51 +21,6 @@
     const style = document.createElement('style');
     style.id = 'cambria-unavailable-styles';
     style.textContent = `
-      /* Site-wide warning banner — fixed at top, above all nav */
-      #${BANNER_ID} {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%) !important;
-        color: #fff !important;
-        text-align: center !important;
-        padding: 10px 16px !important;
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.3px !important;
-        text-transform: uppercase !important;
-        z-index: 2147483647 !important; /* max — above any nav */
-        box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4) !important;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        line-height: 1.4 !important;
-        box-sizing: border-box !important;
-      }
-      #${BANNER_ID} a {
-        color: #fff !important;
-        text-decoration: underline !important;
-        margin-left: 8px !important;
-        white-space: nowrap !important;
-      }
-      /* Reserve space so banner doesn't cover the nav */
-      html.sg-cambria-banner-active {
-        scroll-padding-top: 44px !important;
-      }
-      html.sg-cambria-banner-active body {
-        padding-top: 44px !important;
-      }
-      @media (max-width: 640px) {
-        #${BANNER_ID} {
-          font-size: 11px !important;
-          padding: 8px 10px !important;
-          letter-spacing: 0.2px !important;
-        }
-        html.sg-cambria-banner-active body {
-          padding-top: 38px !important;
-        }
-      }
-
       /* Not Available badge */
       .sg-cambria-not-available-badge {
         position: absolute !important;
@@ -134,40 +89,41 @@
         left: 15px !important;
       }
 
-      /* Hide prices inside a Cambria card */
-      [data-cambria-card="true"] [class*="price"],
-      [data-cambria-card="true"] [class*="Price"],
+      /* Hide ALL pricing inside any Cambria card — broad nuke */
+      [data-cambria-card="true"] [class*="price" i],
+      [data-cambria-card="true"] [class*="cost" i],
+      [data-cambria-card="true"] [class*="amount" i],
       [data-cambria-card="true"] .sg-price-preview,
       [data-cambria-card="true"] .product-price-display,
       [data-cambria-card="true"] .product-price-amount,
+      [data-cambria-card="true"] .slab-price,
+      [data-cambria-card="true"] .featured-card-price,
+      [data-cambria-card="true"] .slab-footer,
+      [data-cambria-card="true"] .featured-card-footer,
       [data-cambria-card="true"] .price,
       [data-cambria-card="true"] .price-range,
       [data-cambria-card="true"] .sg-card-price,
-      [data-cambria-card="true"] [data-price] {
+      [data-cambria-card="true"] [data-price],
+      [data-cambria-card="true"] .sg-cambria-price-nuke {
         display: none !important;
         visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
       }
 
       /* Disable order buttons inside a Cambria card */
-      [data-cambria-card="true"] [class*="add-to-cart"],
-      [data-cambria-card="true"] [class*="add-to-quote"],
-      [data-cambria-card="true"] [class*="buy-now"],
+      [data-cambria-card="true"] [class*="add-to-cart" i],
+      [data-cambria-card="true"] [class*="add-to-quote" i],
+      [data-cambria-card="true"] [class*="buy-now" i],
+      [data-cambria-card="true"] [class*="cart-btn" i],
+      [data-cambria-card="true"] .slab-btn,
+      [data-cambria-card="true"] .slab-cta-group,
       [data-cambria-card="true"] button[onclick*="addToCart"],
       [data-cambria-card="true"] button[onclick*="addToQuote"] {
         display: none !important;
       }
     `;
     document.head.appendChild(style);
-  }
-
-  function addBanner() {
-    if (document.getElementById(BANNER_ID)) return;
-    const banner = document.createElement('div');
-    banner.id = BANNER_ID;
-    banner.setAttribute('role', 'alert');
-    banner.innerHTML = `⚠️ ${BANNER_TEXT} <a href="/contact-us">Contact Us</a>`;
-    document.body.appendChild(banner);
-    document.documentElement.classList.add('sg-cambria-banner-active');
   }
 
   function isCambriaProduct(element) {
@@ -223,6 +179,33 @@
     return false;
   }
 
+  function nukePrices(card) {
+    // Hard-remove any price / dollar-amount / cart-button element inside a Cambria card.
+    // Belt-and-suspenders on top of the CSS rules.
+    const killSelectors = [
+      '[class*="price" i]', '[class*="cost" i]', '[class*="amount" i]',
+      '.slab-price', '.featured-card-price', '.slab-footer', '.featured-card-footer',
+      '.slab-btn', '.slab-cta-group', '.sg-price-preview',
+      '[class*="add-to-cart" i]', '[class*="add-to-quote" i]', '[class*="buy-now" i]',
+      '[class*="cart-btn" i]', '[data-price]'
+    ];
+    killSelectors.forEach(sel => {
+      card.querySelectorAll(sel).forEach(el => {
+        el.style.display = 'none';
+        el.setAttribute('data-sg-cambria-hidden', 'true');
+      });
+    });
+
+    // Final nuke: any descendant whose own text starts/contains a $ amount
+    card.querySelectorAll('*').forEach(el => {
+      if (el.children.length > 0) return;
+      const txt = (el.textContent || '').trim();
+      if (/^\$\s?\d/.test(txt) || /\$\d+(\.\d+)?\s*\/?\s*(sq\s?ft|sf)?/i.test(txt)) {
+        el.style.display = 'none';
+      }
+    });
+  }
+
   function processProducts() {
     const productSelectors = [
       '.product-card',
@@ -233,12 +216,21 @@
       '[class*="stone-card"]',
       '.swipe-card',
       '.shop-product',
-      '.collection-item'
+      '.collection-item',
+      '.slab-card',
+      '.featured-card',
+      '.marketplace-card',
+      '.marketplace-product',
+      '[class*="slab-card"]',
+      '[class*="slab-item"]'
     ];
 
     productSelectors.forEach(selector => {
       document.querySelectorAll(selector).forEach(product => {
-        if (isCambriaProduct(product)) addBadge(product);
+        if (isCambriaProduct(product)) {
+          addBadge(product);
+          nukePrices(product);
+        }
       });
     });
 
@@ -270,7 +262,6 @@
 
   function init() {
     addStyles();
-    addBanner();
     processProducts();
     observeNewProducts();
 
