@@ -37,8 +37,12 @@
 --bg-secondary: #12121a;
 --bg-card: #1a1a24;
 
-/* Layout */
---unified-nav-height: 140px;
+/* Layout
+   --unified-nav-height forwards the canonical value from unified-nav.css
+   (--nav-height-desktop). Fallback to 140px if unified-nav.css ever fails
+   to load. Keeping this name lets the rest of the file stay unchanged.
+   Single source of truth — bump the value in unified-nav.css, nowhere else. */
+--unified-nav-height: var(--nav-height-desktop, 140px);
 --sidebar-width: 260px;
 --sidebar-collapsed-width: 72px;
 }
@@ -53,17 +57,17 @@ button, .btn, .btn-modern, .toolbar-btn, .nav-item, .filter-pill, .view-btn {
 /* Smooth scroll behavior */
 html {
       scroll-behavior: smooth;
-      /* Kill horizontal slide on iPhone — any child overflow stays contained.
-         Before this, any element wider than viewport dragged the whole page sideways. */
-      overflow-x: hidden;
-      max-width: 100vw;
       -webkit-text-size-adjust: 100%;
+      /* Offset the fixed unified nav for anchor jumps (/account#leads etc.) */
+      scroll-padding-top: var(--unified-nav-height);
 }
 
 body {
-      overflow-x: hidden;
-      max-width: 100vw;
-      /* Prevent iOS pull-to-refresh fighting with internal scrolling */
+      /* Contain horizontal overflow without becoming a scroll container —
+         `clip` (unlike `hidden`) does NOT make body a scrolling ancestor,
+         so iOS momentum scroll, address-bar auto-hide, and sticky positioning
+         all behave correctly. */
+      overflow-x: clip;
       overscroll-behavior-y: contain;
 }
 
@@ -178,7 +182,7 @@ button, .btn-modern, .btn, [onclick], a[role="button"], input[type="submit"] {
 }
 
 @media (max-width: 991px) {
-:root { --unified-nav-height: 64px; }
+:root { --unified-nav-height: var(--nav-height-mobile, 64px); }
 }
 
 body {
@@ -4688,7 +4692,7 @@ body.dragging-active .card:has(.calendar-grid) {
         padding-right: 0 !important;
         width: 100% !important;
         max-width: 100vw !important;
-        overflow-x: hidden;
+        overflow-x: clip;
       }
 
       body.sidebar-collapsed .main-content {
@@ -4762,14 +4766,6 @@ body.dragging-active .card:has(.calendar-grid) {
       .sidebar .nav-item:active {
         transform: scale(0.98);
         opacity: 0.9;
-      }
-
-      .main-content {
-        margin-left: 0;
-      }
-
-      body.sidebar-collapsed .main-content {
-        margin-left: 0;
       }
 
       .sidebar-overlay {
@@ -8585,11 +8581,6 @@ body.dragging-active .card:has(.calendar-grid) {
 
       .card-body {
         padding: 16px;
-      }
-
-      /* Pull to refresh indicator area */
-      .main-content {
-        padding-top: 0;
       }
 
       /* Toast notifications mobile positioning */
@@ -12598,20 +12589,17 @@ body.dragging-active .card:has(.calendar-grid) {
 
 /* ===== MOBILE RESPONSIVENESS OVERHAUL ===== */
 
-/* Tablet (992-1199px): sidebar visible, no toolbar */
-@media (min-width: 992px) and (max-width: 1199px) {
-  .main-content {
-    margin-left: var(--sidebar-width) !important;
-  }
-  body.sidebar-collapsed .main-content {
-    margin-left: var(--sidebar-collapsed-width) !important;
-  }
-}
+/* Tablet (992-1199px) sidebar-visible layout is the same as the base
+   .main-content rule (margin-left: var(--sidebar-width)), so no override
+   needed — removed the redundant block that used to live here. */
 
 /* Mobile (<=991px): full-width layout, no sidebar offset */
 @media (max-width: 991px) {
   body {
-    overflow-x: hidden;
+    /* `clip` — not `hidden` — so body does NOT become a scroll container.
+       Using `hidden` here re-creates the iOS nested-scroll jank that the
+       top-level html/body rules were fixed to avoid. */
+    overflow-x: clip;
   }
 
   /* Content fills full width */
