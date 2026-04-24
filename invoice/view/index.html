@@ -262,11 +262,21 @@
             document.getElementById('company-logo-img').style.display = 'block';
             document.getElementById('company-logo-text').style.display = 'none';
           }
-          let contactParts = [];
-          if (settings.phone) contactParts.push(settings.phone);
-          if (settings.email) contactParts.push(settings.email);
-          if (settings.website) contactParts.push(settings.website);
-          document.getElementById('company-contact').textContent = contactParts.join(' | ');
+          // Render company contact block — address on its own line, then
+          // phone/email/website, then license/ROC. Each line only appears
+          // if populated so empty fields don't leave orphan separators.
+          const lines = [];
+          const addrParts = [];
+          if (settings.address) addrParts.push(settings.address);
+          const cityState = [settings.city, settings.state].filter(Boolean).join(', ');
+          const cityStateZip = [cityState, settings.zip].filter(Boolean).join(' ').trim();
+          if (cityStateZip) addrParts.push(cityStateZip);
+          if (addrParts.length) lines.push(addrParts.join(' · '));
+          const contactParts = [settings.phone, settings.email, settings.website].filter(Boolean);
+          if (contactParts.length) lines.push(contactParts.join(' | '));
+          if (settings.license_number) lines.push(settings.license_number);
+          const el = document.getElementById('company-contact');
+          el.innerHTML = lines.map(l => `<div>${l.replace(/</g,'&lt;')}</div>`).join('');
         }
       } catch (err) { console.log('No business settings found'); }
     }
