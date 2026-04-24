@@ -17476,10 +17476,17 @@
       document.getElementById('quick-pay-form-state').style.display = 'block';
       document.getElementById('quick-pay-result-state').style.display = 'none';
       document.getElementById('quick-pay-form').reset();
+      // reset() leaves hidden inputs and checkboxes not present in the default
+      // HTML — clear them explicitly so a leftover lead_id from a prior open
+      // can't attach this pay link to the wrong lead.
+      const hid = document.getElementById('qp-lead-id'); if (hid) hid.value = '';
+      const prev = document.getElementById('qp-preview'); if (prev) prev.style.display = 'none';
+      const feeChk = document.getElementById('qp-pass-fee'); if (feeChk) feeChk.checked = false;
       if (prefillData) {
         if (prefillData.name) document.getElementById('qp-name').value = prefillData.name;
         if (prefillData.email) document.getElementById('qp-email').value = prefillData.email;
         if (prefillData.phone) document.getElementById('qp-phone').value = prefillData.phone;
+        if (prefillData.lead_id && hid) hid.value = prefillData.lead_id;
       }
     }
 
@@ -17488,7 +17495,7 @@
       const name = currentProfileData.full_name || currentProfileData.name || '';
       const email = currentProfileData.email || '';
       const phone = currentProfileData.phone || '';
-      openQuickPayModal({ name, email, phone });
+      openQuickPayModal({ name, email, phone, lead_id: currentProfileData.id });
     }
 
     function closeQuickPayModal() {
@@ -17499,6 +17506,31 @@
       document.getElementById('quick-pay-form-state').style.display = 'block';
       document.getElementById('quick-pay-result-state').style.display = 'none';
       document.getElementById('quick-pay-form').reset();
+      // reset() doesn't clear hidden inputs reliably across browsers
+      const hid = document.getElementById('qp-lead-id'); if (hid) hid.value = '';
+      const prev = document.getElementById('qp-preview'); if (prev) prev.style.display = 'none';
+    }
+
+    // Stripe US standard: 2.9% + $0.30. Gross up so merchant nets `amount`.
+    // Keep in sync with api/routes/stripe.js grossUpForFee().
+    function quickPayGrossUp(amountCents) {
+      const total = Math.ceil((amountCents + 30) / (1 - 0.029));
+      return { totalCents: total, feeCents: total - amountCents };
+    }
+
+    function updateQuickPayPreview() {
+      const preview = document.getElementById('qp-preview');
+      const passFee = document.getElementById('qp-pass-fee')?.checked;
+      const amount = parseFloat(document.getElementById('qp-amount')?.value || '0');
+      if (!passFee || !(amount > 0)) {
+        if (preview) preview.style.display = 'none';
+        return;
+      }
+      const { totalCents, feeCents } = quickPayGrossUp(Math.round(amount * 100));
+      document.getElementById('qp-preview-net').textContent = '$' + amount.toFixed(2);
+      document.getElementById('qp-preview-fee').textContent = '$' + (feeCents / 100).toFixed(2);
+      document.getElementById('qp-preview-total').textContent = '$' + (totalCents / 100).toFixed(2);
+      preview.style.display = 'block';
     }
 
     async function generateQuickPayLink(event) {
@@ -17514,22 +17546,47 @@
         const phone = document.getElementById('qp-phone').value.trim();
         const amount = parseFloat(document.getElementById('qp-amount').value);
         const description = document.getElementById('qp-description').value.trim() || 'Payment to Surprise Granite';
+        const passFee = !!document.getElementById('qp-pass-fee')?.checked;
+        const leadId = document.getElementById('qp-lead-id')?.value || '';
 
         if (!name || !email || !amount || amount <= 0) {
           throw new Error('Please fill in all required fields');
         }
 
-        console.log('[QuickPay] Creating payment link for:', name, email, amount);
-
-        // Build /pay/ URL with pre-filled params (amount in cents)
+        // Build /pay/ URL. fee=1 tells /pay/ to show the fee breakdown and
+        // forward pass_fee=true to /api/stripe/quick-pay. lead_id rides along
+        // so the Stripe session metadata can link the eventual payment back
+        // to the lead row.
         const payParams = new URLSearchParams();
         payParams.set('amount', Math.round(amount * 100).toString());
         payParams.set('email', email);
         if (description && description !== 'Payment to Surprise Granite') {
           payParams.set('memo', description);
         }
+        if (passFee) payParams.set('fee', '1');
+        if (leadId) payParams.set('lead_id', leadId);
 
         const paymentUrl = 'https://www.surprisegranite.com/pay/?' + payParams.toString();
+
+        // Persist against the lead row so the Leads view can show "Pay link
+        // sent $X on <date>" and Josh can re-copy the link. No-op if the modal
+        // was opened without a lead context (ad-hoc pay link).
+        if (leadId) {
+          try {
+            const tok = getAuthToken();
+            const res = await fetchWithTimeout(SG_API_BASE + '/api/leads/' + encodeURIComponent(leadId) + '/record-quick-pay', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(tok ? { 'Authorization': 'Bearer ' + tok } : {})
+              },
+              body: JSON.stringify({ url: paymentUrl, amount, pass_fee: passFee })
+            });
+            if (!res.ok) console.warn('[QuickPay] record-quick-pay non-2xx:', res.status);
+          } catch (e) {
+            console.warn('[QuickPay] record-quick-pay failed (link still usable):', e.message);
+          }
+        }
 
         // Store data for sharing
         quickPayData = {
@@ -17538,12 +17595,14 @@
           phone,
           amount,
           description,
-          url: paymentUrl
+          url: paymentUrl,
+          passFee,
+          leadId
         };
 
         // Update result display
         document.getElementById('qp-result-name').textContent = name;
-        document.getElementById('qp-result-amount').textContent = '$' + amount.toFixed(2);
+        document.getElementById('qp-result-amount').textContent = '$' + amount.toFixed(2) + (passFee ? ' (customer pays ~$' + (quickPayGrossUp(Math.round(amount*100)).totalCents/100).toFixed(2) + ')' : '');
         document.getElementById('qp-link-display').value = paymentUrl;
 
         // Generate QR code using free API

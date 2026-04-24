@@ -582,4 +582,58 @@ router.patch('/:id/status', asyncHandler(async (req, res) => {
   res.json({ success: true, data: lead });
 }));
 
+/**
+ * Record a Quick Pay link against a lead.
+ *
+ * Quick Pay builds a /pay/ URL client-side and hands it to the customer — no
+ * Stripe resource is created until the customer lands on /pay/ and clicks Pay.
+ * Before this endpoint, nothing was recorded, so "I sent Robert a pay link"
+ * was un-provable: the Leads view didn't know, and the webhook couldn't
+ * reconcile a later payment to the lead.
+ *
+ * POST /api/leads/:id/record-quick-pay  { url, amount, pass_fee }
+ */
+router.post('/:id/record-quick-pay', asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const { id } = req.params;
+  const { url, amount, pass_fee } = req.body;
+
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'url is required' });
+  }
+  const amt = parseFloat(amount);
+  if (!Number.isFinite(amt) || amt <= 0) {
+    return res.status(400).json({ error: 'valid amount is required' });
+  }
+
+  // Merge the pass_fee flag into raw_data rather than adding a column —
+  // keeps the fix schema-migration-free.
+  const { data: cur } = await supabase.from('leads').select('raw_data').eq('id', id).single();
+  const raw = (cur && cur.raw_data && typeof cur.raw_data === 'object') ? cur.raw_data : {};
+  raw.quick_pay = { pass_fee: !!pass_fee, recorded_at: new Date().toISOString() };
+
+  const { error } = await supabase
+    .from('leads')
+    .update({
+      pay_link_url: url,
+      pay_link_amount: Math.round(amt * 100),
+      pay_link_created_at: new Date().toISOString(),
+      raw_data: raw,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id);
+
+  if (error) {
+    logger.error('record-quick-pay failed', { leadId: id, error: error.message });
+    return res.status(500).json({ error: 'Failed to record pay link' });
+  }
+
+  logger.info('Quick Pay link recorded', { leadId: id, amount: amt, pass_fee: !!pass_fee });
+  res.json({ success: true });
+}));
+
 module.exports = router;

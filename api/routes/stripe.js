@@ -59,9 +59,21 @@ async function verifyAdminAccess(userId, supabase) {
  * Used by the public /pay/ page for texted/emailed payment links
  * POST /api/stripe/quick-pay
  */
+// Stripe US standard pricing for card-present online: 2.9% + $0.30.
+// Exposed as constants so fee math lives in one place.
+const STRIPE_FEE_RATE = 0.029;
+const STRIPE_FEE_FIXED_CENTS = 30;
+
+// Gross up so the merchant nets `amount_cents` after Stripe takes their cut.
+// Returns { total_cents, fee_cents }. Uses ceil so rounding never underpays.
+function grossUpForFee(amount_cents) {
+  const total = Math.ceil((amount_cents + STRIPE_FEE_FIXED_CENTS) / (1 - STRIPE_FEE_RATE));
+  return { total_cents: total, fee_cents: total - amount_cents };
+}
+
 router.post('/quick-pay', async (req, res) => {
   try {
-    const { amount, email, invoice_ref, memo } = req.body;
+    const { amount, email, invoice_ref, memo, pass_fee, lead_id } = req.body;
 
     // Validate amount (must be at least $1 = 100 cents)
     if (!amount || amount < 100) {
@@ -88,6 +100,36 @@ router.post('/quick-pay', async (req, res) => {
     if (invoice_ref) cancelParams.set('invoice', invoice_ref);
     if (memo) cancelParams.set('memo', memo);
     if (email) cancelParams.set('email', email);
+    if (pass_fee) cancelParams.set('fee', '1');
+    if (lead_id) cancelParams.set('lead_id', lead_id);
+
+    // If the merchant chose to pass Stripe's processing fee to the customer,
+    // add a second line item that grosses up the total so we net `amount`.
+    // Customer sees two lines — "Service" and "Processing fee" — which satisfies
+    // the card-network disclosure rule (Visa/MC require the surcharge be
+    // itemized at checkout).
+    const line_items = [{
+      price_data: {
+        currency: 'usd',
+        product_data: { name: memo || 'Payment to Surprise Granite' },
+        unit_amount: amount,
+      },
+      quantity: 1,
+    }];
+
+    let fee_cents = 0;
+    if (pass_fee) {
+      const gross = grossUpForFee(amount);
+      fee_cents = gross.fee_cents;
+      line_items.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Processing fee' },
+          unit_amount: fee_cents,
+        },
+        quantity: 1,
+      });
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'us_bank_account'],
@@ -96,16 +138,7 @@ router.post('/quick-pay', async (req, res) => {
           financial_connections: { permissions: ['payment_method'] }
         }
       },
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: memo || 'Payment to Surprise Granite',
-          },
-          unit_amount: amount,
-        },
-        quantity: 1,
-      }],
+      line_items,
       mode: 'payment',
       customer_email: email,
       success_url: `${baseUrl}/pay/success/?${successParams.toString()}`,
@@ -114,7 +147,13 @@ router.post('/quick-pay', async (req, res) => {
         invoice_ref: invoice_ref || '',
         memo: memo || '',
         source: 'quick-pay',
-        customer_email: email
+        customer_email: email,
+        // lead_id lets the webhook link the completed payment back to the
+        // originating lead row — without it there's no way to reconcile.
+        lead_id: lead_id || '',
+        pass_fee: pass_fee ? '1' : '0',
+        fee_cents: String(fee_cents),
+        net_cents: String(amount)
       }
     });
 

@@ -5,14 +5,23 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 // Load environment variables - try root first, then api/.env
 require('dotenv').config();
-require('dotenv').config({ path: path.join(__dirname, 'api', '.env') });
+// `override: true` — api/.env is authoritative for the backend. Without this,
+// a stale SUPABASE_URL exported in the shell (e.g. pointing at a deleted
+// project) silently wins and every Supabase call throws "fetch failed".
+require('dotenv').config({ path: path.join(__dirname, 'api', '.env'), override: true });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize Supabase
+// Initialize Supabase.
+//
+// Precedence: SERVICE_KEY first, then SERVICE_ROLE_KEY. Reason: api/.env uses
+// SERVICE_KEY; dotenv override:true only replaces vars that exist in .env, so
+// a shell-exported SERVICE_ROLE_KEY (left over from a deleted project) survives
+// and would otherwise win — producing "Invalid API key" against the real
+// project. Prefer the .env-provided key.
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 let supabase = null;

@@ -5728,6 +5728,63 @@ app.post('/api/leads/:id/pay-link', authenticateJWT, async (req, res) => {
   }
 });
 
+// Record a Quick Pay link against a lead.
+//
+// The Quick Pay flow builds a /pay/?amount=...&email=... URL client-side and
+// hands it to the customer (text/email). No Stripe resource is created at that
+// moment — the Checkout Session only appears when the customer lands on /pay/
+// and clicks Pay. Historically we recorded nothing when Josh clicked "Quick
+// Pay", so every link was invisible to the CRM afterward.
+//
+// This endpoint is the bookkeeping half of Quick Pay: stamp the lead row with
+// the URL, amount, fee toggle state, and timestamp so the Leads view can show
+// "Pay link sent $X on Apr 24" and you can resend the same link.
+app.post('/api/leads/:id/record-quick-pay', authenticateJWT, async (req, res) => {
+  try {
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { url, amount, pass_fee } = req.body;
+
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'url is required' });
+    }
+    const amt = parseFloat(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return res.status(400).json({ error: 'valid amount is required' });
+    }
+
+    // Read existing raw_data so we can merge the quick_pay flag without a
+    // schema migration (Supabase JS doesn't do jsonb deep-merge in one call).
+    const { data: cur } = await supabase.from('leads').select('raw_data').eq('id', id).single();
+    const raw = cur?.raw_data && typeof cur.raw_data === 'object' ? cur.raw_data : {};
+    raw.quick_pay = { pass_fee: !!pass_fee, recorded_at: new Date().toISOString() };
+
+    const { error } = await supabase
+      .from('leads')
+      .update({
+        pay_link_url: url,
+        pay_link_amount: Math.round(amt * 100), // cents, matches pay_link_amount convention
+        pay_link_created_at: new Date().toISOString(),
+        raw_data: raw,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      logger.error('record-quick-pay update error:', error.message);
+      return res.status(500).json({ error: 'Failed to record pay link on lead' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('record-quick-pay error:', err);
+    return handleApiError(res, err);
+  }
+});
+
 // Generate pay link for an estimate (deposit)
 app.post('/api/estimates/:id/pay-link', authenticateJWT, async (req, res) => {
   try {
