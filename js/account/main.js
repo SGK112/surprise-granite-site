@@ -7886,27 +7886,37 @@
           }
           console.log('[SaveLead] Update result:', error ? error.message : 'success');
         } else {
-          // Insert new lead - add user_id, created_at and form_name
+          // Insert new lead.
+          //
+          // Root cause of the recurring "Lead insert timed out after 30s" bug:
+          // supabase-js's `.insert(...).select().single()` issues the insert
+          // AND then round-trips a PostgREST SELECT with RLS applied to read
+          // the row back. That read-back was hanging indefinitely (server
+          // trigger / policy chain — the network tab showed the POST pending,
+          // not a fast error). Previous sessions kept bumping the timeout
+          // (15s → 30s) rather than removing the round-trip.
+          //
+          // Fix: generate the UUID client-side so we own `data.id` downstream,
+          // and use `Prefer: return=minimal` (no .select()) so PostgREST
+          // doesn't read back. Insert is write-only now — no hang surface.
+          const newId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+              });
+          leadData.id = newId;
           leadData.user_id = user.id;
           leadData.created_at = new Date().toISOString();
           leadData.form_name = 'manual-entry';
-          console.log('[SaveLead] Inserting new lead, data:', JSON.stringify(leadData).substring(0, 200));
+          console.log('[SaveLead] Inserting new lead id=' + newId);
 
-          // Wrap insert in a timeout to prevent infinite hang
-          const insertPromise = supabaseClient
+          const { error: insertError } = await supabaseClient
             .from('leads')
-            .insert([leadData])
-            .select()
-            .single();
+            .insert([leadData]);
 
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Lead insert timed out after 30s — check your connection')), 30000)
-          );
-
-          const { data: insertData, error: insertError } = await Promise.race([insertPromise, timeoutPromise]);
-          data = insertData;
+          data = insertError ? null : { ...leadData, id: newId };
           error = insertError;
-          console.log('[SaveLead] Insert result:', error ? error.message : 'success, id=' + data?.id);
+          console.log('[SaveLead] Insert result:', error ? error.message : 'success, id=' + newId);
         }
 
         if (error) throw error;
