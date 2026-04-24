@@ -7966,27 +7966,18 @@
           })();
         }
 
-        // Send welcome email if checkbox is checked (new leads only)
+        // Send welcome email if checkbox is checked (new leads only).
+        // FIRE-AND-FORGET. The save completes the moment the row is in the DB.
+        // Awaiting this was pinning the Save spinner for up to 15s (the welcome
+        // email fetch timeout) whenever the email API was slow, which looks
+        // identical to "save hung" from the user's perspective.
         const sendEmail = document.getElementById('new-lead-send-email').checked;
-        console.log('[SaveLead] Send email?', sendEmail, 'editing?', !!editingLeadId);
         if (sendEmail && email && !editingLeadId) {
-          try {
-            console.log('[SaveLead] Sending welcome email...');
-            await sendLeadWelcomeEmail({
-              firstName,
-              lastName,
-              email,
-              phone,
-              projectType,
-              hasAppointment,
-              apptDate,
-              apptTime,
-              apptType,
-              portalUrl
-            });
-          } catch (emailErr) {
-            console.warn('Welcome email error (non-blocking):', emailErr);
-          }
+          console.log('[SaveLead] Firing welcome email in background…');
+          sendLeadWelcomeEmail({
+            firstName, lastName, email, phone, projectType,
+            hasAppointment, apptDate, apptTime, apptType, portalUrl
+          }).catch(emailErr => console.warn('Welcome email error (non-blocking):', emailErr));
         }
 
         // Capture edit state before closing modal (which resets editingLeadId)
