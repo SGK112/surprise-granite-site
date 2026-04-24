@@ -220,10 +220,26 @@
             <strong style="color:#1a1a2e;">Notes:</strong><br>${esc(data.notes)}
           </div>` : ''}
 
-          <!-- Pay Online Link -->
+          <!-- Pay Online Link → /pay/ pre-filled with this invoice.
+               Previously pointed at /checkout/ (the store cart), which sent
+               invoice customers to an empty Shopify cart. /pay/ is our
+               invoice-specific payment page that builds a Stripe Checkout
+               Session scoped to this invoice amount/number/email. -->
           <div class="inv-animate" data-delay="${2600 + items.length * 200}" style="margin-top:24px;text-align:center;">
-            <a href="/checkout/" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#f9cb00,#e5b800);color:#1a1a2e;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">Pay Online</a>
-            <div style="margin-top:6px;font-size:11px;color:#aaa;">${COMPANY.website}/checkout</div>
+            ${(() => {
+              const payAmount = (data.depositAmount > 0 ? data.depositAmount : total);
+              const payParams = new URLSearchParams();
+              payParams.set('amount', Math.round(payAmount * 100));
+              if (data.customerEmail) payParams.set('email', data.customerEmail);
+              if (data.invoiceNumber) payParams.set('invoice', data.invoiceNumber);
+              const memo = data.depositAmount > 0
+                ? ('Deposit for ' + (data.projectName || data.invoiceNumber || 'Invoice'))
+                : (data.projectName || 'Invoice Payment');
+              payParams.set('memo', memo);
+              const payUrl = '/pay/?' + payParams.toString();
+              return `<a href="${payUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#f9cb00,#e5b800);color:#1a1a2e;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">Pay $${payAmount.toFixed(2)}</a>
+            <div style="margin-top:6px;font-size:11px;color:#aaa;">${COMPANY.website}/pay</div>`;
+            })()}
           </div>
 
           <!-- Footer -->
