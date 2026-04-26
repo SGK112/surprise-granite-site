@@ -675,9 +675,12 @@
         }
       });
 
-      // Hide/show lock icons
+      // Hide/show lock icons.
+      // Designer Pro stays auth-gated (saves projects to user account).
+      // Aria is FREE / no signup — see /aria/ landing page positioning.
+      // Force the lock hidden regardless of auth state.
       if (designerLock) designerLock.style.display = isLoggedIn ? 'none' : 'block';
-      if (ariaLock) ariaLock.style.display = isLoggedIn ? 'none' : 'block';
+      if (ariaLock) ariaLock.style.display = 'none';
 
       // Update account section
       if (isLoggedIn) {
@@ -710,18 +713,11 @@
       }
     });
 
-    // Handle Aria button (auth-gated)
-    ariaBtn?.addEventListener('click', () => {
-      const isLoggedIn = window.SgAuth?.isLoggedIn?.() || false;
-
-      if (!isLoggedIn) {
-        window.location.href = '/sign-up/?redirect=' + encodeURIComponent('/account/');
-        return;
-      }
-
-      closeMenu();
-      openAria();
-    });
+    // Aria is no longer auth-gated. Removed the signup-redirect that
+    // was forcing /sign-up/?redirect=/account/ on click. The single
+    // remaining click handler (a few lines below) just opens the Aria
+    // widget directly. /aria/ landing page positions her as Free · 24/7
+    // · No Signup — the hub UI now matches.
 
     // Initialize auth state
     updateAuthState();
