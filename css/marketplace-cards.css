@@ -248,9 +248,33 @@
   margin-top: 6px;
   transition: all 0.2s;
 }
+/* Style-preserving hover. Earlier version forced a pale yellow
+   background which killed white text on pages styling this button as a
+   solid green CTA (marketplace/tile, marketplace/flooring) — the text
+   went invisible because background became pale yellow but color stayed
+   white. filter:brightness preserves whatever colors the page set. */
 .calc-project-btn:hover {
-  border-color: #f9cb00;
-  background: rgba(249, 203, 0, 0.05);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================================
+   DEFENSIVE: hover-contrast safety net.
+   If a hover state in any stylesheet reduces button contrast to the
+   point of invisibility, this catches it. forced-color-adjust + a
+   transition-friendly outline ensures the button silhouette is always
+   readable even if the inner text/background combo briefly fails.
+   Specifically excludes nav/footer/legacy buttons that have their
+   own deliberate hover designs.
+   ============================================================ */
+button:hover,
+.btn:hover,
+[class*="-btn"]:hover,
+[class$="btn"]:hover {
+  /* If text would become unreadable, browsers with forced-colors
+     active will fall back to system contrast. */
+  forced-color-adjust: auto;
 }
 
 /* Product Count */
