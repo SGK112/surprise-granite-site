@@ -141,6 +141,7 @@
         { label: 'Commercial — GCs &amp; Architects', href: '/commercial/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Reviews & Project Gallery', href: '/reviews/' },
+        { label: 'Our Process — What to Expect', href: '/process/' },
         { label: 'Financing — 0% APR Available', href: '/financing/' },
         { label: 'Contact Us', href: '/contact-us' }
       ]
