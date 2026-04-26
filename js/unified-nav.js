@@ -93,6 +93,7 @@
       items: [
         { label: '✨ Virtual Showroom', href: '/showroom/' },
         { label: 'All Countertops', href: '/materials/all-countertops' },
+        { label: 'Compare Materials (Quartz vs Granite vs…)', href: '/compare/' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
