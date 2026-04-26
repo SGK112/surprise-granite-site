@@ -140,7 +140,7 @@
         { label: 'Custom Millwork', href: '/millwork/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Reviews & Project Gallery', href: '/reviews/' },
-        { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' },
+        { label: 'Financing — 0% APR Available', href: '/financing/' },
         { label: 'Contact Us', href: '/contact-us' }
       ]
     }
