@@ -571,11 +571,15 @@
     const styles = document.createElement('style');
     styles.id = 'sg-promo-callout-styles';
     styles.textContent = `
-      /* Bottom-RIGHT corner — bottom-left is taken by the instant-quote
-         widget (sq-iq-btn). Putting both in the same corner overlaps on
-         every page that loads instant-quote.js. */
+      /* Bottom-RIGHT corner. Stacking order from bottom-up on desktop:
+           1. Remodely Hub button   (bottom: 24px, right: 24px)
+           2. Scroll-to-top         (bottom: 90px, right: 24px) [in own block]
+           3. Promo callout         (bottom: 156px, right: 16px)
+         On mobile we hide the promo callout entirely — the sticky bottom
+         action bar + Remodely Hub button are already enough. Adding a
+         third floating widget on a phone just clutters. */
       .sg-promo-callout {
-        position: fixed; right: 16px; bottom: 16px; z-index: 9998;
+        position: fixed; right: 16px; bottom: 156px; z-index: 9998;
         max-width: 320px; background: linear-gradient(135deg, #1a1a2e, #2d2d44);
         color: #fff; border: 1px solid rgba(249,203,0,.4); border-radius: 14px;
         padding: 18px 18px 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
@@ -604,11 +608,11 @@
         font-weight: 700; font-size: 13px; transition: background .2s;
       }
       .sg-promo-callout__cta:hover { background: #e5b800; }
-      /* Mobile: full-width bottom sheet, but stay clear of the
-         instant-quote button (which lives at bottom:80px on mobile per
-         instant-quote.js). Position above where it would land. */
-      @media (max-width: 600px) {
-        .sg-promo-callout { left: 12px; right: 12px; bottom: 12px; max-width: none; }
+      /* Mobile: hide the floating callout. Mobile action bar + Remodely
+         Hub button already cover both intent paths. The callout adds
+         clutter on small screens. */
+      @media (max-width: 768px) {
+        .sg-promo-callout { display: none !important; }
       }
     `;
     document.head.appendChild(styles);
@@ -711,8 +715,12 @@
     const styles = document.createElement('style');
     styles.id = 'sg-stt-styles';
     styles.textContent = `
+      /* Stack position — sits above the Remodely Hub button which lives
+         at bottom:24px right:24px (desktop) / bottom:85px right:16px
+         (mobile). Pushing scroll-to-top above the hub keeps both visible
+         and tappable without overlap. */
       .sg-stt {
-        position: fixed; right: 16px; bottom: 16px; z-index: 9995;
+        position: fixed; right: 24px; bottom: 90px; z-index: 9995;
         width: 44px; height: 44px; border-radius: 50%; border: none;
         background: rgba(26,26,46,.88); color: #fff; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
@@ -724,11 +732,15 @@
       .sg-stt.visible { opacity: 1; pointer-events: auto; }
       .sg-stt:hover { background: rgba(26,26,46,1); transform: translateY(-2px); }
       .sg-stt svg { width: 20px; height: 20px; }
-      /* Stack above mobile bar + below promo callout when both visible */
+      /* Mobile: sit above the Remodely Hub button (which is at
+         bottom:85px), which is already above the sticky mobile action
+         bar (bottom:0, ~76px tall via padding). */
       @media (max-width: 768px) {
-        .sg-stt { bottom: 88px; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom)); }
-        /* Lift above promo callout if both shown */
-        body:has(.sg-promo-callout:not([hidden])) .sg-stt { bottom: 220px; bottom: calc(220px + env(safe-area-inset-bottom)); }
+        .sg-stt {
+          right: 16px;
+          bottom: 150px;
+          bottom: calc(150px + env(safe-area-inset-bottom));
+        }
       }
       @media print { .sg-stt { display: none; } }
     `;

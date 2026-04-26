@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260201h">
   <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
-  <script defer src="/js/unified-nav.js?v=20260426l"></script>
+  <script defer src="/js/unified-nav.js?v=20260426m"></script>
   <script defer src="/js/remodely-hub.js?v=20260219a"></script>
 
   <script type="application/ld+json">
@@ -74,13 +74,15 @@
     .item-meta{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border)}
     .item-price{color:var(--gold-dark);font-weight:700;font-size:.85rem}
 
-    /* Wishlist counter (floating) */
-    .wishlist-fab{position:fixed;bottom:88px;right:16px;z-index:9996;background:var(--navy);color:#fff;padding:14px 20px;border-radius:50px;display:none;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);text-decoration:none;font-weight:700;font-size:.9rem;transition:transform .2s}
+    /* Wishlist counter (floating). Stacks above scroll-to-top + hub button.
+       Desktop: bottom 150px (above scroll-to-top at 90 + hub at 24).
+       Mobile: bottom 210px (above scroll-to-top at 150 + hub at 85). */
+    .wishlist-fab{position:fixed;bottom:150px;right:24px;z-index:9996;background:var(--navy);color:#fff;padding:14px 20px;border-radius:50px;display:none;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);text-decoration:none;font-weight:700;font-size:.9rem;transition:transform .2s}
     .wishlist-fab.visible{display:inline-flex}
     .wishlist-fab:hover{transform:translateY(-2px)}
     .wishlist-fab svg{width:18px;height:18px}
     .wishlist-fab .count{background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:50px;font-size:.75rem;font-weight:800;min-width:22px;text-align:center}
-    @media(max-width:768px){.wishlist-fab{bottom:88px;right:12px}}
+    @media(max-width:768px){.wishlist-fab{bottom:210px;right:16px;bottom:calc(210px + env(safe-area-inset-bottom))}}
 
     /* Empty state */
     .empty{text-align:center;padding:80px 20px;color:var(--text-muted)}
