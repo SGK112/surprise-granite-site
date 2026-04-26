@@ -921,13 +921,34 @@
       return;
     }
 
+    // ONLY surface the floating cart on actual shopping pages.
+    // Showing it on lead-funnel pages (remodeling/, design-services/,
+    // tile-showers/, reviews/, aria/, etc.) clutters the bottom-right
+    // corner and competes with the Remodely Hub button. Plus it
+    // implies "cart-and-checkout" intent on pages that are quote-driven.
+    //
+    // Whitelist: marketplace, shop, products, cart, checkout pages.
+    // Everything else gets cart functionality via the unified-nav cart
+    // link only — no floating button.
+    const path = (location.pathname || '').toLowerCase();
+    const isShopPage = (
+      path.startsWith('/marketplace') ||
+      path.startsWith('/shop') ||
+      path.startsWith('/products') ||
+      path.startsWith('/cart') ||
+      path.startsWith('/checkout') ||
+      path.startsWith('/showroom') // showroom uses wishlist; cart can ride along
+    );
+
     injectStyles();
     addButtonBarStyles();
-    createCartDrawer();
-    addQuickAddButtons();
-    addCartButtonBars();
+    if (isShopPage) {
+      createCartDrawer();
+      addQuickAddButtons();
+      addCartButtonBars();
+      updateFloatingCount();
+    }
     interceptShopifyLinks();
-    updateFloatingCount();
 
     // No ShopifyCart dependency — drawer re-renders on SgCart calls via renderCartDrawer()
     if (false) {
