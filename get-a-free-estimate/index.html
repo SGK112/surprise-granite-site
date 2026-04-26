@@ -411,7 +411,7 @@
 <link rel="stylesheet" href="/css/mobile-optimizations.css">
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
-<script defer src="/js/unified-nav.js?v=20260426b"></script>
+<script defer src="/js/unified-nav.js?v=20260426d"></script>
 
 </head>
 <body>
@@ -615,6 +615,43 @@
   </div>
 
   <script>
+    // Lead attribution — read URL params on load and capture them with the
+    // form submission so the leads table can show "this came from /promo X"
+    // or "this came from the Phoenix cabinets page". Pre-fills the service
+    // select when ?service= matches an option, so users land on a primed form.
+    //
+    // Params we honor (all optional):
+    //   ?service=   — countertop-install | cabinets | full-remodel | etc.
+    //                 (matches values in the projectType select; auto-selects)
+    //   ?city=      — surprise | phoenix | scottsdale | mesa | glendale | ...
+    //   ?promo=     — full-remodel-dinner (or any campaign slug)
+    //   ?src=       — promo-callout | tariff-warning | remodeling-hub | etc.
+    //                 (campaign source for funnel attribution)
+    //
+    // All captured params are stuffed into formData._attribution and saved to
+    // the lead's raw_data on submit (no schema migration needed).
+    const SG_LEAD_ATTRIBUTION = (function() {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const attr = {};
+        ['service','city','promo','src','utm_source','utm_medium','utm_campaign','utm_content','gclid','fbclid'].forEach(k => {
+          const v = p.get(k);
+          if (v) attr[k] = v.substring(0, 100); // cap length to keep raw_data small
+        });
+        attr.referrer = (document.referrer || '').substring(0, 200);
+        attr.landing_url = window.location.href.substring(0, 500);
+        // Try to pre-fill the service dropdown
+        if (attr.service) {
+          const select = document.getElementById('projectType') || document.querySelector('select[name="projectType"]');
+          if (select) {
+            const match = Array.from(select.options).find(o => o.value === attr.service);
+            if (match) select.value = attr.service;
+          }
+        }
+        return attr;
+      } catch (e) { return {}; }
+    })();
+
     document.getElementById('estimateForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -642,7 +679,9 @@
         images: images,
         imageCount: images.length,
         source: 'website-estimate-form',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Campaign attribution — see SG_LEAD_ATTRIBUTION definition above
+        _attribution: SG_LEAD_ATTRIBUTION
       };
 
       try {

@@ -95,6 +95,8 @@
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
+        { label: 'Cabinets', href: '/cabinets/' },
+        { label: 'Custom Millwork', href: '/millwork/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
         { label: 'LVP Flooring', href: '/materials/flooring' }
       ]
@@ -126,10 +128,13 @@
       label: 'Services',
       icon: '<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>',
       items: [
+        { label: 'Full Remodeling Hub', href: '/remodeling/' },
         { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
         { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
         { label: 'Tile Shower Remodel', href: '/services/tile-shower-remodel/' },
         { label: 'Countertop Installation', href: '/services/countertop-installation/' },
+        { label: 'Cabinets', href: '/cabinets/' },
+        { label: 'Custom Millwork', href: '/millwork/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' },
         { label: 'Project Gallery', href: '/company/project-gallery' },
@@ -148,6 +153,8 @@
   const MOBILE_MENU_ITEMS = [
     { label: 'Home', href: '/' },
     { label: 'Countertops', href: '/materials/all-countertops' },
+    { label: 'Cabinets', href: '/cabinets/' },
+    { label: 'Custom Millwork', href: '/millwork/' },
     { label: 'Tile', href: '/materials/all-tile' },
     { label: 'Flooring', href: '/materials/flooring' },
     { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
@@ -165,6 +172,8 @@
       { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
+      { name: 'Cabinets', desc: 'Custom, refacing, kitchen, bath', href: '/cabinets/', img: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=70' },
+      { name: 'Custom Millwork', desc: 'Built-ins, mantels, paneling', href: '/millwork/', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=70' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
       { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
       { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
@@ -537,6 +546,81 @@
     }, 100);
   }
 
+  // Inject the floating "Full Course Remodel" promo CTA.
+  // Floating bottom-left card, dismissible, persists dismissal in
+  // localStorage so it doesn't haunt repeat visitors.
+  function insertPromoCallout() {
+    try {
+      const path = (location.pathname || '').toLowerCase();
+      // Don't show on the promo page itself or on the high-intent lead form
+      if (path.startsWith('/special-offers/full-remodel-dinner')) return;
+      if (path.startsWith('/get-a-free-estimate')) return;
+      if (path.startsWith('/account')) return; // logged-in CRM users don't need it
+      if (path.startsWith('/cart') || path.startsWith('/checkout')) return;
+
+      // Honor dismissal — set when user clicks the X
+      if (localStorage.getItem('sg_promo_full_course_dismissed') === '1') return;
+    } catch (e) {}
+
+    const styles = document.createElement('style');
+    styles.id = 'sg-promo-callout-styles';
+    styles.textContent = `
+      .sg-promo-callout {
+        position: fixed; left: 16px; bottom: 16px; z-index: 9998;
+        max-width: 320px; background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+        color: #fff; border: 1px solid rgba(249,203,0,.4); border-radius: 14px;
+        padding: 18px 18px 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        animation: sg-promo-in .35s cubic-bezier(.2,.7,.3,1) both;
+      }
+      @keyframes sg-promo-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      .sg-promo-callout__close {
+        position: absolute; top: 8px; right: 8px; width: 24px; height: 24px;
+        background: rgba(255,255,255,.08); border: none; border-radius: 50%;
+        color: rgba(255,255,255,.7); font-size: 14px; line-height: 1; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .sg-promo-callout__close:hover { background: rgba(255,255,255,.18); color: #fff; }
+      .sg-promo-callout__badge {
+        display: inline-block; background: rgba(249,203,0,.18); color: #f9cb00;
+        padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+      }
+      .sg-promo-callout__title { font-size: 16px; font-weight: 800; margin: 0 0 4px; line-height: 1.25; }
+      .sg-promo-callout__title em { color: #f9cb00; font-style: normal; }
+      .sg-promo-callout__sub { font-size: 13px; color: rgba(255,255,255,.78); margin: 0 0 12px; line-height: 1.5; }
+      .sg-promo-callout__cta {
+        display: block; background: #f9cb00; color: #1a1a2e; text-decoration: none;
+        text-align: center; padding: 10px 14px; border-radius: 8px;
+        font-weight: 700; font-size: 13px; transition: background .2s;
+      }
+      .sg-promo-callout__cta:hover { background: #e5b800; }
+      @media (max-width: 600px) {
+        .sg-promo-callout { left: 12px; right: 12px; bottom: 12px; max-width: none; }
+      }
+    `;
+    document.head.appendChild(styles);
+
+    const el = document.createElement('aside');
+    el.className = 'sg-promo-callout';
+    el.setAttribute('role', 'complementary');
+    el.setAttribute('aria-label', 'Special offer');
+    el.innerHTML = `
+      <button class="sg-promo-callout__close" aria-label="Dismiss promo">×</button>
+      <span class="sg-promo-callout__badge">Limited Time</span>
+      <p class="sg-promo-callout__title">The <em>Full Course</em> Remodel</p>
+      <p class="sg-promo-callout__sub">Kitchen + bath, cabinets &amp; counters — 3 dinners on us at Big Buddha while your kitchen's out.</p>
+      <a class="sg-promo-callout__cta" href="/special-offers/full-remodel-dinner/?src=promo-callout">See the deal →</a>
+    `;
+    document.body.appendChild(el);
+
+    el.querySelector('.sg-promo-callout__close').addEventListener('click', () => {
+      try { localStorage.setItem('sg_promo_full_course_dismissed', '1'); } catch (e) {}
+      el.style.animation = 'sg-promo-in .25s reverse forwards';
+      setTimeout(() => el.remove(), 250);
+    });
+  }
+
   // Initialize navigation
   function init() {
     // Remove old navigation first
@@ -550,6 +634,13 @@
 
     // Insert navigation HTML
     document.body.insertAdjacentHTML('afterbegin', createNavHTML());
+
+    // Inject site-wide promo: "The Full Course Remodel" floating CTA.
+    // Dismissed state persists in localStorage so a returning visitor isn't
+    // hammered with it. Hidden on the promo page itself (don't promote a
+    // page to the user already viewing it) and on the lead form (don't
+    // distract from a high-intent action).
+    insertPromoCallout();
 
     // Get elements
     const toggle = document.getElementById('unifiedNavToggle');
