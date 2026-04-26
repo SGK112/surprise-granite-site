@@ -128,6 +128,7 @@
       label: 'Services',
       icon: '<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>',
       items: [
+        { label: '✨ Ask Aria — AI Design Assistant', href: '/aria/' },
         { label: 'Free In-Home Design Consultation', href: '/design-services/' },
         { label: 'Full Remodeling Hub', href: '/remodeling/' },
         { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
@@ -628,6 +629,77 @@
     });
   }
 
+  // Sticky mobile action bar — Call + Get Quote always one thumb away.
+  // 70% of traffic is mobile. The single biggest conversion win is making
+  // the two highest-intent actions reachable without scrolling. Desktop
+  // already has the nav buttons in view; mobile users have to fight the
+  // hamburger + drawer to find them.
+  //
+  // Hidden on:
+  //   - the lead form itself (don't compete with the form)
+  //   - the cart/checkout (don't disrupt purchase flow)
+  //   - print mode
+  function insertMobileActionBar() {
+    try {
+      const path = (location.pathname || '').toLowerCase();
+      if (path.startsWith('/get-a-free-estimate')) return;
+      if (path.startsWith('/cart') || path.startsWith('/checkout')) return;
+    } catch (e) {}
+
+    const styles = document.createElement('style');
+    styles.id = 'sg-mab-styles';
+    styles.textContent = `
+      .sg-mab {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 9997;
+        display: none; /* mobile-only */
+        background: rgba(26,26,46,.96);
+        backdrop-filter: saturate(180%) blur(12px);
+        -webkit-backdrop-filter: saturate(180%) blur(12px);
+        border-top: 1px solid rgba(255,255,255,.08);
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+        gap: 10px;
+        box-shadow: 0 -8px 24px rgba(0,0,0,.25);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      }
+      .sg-mab__btn {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        gap: 8px; padding: 13px 14px; border-radius: 50px;
+        font-size: 15px; font-weight: 700; text-decoration: none;
+        transition: transform .15s, background .15s;
+        min-height: 48px; white-space: nowrap;
+      }
+      .sg-mab__btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+      .sg-mab__btn--call { background: rgba(255,255,255,.1); color: #fff; }
+      .sg-mab__btn--call:active { background: rgba(255,255,255,.18); transform: scale(.98); }
+      .sg-mab__btn--cta { background: #f9cb00; color: #1a1a2e; }
+      .sg-mab__btn--cta:active { background: #e5b800; transform: scale(.98); }
+      @media (max-width: 768px) {
+        .sg-mab { display: flex; }
+        /* Reserve space at bottom of body so the bar doesn't cover content */
+        body.unified-nav-active { padding-bottom: 76px; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+        /* Lift the promo callout above the bar so they don't stack on top of each other */
+        .sg-promo-callout { bottom: 88px !important; bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+      }
+    `;
+    document.head.appendChild(styles);
+
+    const bar = document.createElement('div');
+    bar.className = 'sg-mab';
+    bar.setAttribute('role', 'navigation');
+    bar.setAttribute('aria-label', 'Quick contact');
+    bar.innerHTML = `
+      <a href="tel:+16028333189" class="sg-mab__btn sg-mab__btn--call" aria-label="Call us">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a1 1 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+        Call (602) 833-3189
+      </a>
+      <a href="/get-a-free-estimate/?src=mobile-bar" class="sg-mab__btn sg-mab__btn--cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Free Estimate
+      </a>
+    `;
+    document.body.appendChild(bar);
+  }
+
   // Initialize navigation
   function init() {
     // Remove old navigation first
@@ -648,6 +720,11 @@
     // page to the user already viewing it) and on the lead form (don't
     // distract from a high-intent action).
     insertPromoCallout();
+
+    // Sticky bottom action bar on mobile — Call + Free Estimate always
+    // one thumb away. 70% of traffic is mobile; this is the highest-
+    // leverage conversion win on the site.
+    insertMobileActionBar();
 
     // Get elements
     const toggle = document.getElementById('unifiedNavToggle');
