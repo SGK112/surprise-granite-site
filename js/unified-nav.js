@@ -138,6 +138,7 @@
         { label: 'Countertop Installation', href: '/services/countertop-installation/' },
         { label: 'Cabinets', href: '/cabinets/' },
         { label: 'Custom Millwork', href: '/millwork/' },
+        { label: 'Commercial — GCs &amp; Architects', href: '/commercial/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Reviews & Project Gallery', href: '/reviews/' },
         { label: 'Financing — 0% APR Available', href: '/financing/' },
@@ -702,6 +703,55 @@
     document.body.appendChild(bar);
   }
 
+  // Subtle scroll-to-top button. Appears after 600px scroll, fades in
+  // smoothly. Sits above the mobile bar / promo callout so it doesn't
+  // collide on small screens. Hidden during print.
+  function insertScrollToTop() {
+    const styles = document.createElement('style');
+    styles.id = 'sg-stt-styles';
+    styles.textContent = `
+      .sg-stt {
+        position: fixed; right: 16px; bottom: 16px; z-index: 9995;
+        width: 44px; height: 44px; border-radius: 50%; border: none;
+        background: rgba(26,26,46,.88); color: #fff; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 20px rgba(0,0,0,.25);
+        opacity: 0; pointer-events: none;
+        transition: opacity .25s, transform .25s, background .15s;
+        backdrop-filter: blur(8px);
+      }
+      .sg-stt.visible { opacity: 1; pointer-events: auto; }
+      .sg-stt:hover { background: rgba(26,26,46,1); transform: translateY(-2px); }
+      .sg-stt svg { width: 20px; height: 20px; }
+      /* Stack above mobile bar + below promo callout when both visible */
+      @media (max-width: 768px) {
+        .sg-stt { bottom: 88px; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom)); }
+        /* Lift above promo callout if both shown */
+        body:has(.sg-promo-callout:not([hidden])) .sg-stt { bottom: 220px; bottom: calc(220px + env(safe-area-inset-bottom)); }
+      }
+      @media print { .sg-stt { display: none; } }
+    `;
+    document.head.appendChild(styles);
+
+    const btn = document.createElement('button');
+    btn.className = 'sg-stt';
+    btn.setAttribute('aria-label', 'Scroll to top');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    document.body.appendChild(btn);
+
+    let visible = false;
+    const onScroll = () => {
+      const shouldShow = window.scrollY > 600;
+      if (shouldShow !== visible) {
+        visible = shouldShow;
+        btn.classList.toggle('visible', visible);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
   // Initialize navigation
   function init() {
     // Remove old navigation first
@@ -727,6 +777,10 @@
     // one thumb away. 70% of traffic is mobile; this is the highest-
     // leverage conversion win on the site.
     insertMobileActionBar();
+
+    // Scroll-to-top button — appears after 600px scroll. Subtle UX win,
+    // especially on long landing pages (the new SEO hubs are 600+ lines).
+    insertScrollToTop();
 
     // Get elements
     const toggle = document.getElementById('unifiedNavToggle');
