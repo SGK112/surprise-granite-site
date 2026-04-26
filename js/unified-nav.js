@@ -91,6 +91,7 @@
       label: 'Materials',
       icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>',
       items: [
+        { label: '✨ Virtual Showroom', href: '/showroom/' },
         { label: 'All Countertops', href: '/materials/all-countertops' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
@@ -171,6 +172,7 @@
   // Product data for mega menus
   const PRODUCTS = {
     materials: [
+      { name: 'Virtual Showroom', desc: 'Browse stones, cabinets, tile — save favorites', href: '/showroom/', img: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=70' },
       { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
