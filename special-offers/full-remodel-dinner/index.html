@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260201h">
   <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
-  <script defer src="/js/unified-nav.js?v=20260426e"></script>
+  <script defer src="/js/unified-nav.js?v=20260426g"></script>
 
   <script type="application/ld+json">
   {"@context": "https://schema.org", "@type": "Offer",
@@ -83,8 +83,8 @@
   <section class="hero">
     <div class="container">
       <div class="hero-badge">Limited Time Promotion · Phoenix Metro</div>
-      <h1>The Full Course<br/>Remodel.<span class="free">Dinner's On Us.</span></h1>
-      <p>Kitchen and bath, cabinets and countertops, all in one signed scope — that's a Full Course Remodel. We'll send you off with three dinner gift cards to <strong>Big Buddha Restaurant</strong> the day your project starts, because nobody wants to cook on a hot plate while their kitchen's torn apart.</p>
+      <h1>Free Dinners with<br/>Your Remodel.<span class="free">Three Tiers, One Goal.</span></h1>
+      <p>Every project size gets dinner. <strong>1 dinner</strong> for new countertops · <strong>2 dinners</strong> for a full kitchen remodel · <strong>3 dinners</strong> for the Full Course (kitchen + bath bundle). All gift cards to <strong>Big Buddha Restaurant</strong>, delivered the day your project starts. Because nobody wants to cook on a hot plate.</p>
       <div class="hero-buttons">
         <a href="/get-a-free-estimate/?promo=full-remodel-dinner" class="btn-primary">Book My Estimate</a>
         <a href="tel:+16028333189" class="btn-secondary">Call (602) 833-3189</a>
@@ -92,17 +92,74 @@
     </div>
   </section>
 
+  <!-- Tier the offer — every project size gets dinner -->
   <section class="section">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Why We're Doing This</div>
-        <h2>Because Remodels Are Disruptive</h2>
-        <p>Three weeks without a working kitchen sucks. We can fix the kitchen — we can also help with dinner.</p>
+        <div class="section-badge">Tiered Offer</div>
+        <h2>Every Project Gets Dinner</h2>
+        <p>Big or small, we want to make remodel weeks easier. Three tiers — pick the project, get the dinners.</p>
       </div>
-      <div class="why-grid">
-        <div class="why-card"><div class="num">3</div><h3>Dinner Cards</h3><p>Three gift cards to Big Buddha Restaurant. Use them whenever it makes sense — install week, design week, post-completion celebration.</p></div>
-        <div class="why-card"><div class="num">2</div><h3>Rooms Updated</h3><p>Both kitchen and bathroom — new cabinets and new countertops in each. Done in one project, one timeline, one contractor.</p></div>
-        <div class="why-card"><div class="num">1</div><h3>Local Vendor</h3><p>We don't work with chains. Big Buddha is a local Phoenix-area spot we believe in. Supporting them while supporting you.</p></div>
+      <style>
+        .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:1100px;margin:0 auto}
+        .tier{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:36px 28px;text-align:center;display:flex;flex-direction:column;transition:all .3s}
+        .tier.featured{border-color:var(--gold);box-shadow:0 12px 40px rgba(0,0,0,.12);transform:scale(1.03)}
+        .tier-dinners{font-size:4rem;font-weight:900;color:var(--gold-dark);line-height:1;margin-bottom:6px}
+        .tier-dinners-label{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:18px}
+        .tier h3{font-size:1.4rem;font-weight:800;color:var(--navy);margin-bottom:6px}
+        .tier .scope{font-size:.95rem;color:var(--text-secondary);margin-bottom:20px;line-height:1.55}
+        .tier ul{list-style:none;padding:0;margin:0 0 24px;text-align:left}
+        .tier li{padding:8px 0 8px 24px;position:relative;font-size:.92rem;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+        .tier li:last-child{border-bottom:none}
+        .tier li::before{content:'✓';position:absolute;left:0;color:var(--gold-dark);font-weight:800}
+        .tier .tier-cta{display:block;background:var(--navy);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;font-size:.92rem;margin-top:auto;transition:background .2s}
+        .tier.featured .tier-cta{background:var(--gold);color:var(--navy)}
+        .tier .tier-cta:hover{background:var(--gold-dark);color:var(--navy)}
+        .tier.featured .tier-cta:hover{background:#e5b800}
+        @media(max-width:768px){.tier.featured{transform:none}}
+      </style>
+      <div class="tier-grid">
+        <div class="tier">
+          <div class="tier-dinners">1</div>
+          <div class="tier-dinners-label">Free Dinner</div>
+          <h3>Counters On Us</h3>
+          <p class="scope">New countertops only — kitchen or bath.</p>
+          <ul>
+            <li>New granite, quartz, marble, or quartzite</li>
+            <li>Any single room (kitchen, bath, laundry, bar)</li>
+            <li>Project size: $2,500+</li>
+            <li>1 dinner card to Big Buddha</li>
+          </ul>
+          <a class="tier-cta" href="/get-a-free-estimate/?promo=counters-dinner&service=countertop-install">Quote Countertops →</a>
+        </div>
+        <div class="tier">
+          <div class="tier-dinners">2</div>
+          <div class="tier-dinners-label">Free Dinners</div>
+          <h3>Kitchen Reset</h3>
+          <p class="scope">Full kitchen remodel — cabinets + counters + backsplash.</p>
+          <ul>
+            <li>New or refaced cabinets</li>
+            <li>New countertops</li>
+            <li>Backsplash tile</li>
+            <li>Project size: $15,000+</li>
+            <li>2 dinner cards to Big Buddha</li>
+          </ul>
+          <a class="tier-cta" href="/get-a-free-estimate/?promo=kitchen-dinners&service=kitchen-remodel">Quote Kitchen →</a>
+        </div>
+        <div class="tier featured">
+          <div class="tier-dinners">3</div>
+          <div class="tier-dinners-label">Free Dinners · Most Popular</div>
+          <h3>The Full Course</h3>
+          <p class="scope">Kitchen + bathroom — both rooms, cabinets &amp; counters in each.</p>
+          <ul>
+            <li>Full kitchen scope (cabinets + counters)</li>
+            <li>Bathroom: vanity replacement + counters</li>
+            <li>Coordinated material selections</li>
+            <li>Project size: $25,000+</li>
+            <li>3 dinner cards to Big Buddha</li>
+          </ul>
+          <a class="tier-cta" href="/get-a-free-estimate/?promo=full-course-dinners&service=full-remodel">Book Full Course →</a>
+        </div>
       </div>
     </div>
   </section>
@@ -110,21 +167,17 @@
   <section class="section section-alt">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">How to Qualify</div>
-        <h2>Easy Math</h2>
+        <div class="section-badge">Why We're Doing This</div>
+        <h2>Because Remodels Are Disruptive</h2>
+        <p>Even one weekend without a kitchen counter is annoying. We can fix it — we can also help with dinner.</p>
       </div>
-      <div class="qualify-list">
-        <h3>Your project must include all of:</h3>
-        <ul>
-          <li><strong>New cabinets</strong> in your kitchen (custom, semi-custom, or refacing)</li>
-          <li><strong>New countertops</strong> in your kitchen (granite, quartz, marble, or quartzite)</li>
-          <li><strong>New cabinets</strong> in at least one bathroom (vanity replacement counts)</li>
-          <li><strong>New countertops</strong> in that same bathroom</li>
-          <li>Signed contract and deposit on file</li>
-        </ul>
+      <div class="why-grid">
+        <div class="why-card"><div class="num">Local</div><h3>Big Buddha Restaurant</h3><p>We don't do gift cards to chains. Big Buddha is a local Phoenix-area spot we genuinely like. Supporting them while supporting you.</p></div>
+        <div class="why-card"><div class="num">Real</div><h3>Cards in Hand</h3><p>Physical gift cards delivered the day your project starts. Use them install week, post-completion, whenever — they don't expire.</p></div>
+        <div class="why-card"><div class="num">Stacks</div><h3>With Financing</h3><p>Promo stacks with our 0% / same-as-cash financing options. Doesn't stack with other percent-off discounts.</p></div>
       </div>
       <div class="terms">
-        <strong>Fine print:</strong> Promotion valid through December 31, 2026 for projects contracted after April 26, 2026. One promo per household. Dinner gift cards delivered upon project commencement (after deposit clears). Cabinet refacing qualifies as "new cabinets" for promo purposes. Bathroom must include at least one full vanity replacement (top + cabinet). Promo cannot be combined with other percent-off discounts but stacks fine with financing offers. Big Buddha gift cards subject to restaurant terms; substitutions of equal value available if restaurant unavailable.
+        <strong>Fine print:</strong> Tiered promotion valid through December 31, 2026 for projects contracted after April 26, 2026. One promo per household per calendar year. Dinner gift cards delivered upon project commencement (after deposit clears). Cabinet refacing qualifies as "new cabinets" for promo purposes. Tier qualification based on signed contract scope, not initial inquiry. Promo cannot be combined with other percent-off discounts but stacks with financing offers. Big Buddha gift cards subject to restaurant terms; equivalent-value substitutions available if restaurant unavailable.
       </div>
     </div>
   </section>

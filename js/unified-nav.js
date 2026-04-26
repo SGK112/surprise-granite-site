@@ -132,13 +132,13 @@
         { label: 'Full Remodeling Hub', href: '/remodeling/' },
         { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
         { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
-        { label: 'Tile Shower Remodel', href: '/services/tile-shower-remodel/' },
+        { label: 'Custom Tile Showers', href: '/tile-showers/' },
         { label: 'Countertop Installation', href: '/services/countertop-installation/' },
         { label: 'Cabinets', href: '/cabinets/' },
         { label: 'Custom Millwork', href: '/millwork/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
+        { label: 'Reviews & Project Gallery', href: '/reviews/' },
         { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' },
-        { label: 'Project Gallery', href: '/company/project-gallery' },
         { label: 'Contact Us', href: '/contact-us' }
       ]
     }
@@ -566,8 +566,11 @@
     const styles = document.createElement('style');
     styles.id = 'sg-promo-callout-styles';
     styles.textContent = `
+      /* Bottom-RIGHT corner — bottom-left is taken by the instant-quote
+         widget (sq-iq-btn). Putting both in the same corner overlaps on
+         every page that loads instant-quote.js. */
       .sg-promo-callout {
-        position: fixed; left: 16px; bottom: 16px; z-index: 9998;
+        position: fixed; right: 16px; bottom: 16px; z-index: 9998;
         max-width: 320px; background: linear-gradient(135deg, #1a1a2e, #2d2d44);
         color: #fff; border: 1px solid rgba(249,203,0,.4); border-radius: 14px;
         padding: 18px 18px 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
@@ -576,9 +579,9 @@
       }
       @keyframes sg-promo-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       .sg-promo-callout__close {
-        position: absolute; top: 8px; right: 8px; width: 24px; height: 24px;
+        position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
         background: rgba(255,255,255,.08); border: none; border-radius: 50%;
-        color: rgba(255,255,255,.7); font-size: 14px; line-height: 1; cursor: pointer;
+        color: rgba(255,255,255,.7); font-size: 16px; line-height: 1; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
       }
       .sg-promo-callout__close:hover { background: rgba(255,255,255,.18); color: #fff; }
@@ -587,7 +590,7 @@
         padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
       }
-      .sg-promo-callout__title { font-size: 16px; font-weight: 800; margin: 0 0 4px; line-height: 1.25; }
+      .sg-promo-callout__title { font-size: 16px; font-weight: 800; margin: 0 0 4px; line-height: 1.25; padding-right: 28px; }
       .sg-promo-callout__title em { color: #f9cb00; font-style: normal; }
       .sg-promo-callout__sub { font-size: 13px; color: rgba(255,255,255,.78); margin: 0 0 12px; line-height: 1.5; }
       .sg-promo-callout__cta {
@@ -596,6 +599,9 @@
         font-weight: 700; font-size: 13px; transition: background .2s;
       }
       .sg-promo-callout__cta:hover { background: #e5b800; }
+      /* Mobile: full-width bottom sheet, but stay clear of the
+         instant-quote button (which lives at bottom:80px on mobile per
+         instant-quote.js). Position above where it would land. */
       @media (max-width: 600px) {
         .sg-promo-callout { left: 12px; right: 12px; bottom: 12px; max-width: none; }
       }
@@ -608,10 +614,10 @@
     el.setAttribute('aria-label', 'Special offer');
     el.innerHTML = `
       <button class="sg-promo-callout__close" aria-label="Dismiss promo">×</button>
-      <span class="sg-promo-callout__badge">Limited Time</span>
-      <p class="sg-promo-callout__title">The <em>Full Course</em> Remodel</p>
-      <p class="sg-promo-callout__sub">Kitchen + bath, cabinets &amp; counters — 3 dinners on us at Big Buddha while your kitchen's out.</p>
-      <a class="sg-promo-callout__cta" href="/special-offers/full-remodel-dinner/?src=promo-callout">See the deal →</a>
+      <span class="sg-promo-callout__badge">Dinner's On Us</span>
+      <p class="sg-promo-callout__title">Free Dinners with Your <em>Remodel</em></p>
+      <p class="sg-promo-callout__sub">1 dinner with new countertops · 2 with kitchen remodel · 3 with the Full Course (kitchen + bath).</p>
+      <a class="sg-promo-callout__cta" href="/special-offers/full-remodel-dinner/?src=promo-callout">See the tiers →</a>
     `;
     document.body.appendChild(el);
 
