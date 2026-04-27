@@ -1938,21 +1938,26 @@ setInterval(displayOpeningStatus, 60000);
   z-index: 0;
 }
 
-/* Video Background - Multiple videos with crossfade */
+/* Video Background — cover the hero, anchor crop to the top portion
+   on portrait/mobile viewports so Joshua's face stays visible (the
+   16:9 video would otherwise center-crop to his torso on tall screens). */
 .sg-hero__video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center 25%;
   z-index: 1;
   opacity: 0;
   transition: opacity 1s ease;
   pointer-events: none;
+}
+@media (max-width: 768px) {
+  .sg-hero__video {
+    /* Mobile portrait: anchor to top so head + shoulders show, not stomach */
+    object-position: center top;
+  }
 }
 
 .sg-hero__video--active {
@@ -1975,9 +1980,16 @@ setInterval(displayOpeningStatus, 60000);
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 30%;
+  object-position: center 25%;
   transform: scale(1.02);
   animation: heroZoom 25s ease-in-out infinite alternate;
+}
+
+@media (max-width: 768px) {
+  .sg-hero__img {
+    /* Match the video: anchor to top on mobile so head + shoulders show */
+    object-position: center top;
+  }
 }
 
 @keyframes heroZoom {
