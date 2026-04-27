@@ -81,6 +81,7 @@
     { label: 'Marketplace', href: '/marketplace/', hasMenu: true, isMarketplace: true },
     { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
+    { label: 'Tools', href: '/tools/' },
     { label: 'Contact', href: '/contact-us' },
     { label: 'Book Estimate', href: '/get-a-free-estimate', isBook: true }
   ];
@@ -124,6 +125,24 @@
         { label: 'Find Stone Yards', href: '/stone-yards/' },
         { label: 'Arizona Tile', href: '/stone-yards/arizona-tile/' },
         { label: 'MSI Surfaces', href: '/stone-yards/msi/' }
+      ]
+    },
+    {
+      label: 'Tools &amp; Calculators',
+      icon: '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+      items: [
+        { label: '📐 Countertop Cost Calculator', href: '/tools/countertop-calculator/' },
+        { label: '🪵 Flooring Cost Calculator', href: '/tools/flooring-calculator/' },
+        { label: '🧱 Tile Cost Calculator', href: '/tools/tile-calculator/' },
+        { label: '🛠️ Full Remodel Calculator', href: '/tools/remodel-calculator/' },
+        { label: '🎨 Countertop Edge Visualizer', href: '/tools/countertop-edge-visualizer/' },
+        { label: '🏠 Room Designer', href: '/tools/room-designer/' },
+        { label: '✨ Multi-Surface Visualizer', href: '/tools/multi-surface-room-visualizer/' },
+        { label: '🍳 Virtual Kitchen Design Tool', href: '/tools/virtual-kitchen-design-tool/' },
+        { label: '🛁 Virtual Bathroom Design Tool', href: '/tools/virtual-bathroom-design-tool/' },
+        { label: '🖼️ Interior Design Gallery', href: '/tools/interior-design-gallery/' },
+        { label: '📋 Blueprint Takeoff', href: '/tools/blueprint-takeoff/' },
+        { label: 'All Tools Hub', href: '/tools/' }
       ]
     },
     {
