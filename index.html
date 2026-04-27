@@ -1754,8 +1754,11 @@ setInterval(displayOpeningStatus, 60000);
 /* ===== HERO - CLEAN & SIMPLE ===== */
 .sg-hero {
   position: relative;
-  min-height: 100vh;
-  min-height: 100svh;
+  /* Topbar + nav above us eat ~150px — fit the visible viewport so
+     centered content actually lands in the visible center, not below
+     the fold. */
+  min-height: calc(100vh - var(--unified-nav-height, 120px) - 30px);
+  min-height: calc(100svh - var(--unified-nav-height, 120px) - 30px);
   display: flex;
   align-items: center;
   justify-content: center;
