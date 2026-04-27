@@ -1530,16 +1530,47 @@ setInterval(displayOpeningStatus, 60000);
       <span>(602) 833-3189</span>
     </a>
   </div>
+
+  <!-- Unmute toggle for the hero video — autoplays muted (browser policy),
+       click to enable sound. Sits bottom-right, translucent, premium. -->
+  <button type="button" id="sgHeroSound" class="sg-hero__sound" aria-label="Enable sound" aria-pressed="false">
+    <svg class="sg-hero__sound-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
+    <svg class="sg-hero__sound-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+    <span class="sg-hero__sound-label">Sound off</span>
+  </button>
 </section>
 
-<!-- Hero: single looping video, pause when offscreen to save battery -->
+<!-- Hero: single looping video, pause when offscreen, click-to-unmute -->
 <script>
 (function() {
   const video = document.getElementById('heroVideoMain');
+  const soundBtn = document.getElementById('sgHeroSound');
+  const soundLabel = soundBtn && soundBtn.querySelector('.sg-hero__sound-label');
   if (!video) return;
 
   // Best-effort autoplay (muted/loop is set on the element)
   video.play().catch(() => {});
+
+  // Reveal sound toggle once the video is actually playing
+  function revealSoundBtn() {
+    if (soundBtn) soundBtn.classList.add('ready');
+  }
+  video.addEventListener('playing', revealSoundBtn, { once: true });
+  // Fallback in case 'playing' never fires (paused poster scenarios)
+  setTimeout(revealSoundBtn, 1500);
+
+  // Sound toggle
+  if (soundBtn) {
+    soundBtn.addEventListener('click', () => {
+      const willBeOn = video.muted; // currently muted, so toggling ON
+      video.muted = !willBeOn;
+      soundBtn.setAttribute('aria-pressed', String(willBeOn));
+      soundBtn.setAttribute('aria-label', willBeOn ? 'Mute sound' : 'Enable sound');
+      if (soundLabel) soundLabel.textContent = willBeOn ? 'Sound on' : 'Sound off';
+      // Some browsers pause when toggling; nudge it back
+      if (video.paused) video.play().catch(() => {});
+    });
+  }
 
   // Pause when scrolled offscreen, resume on return — saves battery + bandwidth
   const observer = new IntersectionObserver((entries) => {
@@ -1820,6 +1851,61 @@ setInterval(displayOpeningStatus, 60000);
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 30px rgba(249,203,0,0.4);
+}
+
+/* Hero sound toggle — bottom-right pill, translucent, sits over the
+   video without fighting the headline + CTA. Hidden until video has
+   actually started so it doesn't flash before the autoplay resolves. */
+.sg-hero__sound {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px 10px 12px;
+  background: rgba(26,26,46,0.55);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50px;
+  font-family: 'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease 1.0s, transform 0.6s ease 1.0s, background 0.2s ease;
+  pointer-events: none;
+}
+.sg-hero__sound.ready {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.sg-hero__sound:hover {
+  background: rgba(26,26,46,0.85);
+  border-color: rgba(255,255,255,0.35);
+}
+.sg-hero__sound svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.sg-hero__sound-on { display: none; }
+.sg-hero__sound[aria-pressed="true"] .sg-hero__sound-muted { display: none; }
+.sg-hero__sound[aria-pressed="true"] .sg-hero__sound-on { display: inline-block; }
+@media (max-width: 600px) {
+  .sg-hero__sound {
+    bottom: 16px;
+    right: 16px;
+    padding: 9px 14px 9px 10px;
+    font-size: 0.78rem;
+  }
+  .sg-hero__sound-label { display: none; }
+  .sg-hero__sound { padding: 10px; gap: 0; }
 }
 
 .sg-hero__cta-simple:hover {
