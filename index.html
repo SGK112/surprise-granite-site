@@ -1493,7 +1493,7 @@ setInterval(displayOpeningStatus, 60000);
   <div class="sg-hero__bg">
     <!-- Separate Videos for Each Scene -->
     <video class="sg-hero__video sg-hero__video--active" id="heroVideoMain" autoplay muted loop playsinline poster="/images/hero-josh-poster.jpg">
-      <source src="/videos/hero-josh-intro.mp4" type="video/mp4">
+      <source src="/videos/hero-josh-intro.mp4?v=trimmed20260427" type="video/mp4">
     </video>
     <!-- Fallback Image - Joshua intro still -->
     <img src="/images/hero-josh-poster.jpg"
@@ -1506,17 +1506,27 @@ setInterval(displayOpeningStatus, 60000);
     <div class="sg-hero__gradient"></div>
   </div>
 
-  <!-- Content - Single hero with delayed text fade-in -->
+  <!-- Content - Two-scene cycle:
+       Scene 1 (intro) pops in at 0s, holds 3s, fades out at 3s.
+       Scene 2 (main) pops in at 9s — 6s after intro disappears — and stays.
+       Both scenes include the CTA so the button cycles with the text. -->
   <div class="sg-hero__content">
-    <div class="sg-hero__scenes">
-      <div class="sg-hero__scene active" data-scene="main">
+    <div class="sg-hero__scenes sg-hero__scenes--cycle">
+      <div class="sg-hero__scene sg-hero__scene--intro" data-scene="intro">
         <h1 class="sg-hero__headline-simple">Meet Joshua</h1>
         <p class="sg-hero__sub-simple">Owner of Surprise Granite — straight talk on stone, cabinets &amp; remodels.</p>
+        <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
+          Get Free Estimate
+        </button>
+      </div>
+      <div class="sg-hero__scene sg-hero__scene--main" data-scene="main">
+        <h1 class="sg-hero__headline-simple">Making Interiors Great Again</h1>
+        <p class="sg-hero__sub-simple">Counters · Cabinets · Flooring · Tile · Owner-operated · AZ ROC #341113</p>
+        <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
+          Get Free Estimate
+        </button>
       </div>
     </div>
-    <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
-      Get Free Estimate
-    </button>
 
     <!-- Mobile Trust Badge -->
     <div class="sg-hero__trust-mobile">
@@ -1788,36 +1798,74 @@ setInterval(displayOpeningStatus, 60000);
   position: relative;
 }
 
-/* Headline + tagline start hidden so the video reads first.
-   Keyframe animations (not transitions) so the from-state actually
-   renders before the active class kicks in — transitions don't fire
-   on initial page load when the .active class is already on the
-   element. The 'both' fill keeps the from-state until animation starts. */
-@keyframes sgHeroTextIn {
+/* Two-scene cycle:
+   Scene 1 ("Meet Joshua" + intro): pops in 0s, holds 3s, fades out at 3s
+   Scene 2 ("Making Interiors Great Again"): pops in at 9s, stays
+   Gap of 6s between intro disappearing and main appearing. */
+
+@keyframes sgHeroPopIn {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes sgHeroIntroCycle {
+  /* 0s pop in (0 → 0.7s): hidden → visible */
+  0%   { opacity: 0; transform: translateY(20px); pointer-events: none; }
+  6%   { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  /* hold visible (0.7s → 3s) */
+  30%  { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  /* fade out (3s → 3.7s) */
+  37%  { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+  /* gone forever */
+  100% { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+}
 
-.sg-hero__scene .sg-hero__headline-simple,
-.sg-hero__scene .sg-hero__sub-simple {
+.sg-hero__scenes--cycle {
+  position: relative;
+  /* Reserve enough vertical space so the absolute scenes don't collapse
+     the surrounding layout. Both scenes need to fit. */
+  min-height: 280px;
+}
+
+.sg-hero__scene--intro,
+.sg-hero__scene--main {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   opacity: 0;
-  transform: translateY(20px);
 }
 
-.sg-hero__scene.active .sg-hero__headline-simple {
-  animation: sgHeroTextIn 0.7s ease 1.4s both;
+/* 10s total animation: 3.7s active, 6.3s gone — matches the brief
+   (visible 3s, disappear, return 6s later). Plays once on load. */
+.sg-hero__scene--intro {
+  animation: sgHeroIntroCycle 10s ease both;
 }
 
-.sg-hero__scene.active .sg-hero__sub-simple {
-  animation: sgHeroTextIn 0.7s ease 1.8s both;
+/* Hidden until 9s, then pops in and stays. Pointer events enabled
+   via a 0-duration keyframe at 9.7s so the CTA isn't tappable
+   during the gap when the scene is invisible. */
+@keyframes sgHeroEnableMain {
+  to { pointer-events: auto; }
+}
+.sg-hero__scene--main {
+  pointer-events: none;
+  animation:
+    sgHeroPopIn 0.7s ease 9s both,
+    sgHeroEnableMain 0s linear 9.7s forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sg-hero__scene.active .sg-hero__headline-simple,
-  .sg-hero__scene.active .sg-hero__sub-simple {
+  .sg-hero__scene--intro {
+    /* Skip the cycle, just show intro briefly then defer to main */
+    animation: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sg-hero__scene--main {
     animation: none;
     opacity: 1;
     transform: none;
+    pointer-events: auto;
   }
 }
 
