@@ -197,7 +197,7 @@
 
         #remodely-hub {
           position: fixed;
-          bottom: 24px;
+          bottom: 90px;
           right: 24px;
           z-index: 99990;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -456,10 +456,10 @@
           color: rgba(255,255,255,0.5);
         }
 
-        /* Mobile - higher position to avoid floating CTA */
+        /* Mobile - sits above the scroll-to-top arrow + sticky mobile action bar */
         @media (max-width: 768px) {
           #remodely-hub {
-            bottom: 85px;
+            bottom: 150px;
             right: 16px;
           }
 
@@ -484,12 +484,12 @@
         /* Safe area */
         @supports (padding: env(safe-area-inset-bottom)) {
           #remodely-hub {
-            bottom: calc(24px + env(safe-area-inset-bottom));
+            bottom: calc(90px + env(safe-area-inset-bottom));
             right: calc(24px + env(safe-area-inset-right));
           }
           @media (max-width: 768px) {
             #remodely-hub {
-              bottom: calc(85px + env(safe-area-inset-bottom));
+              bottom: calc(150px + env(safe-area-inset-bottom));
               right: calc(16px + env(safe-area-inset-right));
             }
           }

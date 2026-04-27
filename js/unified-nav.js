@@ -579,8 +579,8 @@
     styles.id = 'sg-promo-callout-styles';
     styles.textContent = `
       /* Bottom-RIGHT corner. Stacking order from bottom-up on desktop:
-           1. Remodely Hub button   (bottom: 24px, right: 24px)
-           2. Scroll-to-top         (bottom: 90px, right: 24px) [in own block]
+           1. Scroll-to-top         (bottom: 24px, right: 24px) [in own block]
+           2. Remodely Hub button   (bottom: 90px, right: 24px)
            3. Promo callout         (bottom: 156px, right: 16px)
          On mobile we hide the promo callout entirely — the sticky bottom
          action bar + Remodely Hub button are already enough. Adding a
@@ -722,12 +722,12 @@
     const styles = document.createElement('style');
     styles.id = 'sg-stt-styles';
     styles.textContent = `
-      /* Stack position — sits above the Remodely Hub button which lives
-         at bottom:24px right:24px (desktop) / bottom:85px right:16px
-         (mobile). Pushing scroll-to-top above the hub keeps both visible
-         and tappable without overlap. */
+      /* Stack position — sits BELOW the Remodely Hub button (which lives
+         at bottom:90px desktop / 150px mobile). The arrow appears on
+         scroll, slotting in underneath the hub so the hub feels pushed
+         "up" as a stacked pair. */
       .sg-stt {
-        position: fixed; right: 24px; bottom: 90px; z-index: 9995;
+        position: fixed; right: 24px; bottom: 24px; z-index: 9995;
         width: 44px; height: 44px; border-radius: 50%; border: none;
         background: rgba(26,26,46,.88); color: #fff; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
@@ -739,14 +739,13 @@
       .sg-stt.visible { opacity: 1; pointer-events: auto; }
       .sg-stt:hover { background: rgba(26,26,46,1); transform: translateY(-2px); }
       .sg-stt svg { width: 20px; height: 20px; }
-      /* Mobile: sit above the Remodely Hub button (which is at
-         bottom:85px), which is already above the sticky mobile action
-         bar (bottom:0, ~76px tall via padding). */
+      /* Mobile: sit above the sticky mobile action bar (bottom:0, ~76px
+         tall) but BELOW the Remodely Hub at 150px. */
       @media (max-width: 768px) {
         .sg-stt {
           right: 16px;
-          bottom: 150px;
-          bottom: calc(150px + env(safe-area-inset-bottom));
+          bottom: 85px;
+          bottom: calc(85px + env(safe-area-inset-bottom));
         }
       }
       @media print { .sg-stt { display: none; } }
