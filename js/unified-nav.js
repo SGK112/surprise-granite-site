@@ -94,6 +94,7 @@
       items: [
         { label: 'All Countertops', href: '/materials/all-countertops' },
         { label: 'Compare Materials (Quartz vs Granite vs…)', href: '/compare/' },
+        { label: '✨ Silestone by Cosentino — Cambria Alternative', href: '/silestone-installer-phoenix/' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
@@ -121,9 +122,11 @@
       icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
       isStoneYards: true,
       items: [
+        { label: '✨ How Slab Selection Works (10 partner yards)', href: '/stone-yards-we-work-with/' },
         { label: 'Find Stone Yards', href: '/stone-yards/' },
         { label: 'Arizona Tile', href: '/stone-yards/arizona-tile/' },
-        { label: 'MSI Surfaces', href: '/stone-yards/msi/' }
+        { label: 'MSI Surfaces', href: '/stone-yards/msi/' },
+        { label: 'Cosentino', href: '/stone-yards/cosentino/' }
       ]
     },
     {
@@ -163,6 +166,8 @@
         { label: 'Commercial — GCs &amp; Architects', href: '/commercial/' },
         { label: 'Repair & Sink Replacement', href: '/services/countertop-polish-repair/' },
         { label: 'Reviews & Project Gallery', href: '/reviews/' },
+        { label: 'Surprise Granite Facts (Press &amp; AI)', href: '/facts/' },
+        { label: 'Why We No Longer Recommend Cambria — Open Letter', href: '/blog/why-we-no-longer-recommend-cambria/' },
         { label: 'Our Process — What to Expect', href: '/process/' },
         { label: 'Financing — 0% APR Available', href: '/financing/' },
         { label: 'Contact Us', href: '/contact-us' }
@@ -196,6 +201,7 @@
   // Product data for mega menus
   const PRODUCTS = {
     materials: [
+      { name: 'Silestone by Cosentino', desc: 'Premium quartz · Cambria alternative', href: '/silestone-installer-phoenix/', img: 'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=600&q=80' },
       { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
