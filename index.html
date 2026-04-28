@@ -5,6 +5,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Surprise Granite">
     <link rel="apple-touch-icon" sizes="192x192" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png">
+    <!-- LCP: preload the hero poster image. The 11MB hero video used to dominate
+         LCP (~14s on mobile). Preloading the 117KB poster makes IT the LCP element
+         and the video lazy-loads after window.load. -->
+    <link rel="preload" as="image" href="/images/hero-josh-poster.jpg" fetchpriority="high">
 <title>Premium Countertops &amp; Kitchen Remodeling in Surprise, AZ | Surprise Granite Marble &amp; Quartz</title>
   <link rel="canonical" href="https://www.surprisegranite.com/"/><meta content="Arizona's premier countertop and remodeling specialists. Granite, quartz, marble countertops with expert installation. Free in-home estimates in Phoenix, Surprise, Peoria & surrounding areas." name="description"/><meta content="Transform Your Kitchen | Surprise Granite - Surprise, AZ" property="og:title"/><meta content="Premium countertops, cabinets &amp; full kitchen remodeling. 400+ completed projects. 4.6⭐ rated. Free estimates in Surprise, Arizona." property="og:description"/><meta content="https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg" property="og:image"/><meta content="Transform Your Kitchen | Surprise Granite - Surprise, AZ" property="twitter:title"/><meta content="Premium countertops, cabinets &amp; full kitchen remodeling. 400+ completed projects. 4.6⭐ rated. Free estimates in Surprise, Arizona." property="twitter:description"/><meta content="https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg" property="twitter:image"/><meta property="og:type" content="website"/><meta content="summary_large_image" name="twitter:card"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link href="/css/surprisegranite.webflow.shared.06fa25eb8.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap" rel="stylesheet"/><link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/><link href="https://cdn.prod.website-files.com" rel="preconnect" crossorigin="anonymous"/><link href="https://pagead2.googlesyndication.com" rel="preconnect" crossorigin="anonymous"/><link rel="dns-prefetch" href="https://unpkg.com"/><link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/><link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png" rel="apple-touch-icon"/>
 
@@ -1488,10 +1492,36 @@ setInterval(displayOpeningStatus, 60000);
 <section class="sg-hero" id="sgHero">
   <!-- Background with Video Support -->
   <div class="sg-hero__bg">
-    <!-- Separate Videos for Each Scene -->
-    <video class="sg-hero__video sg-hero__video--active" id="heroVideoMain" autoplay muted loop playsinline poster="/images/hero-josh-poster.jpg">
-      <source src="/videos/hero-josh-intro.mp4?v=trimmed20260427" type="video/mp4">
-    </video>
+    <!-- Separate Videos for Each Scene.
+         IMPORTANT: no <source> tag and preload="none" on initial render so the
+         11MB MP4 doesn't block LCP. Source is attached after window.load by the
+         inline script below. Poster (117KB) is preloaded via <link> in <head>
+         and acts as the LCP element. -->
+    <video class="sg-hero__video sg-hero__video--active" id="heroVideoMain" muted loop playsinline preload="none" poster="/images/hero-josh-poster.jpg" data-src="/videos/hero-josh-intro.mp4?v=trimmed20260427"></video>
+    <script>
+      // Defer hero video load until after the LCP / window load. Poster image
+      // stays visible during the gap. Wrapped in try so a failure here never
+      // breaks the page.
+      (function(){
+        function loadHeroVideo(){
+          try {
+            var v = document.getElementById('heroVideoMain');
+            if (!v || v.querySelector('source')) return;
+            var s = document.createElement('source');
+            s.src = v.getAttribute('data-src');
+            s.type = 'video/mp4';
+            v.appendChild(s);
+            v.load();
+            var p = v.play(); if (p && p.catch) p.catch(function(){});
+          } catch (e) { /* poster stays — graceful degrade */ }
+        }
+        if (document.readyState === 'complete') {
+          setTimeout(loadHeroVideo, 200);
+        } else {
+          window.addEventListener('load', function(){ setTimeout(loadHeroVideo, 200); }, { once: true });
+        }
+      })();
+    </script>
     <!-- Fallback Image - Joshua intro still -->
     <img src="/images/hero-josh-poster.jpg"
          alt="Joshua Breese, owner of Surprise Granite"
