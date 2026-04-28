@@ -3467,7 +3467,20 @@ form.addEventListener('submit', async (e) => {
   submitBtn.textContent = 'Sending...';
   
   try {
-    // Submit to Supabase ONLY (powers /account page leads tab)
+    // Submit to Supabase, then mirror into VoiceNow CRM so Aria sees it.
+    const sgLeadPayload = {
+      full_name: formInputs.name,
+      email: formInputs.email,
+      phone: formInputs.phone,
+      project_type: formInputs.projectType,
+      timeline: formInputs.timeline,
+      budget: formInputs.budget,
+      message: formInputs.message,
+      source: 'website',
+      form_name: 'hero-quote-form',
+      page_url: window.location.href,
+      raw_data: formInputs
+    };
     const _heroCtrl = new AbortController();
     const _heroTid = setTimeout(() => _heroCtrl.abort(), 15000);
     const response = await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
@@ -3478,23 +3491,12 @@ form.addEventListener('submit', async (e) => {
         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({
-        full_name: formInputs.name,
-        email: formInputs.email,
-        phone: formInputs.phone,
-        project_type: formInputs.projectType,
-        timeline: formInputs.timeline,
-        budget: formInputs.budget,
-        message: formInputs.message,
-        source: 'website',
-        form_name: 'hero-quote-form',
-        page_url: window.location.href,
-        raw_data: formInputs
-      })
+      body: JSON.stringify(sgLeadPayload)
     });
     clearTimeout(_heroTid);
 
     if (response.ok) {
+      if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
       if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formInputs.name, email: formInputs.email, phone: formInputs.phone, form_name: 'hero-quote-form', project_type: formInputs.projectType, message: formInputs.message });
       closeModal();
       alert('Thank you! We\'ll contact you within 24 hours.');
@@ -8111,7 +8113,21 @@ form.addEventListener('submit', async (e) => {
       thankYouPage.classList.add('active');
       form.reset();
       
-      // Submit to Supabase ONLY (powers /account page leads tab)
+      // Submit to Supabase, then mirror into VoiceNow CRM so Aria sees it.
+      const sgLeadPayload = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        project_type: data.project_type,
+        timeline: data.timeline,
+        message: data.message + ' [Promo: ' + data.promo_type + ' - ' + data.promo_value + ']',
+        source: 'website',
+        form_name: 'promo-form',
+        page_url: window.location.href,
+        raw_data: data
+      };
       fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
         method: 'POST',
         headers: {
@@ -8119,23 +8135,10 @@ form.addEventListener('submit', async (e) => {
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          full_name: data.full_name,
-          email: data.email,
-          phone: data.phone,
-          project_type: data.project_type,
-          timeline: data.timeline,
-          message: data.message + ' [Promo: ' + data.promo_type + ' - ' + data.promo_value + ']',
-          source: 'website',
-          form_name: 'promo-form',
-          page_url: window.location.href,
-          raw_data: data
-        })
+        body: JSON.stringify(sgLeadPayload)
       }).catch(function(err) { console.log('Supabase error:', err); });
 
-      // Notify admin of new promo lead
+      if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
       if (window.SG_notifyNewLead) SG_notifyNewLead({ name: data.full_name, email: data.email, phone: data.phone, form_name: 'promo-form', project_type: data.project_type, message: data.message + ' [Promo: ' + data.promo_type + ']' });
 
       // Auto-close modal after 10 seconds

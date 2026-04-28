@@ -1388,7 +1388,31 @@
         zip: zipVal || null
       } : null;
 
-      // Submit to Supabase ONLY (powers /account page leads tab)
+      // Submit to Supabase, then mirror the same payload into VoiceNow CRM so Aria sees it.
+      const sgLeadPayload = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        zip_code: formData.zipCode,
+        billing_address: addressObj,
+        service_address: addressObj,
+        address_same: true,
+        project_type: formData.projectType,
+        project_details: formData.bathroomSubType || null,
+        timeline: formData.timeline,
+        budget: formData.budget,
+        message: formData.message,
+        image_urls: imageUrls,
+        images: imageUrls.map((url, i) => ({ url, order: i })),
+        appointment_date: formData.appointment_date,
+        appointment_time: formData.appointment_time,
+        source: 'website',
+        form_name: 'estimate-form',
+        page_url: window.location.href,
+        raw_data: formData
+      };
       try {
         const _ctrl = new AbortController();
         const _tid = setTimeout(() => _ctrl.abort(), 15000);
@@ -1400,32 +1424,10 @@
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
             'Prefer': 'return=minimal'
           },
-          body: JSON.stringify({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            full_name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            zip_code: formData.zipCode,
-            billing_address: addressObj,
-            service_address: addressObj,
-            address_same: true,
-            project_type: formData.projectType,
-            project_details: formData.bathroomSubType || null,
-            timeline: formData.timeline,
-            budget: formData.budget,
-            message: formData.message,
-            image_urls: imageUrls,
-            images: imageUrls.map((url, i) => ({ url, order: i })),
-            appointment_date: formData.appointment_date,
-            appointment_time: formData.appointment_time,
-            source: 'website',
-            form_name: 'estimate-form',
-            page_url: window.location.href,
-            raw_data: formData
-          })
+          body: JSON.stringify(sgLeadPayload)
         });
         clearTimeout(_tid);
+        if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
         if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'estimate-form', project_type: formData.projectType, message: formData.message });
       } catch (error) {
         console.log('Supabase error:', error);
