@@ -2603,9 +2603,6 @@
             <button class="slab-favorite" aria-label="Add to favorites">
               <svg viewBox="0 0 24 24" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
-            <a href="/get-a-free-estimate?service=countertop-install&material=${encodeURIComponent(slab.material_type || 'stone')}&product=${encodeURIComponent(slab.product_name || '')}" class="slab-install-badge" aria-label="Get this installed" title="Get This Installed">
-              <svg viewBox="0 0 24 24" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            </a>
           </div>
           <div class="slab-card-body">
             ${slab.distributor?.company_name ? `<div class="slab-distributor">${getDistributorLink(slab.distributor.company_name)}</div>` : ''}
@@ -2634,7 +2631,20 @@
             <div class="slab-footer">
               ${priceHtml}
               <div class="slab-cta-group">
-                ${slab.price_per_sqft > 0 ? `<button class="add-to-cart-btn" onclick="event.preventDefault();event.stopPropagation();window.sgAddToCart && window.sgAddToCart('${slab.id}', this)">Add to Cart</button>` : ''}
+                ${(() => {
+                  // Sample rules: Quartz only — samples mailable. Natural stone (granite,
+                  // marble, quartzite, dekton, soapstone, travertine, onyx, limestone, slate,
+                  // sandstone, porcelain) — view in person at partner stone yards, no samples.
+                  const NATURAL_STONE = ['granite','marble','quartzite','dekton','soapstone','travertine','onyx','limestone','slate','sandstone','porcelain'];
+                  const matType = String(slab.material_type || '').toLowerCase();
+                  const isNaturalStone = NATURAL_STONE.includes(matType);
+                  if (isNaturalStone) {
+                    return `<a class="add-to-cart-btn" href="/stone-yards-we-work-with/" onclick="event.stopPropagation();" style="background:#1a1a2e;color:#f9cb00;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">See at Stone Yard</a>`;
+                  }
+                  return slab.price_per_sqft > 0
+                    ? `<button class="add-to-cart-btn" onclick="event.preventDefault();event.stopPropagation();window.sgAddToCart && window.sgAddToCart('${slab.id}', this)">Add Sample</button>`
+                    : '';
+                })()}
                 <button class="slab-btn" data-slab-id="${slab.id}">Get Quote</button>
               </div>
             </div>

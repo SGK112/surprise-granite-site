@@ -230,6 +230,18 @@
       function renderCart() {
         if (!window.SgCart) return;
         var cart = window.SgCart.getCart();
+
+        // Defensively drop corrupt/orphan entries — items with no name OR no id.
+        // These can occur from older cart code paths that didn't validate input;
+        // rendering them shows up as a ghost "Product $0.00" row in the UI.
+        var corruptItems = cart.filter(function(it) { return !it || !it.id || !it.name; });
+        if (corruptItems.length) {
+          corruptItems.forEach(function(it) {
+            try { window.SgCart.removeFromCart(it && it.id, it && it.variant); } catch (e) {}
+          });
+          cart = window.SgCart.getCart();
+        }
+
         var totals = window.SgCart.getCartTotals();
 
         if (cart.length === 0) {
