@@ -924,7 +924,7 @@
 
       let badgesHtml = '';
       const isUnavailable = card.available === false;
-      const isPremiumBrand = card.brand && ['Cambria', 'Caesarstone', 'Silestone', 'Dekton', 'Neolith'].some(b => card.brand.includes(b));
+      const isPremiumBrand = card.brand && ['premium quartz', 'Caesarstone', 'Silestone', 'Dekton', 'Neolith'].some(b => card.brand.includes(b));
       const isNew = Math.random() < 0.15;
 
       // Show unavailable badge first (highest priority)

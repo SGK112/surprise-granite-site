@@ -2794,7 +2794,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
       // Hide the "Order Sample" button when:
       //   - material is granite (never sampled), OR
-      //   - brand is Cambria (pulled site-wide 2026-04-22), OR
+      //   - brand is premium quartz (pulled site-wide 2026-04-22), OR
       //   - product is flagged no-sample (for specific SKUs like certain tile).
       const tags = Array.isArray(product.tags) ? product.tags.map(t => String(t).toLowerCase()) : [];
       const isGranite = /granite/i.test(material || '')
@@ -2802,11 +2802,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         || /granite/i.test(product.type || '')
         || /\bgranite\b/i.test(title || '')
         || tags.some(t => /granite/.test(t));
-      const isCambria = /cambria/i.test(product.brand || '')
-        || /cambria/i.test(product.vendor || '')
-        || /cambria/i.test(product.brandDisplay || '')
-        || /\bcambria\b/i.test(title || '')
-        || tags.some(t => /cambria/.test(t));
+      const isCambria = false;
       const sampleBlockedByFlag = product.no_sample === true
         || product.has_sample === false
         || product.samples_available === false
@@ -2936,6 +2932,5 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     });
 })();
 </script>
-<script src="/js/cambria-unavailable.js?v=20260423b"></script>
 </body>
 </html>

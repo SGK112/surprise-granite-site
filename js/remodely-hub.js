@@ -60,14 +60,14 @@
     knowledge: {
       // Material types
       materials: {
-        'quartz': "Quartz is our most popular choice - it's engineered stone that's non-porous, scratch-resistant, and never needs sealing. We carry MSI, Silestone, Cambria, and more. Prices range from $45-85 per square foot installed. Popular styles include Calacatta, marble-look, and solid colors.",
+        'quartz': "Quartz is our most popular choice - it's engineered stone that's non-porous, scratch-resistant, and never needs sealing. We carry MSI, Silestone, and more. Prices range from $45-85 per square foot installed. Popular styles include Calacatta, marble-look, and solid colors.",
         'granite': "Granite is a natural stone that's heat-resistant and timeless. Each slab is unique! We source premium granite starting at $40 per square foot installed. It does need sealing once a year, but many people love the natural variations.",
         'marble': "Marble is the ultimate luxury surface - perfect for elegant kitchens and bathrooms. It's softer than granite so it needs more care, but nothing beats that classic look. Prices start around $60 per square foot.",
         'quartzite': "Quartzite is natural stone that's actually harder than granite! It has the beauty of marble with superior durability. It's great for busy kitchens. Prices range from $70-120 per square foot.",
         'porcelain': "Porcelain slabs are a newer option - ultra-thin, lightweight, and virtually indestructible. They resist UV, heat, and scratches. Great for indoor/outdoor kitchens. Starting around $50 per square foot.",
         'dekton': "Dekton by Cosentino is an ultra-compact surface made with extreme heat and pressure. It's virtually indestructible - resistant to scratches, stains, UV, and heat up to 600°F. Perfect for outdoor kitchens and heavy-use areas.",
         'silestone': "Silestone is premium quartz by Cosentino with built-in antimicrobial protection. They offer unique colors and the marble-look Calacatta series is stunning. Comes with a 25-year warranty.",
-        'cambria': "Cambria is American-made quartz - all their slabs are produced in Minnesota. Known for durability and innovative designs like their Brittanicca collection that mimics natural marble beautifully."
+        'premium quartz': "premium quartz is American-made quartz - all their slabs are produced in Minnesota. Known for durability and innovative designs like their Brittanicca collection that mimics natural marble beautifully."
       },
 
       // Vendors
@@ -80,7 +80,7 @@
 
       // Topics (keywords separated by |)
       topics: {
-        'calacatta|calcatta|white marble': "Calacatta-look is our most requested style! We have it in quartz from MSI (Calacatta Arno, Calacatta Gold), Silestone (Calacatta Gold), and Cambria (Brittanicca). You get the marble look without the maintenance. Would you like to see samples?",
+        'calacatta|calcatta|white marble': "Calacatta-look is our most requested style! We have it in quartz from MSI (Calacatta Arno, Calacatta Gold), Silestone (Calacatta Gold), (Brittanicca). You get the marble look without the maintenance. Would you like to see samples?",
         'backsplash|back splash|tile': "We install beautiful backsplashes! Popular options include subway tile, marble mosaics, and large-format porcelain that matches your countertops. A backsplash can totally transform your kitchen. Prices start around $15-25 per square foot installed.",
         'kitchen remodel|full kitchen|renovation': "We do full kitchen remodels! Countertops, cabinets, backsplash, flooring - the whole package. We'll help you design your dream kitchen and coordinate everything. Want to schedule a design consultation?",
         'bathroom|vanity|bath': "We love bathroom projects! From vanity tops to shower surrounds, we've got you covered. Quartz and marble are popular for bathrooms. A new vanity top can start as low as $500 installed.",

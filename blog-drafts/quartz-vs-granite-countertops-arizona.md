@@ -22,7 +22,7 @@ At Surprise Granite, we carry over 200 granite options ranging from classic Blac
 
 Quartz countertops are engineered surfaces made from approximately 90-95% crushed natural quartz crystals combined with resins and pigments. This manufacturing process allows for consistent patterns and a wide range of colors not found in nature.
 
-Our collection includes over 1,100 quartz options from top brands like MSI Surfaces, Cambria, Silestone, and Radianz.
+Our collection includes over 1,100 quartz options from top brands like MSI Surfaces, Silestone, and Radianz.
 
 ## Head-to-Head Comparison
 

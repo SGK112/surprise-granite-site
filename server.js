@@ -1005,6 +1005,17 @@ try {
 }
 
 // ============================================
+// ASPN — Arizona Stone Providers Network
+// ============================================
+try {
+  const aspnRouter = require('./api/routes/aspn');
+  app.use('/api/aspn', aspnRouter);
+  console.log('ASPN API loaded');
+} catch (err) {
+  console.warn('ASPN API not available:', err.message);
+}
+
+// ============================================
 // INVOICES API
 // ============================================
 try {

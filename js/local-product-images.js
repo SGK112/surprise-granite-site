@@ -134,7 +134,7 @@
     // Keywords that indicate blog content
     const blogKeywords = [
       'top 10',
-      'best cambria',
+      'best premium quartz',
       'updated for 2024',
       'updated for 2025',
       'blog',
