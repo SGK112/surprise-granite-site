@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>ASPN Member Profile · Arizona Stone Providers Network</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+  <style>
+    .aspn-profile { max-width: 880px; margin: 0 auto; }
+    .aspn-profile__header { background: #fff; border: 1px solid var(--aspn-line); border-radius: var(--aspn-radius-lg); padding: 48px; margin-bottom: 24px; position: relative; }
+    .aspn-profile__badges { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .aspn-profile__badge { padding: 4px 12px; border-radius: var(--aspn-radius); font-size: .75rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .aspn-profile__badge--founder { background: var(--aspn-amber); color: var(--aspn-stone); }
+    .aspn-profile__badge--cat { background: var(--aspn-paper-2); color: var(--aspn-text-2); }
+    .aspn-profile__badge--featured { background: var(--aspn-stone); color: var(--aspn-amber); }
+    .aspn-profile__h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; margin-bottom: 12px; letter-spacing: -.01em; }
+    .aspn-profile__city { color: var(--aspn-text-2); font-size: 1.05rem; margin-bottom: 20px; }
+    .aspn-profile__desc { font-size: 1.1rem; color: var(--aspn-text); line-height: 1.7; margin-bottom: 24px; }
+    .aspn-profile__meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding-top: 24px; border-top: 1px solid var(--aspn-line); }
+    .aspn-profile__meta-item { font-size: .92rem; }
+    .aspn-profile__meta-label { color: var(--aspn-text-3); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+    .aspn-profile__meta-value { color: var(--aspn-text); font-weight: 600; }
+    .aspn-profile__meta-value a { color: var(--aspn-amber-deep); }
+    .aspn-profile__section { background: #fff; border: 1px solid var(--aspn-line); border-radius: var(--aspn-radius-lg); padding: 36px; margin-bottom: 24px; }
+    .aspn-profile__section h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; }
+    .aspn-profile__section p { color: var(--aspn-text-2); line-height: 1.7; margin-bottom: 12px; }
+    .aspn-profile__tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .aspn-profile__tag { padding: 6px 14px; background: var(--aspn-paper-2); border-radius: var(--aspn-radius); font-size: .85rem; color: var(--aspn-text); font-weight: 500; }
+    .aspn-profile__socials { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 16px; }
+    .aspn-profile__socials a { padding: 10px 16px; background: var(--aspn-paper-2); border-radius: var(--aspn-radius); font-weight: 600; font-size: .9rem; transition: all .2s; }
+    .aspn-profile__socials a:hover { background: var(--aspn-amber); color: var(--aspn-stone); }
+  </style>
+  <script type="application/ld+json" id="profileSchema">{}</script>
+</head>
+<body>
+  <header class="aspn-nav">
+    <div class="aspn-nav__inner">
+      <a href="/aspn/" class="aspn-nav__brand">
+        <span class="aspn-nav__logo">ASPN</span>
+        <span class="aspn-nav__brand-text">Arizona Stone Providers Network</span>
+      </a>
+      <nav class="aspn-nav__links">
+        <a href="/aspn/directory/">Directory</a>
+        <a href="/aspn/">About</a>
+        <a href="/aspn/join/" class="aspn-nav__cta">Join Free</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="aspn-section">
+    <div class="aspn-section__inner aspn-profile">
+      <div id="profileContent"><div class="aspn-dir-empty">Loading member profile…</div></div>
+    </div>
+  </section>
+
+  <footer class="aspn-footer">
+    <div class="aspn-footer__inner">
+      <div>© <span id="year"></span> Arizona Stone Providers Network</div>
+      <div><a href="/aspn/">Home</a> · <a href="/aspn/directory/">Directory</a></div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const CAT_LABELS = {
+      'stone-yard':'Stone Yard','fabricator':'Fabricator','tile-installer':'Tile Installer',
+      'flooring-installer':'Flooring Installer','cabinet-installer':'Cabinet Installer',
+      'designer':'Designer','general-contractor':'General Contractor',
+      'sealer-restorer':'Sealer / Restorer','distributor':'Distributor','other':'Other'
+    };
+
+    // Slug from /aspn/members/<slug>/ — last non-empty path segment before any trailing slash
+    function getSlug() {
+      const parts = location.pathname.split('/').filter(Boolean);
+      return parts[parts.length - 1] || '';
+    }
+
+    function escapeHtml(s) {
+      return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function render(m) {
+      // Update title + meta
+      document.title = m.business_name + ' · ASPN Member · Arizona Stone Providers Network';
+      // Inject schema.org Organization
+      const schema = {
+        "@context":"https://schema.org",
+        "@type":"LocalBusiness",
+        "name": m.business_name,
+        "url": m.website || ('https://www.surprisegranite.com/aspn/members/' + m.slug + '/'),
+        "telephone": m.phone || undefined,
+        "address": (m.city || m.zip) ? {
+          "@type":"PostalAddress",
+          "addressLocality": m.city || undefined,
+          "addressRegion": m.state || 'AZ',
+          "postalCode": m.zip || undefined,
+          "addressCountry":"US"
+        } : undefined,
+        "description": m.short_description || m.long_description || undefined,
+        "memberOf": {"@type":"Organization","name":"Arizona Stone Providers Network","@id":"https://www.surprisegranite.com/aspn/#organization"},
+        "sameAs": [m.website, m.instagram_url, m.facebook_url, m.houzz_url, m.yelp_url, m.google_url, m.linkedin_url].filter(Boolean)
+      };
+      document.getElementById('profileSchema').textContent = JSON.stringify(schema);
+
+      const cat = CAT_LABELS[m.service_category] || m.service_category;
+      const founderBadge = m.founder_status ? '<span class="aspn-profile__badge aspn-profile__badge--founder">🏆 Founding Member</span>' : '';
+      const featuredBadge = m.featured ? '<span class="aspn-profile__badge aspn-profile__badge--featured">★ Featured</span>' : '';
+      const cityLine = m.city ? (m.city + (m.state ? ', ' + m.state : '')) : (m.state || '');
+
+      const socials = [
+        ['Website', m.website],
+        ['Instagram', m.instagram_url],
+        ['Facebook', m.facebook_url],
+        ['Houzz', m.houzz_url],
+        ['Yelp', m.yelp_url],
+        ['Google', m.google_url],
+        ['LinkedIn', m.linkedin_url]
+      ].filter(([_, v]) => !!v).map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${label} →</a>`).join('');
+
+      const meta = [];
+      if (m.phone) meta.push({label:'Phone', value:`<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>`});
+      if (m.az_roc_license) meta.push({label:'AZ ROC License', value: escapeHtml(m.az_roc_license)});
+      if (m.bonded_insured) meta.push({label:'Bonded &amp; Insured', value:'Yes'});
+      if (m.created_at) meta.push({label:'Member Since', value: new Date(m.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short'})});
+
+      const html = `
+        <div class="aspn-profile__header">
+          <div class="aspn-profile__badges">
+            ${founderBadge}
+            ${featuredBadge}
+            <span class="aspn-profile__badge aspn-profile__badge--cat">${escapeHtml(cat)}</span>
+          </div>
+          <h1 class="aspn-profile__h1">${escapeHtml(m.business_name)}</h1>
+          ${cityLine ? `<div class="aspn-profile__city">${escapeHtml(cityLine)}</div>` : ''}
+          ${m.short_description ? `<p class="aspn-profile__desc">${escapeHtml(m.short_description)}</p>` : ''}
+          ${meta.length ? `<div class="aspn-profile__meta-grid">${meta.map(x => `<div class="aspn-profile__meta-item"><div class="aspn-profile__meta-label">${x.label}</div><div class="aspn-profile__meta-value">${x.value}</div></div>`).join('')}</div>` : ''}
+          ${socials ? `<div class="aspn-profile__socials">${socials}</div>` : ''}
+        </div>
+        ${m.long_description ? `<div class="aspn-profile__section"><h3>About</h3><p>${escapeHtml(m.long_description).replace(/\n/g,'<br/>')}</p></div>` : ''}
+        ${(m.specialties && m.specialties.length) ? `<div class="aspn-profile__section"><h3>Specialties</h3><div class="aspn-profile__tags">${m.specialties.map(t => `<span class="aspn-profile__tag">${escapeHtml(t)}</span>`).join('')}</div></div>` : ''}
+        ${(m.service_areas && m.service_areas.length) ? `<div class="aspn-profile__section"><h3>Service Areas</h3><div class="aspn-profile__tags">${m.service_areas.map(t => `<span class="aspn-profile__tag">${escapeHtml(t)}</span>`).join('')}</div></div>` : ''}
+        <div style="text-align:center;margin-top:32px;">
+          <a href="/aspn/directory/" class="aspn-btn aspn-btn--ghost-light">← Back to Directory</a>
+        </div>
+      `;
+      document.getElementById('profileContent').innerHTML = html;
+    }
+
+    async function load() {
+      const slug = getSlug();
+      if (!slug) {
+        document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>Profile not found.</h3><p><a href="/aspn/directory/">Browse the directory</a></p></div>';
+        return;
+      }
+      try {
+        const r = await fetch('/api/aspn/members/' + encodeURIComponent(slug));
+        const j = await r.json();
+        if (r.ok && j?.member) {
+          render(j.member);
+        } else {
+          document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>This member isn\'t in the directory yet.</h3><p>They may be pending approval, or the URL is wrong. <a href="/aspn/directory/">Browse the directory</a> or <a href="/aspn/join/">join ASPN</a>.</p></div>';
+        }
+      } catch (e) {
+        document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty">Couldn\'t load profile. Try refreshing.</div>';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

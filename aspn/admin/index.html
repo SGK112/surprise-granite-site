@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>ASPN Admin — Member Approvals</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+  <style>
+    .admin-card { background:#fff;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius-lg);padding:24px;margin-bottom:16px;}
+    .admin-card__head { display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:12px;}
+    .admin-card__name { font-size:1.2rem;font-weight:700;}
+    .admin-card__meta { color:var(--aspn-text-2);font-size:.92rem;line-height:1.6;margin-bottom:16px;}
+    .admin-card__actions { display:flex;gap:8px;flex-wrap:wrap;}
+    .admin-card__actions button { padding:8px 16px;border-radius:var(--aspn-radius);border:1px solid var(--aspn-line);background:#fff;font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s;}
+    .admin-card__actions button:hover { border-color:var(--aspn-amber);}
+    .admin-card__actions .approve { background:#10b981;color:#fff;border-color:#10b981;}
+    .admin-card__actions .reject { background:#ef4444;color:#fff;border-color:#ef4444;}
+    .admin-status { display:inline-block;padding:4px 10px;border-radius:var(--aspn-radius);font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;}
+    .admin-status--pending { background:#fef3c7;color:#92400e;}
+    .admin-status--approved { background:#d1fae5;color:#065f46;}
+    .admin-status--rejected { background:#fee2e2;color:#991b1b;}
+    .admin-keybox { background:#fff;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius-lg);padding:20px;margin-bottom:24px;display:flex;gap:12px;align-items:end;}
+    .admin-keybox input { flex:1;padding:12px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);font-family:monospace;}
+  </style>
+</head>
+<body>
+  <header class="aspn-nav">
+    <div class="aspn-nav__inner">
+      <a href="/aspn/" class="aspn-nav__brand">
+        <span class="aspn-nav__logo">ASPN</span>
+        <span class="aspn-nav__brand-text">Admin</span>
+      </a>
+      <nav class="aspn-nav__links">
+        <a href="/aspn/directory/">Directory</a>
+        <a href="/aspn/">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="aspn-section">
+    <div class="aspn-section__inner" style="max-width:880px;">
+      <div class="aspn-section__header" style="text-align:left;margin-bottom:24px;">
+        <div class="aspn-section__badge">Admin</div>
+        <h2>Member Approvals</h2>
+        <p>Review pending members and publish them to the directory.</p>
+      </div>
+
+      <div class="admin-keybox">
+        <div style="flex:1;">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;">Admin Key</label>
+          <input type="password" id="adminKey" placeholder="X-Admin-Key value (set ADMIN_KEY env on Render)"/>
+        </div>
+        <button class="aspn-btn aspn-btn--primary" id="loadBtn" style="padding:12px 20px;">Load Members</button>
+      </div>
+
+      <div id="adminMsg"></div>
+      <div id="memberList"></div>
+    </div>
+  </section>
+
+  <script>
+    const list = document.getElementById('memberList');
+    const msg = document.getElementById('adminMsg');
+    const keyInput = document.getElementById('adminKey');
+    // Persist admin key in sessionStorage so reload doesn't lose it
+    keyInput.value = sessionStorage.getItem('aspnAdminKey') || '';
+
+    function status(m) {
+      if (m.rejected) return '<span class="admin-status admin-status--rejected">Rejected</span>';
+      if (m.approved) return '<span class="admin-status admin-status--approved">Approved</span>';
+      return '<span class="admin-status admin-status--pending">Pending</span>';
+    }
+    function escapeHtml(s) {
+      return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function loadMembers() {
+      const key = keyInput.value.trim();
+      if (!key) { msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Admin key required</div>'; return; }
+      sessionStorage.setItem('aspnAdminKey', key);
+      msg.innerHTML = '';
+      list.innerHTML = '<p>Loading…</p>';
+      // We hit the public list endpoint to get approved, then need a separate admin endpoint for pending.
+      // Public endpoint only returns approved=true, so for admin we'll have to hit /signup for new ones. For now,
+      // we'll hit the public stats + list and also fetch pending via direct Supabase REST below.
+      try {
+        // Fetch BOTH pending (admin) and approved (public) lists, render as two sections
+        const [pendingRes, approvedRes] = await Promise.all([
+          fetch('/api/aspn/admin/pending', { headers: {'X-Admin-Key': key} }),
+          fetch('/api/aspn/members?limit=100')
+        ]);
+        if (pendingRes.status === 401) {
+          msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Invalid admin key. Set the ADMIN_KEY env var on Render to authenticate.</div>';
+          list.innerHTML = '';
+          return;
+        }
+        const pendingJ = await pendingRes.json();
+        const approvedJ = await approvedRes.json();
+        const pending = pendingJ?.members || [];
+        const approved = approvedJ?.members || [];
+        if (!pending.length && !approved.length) {
+          list.innerHTML = '<p style="text-align:center;color:var(--aspn-text-3);padding:40px;">No members yet.</p>';
+          return;
+        }
+        const members = [...pending, ...approved];
+        list.innerHTML = members.map(m => `
+          <div class="admin-card">
+            <div class="admin-card__head">
+              <div>
+                <div class="admin-card__name">${escapeHtml(m.business_name)} ${m.founder_status ? '<span class="admin-status" style="background:#fde68a;color:#92400e;">FOUNDER</span>' : ''}</div>
+                <div style="font-size:.85rem;color:var(--aspn-text-2);">${escapeHtml(m.service_category)} · ${escapeHtml(m.city || 'no city')} · /${escapeHtml(m.slug)}</div>
+              </div>
+              ${status(m)}
+            </div>
+            ${m.short_description ? `<div class="admin-card__meta">${escapeHtml(m.short_description)}</div>` : ''}
+            <div class="admin-card__actions">
+              ${m.approved ? `<a href="/aspn/members/${m.slug}/" target="_blank" style="padding:8px 16px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);text-decoration:none;font-weight:600;font-size:.85rem;">View profile →</a>` : ''}
+              ${!m.approved && !m.rejected ? `<button class="approve" onclick="setStatus('${m.id}', {approved: true})">✓ Approve</button>` : ''}
+              ${!m.approved && !m.rejected ? `<button class="reject" onclick="setStatus('${m.id}', {rejected: true})">✕ Reject</button>` : ''}
+              ${m.approved ? `<button onclick="setStatus('${m.id}', {featured: ${!m.featured}})">${m.featured ? 'Unfeature' : 'Feature'}</button>` : ''}
+              ${m.email ? `<a href="mailto:${m.email}" style="padding:8px 16px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);text-decoration:none;font-weight:600;font-size:.85rem;">Email</a>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Load failed: ' + e.message + '</div>';
+      }
+    }
+
+    async function setStatus(id, body) {
+      const key = keyInput.value.trim();
+      try {
+        const r = await fetch('/api/aspn/members/' + encodeURIComponent(id) + '/approve', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json', 'X-Admin-Key': key},
+          body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'Update failed');
+        msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--ok">Updated.</div>';
+        loadMembers();
+      } catch (e) {
+        msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Update failed: ' + e.message + '</div>';
+      }
+    }
+    window.setStatus = setStatus;
+    document.getElementById('loadBtn').addEventListener('click', loadMembers);
+  </script>
+</body>
+</html>

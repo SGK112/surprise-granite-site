@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>ASPN Directory — Find Arizona Stone, Tile &amp; Surface Pros</title>
+  <meta name="description" content="Searchable directory of Arizona Stone Providers Network members — stone yards, fabricators, tile installers, designers, and surface professionals across Arizona."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <link rel="canonical" href="https://www.surprisegranite.com/aspn/directory/"/>
+  <meta name="robots" content="index, follow"/>
+
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.surprisegranite.com/"},{"@type":"ListItem","position":2,"name":"ASPN","item":"https://www.surprisegranite.com/aspn/"},{"@type":"ListItem","position":3,"name":"Directory","item":"https://www.surprisegranite.com/aspn/directory/"}]}
+  </script>
+</head>
+<body>
+  <header class="aspn-nav">
+    <div class="aspn-nav__inner">
+      <a href="/aspn/" class="aspn-nav__brand">
+        <span class="aspn-nav__logo">ASPN</span>
+        <span class="aspn-nav__brand-text">Arizona Stone Providers Network</span>
+      </a>
+      <nav class="aspn-nav__links">
+        <a href="/aspn/directory/" style="color:var(--aspn-amber);">Directory</a>
+        <a href="/aspn/#about">About</a>
+        <a href="/aspn/join/" class="aspn-nav__cta">Join Free</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="aspn-hero" style="padding:64px 24px;">
+    <div class="aspn-hero__inner" style="text-align:center;">
+      <div class="aspn-hero__badge"><span id="memberCount">…</span> approved members</div>
+      <h1 class="aspn-hero__h1" style="font-size:clamp(2rem,5vw,3.4rem);">ASPN <span class="aspn-hero__accent">Directory</span></h1>
+      <p class="aspn-hero__sub" style="margin-left:auto;margin-right:auto;">Stone yards, fabricators, installers, designers, and surface professionals across Arizona — verified members of the trade network.</p>
+    </div>
+  </section>
+
+  <section class="aspn-section">
+    <div class="aspn-section__inner">
+      <div class="aspn-search-bar">
+        <input id="search" type="text" placeholder="Search business name or specialty…" />
+        <select id="category">
+          <option value="">All categories</option>
+          <option value="stone-yard">Stone Yard</option>
+          <option value="fabricator">Fabricator</option>
+          <option value="tile-installer">Tile Installer</option>
+          <option value="flooring-installer">Flooring Installer</option>
+          <option value="cabinet-installer">Cabinet Installer</option>
+          <option value="designer">Designer</option>
+          <option value="general-contractor">General Contractor</option>
+          <option value="sealer-restorer">Sealer / Restorer</option>
+          <option value="distributor">Distributor</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="city" type="text" placeholder="City (e.g. Phoenix)" />
+        <button id="searchBtn" class="aspn-btn aspn-btn--primary" style="padding:12px 24px;">Search</button>
+      </div>
+
+      <div id="dirGrid" class="aspn-dir-grid">
+        <div class="aspn-dir-empty">Loading members…</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="aspn-footer">
+    <div class="aspn-footer__inner">
+      <div>© <span id="year"></span> Arizona Stone Providers Network · Founded by <a href="/">Surprise Granite</a></div>
+      <div><a href="/aspn/">Home</a> · <a href="/aspn/join/">Join</a></div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const grid = document.getElementById('dirGrid');
+    const memberCountEl = document.getElementById('memberCount');
+    const CAT_LABELS = {
+      'stone-yard':'Stone Yard','fabricator':'Fabricator','tile-installer':'Tile Installer',
+      'flooring-installer':'Flooring Installer','cabinet-installer':'Cabinet Installer',
+      'designer':'Designer','general-contractor':'General Contractor',
+      'sealer-restorer':'Sealer / Restorer','distributor':'Distributor','other':'Other'
+    };
+
+    function renderCard(m) {
+      const badge = m.founder_status ? '<div class="aspn-dir-card__badge">FOUNDER</div>' : '';
+      const cat = CAT_LABELS[m.service_category] || m.service_category;
+      const desc = m.short_description || 'Member of the Arizona Stone Providers Network.';
+      const cityLine = m.city ? (m.city + (m.state ? ', ' + m.state : '')) : '';
+      return `<a href="/aspn/members/${m.slug}/" class="aspn-dir-card">
+        ${badge}
+        <div class="aspn-dir-card__cat">${cat}</div>
+        <h3>${escapeHtml(m.business_name)}</h3>
+        ${cityLine ? `<div class="aspn-dir-card__city">${escapeHtml(cityLine)}</div>` : ''}
+        <p class="aspn-dir-card__desc">${escapeHtml(desc)}</p>
+        <span class="aspn-dir-card__link">View profile →</span>
+      </a>`;
+    }
+    function escapeHtml(s) {
+      return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function load() {
+      const q = new URLSearchParams();
+      const search = document.getElementById('search').value.trim();
+      const category = document.getElementById('category').value;
+      const city = document.getElementById('city').value.trim();
+      if (search) q.set('search', search);
+      if (category) q.set('category', category);
+      if (city) q.set('city', city);
+      grid.innerHTML = '<div class="aspn-dir-empty">Searching…</div>';
+      try {
+        const r = await fetch('/api/aspn/members?' + q.toString());
+        const j = await r.json();
+        const members = j?.members || [];
+        memberCountEl.textContent = j?.total ?? members.length;
+        if (!members.length) {
+          grid.innerHTML = '<div class="aspn-dir-empty"><h3>No members match your search yet.</h3><p style="margin-top:8px;">Try a different filter, or <a href="/aspn/join/" style="color:var(--aspn-amber-deep);font-weight:600;">be the first to join</a> in this category.</p></div>';
+          return;
+        }
+        grid.innerHTML = members.map(renderCard).join('');
+      } catch (e) {
+        grid.innerHTML = '<div class="aspn-dir-empty">Couldn\'t load directory. Try refreshing — or <a href="mailto:joshb@surprisegranite.com" style="color:var(--aspn-amber-deep);">email us</a>.</div>';
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', load);
+    document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+    document.getElementById('category').addEventListener('change', load);
+    document.getElementById('city').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+    load();
+  </script>
+</body>
+</html>

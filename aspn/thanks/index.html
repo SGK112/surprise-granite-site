@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Welcome to ASPN — Profile Submitted</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+</head>
+<body>
+  <header class="aspn-nav">
+    <div class="aspn-nav__inner">
+      <a href="/aspn/" class="aspn-nav__brand">
+        <span class="aspn-nav__logo">ASPN</span>
+        <span class="aspn-nav__brand-text">Arizona Stone Providers Network</span>
+      </a>
+      <nav class="aspn-nav__links">
+        <a href="/aspn/directory/">Directory</a>
+        <a href="/aspn/">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="aspn-hero" style="padding-bottom:60px;">
+    <div class="aspn-hero__inner" style="text-align:center;max-width:680px;margin:0 auto;">
+      <div class="aspn-hero__badge" id="founderBadge">Welcome to ASPN</div>
+      <h1 class="aspn-hero__h1" style="font-size:clamp(2rem,5vw,3.4rem);">You're <span class="aspn-hero__accent">in.</span></h1>
+      <p class="aspn-hero__sub" id="welcomeMsg">Your profile is under review and will publish in the directory within 24 hours. We'll email you when it's live.</p>
+    </div>
+  </section>
+
+  <section class="aspn-section">
+    <div class="aspn-section__inner" style="max-width:680px;">
+      <div class="aspn-form" style="padding:48px;">
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:24px;">Want to add details now?</h2>
+        <p style="color:var(--aspn-text-2);margin-bottom:24px;">You can complete your member profile any time using the link below — it's tied to your account via a private token. Bookmark this page or save the link.</p>
+        <a id="completeLink" href="#" class="aspn-btn aspn-btn--primary aspn-btn--block">Complete My Profile →</a>
+        <p style="margin-top:18px;font-size:.85rem;color:var(--aspn-text-3);text-align:center;">Or skip — we'll publish with the basics you submitted.</p>
+      </div>
+      <div style="margin-top:48px;text-align:center;">
+        <a href="/aspn/directory/" class="aspn-btn aspn-btn--ghost-light">Browse the Directory</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="aspn-footer">
+    <div class="aspn-footer__inner">
+      <div>© <span id="year"></span> Arizona Stone Providers Network</div>
+      <div><a href="/aspn/">Home</a> · <a href="/aspn/directory/">Directory</a></div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id'), token = params.get('token'), founder = params.get('founder'), already = params.get('already');
+    if (already === '1') {
+      document.getElementById('welcomeMsg').textContent = 'This email is already registered. Check your inbox for the original confirmation — or email joshb@surprisegranite.com if you need it resent.';
+      document.getElementById('founderBadge').textContent = 'Already Registered';
+    } else if (founder === '1') {
+      document.getElementById('founderBadge').textContent = '🏆 Founding Member · Free Forever';
+    }
+    const link = document.getElementById('completeLink');
+    if (id && token) {
+      link.href = '/aspn/complete/?id=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(token);
+    } else {
+      link.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
