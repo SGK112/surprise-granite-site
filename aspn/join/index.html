@@ -119,6 +119,7 @@
   </footer>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     document.getElementById('year').textContent = new Date().getFullYear();
     const form = document.getElementById('signupForm');
     const msg = document.getElementById('signupMsg');
@@ -131,7 +132,7 @@
       btn.textContent = 'Joining…';
       const data = Object.fromEntries(new FormData(form).entries());
       try {
-        const r = await fetch('/api/aspn/signup', {
+        const r = await fetch(API_BASE + '/api/aspn/signup', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify(data)

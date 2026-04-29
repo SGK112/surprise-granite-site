@@ -64,6 +64,7 @@
   </footer>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     document.getElementById('year').textContent = new Date().getFullYear();
     const CAT_LABELS = {
       'stone-yard':'Stone Yard','fabricator':'Fabricator','tile-installer':'Tile Installer',
@@ -156,7 +157,7 @@
         return;
       }
       try {
-        const r = await fetch('/api/aspn/members/' + encodeURIComponent(slug));
+        const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(slug));
         const j = await r.json();
         if (r.ok && j?.member) {
           render(j.member);

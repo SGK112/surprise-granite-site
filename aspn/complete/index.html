@@ -120,6 +120,7 @@
   </footer>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     document.getElementById('year').textContent = new Date().getFullYear();
     const params = new URLSearchParams(location.search);
     const id = params.get('id'), token = params.get('token');
@@ -148,7 +149,7 @@
         }
       }
       try {
-        const r = await fetch('/api/aspn/members/' + encodeURIComponent(id), {
+        const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(id), {
           method: 'PATCH',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify(body)

@@ -212,8 +212,9 @@
   </footer>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     document.getElementById('year').textContent = new Date().getFullYear();
-    fetch('/api/aspn/stats').then(r => r.json()).then(d => {
+    fetch(API_BASE + '/api/aspn/stats').then(r => r.json()).then(d => {
       if (d?.stats) {
         const remaining = d.stats.founder_seats_remaining;
         const total = d.stats.members;

@@ -62,6 +62,7 @@
   </section>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     const list = document.getElementById('memberList');
     const msg = document.getElementById('adminMsg');
     const keyInput = document.getElementById('adminKey');
@@ -89,8 +90,8 @@
       try {
         // Fetch BOTH pending (admin) and approved (public) lists, render as two sections
         const [pendingRes, approvedRes] = await Promise.all([
-          fetch('/api/aspn/admin/pending', { headers: {'X-Admin-Key': key} }),
-          fetch('/api/aspn/members?limit=100')
+          fetch(API_BASE + '/api/aspn/admin/pending', { headers: {'X-Admin-Key': key} }),
+          fetch(API_BASE + '/api/aspn/members?limit=100')
         ]);
         if (pendingRes.status === 401) {
           msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Invalid admin key. Set the ADMIN_KEY env var on Render to authenticate.</div>';
@@ -133,7 +134,7 @@
     async function setStatus(id, body) {
       const key = keyInput.value.trim();
       try {
-        const r = await fetch('/api/aspn/members/' + encodeURIComponent(id) + '/approve', {
+        const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(id) + '/approve', {
           method: 'POST',
           headers: {'Content-Type':'application/json', 'X-Admin-Key': key},
           body: JSON.stringify(body)

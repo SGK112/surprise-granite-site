@@ -75,6 +75,7 @@
   </footer>
 
   <script>
+    const API_BASE = (typeof window !== 'undefined' && window.SG_CONFIG?.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     document.getElementById('year').textContent = new Date().getFullYear();
     const grid = document.getElementById('dirGrid');
     const memberCountEl = document.getElementById('memberCount');
@@ -113,7 +114,7 @@
       if (city) q.set('city', city);
       grid.innerHTML = '<div class="aspn-dir-empty">Searching…</div>';
       try {
-        const r = await fetch('/api/aspn/members?' + q.toString());
+        const r = await fetch(API_BASE + '/api/aspn/members?' + q.toString());
         const j = await r.json();
         const members = j?.members || [];
         memberCountEl.textContent = j?.total ?? members.length;

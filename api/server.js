@@ -2194,7 +2194,7 @@ const corsConfig = {
     callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-admin-key', 'x-verification-token', 'X-Admin-Key', 'X-Verification-Token'],
   credentials: true
 };
 
@@ -3961,6 +3961,15 @@ app.use('/api/scrapers', scrapersRouter);
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
+
+// ============ ASPN — Arizona Stone Providers Network ============
+try {
+  const aspnRouter = require('./routes/aspn');
+  app.use('/api/aspn', aspnRouter);
+  console.log('ASPN API loaded');
+} catch (err) {
+  console.warn('ASPN API not available:', err.message);
+}
 
 // Admin identity — lets clients and Aria confirm they have admin access.
 // Accepts either a Supabase JWT (humans) or Aria's X-Aria-Service-Key
