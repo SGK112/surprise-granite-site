@@ -81,7 +81,7 @@ Calacatta's veining looks different under various lighting conditions. Visit our
 ### Match Your Fixtures
 Gold-veined Calacatta pairs beautifully with brass or gold fixtures, while gray-veined options complement chrome or nickel hardware.
 
-## Visit Our Showroom
+## See Calacatta Slabs in Person
 
 Ready to see Calacatta countertops in person? Our Surprise, Arizona showroom features full-size slabs of all our Calacatta options. Our design experts can help you find the perfect match for your vision and budget.
 

@@ -93,12 +93,15 @@
       DISTRIBUTOR_EMAIL: 'distributors@surprisegranite.com'
     },
 
-    // Social Links
+    // Social Links (Facebook removed — page lost)
     SOCIAL: {
-      FACEBOOK: 'https://facebook.com/surprisegranite',
-      INSTAGRAM: 'https://instagram.com/surprisegranite',
-      YOUTUBE: 'https://youtube.com/@surprisegranite',
-      GOOGLE: 'https://g.page/surprisegranite'
+      INSTAGRAM: 'https://www.instagram.com/surprisegranite/',
+      YOUTUBE: 'https://www.youtube.com/@surprisegranite',
+      PINTEREST: 'https://www.pinterest.com/surprisegranite1/',
+      HOUZZ: 'https://www.houzz.com/pro/surprisegranite',
+      YELP: 'https://www.yelp.com/biz/surprise-granite-surprise-2',
+      NEXTDOOR: 'https://nextdoor.com/page/surprise-granite-surprise-az',
+      GOOGLE: 'https://www.google.com/search?kgmid=/g/11h3_zl49h'
     },
 
     // CDN and Assets

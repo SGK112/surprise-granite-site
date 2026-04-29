@@ -86,9 +86,13 @@ const TENANTS = {
         ],
 
         social: {
-            facebook: 'https://facebook.com/surprisegranite',
-            instagram: 'https://instagram.com/surprisegranite',
-            yelp: 'https://yelp.com/biz/surprise-granite'
+            instagram: 'https://www.instagram.com/surprisegranite/',
+            youtube: 'https://www.youtube.com/@surprisegranite',
+            pinterest: 'https://www.pinterest.com/surprisegranite1/',
+            houzz: 'https://www.houzz.com/pro/surprisegranite',
+            yelp: 'https://www.yelp.com/biz/surprise-granite-surprise-2',
+            nextdoor: 'https://nextdoor.com/page/surprise-granite-surprise-az',
+            google: 'https://www.google.com/search?kgmid=/g/11h3_zl49h'
         }
     },
 
