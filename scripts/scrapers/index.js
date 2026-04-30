@@ -15,16 +15,22 @@ require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
 
-// Available scrapers
+// Available scrapers (lazy-load so a broken adapter doesn't kill the CLI)
+function lazy(p) { return { get: () => require(p) }; }
 const SCRAPERS = {
-  msi: {
-    name: 'MSI Surfaces',
-    class: require('./vendors/msi')
-  }
-  // Add more scrapers as they're implemented:
-  // 'arizona-tile': { name: 'Arizona Tile', class: require('./vendors/arizona-tile') },
-  // 'cambria': { name: 'Cambria', class: require('./vendors/cambria') },
+  'kibi':           { name: 'Kibi USA',         loader: lazy('./vendors/kibi') },
+  'monterrey-tile': { name: 'Monterrey Tile',   loader: lazy('./vendors/monterrey-tile') },
+  'ruvati':         { name: 'Ruvati',           loader: lazy('./vendors/ruvati') },
+  'msi':            { name: 'MSI Surfaces',     loader: lazy('./vendors/msi') }
+  // Pending adapters: 'aracruz' (Stone Profits, Cloudflare-protected, needs Puppeteer);
+  // 'arcsurfaces' (WP/WooCommerce); 'cosentino' (Silestone/Dekton parent); 'lions-floor'.
 };
+// Resolve class lazily on first access
+Object.keys(SCRAPERS).forEach(k => {
+  Object.defineProperty(SCRAPERS[k], 'class', {
+    get() { return this.loader.get(); }
+  });
+});
 
 function printUsage() {
   console.log(`

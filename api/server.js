@@ -3971,6 +3971,24 @@ try {
   console.warn('ASPN API not available:', err.message);
 }
 
+// ============ Catalog (live products from scrapers) ============
+try {
+  const catalogRouter = require('./routes/catalog');
+  app.use('/api/catalog', catalogRouter);
+  console.log('Catalog API loaded');
+} catch (err) {
+  console.warn('Catalog API not available:', err.message);
+}
+
+// ============ Drop-ship sample orders ============
+try {
+  const dropshipRouter = require('./routes/dropship');
+  app.use('/api/dropship', dropshipRouter);
+  console.log('Drop-ship API loaded');
+} catch (err) {
+  console.warn('Drop-ship API not available:', err.message);
+}
+
 // Admin identity — lets clients and Aria confirm they have admin access.
 // Accepts either a Supabase JWT (humans) or Aria's X-Aria-Service-Key
 // header (server-to-server from VoiceNow).
