@@ -1,0 +1,364 @@
+/* ============================================================
+   Marketplace mobile rescue — 2026-04-30
+   Single stylesheet that fixes the most common mobile-layout
+   failures across /marketplace/, /cart/, /products/, etc.
+   Loaded AFTER the page's own styles so these rules win.
+   ============================================================ */
+
+/* ---------- 0. Universal safety nets ---------- */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+    -webkit-text-size-adjust: 100%;
+  }
+  body, body * {
+    box-sizing: border-box;
+  }
+  /* Stop runaway horizontal overflow from any positioned child */
+  .container, .marketplace-container, .page-wrap, main {
+    max-width: 100% !important;
+  }
+  /* Images never explode their parents */
+  img, video, iframe, picture {
+    max-width: 100% !important;
+    height: auto;
+  }
+}
+
+/* ---------- 1. Hero / above-fold ---------- */
+@media (max-width: 768px) {
+  .hero, .marketplace-hero, .page-hero, [class*="hero-section"] {
+    padding: 24px 16px !important;
+    min-height: auto !important;
+    text-align: center;
+  }
+  .hero h1, .marketplace-hero h1, .page-hero h1 {
+    font-size: clamp(1.6rem, 7vw, 2.2rem) !important;
+    line-height: 1.2 !important;
+  }
+  .hero p, .marketplace-hero p, .page-hero p {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+  .hero-inner, .hero-stats {
+    flex-direction: column !important;
+    gap: 16px !important;
+    align-items: center !important;
+  }
+  .hero-stats .stat-block, .hero-stat, [class*="stat-card"] {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ---------- 2. Filter bar (the worst mobile offender) ---------- */
+@media (max-width: 768px) {
+  .filters-bar, .filter-bar, .toolbar, .marketplace-filters,
+  [class*="filter-row"], [class*="filter-pills"] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filters-bar::-webkit-scrollbar,
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filters-bar > *, .filter-bar > *, .toolbar > * {
+    flex-shrink: 0;
+  }
+  .search-box, .search-input, [class*="search-bar"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+  .search-box input, .search-input input,
+  [class*="search-bar"] input {
+    width: 100% !important;
+    min-height: 44px;
+    font-size: 16px !important;  /* prevent iOS zoom on focus */
+    padding: 12px 16px !important;
+  }
+  .filter-pill, .pill-btn, .chip, [class*="filter-chip"] {
+    min-height: 36px;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+  }
+  select, .filter-select {
+    min-height: 44px !important;
+    font-size: 16px !important;
+    padding: 8px 32px 8px 12px !important;
+  }
+}
+
+/* ---------- 3. Product / slab / card grids ---------- */
+@media (max-width: 768px) {
+  /* Two columns at narrow tablet, single column on phone */
+  .slab-grid, .products-grid, .product-grid,
+  .marketplace-grid, .grid, [class*="-grid"]:not(.footer-grid):not(.scope-grid):not(.benefits-grid) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .featured-card, .featured-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  /* Single column on phones — the original problem */
+  .slab-grid, .products-grid, .product-grid,
+  .marketplace-grid, .grid, [class*="-grid"]:not(.footer-grid):not(.scope-grid):not(.benefits-grid) {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Card padding/spacing — tighter on mobile so content fits */
+@media (max-width: 768px) {
+  .slab-card, .product-card, .marketplace-card, [class*="-card"] {
+    border-radius: 10px;
+  }
+  .slab-card-body, .product-card-body, [class*="-card-body"] {
+    padding: 14px !important;
+  }
+  .slab-title, .product-title, .card-title,
+  .slab-card h3, .product-card h3 {
+    font-size: 1rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 6px !important;
+  }
+  .slab-distributor, .product-distributor, .product-card-meta {
+    font-size: 11px !important;
+  }
+  .slab-card-image, .product-card-image, [class*="card-image"] {
+    aspect-ratio: 4/3;
+  }
+  /* Badges shrink */
+  .slab-badge, .product-badge, .badge, [class*="-badge"] {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+}
+
+/* ---------- 4. Pricing + CTA buttons in cards ---------- */
+@media (max-width: 768px) {
+  .slab-footer, .product-footer, .card-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .slab-cta-group, .product-cta-group, .card-cta-group,
+  .slab-actions, .card-actions, [class*="cta-group"] {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+  .add-to-cart-btn, .slab-btn, .product-btn,
+  .card-btn, .btn-primary, .btn-secondary,
+  [class*="add-to-cart"] {
+    flex: 1 1 calc(50% - 3px);
+    min-height: 44px !important;
+    font-size: 13px !important;
+    padding: 10px 8px !important;
+    white-space: nowrap;
+    text-align: center;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  .price, .slab-price, .product-price, [class*="-price"] {
+    font-size: 1.1rem !important;
+    font-weight: 700;
+  }
+}
+
+/* ---------- 5. Modal / dialog ---------- */
+@media (max-width: 768px) {
+  .modal, .dialog, .lightbox, [class*="modal-content"] {
+    width: calc(100vw - 24px) !important;
+    max-width: 100% !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px !important;
+    border-radius: 12px;
+  }
+  .modal form, .modal-form {
+    grid-template-columns: 1fr !important;
+  }
+  .modal input, .modal textarea, .modal select,
+  .form-input, .form-textarea, .form-select {
+    width: 100% !important;
+    font-size: 16px !important;  /* prevent iOS zoom */
+    min-height: 44px;
+    padding: 12px !important;
+  }
+  .modal textarea, .form-textarea { min-height: 88px; }
+  .modal-submit, .submit-btn { width: 100% !important; }
+}
+
+/* ---------- 6. Cart-specific ---------- */
+@media (max-width: 768px) {
+  .cart-content, .cart-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .cart-item {
+    grid-template-columns: 80px 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 12px !important;
+  }
+  .cart-item-image {
+    grid-row: 1 / 3 !important;
+    width: 80px !important;
+    height: 80px !important;
+  }
+  .cart-item-image img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+  .cart-item-actions {
+    grid-column: 1 / 3;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  .cart-item-name {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+  .quantity-selector {
+    flex-shrink: 0;
+  }
+  .quantity-btn {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  .remove-item {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+  }
+  .cart-summary {
+    position: static !important;
+    width: 100% !important;
+  }
+  .btn-checkout {
+    width: 100% !important;
+    min-height: 50px !important;
+    font-size: 1rem !important;
+  }
+  .promo-input {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .promo-input input, .promo-input button {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ---------- 7. Page header / nav banners ---------- */
+@media (max-width: 600px) {
+  .page-header, .marketplace-header {
+    padding: 16px !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  .page-title, .breadcrumb {
+    font-size: 1rem !important;
+  }
+}
+
+/* ---------- 8. Footer ---------- */
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+  }
+  .footer-bottom-inner {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---------- 9. Marketplace nav tabs / category strip ---------- */
+@media (max-width: 768px) {
+  .category-strip, .nav-tabs, [class*="category-nav"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding: 8px 0 !important;
+    scrollbar-width: none;
+  }
+  .category-strip::-webkit-scrollbar,
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .category-strip a, .nav-tabs a {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* ---------- 10. Tap-target floor ---------- */
+@media (max-width: 768px) {
+  a.btn, button.btn, .btn,
+  a[role="button"], [role="button"],
+  .nav-link, .menu-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Anything with onclick that's a div — make it tappable */
+  [onclick]:not(svg):not(path) {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+}
+
+/* ---------- 11. Inputs anywhere — prevent iOS zoom ---------- */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="url"],
+  input[type="number"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+}
+
+/* ---------- 12. Sticky banner correction ---------- */
+@media (max-width: 768px) {
+  /* Many marketplace pages have a sticky filters bar that leaves no room for content. */
+  .filters-bar.is-sticky, .toolbar.is-sticky {
+    position: relative !important;  /* unstick on mobile — content priority */
+    top: auto !important;
+  }
+}
+
+/* ---------- 13. Pagination + load more ---------- */
+@media (max-width: 768px) {
+  .pagination, [class*="pagination"] {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    justify-content: center;
+  }
+  .pagination a, .pagination button {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 13px !important;
+  }
+}
