@@ -42,6 +42,25 @@ img {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
+/* ---------- Slabs page: filter pill overflow + ghost thumbnails ---------- */
+/* The slabs page renders <a class="category-pill"><img src="placeholder-image.svg"/>Label</a>
+   The placeholder thumbnails inside each pill add no value — they're broken-looking gray
+   circles. And the labels overflow on narrow chips ("All Materials" gets clipped to "All Material").
+   Hide the thumbnails site-wide and let pills size to their text. */
+.category-pill {
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 8px 16px !important;
+  min-width: 0;
+}
+.category-pill img {
+  display: none !important;
+}
+.category-pill.active {
+  background: #1a1a2e !important;
+  color: #fff !important;
+}
+
 /* ---------- 0. Universal safety nets ---------- */
 @media (max-width: 768px) {
   html, body {
