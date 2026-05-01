@@ -1,8 +1,6 @@
 -- ============================================================
--- ONE-PASTE BOOTSTRAP — applies migrations 014 + 015 +
--- creates `exec_sql` admin RPC so future migrations can be
--- run programmatically by the backend (Joshua never pastes
--- SQL again).
+-- ONE-PASTE BOOTSTRAP — applies migrations 014 (ASPN) + 015
+-- (products / vendor_inventory / drop_ship_orders).
 --
 -- HOW TO USE:
 --   1. Open https://supabase.com/dashboard/project/ypeypgwsycxcagncgdur/sql/new
@@ -10,7 +8,13 @@
 --   3. Click RUN
 --   4. Tell Claude "migrations done"
 --
--- This is idempotent. Safe to run multiple times.
+-- This is the LAST manual SQL paste. Future migrations apply
+-- automatically via the `supabase-migrate` GitHub Action when
+-- you push a new file under `supabase/migrations/`.
+--
+-- Safe + idempotent: re-running this file is a no-op.
+-- No `exec_sql` backdoor — DDL stays scoped to the GitHub
+-- workflow, which authenticates with a project-scoped PAT.
 -- ============================================================
 
 \echo '=== Applying migration 014: ASPN members ==='
@@ -307,26 +311,9 @@ GRANT ALL ON public.vendor_inventory TO service_role;
 GRANT ALL ON public.drop_ship_orders TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.vendor_inventory_id_seq TO service_role;
 
-\echo '=== Creating exec_sql admin RPC (lets backend run future migrations programmatically) ==='
-
-CREATE OR REPLACE FUNCTION public.exec_sql(query text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE result jsonb;
-BEGIN
-  EXECUTE query;
-  RETURN jsonb_build_object('ok', true);
-EXCEPTION WHEN OTHERS THEN
-  RETURN jsonb_build_object('ok', false, 'error', SQLERRM, 'detail', SQLSTATE);
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.exec_sql(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.exec_sql(text) FROM anon;
-REVOKE ALL ON FUNCTION public.exec_sql(text) FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;
+-- Note: future migrations apply automatically via the
+-- `.github/workflows/supabase-migrate.yml` GitHub Action +
+-- supabase/migrations/ directory. No exec_sql backdoor.
 
 \echo '=== DONE — verify ==='
 SELECT 'aspn_members' AS table_name, count(*) AS rows FROM public.aspn_members
