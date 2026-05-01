@@ -602,7 +602,9 @@
         const rawImg = product.images?.[0] || '';
         const img = fixImageUrl(rawImg);
         const brand = product.brandDisplay || product.vendor || '';
-        const url = `/marketplace/tile/product.html?handle=${product.handle}`;
+        const url = product._source === 'catalog'
+          ? `/get-a-free-estimate?service=tile-install&material=tile&product=${encodeURIComponent(product.title)}`
+          : `/marketplace/tile/product.html?handle=${product.handle}`;
 
         // Calculate dynamic pricing
         let priceHtml = '<div class="product-price">Call for Price</div>';
@@ -651,22 +653,56 @@
       }).join('');
     }
 
+    function mapCatalogToPageShape(p) {
+      return {
+        handle: p.slug || p.id,
+        title: p.name,
+        productType: p.subcategory ? p.subcategory.replace(/-/g, ' ') : 'Tile',
+        vendor: p.brand || p.vendor_id,
+        brandDisplay: p.brand || p.vendor_id,
+        images: p.image_urls && p.image_urls.length ? p.image_urls : (p.primary_image_url ? [p.primary_image_url] : []),
+        price: p.retail_price,
+        specs: p.specs || {},
+        description: p.short_description,
+        tags: p.tags || [],
+        url: p.vendor_url,
+        _source: 'catalog',
+        _id: p.id,
+        _vendor_id: p.vendor_id,
+        _external_url: p.vendor_url
+      };
+    }
+
     async function loadProducts() {
       const grid = document.getElementById('products-grid');
       try {
-        console.log('Fetching tile data...');
-        const response = await fetch('/data/tile.json?v=' + Date.now());
-        console.log('Response status:', response.status);
-        if (!response.ok) throw new Error('Failed to fetch: ' + response.status);
-        let products = await response.json();
+        const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const [staticRes, liveRes] = await Promise.allSettled([
+          fetch('/data/tile.json?v=' + Date.now()),
+          fetch(API_BASE + '/api/catalog?category=tile&limit=2000')
+        ]);
 
-        // Remove duplicates
+        let staticProducts = [];
+        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
+          staticProducts = await staticRes.value.json();
+        }
+
+        let liveProducts = [];
+        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
+          const json = await liveRes.value.json();
+          if (json.success && Array.isArray(json.products)) {
+            liveProducts = json.products.map(mapCatalogToPageShape);
+          }
+        }
+
+        let products = [...liveProducts, ...staticProducts];
+        console.log(`Tile: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+
         products = deduplicateProducts(products);
         allProducts = products;
-        console.log('Loaded', products.length, 'unique tiles');
 
         if (!products || products.length === 0) {
-          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">No tiles found in data file.</p>';
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">No tiles found.</p>';
           return;
         }
 

@@ -2446,6 +2446,48 @@
           console.log('API unavailable, using local products');
         }
 
+        // Load live catalog slabs from /api/catalog (MSI / Cosentino / Arizona Tile / AraCruz)
+        try {
+          const catRes = await fetch(`${API_BASE}/api/catalog?category=slab&limit=2000`);
+          if (catRes.ok) {
+            const json = await catRes.json();
+            if (json.success && Array.isArray(json.products)) {
+              json.products.forEach(p => {
+                const material = (p.subcategory || p.specs?.material || 'quartz').toLowerCase().replace(/-/g, ' ');
+                const price = parseFloat(p.retail_price) || 0;
+                slabs.push({
+                  id: p.id,
+                  product_name: p.name,
+                  brand: p.brand || p.vendor_id,
+                  material_type: material.includes('granite') ? 'granite'
+                              : material.includes('marble') ? 'marble'
+                              : material.includes('quartzite') ? 'quartzite'
+                              : material.includes('porcelain') ? 'porcelain'
+                              : material.includes('dekton') ? 'dekton'
+                              : 'quartz',
+                  color_family: detectColor(p.name),
+                  price_per_sqft: getSlabPrice(material, price),
+                  length_inches: 126,
+                  width_inches: 63,
+                  thickness_cm: 3,
+                  finish: p.finish || 'Polished',
+                  images: p.image_urls && p.image_urls.length ? p.image_urls : (p.primary_image_url ? [p.primary_image_url] : []),
+                  distributor: { company_name: p.brand || p.vendor_id },
+                  created_at: new Date().toISOString(),
+                  slug: p.slug || p.id,
+                  catalog: true,
+                  vendor_id: p.vendor_id,
+                  vendor_url: p.vendor_url,
+                  sample_eligible: p.sample_eligible !== false
+                });
+              });
+              console.log(`Loaded ${json.products.length} live catalog slabs`);
+            }
+          }
+        } catch (catErr) {
+          console.log('Catalog unavailable:', catErr);
+        }
+
         // Update stats
         document.getElementById('statSlabs').textContent = slabs.length.toLocaleString();
 

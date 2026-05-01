@@ -613,8 +613,10 @@
         const retailPrice = tierPrices.guest ?? calculatePrice(basePrice, 'guest');
         const showSavings = currentTier !== 'guest' && retailPrice - userPrice > 0.10;
 
-        // Link to flooring detail page (we'll use a query param approach)
-        const url = `/flooring/${slug}/`;
+        // Link to flooring detail page; catalog products go straight to estimate (no detail page yet)
+        const url = product._source === 'catalog'
+          ? `/get-a-free-estimate?service=flooring-install&material=${encodeURIComponent(type)}&product=${encodeURIComponent(product.name || '')}`
+          : `/flooring/${slug}/`;
 
         const installUrl = `/get-a-free-estimate?service=flooring-install&material=${encodeURIComponent(type)}&product=${encodeURIComponent(product.name || '')}`;
 
@@ -643,15 +645,49 @@
       }).join('');
     }
 
+    function mapCatalogToFlooringShape(p) {
+      return {
+        slug: p.slug || p.id,
+        name: p.name,
+        brand: p.brand || p.vendor_id,
+        type: p.subcategory ? p.subcategory.replace(/-/g, ' ') : 'Flooring',
+        primaryImage: p.primary_image_url || (p.image_urls && p.image_urls[0]) || '',
+        image: p.primary_image_url || (p.image_urls && p.image_urls[0]) || '',
+        price_sf: p.retail_price ? { guest: p.retail_price } : {},
+        collection: p.specs && p.specs.collection ? p.specs.collection : null,
+        _source: 'catalog',
+        _id: p.id,
+        _vendor_id: p.vendor_id,
+        _external_url: p.vendor_url
+      };
+    }
+
     async function loadProducts() {
       const grid = document.getElementById('products-grid');
       try {
-        console.log('Fetching flooring data...');
-        const response = await fetch('/data/flooring.json');
-        const data = await response.json();
-        const products = data.flooring || data.products || data || [];
+        const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const [staticRes, liveRes] = await Promise.allSettled([
+          fetch('/data/flooring.json'),
+          fetch(API_BASE + '/api/catalog?category=flooring&limit=1000')
+        ]);
+
+        let staticProducts = [];
+        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
+          const data = await staticRes.value.json();
+          staticProducts = data.flooring || data.products || data || [];
+        }
+
+        let liveProducts = [];
+        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
+          const json = await liveRes.value.json();
+          if (json.success && Array.isArray(json.products)) {
+            liveProducts = json.products.map(mapCatalogToFlooringShape);
+          }
+        }
+
+        const products = [...liveProducts, ...staticProducts];
         allProducts = products;
-        console.log('Loaded', products.length, 'flooring products');
+        console.log(`Flooring: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
 
         // Render immediately, update when pricing changes
         renderProducts(products);

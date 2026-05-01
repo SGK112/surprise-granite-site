@@ -13,7 +13,7 @@ class MonterreyTileScraper extends LiteScraper {
       minDelayMs: 700,
       maxDelayMs: 1400
     });
-    this.maxProducts = 250;  // first run cap; remove for full scrape
+    this.maxProducts = 5000;  // raised from 250 — scrape the full ~1709-product Monterrey catalog
   }
 
   async scrape() {
