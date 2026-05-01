@@ -822,9 +822,9 @@
     // leverage conversion win on the site.
     insertMobileActionBar();
 
-    // Scroll-to-top button — appears after 600px scroll. Subtle UX win,
-    // especially on long landing pages (the new SEO hubs are 600+ lines).
-    insertScrollToTop();
+    // Scroll-to-top arrow removed 2026-05-01 — collided with the cart and
+    // tool hub on mobile despite the layered bottom-position math. Browsers
+    // already give users a way to scroll up (back-to-top gesture, swipe).
 
     // Get elements
     const toggle = document.getElementById('unifiedNavToggle');
