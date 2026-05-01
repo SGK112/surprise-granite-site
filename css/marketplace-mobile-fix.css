@@ -1,9 +1,46 @@
 /* ============================================================
-   Marketplace mobile rescue — 2026-04-30
+   Marketplace mobile rescue — 2026-04-30 (v2 2026-05-01)
    Single stylesheet that fixes the most common mobile-layout
    failures across /marketplace/, /cart/, /products/, etc.
    Loaded AFTER the page's own styles so these rules win.
    ============================================================ */
+
+/* ---------- Site-wide button consistency (all viewports) ---------- */
+/* Every add-to-cart button looks the same: green gradient, white text.
+   Overrides the 3 conflicting variants (gold on slabs, navy on product
+   detail, green on category pages). */
+.add-to-cart-btn,
+button.add-to-cart-btn,
+.detail-add-to-cart-btn,
+button.detail-add-to-cart-btn,
+a.add-to-cart-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+.add-to-cart-btn:hover,
+button.add-to-cart-btn:hover,
+.detail-add-to-cart-btn:hover,
+a.add-to-cart-btn:hover {
+  background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+  transform: translateY(-1px);
+}
+.add-to-cart-btn:disabled,
+button.add-to-cart-btn:disabled,
+.detail-add-to-cart-btn:disabled {
+  background: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: .8 !important;
+}
+
+/* Broken image fallback — any <img> that 404s or fails CORS shows a
+   gray gradient placeholder block instead of a busted-image icon. */
+img {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
 
 /* ---------- 0. Universal safety nets ---------- */
 @media (max-width: 768px) {

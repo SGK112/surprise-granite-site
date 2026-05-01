@@ -154,7 +154,7 @@
     // Render items (with XSS protection)
     orderItems.innerHTML = cart.map(item => {
       const safeName = escapeHtml(item.name);
-      const safeImage = escapeAttr(item.image || '/images/placeholder.jpg');
+      const safeImage = escapeAttr(item.image || '/images/placeholder-card.svg');
       const safeVariant = escapeHtml(item.variant || '');
       const safePrice = parseFloat(item.price) || 0;
       const safeQty = parseInt(item.quantity) || 1;
