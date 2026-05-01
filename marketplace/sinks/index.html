@@ -572,7 +572,7 @@
     .faq-section details[open] summary { border-bottom: 1px solid var(--border); }
     .faq-section .faq-answer { padding: 16px 20px; font-size: 14px; line-height: 1.7; color: var(--text-primary); }
   </style>
-  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501a"/>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501b"/>
   <script defer src="/js/image-fallback.js?v=20260501a"></script>
 </head>
 <body>
@@ -792,9 +792,24 @@
           }
         }
 
-        // Live products first (scraped vendor catalog), static after (legacy curated)
-        const products = [...liveProducts, ...staticProducts];
-        console.log(`Sinks: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+        // Dedupe: drop static products whose vendor is now in live catalog.
+        // Live wins because it's fresh, has structured pricing, and matches our drop-ship workflow.
+        const liveVendorNames = new Set(
+          liveProducts
+            .map(p => (p.vendor || p.brandDisplay || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, ''))
+            .filter(Boolean)
+        );
+        const filteredStatic = staticProducts.filter(p => {
+          const v = ((p.vendor || p.brand || p.brandDisplay || '') + '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+          if (!v) return true;
+          // ruvati / ruvatisinks / kibi etc. — any partial match against a live vendor key
+          for (const liveV of liveVendorNames) {
+            if (v.includes(liveV) || liveV.includes(v)) return false;
+          }
+          return true;
+        });
+        const products = [...liveProducts, ...filteredStatic];
+        console.log(`Sinks: ${liveProducts.length} live + ${filteredStatic.length} static (${staticProducts.length - filteredStatic.length} duped) = ${products.length}`);
 
         allProductsData = products;
         renderProducts(products);

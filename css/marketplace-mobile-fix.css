@@ -36,9 +36,16 @@ button.add-to-cart-btn:disabled,
   opacity: .8 !important;
 }
 
-/* Broken image fallback — any <img> that 404s or fails CORS shows a
-   gray gradient placeholder block instead of a busted-image icon. */
-img {
+/* Broken image fallback — any product/card <img> that 404s shows a
+   gray gradient placeholder block instead of a busted-image icon.
+   Scoped to product imagery only so it doesn't bleed through SVG logos
+   with transparent backgrounds (.logo, .nav-logo, .brand-logo, .header-logo). */
+.product-card img,
+.slab-card img,
+.product-image img,
+.slab-card-image img,
+[class*="card-image"] img,
+.cart-item-image img {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
