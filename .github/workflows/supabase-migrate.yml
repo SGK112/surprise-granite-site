@@ -78,8 +78,20 @@ jobs:
       - name: Apply migrations
         run: |
           echo "::group::supabase db push"
-          supabase db push --include-all --debug
+          # Prefer SUPABASE_DB_URL (full connection string from Supabase dashboard
+          # under Settings → Database → Connection string → URI). Eliminates the
+          # "I copied the wrong password field" failure mode. Falls back to
+          # SUPABASE_DB_PASSWORD if SUPABASE_DB_URL isn't set.
+          if [ -n "${SUPABASE_DB_URL:-}" ]; then
+            echo "Using SUPABASE_DB_URL (full connection string)"
+            supabase db push --include-all --db-url "$SUPABASE_DB_URL" --debug
+          else
+            echo "Using SUPABASE_DB_PASSWORD (env var)"
+            supabase db push --include-all --debug
+          fi
           echo "::endgroup::"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
       - name: Confirm
         run: |
