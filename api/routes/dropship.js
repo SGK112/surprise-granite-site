@@ -51,7 +51,7 @@ orderHandlers.push(async (req, res) => {
 
     // Validate product is sample-eligible
     const { data: product, error: pErr } = await supabase
-      .from('products')
+      .from('catalog_products')
       .select('id, vendor_id, sku, name, sample_eligible, sample_price, sample_sku')
       .eq('id', product_id)
       .maybeSingle();

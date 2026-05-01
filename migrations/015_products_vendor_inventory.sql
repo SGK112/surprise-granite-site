@@ -55,7 +55,7 @@ VALUES
 ON CONFLICT (vendor_id) DO NOTHING;
 
 -- ───────── products ─────────
-CREATE TABLE IF NOT EXISTS public.products (
+CREATE TABLE IF NOT EXISTS public.catalog_products (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_id       text NOT NULL REFERENCES public.vendor_config(vendor_id) ON DELETE CASCADE,
   sku             text NOT NULL,
@@ -106,14 +106,14 @@ CREATE TABLE IF NOT EXISTS public.products (
   UNIQUE(vendor_id, sku)
 );
 
-CREATE INDEX IF NOT EXISTS products_vendor_idx ON public.products(vendor_id);
-CREATE INDEX IF NOT EXISTS products_category_idx ON public.products(category);
-CREATE INDEX IF NOT EXISTS products_active_in_stock_idx ON public.products(active, in_stock) WHERE active = true AND in_stock = true;
-CREATE INDEX IF NOT EXISTS products_sample_eligible_idx ON public.products(sample_eligible) WHERE sample_eligible = true;
-CREATE INDEX IF NOT EXISTS products_slug_idx ON public.products(slug);
+CREATE INDEX IF NOT EXISTS catalog_products_vendor_idx ON public.catalog_products(vendor_id);
+CREATE INDEX IF NOT EXISTS catalog_products_category_idx ON public.catalog_products(category);
+CREATE INDEX IF NOT EXISTS catalog_products_active_in_stock_idx ON public.catalog_products(active, in_stock) WHERE active = true AND in_stock = true;
+CREATE INDEX IF NOT EXISTS catalog_products_sample_eligible_idx ON public.catalog_products(sample_eligible) WHERE sample_eligible = true;
+CREATE INDEX IF NOT EXISTS catalog_products_slug_idx ON public.catalog_products(slug);
 
 -- Slug auto-generation (lowercase, alphanumeric+dash) — combine vendor_id + sku for uniqueness
-CREATE OR REPLACE FUNCTION public.products_generate_slug()
+CREATE OR REPLACE FUNCTION public.catalog_products_generate_slug()
 RETURNS trigger AS $$
 BEGIN
   IF NEW.slug IS NULL OR NEW.slug = '' THEN
@@ -125,13 +125,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS products_slug_gen ON public.products;
-CREATE TRIGGER products_slug_gen
-  BEFORE INSERT ON public.products
-  FOR EACH ROW EXECUTE FUNCTION public.products_generate_slug();
+DROP TRIGGER IF EXISTS catalog_products_slug_gen ON public.catalog_products;
+CREATE TRIGGER catalog_products_slug_gen
+  BEFORE INSERT ON public.catalog_products
+  FOR EACH ROW EXECUTE FUNCTION public.catalog_products_generate_slug();
 
 -- updated_at
-CREATE OR REPLACE FUNCTION public.products_set_updated_at()
+CREATE OR REPLACE FUNCTION public.catalog_products_set_updated_at()
 RETURNS trigger AS $$
 BEGIN
   NEW.updated_at = now();
@@ -139,10 +139,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS products_updated_at ON public.products;
-CREATE TRIGGER products_updated_at
-  BEFORE UPDATE ON public.products
-  FOR EACH ROW EXECUTE FUNCTION public.products_set_updated_at();
+DROP TRIGGER IF EXISTS catalog_products_updated_at ON public.catalog_products;
+CREATE TRIGGER catalog_products_updated_at
+  BEFORE UPDATE ON public.catalog_products
+  FOR EACH ROW EXECUTE FUNCTION public.catalog_products_set_updated_at();
 
 -- ───────── vendor_inventory ─────────
 -- Time-series of stock snapshots. Lets us track stock changes over time
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.vendor_inventory (
   id              bigserial PRIMARY KEY,
   vendor_id       text NOT NULL REFERENCES public.vendor_config(vendor_id) ON DELETE CASCADE,
   sku             text NOT NULL,
-  product_id      uuid REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id      uuid REFERENCES public.catalog_products(id) ON DELETE CASCADE,
   -- Snapshot
   in_stock        boolean,
   stock_quantity  integer,
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS public.drop_ship_orders (
   ship_to_zip     text,
   ship_to_country text DEFAULT 'US',
   -- Order details
-  product_id      uuid REFERENCES public.products(id),
+  product_id      uuid REFERENCES public.catalog_products(id),
   vendor_id       text REFERENCES public.vendor_config(vendor_id),
   product_sku     text,
   product_name    text,
@@ -231,17 +231,17 @@ CREATE TRIGGER drop_ship_orders_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.drop_ship_orders_set_updated_at();
 
 -- ───────── RLS ─────────
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catalog_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drop_ship_orders ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS products_anon_read ON public.products;
-CREATE POLICY products_anon_read ON public.products
+DROP POLICY IF EXISTS catalog_products_anon_read ON public.catalog_products;
+CREATE POLICY catalog_products_anon_read ON public.catalog_products
   FOR SELECT TO anon USING (active = true);
 
-DROP POLICY IF EXISTS products_service_all ON public.products;
-CREATE POLICY products_service_all ON public.products
+DROP POLICY IF EXISTS catalog_products_service_all ON public.catalog_products;
+CREATE POLICY catalog_products_service_all ON public.catalog_products
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS vendor_config_anon_read ON public.vendor_config;
@@ -260,9 +260,9 @@ DROP POLICY IF EXISTS drop_ship_orders_service_all ON public.drop_ship_orders;
 CREATE POLICY drop_ship_orders_service_all ON public.drop_ship_orders
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
-GRANT SELECT ON public.products TO anon;
+GRANT SELECT ON public.catalog_products TO anon;
 GRANT SELECT ON public.vendor_config TO anon;
-GRANT ALL ON public.products TO service_role;
+GRANT ALL ON public.catalog_products TO service_role;
 GRANT ALL ON public.vendor_config TO service_role;
 GRANT ALL ON public.vendor_inventory TO service_role;
 GRANT ALL ON public.drop_ship_orders TO service_role;

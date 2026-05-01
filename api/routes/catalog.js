@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
     const inStockOnly = req.query?.in_stock !== 'false';
 
     let q = supabase
-      .from('products')
+      .from('catalog_products')
       .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags', { count: 'exact' })
       .eq('active', true)
       .order('vendor_id', { ascending: true })
@@ -62,7 +62,7 @@ router.get('/categories', async (req, res) => {
     const supabase = req.app.get('supabase');
     if (!supabase) return res.status(503).json({ error: 'Database not available' });
     const { data, error } = await supabase
-      .from('products')
+      .from('catalog_products')
       .select('category, vendor_id')
       .eq('active', true)
       .limit(10000);
@@ -106,7 +106,7 @@ router.get('/:slug', async (req, res) => {
     if (!slug) return res.status(400).json({ error: 'Invalid slug' });
 
     const { data, error } = await supabase
-      .from('products')
+      .from('catalog_products')
       .select('*')
       .eq('slug', slug)
       .eq('active', true)

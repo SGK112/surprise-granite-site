@@ -154,7 +154,7 @@ class LiteScraper {
     for (let i = 0; i < this.scrapedProducts.length; i += CHUNK) {
       const chunk = this.scrapedProducts.slice(i, i + CHUNK);
       const { data, error } = await this.supabase
-        .from('products')
+        .from('catalog_products')
         .upsert(chunk, { onConflict: 'vendor_id,sku', ignoreDuplicates: false })
         .select('id, sku');
       if (error) {

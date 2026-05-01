@@ -161,7 +161,7 @@ INSERT INTO public.vendor_config (vendor_id, vendor_name, vendor_url, dropship_m
   ('cosentino',     'Cosentino',           'https://www.cosentino.com',           'manual', true,  30, 'Silestone + Dekton + Sensa parent')
 ON CONFLICT (vendor_id) DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS public.products (
+CREATE TABLE IF NOT EXISTS public.catalog_products (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_id       text NOT NULL REFERENCES public.vendor_config(vendor_id) ON DELETE CASCADE,
   sku             text NOT NULL,
@@ -199,13 +199,13 @@ CREATE TABLE IF NOT EXISTS public.products (
   UNIQUE(vendor_id, sku)
 );
 
-CREATE INDEX IF NOT EXISTS products_vendor_idx ON public.products(vendor_id);
-CREATE INDEX IF NOT EXISTS products_category_idx ON public.products(category);
-CREATE INDEX IF NOT EXISTS products_active_in_stock_idx ON public.products(active, in_stock) WHERE active = true AND in_stock = true;
-CREATE INDEX IF NOT EXISTS products_sample_eligible_idx ON public.products(sample_eligible) WHERE sample_eligible = true;
-CREATE INDEX IF NOT EXISTS products_slug_idx ON public.products(slug);
+CREATE INDEX IF NOT EXISTS catalog_products_vendor_idx ON public.catalog_products(vendor_id);
+CREATE INDEX IF NOT EXISTS catalog_products_category_idx ON public.catalog_products(category);
+CREATE INDEX IF NOT EXISTS catalog_products_active_in_stock_idx ON public.catalog_products(active, in_stock) WHERE active = true AND in_stock = true;
+CREATE INDEX IF NOT EXISTS catalog_products_sample_eligible_idx ON public.catalog_products(sample_eligible) WHERE sample_eligible = true;
+CREATE INDEX IF NOT EXISTS catalog_products_slug_idx ON public.catalog_products(slug);
 
-CREATE OR REPLACE FUNCTION public.products_generate_slug() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.catalog_products_generate_slug() RETURNS trigger AS $$
 BEGIN
   IF NEW.slug IS NULL OR NEW.slug = '' THEN
     NEW.slug := regexp_replace(lower(NEW.vendor_id || '-' || NEW.name), '[^a-z0-9]+', '-', 'g');
@@ -215,20 +215,20 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE TRIGGER products_slug_gen BEFORE INSERT ON public.products
-  FOR EACH ROW EXECUTE FUNCTION public.products_generate_slug();
+CREATE OR REPLACE TRIGGER catalog_products_slug_gen BEFORE INSERT ON public.catalog_products
+  FOR EACH ROW EXECUTE FUNCTION public.catalog_products_generate_slug();
 
-CREATE OR REPLACE FUNCTION public.products_set_updated_at() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.catalog_products_set_updated_at() RETURNS trigger AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE TRIGGER products_updated_at BEFORE UPDATE ON public.products
-  FOR EACH ROW EXECUTE FUNCTION public.products_set_updated_at();
+CREATE OR REPLACE TRIGGER catalog_products_updated_at BEFORE UPDATE ON public.catalog_products
+  FOR EACH ROW EXECUTE FUNCTION public.catalog_products_set_updated_at();
 
 CREATE TABLE IF NOT EXISTS public.vendor_inventory (
   id              bigserial PRIMARY KEY,
   vendor_id       text NOT NULL REFERENCES public.vendor_config(vendor_id) ON DELETE CASCADE,
   sku             text NOT NULL,
-  product_id      uuid REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id      uuid REFERENCES public.catalog_products(id) ON DELETE CASCADE,
   in_stock        boolean,
   stock_quantity  integer,
   vendor_cost     numeric,
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS public.drop_ship_orders (
   ship_to_state   text,
   ship_to_zip     text,
   ship_to_country text DEFAULT 'US',
-  product_id      uuid REFERENCES public.products(id),
+  product_id      uuid REFERENCES public.catalog_products(id),
   vendor_id       text REFERENCES public.vendor_config(vendor_id),
   product_sku     text,
   product_name    text,
@@ -287,21 +287,21 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER drop_ship_orders_updated_at BEFORE UPDATE ON public.drop_ship_orders
   FOR EACH ROW EXECUTE FUNCTION public.drop_ship_orders_set_updated_at();
 
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catalog_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drop_ship_orders ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='products' AND policyname='products_anon_read') THEN
-    EXECUTE 'CREATE POLICY products_anon_read ON public.products FOR SELECT TO anon USING (active = true)';
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='catalog_products' AND policyname='catalog_products_anon_read') THEN
+    EXECUTE 'CREATE POLICY catalog_products_anon_read ON public.catalog_products FOR SELECT TO anon USING (active = true)';
   END IF;
 END $$;
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='products' AND policyname='products_service_all') THEN
-    EXECUTE 'CREATE POLICY products_service_all ON public.products FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='catalog_products' AND policyname='catalog_products_service_all') THEN
+    EXECUTE 'CREATE POLICY catalog_products_service_all ON public.catalog_products FOR ALL TO service_role USING (true) WITH CHECK (true)';
   END IF;
 END $$;
 DO $$
@@ -329,9 +329,9 @@ BEGIN
   END IF;
 END $$;
 
-GRANT SELECT ON public.products TO anon;
+GRANT SELECT ON public.catalog_products TO anon;
 GRANT SELECT ON public.vendor_config TO anon;
-GRANT ALL ON public.products TO service_role;
+GRANT ALL ON public.catalog_products TO service_role;
 GRANT ALL ON public.vendor_config TO service_role;
 GRANT ALL ON public.vendor_inventory TO service_role;
 GRANT ALL ON public.drop_ship_orders TO service_role;
@@ -343,7 +343,7 @@ GRANT USAGE, SELECT ON SEQUENCE public.vendor_inventory_id_seq TO service_role;
 
 -- =========== DONE — verification select below ===========
 SELECT 'aspn_members' AS table_name, count(*) AS rows FROM public.aspn_members
-UNION ALL SELECT 'products', count(*) FROM public.products
+UNION ALL SELECT 'products', count(*) FROM public.catalog_products
 UNION ALL SELECT 'vendor_config', count(*) FROM public.vendor_config
 UNION ALL SELECT 'vendor_inventory', count(*) FROM public.vendor_inventory
 UNION ALL SELECT 'drop_ship_orders', count(*) FROM public.drop_ship_orders;
