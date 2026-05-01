@@ -70,8 +70,7 @@ CREATE INDEX IF NOT EXISTS aspn_members_founder_idx ON public.aspn_members(found
 CREATE OR REPLACE FUNCTION public.aspn_members_set_updated_at() RETURNS trigger AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS aspn_members_updated_at ON public.aspn_members;
-CREATE TRIGGER aspn_members_updated_at BEFORE UPDATE ON public.aspn_members
+CREATE OR REPLACE TRIGGER aspn_members_updated_at BEFORE UPDATE ON public.aspn_members
   FOR EACH ROW EXECUTE FUNCTION public.aspn_members_set_updated_at();
 
 CREATE OR REPLACE FUNCTION public.aspn_members_set_founder_status() RETURNS trigger AS $$
@@ -85,8 +84,7 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS aspn_members_founder_check ON public.aspn_members;
-CREATE TRIGGER aspn_members_founder_check BEFORE UPDATE ON public.aspn_members
+CREATE OR REPLACE TRIGGER aspn_members_founder_check BEFORE UPDATE ON public.aspn_members
   FOR EACH ROW EXECUTE FUNCTION public.aspn_members_set_founder_status();
 
 CREATE OR REPLACE FUNCTION public.aspn_members_generate_slug() RETURNS trigger AS $$
@@ -105,15 +103,22 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS aspn_members_slug_gen ON public.aspn_members;
-CREATE TRIGGER aspn_members_slug_gen BEFORE INSERT ON public.aspn_members
+CREATE OR REPLACE TRIGGER aspn_members_slug_gen BEFORE INSERT ON public.aspn_members
   FOR EACH ROW EXECUTE FUNCTION public.aspn_members_generate_slug();
 
 ALTER TABLE public.aspn_members ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS aspn_members_anon_read_approved ON public.aspn_members;
-CREATE POLICY aspn_members_anon_read_approved ON public.aspn_members FOR SELECT TO anon USING (approved = true);
-DROP POLICY IF EXISTS aspn_members_service_role_all ON public.aspn_members;
-CREATE POLICY aspn_members_service_role_all ON public.aspn_members FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='aspn_members' AND policyname='aspn_members_anon_read_approved') THEN
+    EXECUTE 'CREATE POLICY aspn_members_anon_read_approved ON public.aspn_members FOR SELECT TO anon USING (approved = true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='aspn_members' AND policyname='aspn_members_service_role_all') THEN
+    EXECUTE 'CREATE POLICY aspn_members_service_role_all ON public.aspn_members FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
 GRANT SELECT ON public.aspn_members TO anon;
 GRANT ALL ON public.aspn_members TO service_role;
 
@@ -210,15 +215,13 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS products_slug_gen ON public.products;
-CREATE TRIGGER products_slug_gen BEFORE INSERT ON public.products
+CREATE OR REPLACE TRIGGER products_slug_gen BEFORE INSERT ON public.products
   FOR EACH ROW EXECUTE FUNCTION public.products_generate_slug();
 
 CREATE OR REPLACE FUNCTION public.products_set_updated_at() RETURNS trigger AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS products_updated_at ON public.products;
-CREATE TRIGGER products_updated_at BEFORE UPDATE ON public.products
+CREATE OR REPLACE TRIGGER products_updated_at BEFORE UPDATE ON public.products
   FOR EACH ROW EXECUTE FUNCTION public.products_set_updated_at();
 
 CREATE TABLE IF NOT EXISTS public.vendor_inventory (
@@ -281,8 +284,7 @@ CREATE INDEX IF NOT EXISTS drop_ship_orders_created_idx ON public.drop_ship_orde
 CREATE OR REPLACE FUNCTION public.drop_ship_orders_set_updated_at() RETURNS trigger AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
-DROP TRIGGER IF EXISTS drop_ship_orders_updated_at ON public.drop_ship_orders;
-CREATE TRIGGER drop_ship_orders_updated_at BEFORE UPDATE ON public.drop_ship_orders
+CREATE OR REPLACE TRIGGER drop_ship_orders_updated_at BEFORE UPDATE ON public.drop_ship_orders
   FOR EACH ROW EXECUTE FUNCTION public.drop_ship_orders_set_updated_at();
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -290,18 +292,42 @@ ALTER TABLE public.vendor_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drop_ship_orders ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS products_anon_read ON public.products;
-CREATE POLICY products_anon_read ON public.products FOR SELECT TO anon USING (active = true);
-DROP POLICY IF EXISTS products_service_all ON public.products;
-CREATE POLICY products_service_all ON public.products FOR ALL TO service_role USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS vendor_config_anon_read ON public.vendor_config;
-CREATE POLICY vendor_config_anon_read ON public.vendor_config FOR SELECT TO anon USING (true);
-DROP POLICY IF EXISTS vendor_config_service_all ON public.vendor_config;
-CREATE POLICY vendor_config_service_all ON public.vendor_config FOR ALL TO service_role USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS vendor_inventory_service_all ON public.vendor_inventory;
-CREATE POLICY vendor_inventory_service_all ON public.vendor_inventory FOR ALL TO service_role USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS drop_ship_orders_service_all ON public.drop_ship_orders;
-CREATE POLICY drop_ship_orders_service_all ON public.drop_ship_orders FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='products' AND policyname='products_anon_read') THEN
+    EXECUTE 'CREATE POLICY products_anon_read ON public.products FOR SELECT TO anon USING (active = true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='products' AND policyname='products_service_all') THEN
+    EXECUTE 'CREATE POLICY products_service_all ON public.products FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_config' AND policyname='vendor_config_anon_read') THEN
+    EXECUTE 'CREATE POLICY vendor_config_anon_read ON public.vendor_config FOR SELECT TO anon USING (true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_config' AND policyname='vendor_config_service_all') THEN
+    EXECUTE 'CREATE POLICY vendor_config_service_all ON public.vendor_config FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_inventory' AND policyname='vendor_inventory_service_all') THEN
+    EXECUTE 'CREATE POLICY vendor_inventory_service_all ON public.vendor_inventory FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='drop_ship_orders' AND policyname='drop_ship_orders_service_all') THEN
+    EXECUTE 'CREATE POLICY drop_ship_orders_service_all ON public.drop_ship_orders FOR ALL TO service_role USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
 
 GRANT SELECT ON public.products TO anon;
 GRANT SELECT ON public.vendor_config TO anon;
