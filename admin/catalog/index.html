@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Catalog Manager — Surprise Granite Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260430a"/>
+  <style>
+    :root {
+      --navy:#1a1a2e; --navy-light:#2d2d44; --gold:#f9cb00; --gold-dark:#cca600;
+      --bg:#fafaf7; --bg-2:#f3f2ed; --line:#e5e3dc; --text:#1a1a2e; --text-2:#5a5d63; --text-3:#8b8e94;
+      --green:#10b981; --red:#ef4444; --amber:#f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    a { color: inherit; text-decoration: none; }
+
+    .topbar { background:var(--navy); color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .topbar h1 { font-size:1.05rem; font-weight:700; letter-spacing:.02em; }
+    .topbar a { color:rgba(255,255,255,.7); font-size:.85rem; }
+    .topbar a:hover { color:var(--gold); }
+
+    .keybox { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; margin:24px auto; max-width:1100px; display:flex; gap:12px; align-items:end; }
+    .keybox label { font-size:.82rem; font-weight:600; color:var(--text-2); display:block; margin-bottom:6px; }
+    .keybox input { padding:10px 12px; border:1px solid var(--line); border-radius:6px; font-family:monospace; font-size:.85rem; width:100%; }
+    .btn { padding:10px 20px; background:var(--gold); color:var(--navy); border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:.9rem; transition: all .15s; }
+    .btn:hover:not(:disabled) { background:var(--gold-dark); transform: translateY(-1px); }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-secondary { background:transparent; border:1px solid var(--line); color:var(--text); }
+    .btn-secondary:hover { border-color:var(--text); }
+    .btn-danger { background:var(--red); color:#fff; }
+    .btn-sm { padding:6px 12px; font-size:.8rem; }
+
+    .main { max-width:1100px; margin:0 auto; padding:0 24px 60px; }
+    .section { margin-bottom:32px; }
+    .section h2 { font-size:1.2rem; font-weight:700; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+    .section h2 .count { font-size:.85rem; color:var(--text-3); font-weight:500; }
+
+    .vendor-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+    .vendor-card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:20px; }
+    .vendor-card__head { display:flex; justify-content:space-between; align-items:start; margin-bottom:12px; }
+    .vendor-card__name { font-weight:700; font-size:1rem; }
+    .vendor-card__id { font-family:monospace; font-size:.72rem; color:var(--text-3); margin-top:2px; }
+    .vendor-card__count { font-size:1.6rem; font-weight:800; color:var(--gold-dark); line-height:1; }
+    .vendor-card__count-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-3); }
+    .vendor-card__meta { font-size:.82rem; color:var(--text-2); margin:8px 0 14px; line-height:1.6; }
+    .vendor-card__meta strong { color:var(--text); }
+    .vendor-card__actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill { padding:3px 8px; border-radius:50px; font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    .pill-green { background:#d1fae5; color:#065f46; }
+    .pill-amber { background:#fef3c7; color:#92400e; }
+    .pill-grey  { background:var(--bg-2); color:var(--text-2); }
+
+    .add-vendor-card { background:var(--bg-2); border:2px dashed var(--line); border-radius:10px; padding:20px; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; min-height:140px; font-weight:600; color:var(--text-2); }
+    .add-vendor-card:hover { border-color:var(--gold); color:var(--gold-dark); }
+
+    table { width:100%; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; border-collapse:collapse; }
+    th, td { text-align:left; padding:10px 12px; font-size:.85rem; border-bottom:1px solid var(--line); }
+    th { background:var(--bg-2); font-weight:700; color:var(--text-2); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; }
+    tr:last-child td { border-bottom:none; }
+    td img { width:40px; height:40px; object-fit:cover; border-radius:4px; background:var(--bg-2); }
+    td .price { font-weight:700; color:var(--gold-dark); }
+    td input[type=number] { width:80px; padding:4px 6px; border:1px solid var(--line); border-radius:4px; font-size:.8rem; }
+    td input[type=checkbox] { width:18px; height:18px; }
+
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:100; }
+    .modal__card { background:#fff; border-radius:12px; padding:28px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; }
+    .modal__card h3 { font-size:1.15rem; font-weight:700; margin-bottom:18px; }
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-weight:600; font-size:.85rem; margin-bottom:6px; }
+    .field input, .field select, .field textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px; font-size:.95rem; font-family:inherit; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .modal__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:24px; }
+
+    .msg { padding:12px 16px; border-radius:6px; margin-bottom:16px; font-size:.9rem; }
+    .msg-ok  { background:#ecfdf5; color:#065f46; border-left:3px solid var(--green); }
+    .msg-err { background:#fef2f2; color:#991b1b; border-left:3px solid var(--red); }
+    .empty { text-align:center; padding:60px 20px; color:var(--text-3); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>📦 Catalog Manager</h1>
+    <div>
+      <a href="/aspn/admin/">ASPN admin →</a>
+      <a href="/" style="margin-left:16px;">Site home →</a>
+    </div>
+  </div>
+
+  <div class="keybox">
+    <div style="flex:1;">
+      <label>Admin Key</label>
+      <input type="password" id="adminKey" placeholder="X-Admin-Key value (set ADMIN_KEY env on Render)"/>
+    </div>
+    <button class="btn" id="loadBtn">Load</button>
+  </div>
+
+  <div class="main">
+    <div id="msg"></div>
+
+    <!-- Vendors -->
+    <div class="section">
+      <h2>Vendors <span class="count" id="vendorCount">—</span></h2>
+      <div id="vendorGrid" class="vendor-grid">
+        <div class="empty">Enter your admin key + click Load.</div>
+      </div>
+    </div>
+
+    <!-- Recent products (filterable by vendor) -->
+    <div class="section" id="productsSection" style="display:none;">
+      <h2>Recent products <span class="count" id="productsCount">—</span></h2>
+      <div style="margin-bottom:12px;">
+        <select id="filterVendor" style="padding:8px 12px; border:1px solid var(--line); border-radius:6px;">
+          <option value="">All vendors</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="productsTable">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Name</th>
+              <th>Vendor</th>
+              <th>Category</th>
+              <th>Cost</th>
+              <th>Retail</th>
+              <th>Sample</th>
+              <th>Stock</th>
+              <th>Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add vendor modal -->
+  <div id="addVendorModal" class="modal" style="display:none;">
+    <div class="modal__card">
+      <h3>Add new vendor</h3>
+      <form id="addVendorForm">
+        <div class="field-row">
+          <div class="field">
+            <label>Vendor ID *</label>
+            <input id="vf-id" placeholder="lowercase-with-dashes" required pattern="[a-z0-9-]+"/>
+          </div>
+          <div class="field">
+            <label>Vendor name *</label>
+            <input id="vf-name" placeholder="Acme Stone Co." required/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vendor URL</label>
+          <input id="vf-url" type="url" placeholder="https://..."/>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Drop-ship method</label>
+            <select id="vf-dropship-method">
+              <option value="manual">Manual (we email)</option>
+              <option value="email">Auto email</option>
+              <option value="api">API webhook</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Drop-ship email</label>
+            <input id="vf-dropship-email" type="email" placeholder="orders@vendor.com"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Default markup %</label>
+            <input id="vf-markup" type="number" step="1" value="30"/>
+          </div>
+          <div class="field">
+            <label>Sample shipping ($)</label>
+            <input id="vf-sample-shipping" type="number" step="0.01" value="0"/>
+          </div>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:10px;">
+          <input id="vf-sample-offered" type="checkbox" style="width:20px;height:20px;"/>
+          <label for="vf-sample-offered" style="margin:0;">Offers samples</label>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea id="vf-notes" rows="2"></textarea>
+        </div>
+        <div class="modal__actions">
+          <button type="button" class="btn btn-secondary" onclick="closeAddVendor()">Cancel</button>
+          <button type="submit" class="btn">Add vendor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+    const grid = document.getElementById('vendorGrid');
+    const msg = document.getElementById('msg');
+    const keyInput = document.getElementById('adminKey');
+    const productsSection = document.getElementById('productsSection');
+    const productsTbody = document.querySelector('#productsTable tbody');
+    keyInput.value = localStorage.getItem('catalogAdminKey') || '';
+
+    function showMsg(text, type='ok') {
+      msg.innerHTML = `<div class="msg msg-${type}">${text}</div>`;
+      setTimeout(() => { if (msg.firstChild?.classList?.contains(`msg-${type}`)) msg.innerHTML = ''; }, 5000);
+    }
+    function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function authHeaders() {
+      const key = keyInput.value.trim();
+      if (!key) throw new Error('Admin key required');
+      return { 'X-Admin-Key': key, 'Content-Type': 'application/json' };
+    }
+
+    async function loadVendors() {
+      try {
+        const headers = authHeaders();
+        const r = await fetch(API_BASE + '/api/admin/catalog/vendors', { headers });
+        if (r.status === 401) {
+          showMsg('Invalid admin key. Set ADMIN_KEY env var on Render and use the same value here.', 'err');
+          return;
+        }
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'Load failed');
+        localStorage.setItem('catalogAdminKey', keyInput.value.trim());
+        document.getElementById('vendorCount').textContent = `${j.vendors.length} configured`;
+        renderVendors(j.vendors);
+        populateVendorFilter(j.vendors);
+        loadProducts();
+        productsSection.style.display = 'block';
+      } catch (e) {
+        showMsg(`Load failed: ${e.message}`, 'err');
+      }
+    }
+
+    function renderVendors(vendors) {
+      const SCRAPER_AVAILABLE = ['kibi','monterrey-tile','ruvati','msi'];
+      const cards = vendors.map(v => {
+        const canScrape = SCRAPER_AVAILABLE.includes(v.vendor_id);
+        const lastScraped = v.last_scraped_at ? new Date(v.last_scraped_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'never';
+        const statusPill = v.last_scrape_status === 'ok' ? '<span class="pill pill-green">OK</span>' : v.last_scrape_status ? '<span class="pill pill-amber">'+escapeHtml(v.last_scrape_status)+'</span>' : '<span class="pill pill-grey">Not run</span>';
+        return `<div class="vendor-card" data-vendor="${escapeHtml(v.vendor_id)}">
+          <div class="vendor-card__head">
+            <div>
+              <div class="vendor-card__name">${escapeHtml(v.vendor_name)}</div>
+              <div class="vendor-card__id">${escapeHtml(v.vendor_id)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="vendor-card__count">${v.product_count}</div>
+              <div class="vendor-card__count-label">Products</div>
+            </div>
+          </div>
+          <div class="vendor-card__meta">
+            <strong>Markup:</strong> ${v.default_markup_pct}% &nbsp;·&nbsp;
+            <strong>Samples:</strong> ${v.sample_offered ? 'Yes' : 'No'} &nbsp;·&nbsp;
+            <strong>Drop-ship:</strong> ${escapeHtml(v.dropship_method)}<br/>
+            <strong>Last scraped:</strong> ${lastScraped} ${statusPill}
+          </div>
+          <div class="vendor-card__actions">
+            ${canScrape ? `<button class="btn btn-sm" onclick="scrapeVendor('${escapeHtml(v.vendor_id)}', this)">▶ Scrape now</button>` : '<button class="btn btn-sm btn-secondary" disabled title="No scraper adapter yet">No scraper</button>'}
+            <button class="btn btn-sm btn-secondary" onclick="filterByVendor('${escapeHtml(v.vendor_id)}')">View products</button>
+            ${v.vendor_url ? `<a href="${escapeHtml(v.vendor_url)}" target="_blank" class="btn btn-sm btn-secondary">Site →</a>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      grid.innerHTML = cards + `<div class="add-vendor-card" onclick="openAddVendor()">+ Add new vendor</div>`;
+    }
+
+    function populateVendorFilter(vendors) {
+      const sel = document.getElementById('filterVendor');
+      sel.innerHTML = '<option value="">All vendors</option>' + vendors.map(v => `<option value="${escapeHtml(v.vendor_id)}">${escapeHtml(v.vendor_name)}</option>`).join('');
+      sel.onchange = () => loadProducts(sel.value);
+    }
+    window.filterByVendor = (vid) => {
+      document.getElementById('filterVendor').value = vid;
+      loadProducts(vid);
+      productsSection.scrollIntoView({behavior:'smooth'});
+    };
+
+    async function loadProducts(vendor='') {
+      const headers = authHeaders();
+      const url = API_BASE + '/api/admin/catalog/products?limit=50' + (vendor ? '&vendor=' + encodeURIComponent(vendor) : '');
+      const r = await fetch(url, { headers });
+      const j = await r.json();
+      if (!r.ok || !j.success) { showMsg('Products load failed: '+(j.error||'unknown'), 'err'); return; }
+      document.getElementById('productsCount').textContent = `${j.total} total · showing ${j.products.length}`;
+      productsTbody.innerHTML = j.products.map(p => `<tr data-id="${p.id}">
+        <td>${p.primary_image_url ? `<img src="${escapeHtml(p.primary_image_url)}" alt=""/>` : ''}</td>
+        <td><a href="${escapeHtml(p.vendor_url||'#')}" target="_blank">${escapeHtml(p.name)}</a><br/><span style="font-size:.7rem;color:var(--text-3);">${escapeHtml(p.sku)}</span></td>
+        <td>${escapeHtml(p.vendor_id)}</td>
+        <td>${escapeHtml(p.category||'')}</td>
+        <td>${p.vendor_cost ? '$'+p.vendor_cost.toFixed(2) : '—'}</td>
+        <td><span class="price">${p.retail_price ? '$'+Number(p.retail_price).toFixed(2) : '—'}</span></td>
+        <td><input type="checkbox" ${p.sample_eligible?'checked':''} onchange="updateProduct('${p.id}',{sample_eligible:this.checked})"/></td>
+        <td>${p.in_stock ? '<span class="pill pill-green">In</span>' : '<span class="pill pill-amber">Out</span>'}</td>
+        <td><input type="checkbox" ${p.active?'checked':''} onchange="updateProduct('${p.id}',{active:this.checked})"/></td>
+        <td><button class="btn btn-sm btn-danger" onclick="if(confirm('Deactivate this product?')) deleteProduct('${p.id}')">×</button></td>
+      </tr>`).join('') || '<tr><td colspan="10" class="empty">No products yet. Run a scraper.</td></tr>';
+    }
+
+    window.updateProduct = async (id, body) => {
+      try {
+        const r = await fetch(API_BASE + '/api/admin/catalog/products/' + encodeURIComponent(id), {
+          method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'update failed');
+        showMsg('Updated', 'ok');
+      } catch (e) { showMsg('Update failed: '+e.message, 'err'); }
+    };
+
+    window.deleteProduct = async (id) => {
+      try {
+        const r = await fetch(API_BASE + '/api/admin/catalog/products/' + encodeURIComponent(id), {
+          method: 'DELETE', headers: authHeaders()
+        });
+        if (!r.ok) throw new Error('delete failed');
+        showMsg('Deactivated', 'ok');
+        loadProducts(document.getElementById('filterVendor').value);
+      } catch (e) { showMsg('Delete failed: '+e.message, 'err'); }
+    };
+
+    window.scrapeVendor = async (vid, btn) => {
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = '⏳ Starting…';
+      try {
+        const r = await fetch(API_BASE + '/api/admin/catalog/scrape/' + encodeURIComponent(vid), {
+          method: 'POST', headers: authHeaders()
+        });
+        const j = await r.json();
+        if (!r.ok && r.status !== 202) throw new Error(j.error || 'failed');
+        showMsg(`Scrape started for ${vid}. Checking back in 20s…`, 'ok');
+        btn.textContent = '⏳ Running…';
+        setTimeout(() => loadVendors(), 20000);
+      } catch (e) {
+        showMsg(`Scrape failed: ${e.message}`, 'err');
+        btn.disabled = false; btn.textContent = orig;
+      }
+    };
+
+    window.openAddVendor = () => document.getElementById('addVendorModal').style.display = 'flex';
+    window.closeAddVendor = () => document.getElementById('addVendorModal').style.display = 'none';
+    document.getElementById('addVendorForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        vendor_id: document.getElementById('vf-id').value,
+        vendor_name: document.getElementById('vf-name').value,
+        vendor_url: document.getElementById('vf-url').value,
+        dropship_method: document.getElementById('vf-dropship-method').value,
+        dropship_email: document.getElementById('vf-dropship-email').value,
+        default_markup_pct: parseFloat(document.getElementById('vf-markup').value),
+        sample_shipping: parseFloat(document.getElementById('vf-sample-shipping').value),
+        sample_offered: document.getElementById('vf-sample-offered').checked,
+        notes: document.getElementById('vf-notes').value
+      };
+      try {
+        const r = await fetch(API_BASE + '/api/admin/catalog/vendors', {
+          method:'POST', headers: authHeaders(), body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'failed');
+        showMsg(`Added vendor: ${body.vendor_name}`, 'ok');
+        closeAddVendor();
+        loadVendors();
+      } catch (e) { showMsg(`Add failed: ${e.message}`, 'err'); }
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', loadVendors);
+    keyInput.addEventListener('keydown', e => { if (e.key==='Enter') loadVendors(); });
+    document.getElementById('filterVendor').addEventListener('change', e => loadProducts(e.target.value));
+    if (keyInput.value) loadVendors();
+  </script>
+</body>
+</html>

@@ -68,7 +68,7 @@
     const msg = document.getElementById('adminMsg');
     const keyInput = document.getElementById('adminKey');
     // Persist admin key in sessionStorage so reload doesn't lose it
-    keyInput.value = sessionStorage.getItem('aspnAdminKey') || '';
+    keyInput.value = localStorage.getItem('aspnAdminKey') || '';
 
     function status(m) {
       if (m.rejected) return '<span class="admin-status admin-status--rejected">Rejected</span>';
@@ -82,7 +82,7 @@
     async function loadMembers() {
       const key = keyInput.value.trim();
       if (!key) { msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Admin key required</div>'; return; }
-      sessionStorage.setItem('aspnAdminKey', key);
+      localStorage.setItem('aspnAdminKey', key);
       msg.innerHTML = '';
       list.innerHTML = '<p>Loading…</p>';
       // We hit the public list endpoint to get approved, then need a separate admin endpoint for pending.

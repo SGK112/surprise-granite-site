@@ -3989,6 +3989,15 @@ try {
   console.warn('Drop-ship API not available:', err.message);
 }
 
+// ============ Catalog admin (vendor management, scrape, edits) ============
+try {
+  const adminCatalogRouter = require('./routes/admin-catalog');
+  app.use('/api/admin/catalog', adminCatalogRouter);
+  console.log('Admin catalog API loaded');
+} catch (err) {
+  console.warn('Admin catalog API not available:', err.message);
+}
+
 // Admin identity — lets clients and Aria confirm they have admin access.
 // Accepts either a Supabase JWT (humans) or Aria's X-Aria-Service-Key
 // header (server-to-server from VoiceNow).
