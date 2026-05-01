@@ -137,9 +137,10 @@
 /showroom/       /stone-yards-we-work-with/   301
 
 # ASPN — wildcard for /aspn/members/<slug>/ → SPA shell at /aspn/members/index.html
-# Order matters: this must come BEFORE the catch-all 404 fallback below.
-/aspn/members/:slug/   /aspn/members/index.html   200
-/aspn/members/:slug    /aspn/members/index.html   200
+# Render uses * (not :slug — that's Netlify syntax). Order matters: must come
+# BEFORE the catch-all 404 fallback below.
+/aspn/members/*/   /aspn/members/index.html   200
+/aspn/members/*    /aspn/members/index.html   200
 
 # 404 fallback
 /*   /404.html   404
