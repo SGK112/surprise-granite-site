@@ -700,13 +700,16 @@
       count.textContent = products.length;
 
       const hasPricing = window.SG_PRICING && window.SG_PRICING_CONFIG;
+      const esc = s => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
       grid.innerHTML = products.map((product, index) => {
         const img = product.images?.[0] || '/images/6243807090316203124aee66_placeholder-image.svg';
         const type = product.productType || 'Faucet';
         const brand = product.vendor || '';
         const specs = product.specs || {};
-        const productUrl = `/marketplace/product/?handle=${product.handle}&category=faucets`;
+        const productUrl = `/marketplace/product/?handle=${encodeURIComponent(product.handle || '')}&category=faucets`;
 
         // Build mini specs string
         const specParts = [];
@@ -742,18 +745,18 @@
         const isAvailable = product.available !== false && !!variantId;
 
         return `
-          <a href="${productUrl}" class="product-card" data-title="${product.title.toLowerCase()}" data-type="${type.toLowerCase()}" data-brand="${brand.toLowerCase()}" data-variant-id="${variantId}">
-            <div class="product-image" style="background-image: url('${img}'); background-size: contain; background-position: center; background-repeat: no-repeat;">
+          <a href="${esc(productUrl)}" class="product-card" data-title="${esc((product.title||'').toLowerCase())}" data-type="${esc(type.toLowerCase())}" data-brand="${esc(brand.toLowerCase())}" data-variant-id="${esc(variantId)}">
+            <div class="product-image" style="background-image: url(&quot;${esc(img)}&quot;); background-size: contain; background-position: center; background-repeat: no-repeat;">
             </div>
             <div class="product-info">
-              ${brand ? `<span class="product-brand">${brand}</span>` : ''}
-              <h3 class="product-title">${product.title}</h3>
-              ${specsStr ? `<div class="product-specs-mini">${specsStr}</div>` : ''}
+              ${brand ? `<span class="product-brand">${esc(brand)}</span>` : ''}
+              <h3 class="product-title">${esc(product.title)}</h3>
+              ${specsStr ? `<div class="product-specs-mini">${esc(specsStr)}</div>` : ''}
               ${priceHtml}
               <span class="product-btn">View Details</span>
               ${isAvailable
-                ? `<button class="add-to-cart-btn" onclick="event.preventDefault(); event.stopPropagation(); window.sgAddToCart && window.sgAddToCart('${variantId}', this)">Add to Cart</button>`
-                : `<a class="get-quote-btn" href="/get-a-free-estimate?service=faucet-install&product=${encodeURIComponent(product.title)}" onclick="event.stopPropagation()">Get a Quote</a>`}
+                ? `<button class="add-to-cart-btn" onclick="event.preventDefault(); event.stopPropagation(); window.sgAddToCart && window.sgAddToCart('${esc(variantId)}', this)">Add to Cart</button>`
+                : `<a class="get-quote-btn" href="/get-a-free-estimate?service=faucet-install&product=${encodeURIComponent(product.title || '')}" onclick="event.stopPropagation()">Get a Quote</a>`}
             </div>
           </a>
         `;
