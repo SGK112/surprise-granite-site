@@ -274,20 +274,6 @@
           <input type="text" id="memo" name="memo" placeholder="e.g. Kitchen countertops deposit">
         </div>
 
-        <!-- Fee breakdown (shown when ?fee=1 — processing fee is passed to payer).
-             Itemizing the surcharge at checkout is what Visa/MC require for disclosure. -->
-        <div id="fee-breakdown" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin: 16px 0; font-size: 14px;">
-          <div style="display: flex; justify-content: space-between; color: #334155; margin-bottom: 4px;">
-            <span>Amount</span><span id="fb-amount">$0.00</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; color: #64748b; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1;">
-            <span>Processing fee (2.9% + $0.30)</span><span id="fb-fee">$0.00</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-weight: 700; color: #0f172a;">
-            <span>Total</span><span id="fb-total">$0.00</span>
-          </div>
-        </div>
-
         <!-- Error message -->
         <div class="form-error" id="form-error"></div>
 
@@ -311,10 +297,6 @@
           <div class="pm-badge">
             <svg viewBox="0 0 24 16" fill="none"><rect width="24" height="16" rx="2" fill="#006fcf"/><text x="5" y="11" font-size="6" font-weight="700" fill="#fff">AMEX</text></svg>
             Amex
-          </div>
-          <div class="pm-badge">
-            <svg viewBox="0 0 24 16" fill="none"><rect width="24" height="16" rx="2" fill="#1a3d6d"/><path d="M4 5h16v1H4zM4 10h16v1H4z" fill="#f7941d"/></svg>
-            eCheck / ACH
           </div>
         </div>
       </form>
@@ -373,19 +355,11 @@
     if (params.get('invoice')) invoiceInput.value = params.get('invoice');
     if (params.get('memo')) memoInput.value = params.get('memo');
 
-    // Pass-fee + lead linkage come from the Quick Pay flow. Both get forwarded
-    // to the backend so Stripe session metadata can later reconcile payment
-    // back to the originating lead.
-    const passFee = params.get('fee') === '1';
+    // Fee pass-through has been retired — confused customers (the grossed-up
+    // total didn't match the invoice they expected) and the backend ignores
+    // pass_fee now. Lead linkage is still forwarded so the Stripe webhook
+    // can reconcile completed payments back to the lead.
     const leadId = params.get('lead_id') || '';
-
-    // Keep in sync with api/routes/stripe.js grossUpForFee() and the
-    // account/main.js quickPayGrossUp() — all three must agree or the
-    // breakdown shown here won't match what Stripe actually charges.
-    function grossUpForFee(amountCents) {
-      const total = Math.ceil((amountCents + 30) / (1 - 0.029));
-      return { totalCents: total, feeCents: total - amountCents };
-    }
 
     // Show invoice banner if pre-filled from invoice
     if (params.get('amount') && params.get('invoice')) {
@@ -396,33 +370,18 @@
       banner.classList.add('visible');
     }
 
-    function updateFeeBreakdown() {
-      const breakdown = document.getElementById('fee-breakdown');
-      const val = parseFloat(amountInput.value);
-      if (!passFee || !(val >= 1)) { breakdown.style.display = 'none'; return; }
-      const { totalCents, feeCents } = grossUpForFee(Math.round(val * 100));
-      const fmt = n => '$' + (n/100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      document.getElementById('fb-amount').textContent = fmt(Math.round(val * 100));
-      document.getElementById('fb-fee').textContent = fmt(feeCents);
-      document.getElementById('fb-total').textContent = fmt(totalCents);
-      breakdown.style.display = 'block';
-    }
-
     // Update button text when amount changes
     function updateButtonText() {
       const val = parseFloat(amountInput.value);
       if (val && val >= 1) {
-        let payAmount = val;
-        if (passFee) payAmount = grossUpForFee(Math.round(val * 100)).totalCents / 100;
-        btnText.textContent = 'Pay $' + payAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        btnText.textContent = 'Pay $' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         amountError.classList.remove('visible');
       } else {
         btnText.textContent = 'Pay Now';
       }
     }
-    amountInput.addEventListener('input', () => { updateButtonText(); updateFeeBreakdown(); });
+    amountInput.addEventListener('input', updateButtonText);
     updateButtonText();
-    updateFeeBreakdown();
 
     // Form submission
     document.getElementById('payment-form').addEventListener('submit', async (e) => {
@@ -461,7 +420,6 @@
               email: (email || '').trim().toLowerCase(),
               invoice_ref: invoiceInput.value.trim() || undefined,
               memo: memoInput.value.trim() || undefined,
-              pass_fee: passFee || undefined,
               lead_id: leadId || undefined
             })
           });

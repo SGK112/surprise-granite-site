@@ -117,27 +117,17 @@ router.post('/quick-pay', async (req, res) => {
       quantity: 1,
     }];
 
-    let fee_cents = 0;
-    if (pass_fee) {
-      const gross = grossUpForFee(amount);
-      fee_cents = gross.fee_cents;
-      line_items.push({
-        price_data: {
-          currency: 'usd',
-          product_data: { name: 'Processing fee' },
-          unit_amount: fee_cents,
-        },
-        quantity: 1,
-      });
-    }
+    // Fee pass-through disabled. Customers were getting charged a "Processing
+    // fee" line item that confused them. We absorb the Stripe fee on our side.
+    // ACH (us_bank_account) also disabled — its Financial Connections
+    // verification SMS goes to whatever phone is on file at the customer's
+    // bank, which is not always the customer's current number and confused
+    // payers (the SMS code was perceived as "from us" sent to the wrong
+    // person). Card-only is simple and unambiguous.
+    const fee_cents = 0;
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'us_bank_account'],
-      payment_method_options: {
-        us_bank_account: {
-          financial_connections: { permissions: ['payment_method'] }
-        }
-      },
+      payment_method_types: ['card'],
       line_items,
       mode: 'payment',
       customer_email: email,
@@ -151,8 +141,8 @@ router.post('/quick-pay', async (req, res) => {
         // lead_id lets the webhook link the completed payment back to the
         // originating lead row — without it there's no way to reconcile.
         lead_id: lead_id || '',
-        pass_fee: pass_fee ? '1' : '0',
-        fee_cents: String(fee_cents),
+        pass_fee: '0',
+        fee_cents: '0',
         net_cents: String(amount)
       }
     });
