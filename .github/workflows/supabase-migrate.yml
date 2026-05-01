@@ -48,6 +48,18 @@ jobs:
             echo "::error::SUPABASE_DB_PASSWORD is missing. Find it at https://supabase.com/dashboard/project/$SUPABASE_PROJECT_ID/settings/database and add it as a repo secret."
             exit 1
           fi
+          # Diagnostics: print length + first/last char (NEVER the value).
+          # If length=0, the secret didn't reach the runner.
+          # If length is suspiciously low (<10) or has whitespace ends, the paste was probably wrong.
+          echo "PAT length: ${#SUPABASE_ACCESS_TOKEN}"
+          echo "DB pwd length: ${#SUPABASE_DB_PASSWORD}"
+          # Detect leading/trailing whitespace or newlines that GitHub usually strips but worth checking
+          if [[ "$SUPABASE_DB_PASSWORD" =~ ^[[:space:]] ]] || [[ "$SUPABASE_DB_PASSWORD" =~ [[:space:]]$ ]]; then
+            echo "::warning::DB password has leading or trailing whitespace — this will cause auth failures"
+          fi
+          if [[ "$SUPABASE_DB_PASSWORD" == *$'\n'* ]] || [[ "$SUPABASE_DB_PASSWORD" == *$'\r'* ]]; then
+            echo "::warning::DB password contains newline characters — this will cause auth failures"
+          fi
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
