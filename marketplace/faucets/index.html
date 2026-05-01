@@ -604,13 +604,64 @@
       }
     }
 
+    // Map a /api/catalog product (vendor-scraped) to the shape this page expects
+    function mapCatalogToPageShape(p) {
+      return {
+        handle: p.slug || p.id,
+        title: p.name,
+        productType: p.subcategory ? p.subcategory.replace(/-/g, ' ') : 'Faucet',
+        vendor: p.brand || p.vendor_id,
+        images: p.image_urls && p.image_urls.length ? p.image_urls : (p.primary_image_url ? [p.primary_image_url] : []),
+        price: p.retail_price,
+        specs: p.specs || {},
+        description: p.short_description,
+        url: p.vendor_url,
+        _source: 'catalog',
+        _id: p.id,
+        _vendor_id: p.vendor_id
+      };
+    }
+
     async function loadProducts() {
       try {
-        const response = await fetch('/data/faucets.json');
-        const products = await response.json();
-        allProductsData = products;
+        const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const [staticRes, liveRes] = await Promise.allSettled([
+          fetch('/data/faucets.json'),
+          // Pull faucet + fixture (Kibi tags shower trim/valves as 'fixture')
+          fetch(API_BASE + '/api/catalog?category=faucet&limit=250'),
+          fetch(API_BASE + '/api/catalog?category=fixture&limit=250')
+        ]);
 
-        // Render immediately, update when pricing changes
+        let staticProducts = [];
+        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
+          staticProducts = await staticRes.value.json();
+        }
+
+        // Live products = faucet + fixture
+        let liveProducts = [];
+        for (const r of [liveRes]) {
+          if (r.status === 'fulfilled' && r.value.ok) {
+            const json = await r.value.json();
+            if (json.success && Array.isArray(json.products)) {
+              liveProducts.push(...json.products.map(mapCatalogToPageShape));
+            }
+          }
+        }
+        // Also fetch fixtures (above only fetched first; need separate for fixtures)
+        try {
+          const fxRes = await fetch(API_BASE + '/api/catalog?category=fixture&limit=250');
+          if (fxRes.ok) {
+            const fxJson = await fxRes.json();
+            if (fxJson.success && Array.isArray(fxJson.products)) {
+              liveProducts.push(...fxJson.products.map(mapCatalogToPageShape));
+            }
+          }
+        } catch (e) { /* non-fatal */ }
+
+        const products = [...liveProducts, ...staticProducts];
+        console.log(`Faucets: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+
+        allProductsData = products;
         renderProducts(products);
         updatePricingBanner(currentTier || 'guest', null);
         if (window.SG_PRICING && window.SG_PRICING.onTierChange) {

@@ -749,13 +749,53 @@
       }
     }
 
+    // Map a /api/catalog product (vendor-scraped) to the shape this page expects
+    function mapCatalogToPageShape(p) {
+      return {
+        handle: p.slug || p.id,
+        title: p.name,
+        productType: p.subcategory ? p.subcategory.replace(/-/g, ' ') : 'Sink',
+        vendor: p.brand || p.vendor_id,
+        images: p.image_urls && p.image_urls.length ? p.image_urls : (p.primary_image_url ? [p.primary_image_url] : []),
+        price: p.retail_price,
+        specs: p.specs || {},
+        description: p.short_description,
+        url: p.vendor_url,
+        _source: 'catalog',
+        _id: p.id,
+        _vendor_id: p.vendor_id
+      };
+    }
+
     async function loadProducts() {
       try {
-        const response = await fetch('/data/sinks.json?v=' + Date.now());
-        const products = await response.json();
-        allProductsData = products;
+        // Fetch live catalog (Kibi + others) AND static sinks.json in parallel
+        const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const [staticRes, liveRes] = await Promise.allSettled([
+          fetch('/data/sinks.json?v=' + Date.now()),
+          fetch(API_BASE + '/api/catalog?category=sink&limit=250')
+        ]);
 
-        // Render immediately, update when pricing changes
+        // Static products
+        let staticProducts = [];
+        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
+          staticProducts = await staticRes.value.json();
+        }
+
+        // Live products from scraped catalog
+        let liveProducts = [];
+        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
+          const json = await liveRes.value.json();
+          if (json.success && Array.isArray(json.products)) {
+            liveProducts = json.products.map(mapCatalogToPageShape);
+          }
+        }
+
+        // Live products first (scraped vendor catalog), static after (legacy curated)
+        const products = [...liveProducts, ...staticProducts];
+        console.log(`Sinks: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+
+        allProductsData = products;
         renderProducts(products);
         updatePricingBanner(currentTier || 'guest', null);
         if (window.SG_PRICING && window.SG_PRICING.onTierChange) {
