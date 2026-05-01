@@ -82,6 +82,7 @@
     { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Tools', href: '/tools/' },
+    { label: 'ASPN', href: '/aspn/', isAspn: true },
     { label: 'Contact', href: '/contact-us' },
     { label: 'Book Estimate', href: '/get-a-free-estimate', isBook: true }
   ];
@@ -193,6 +194,7 @@
     { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
     { label: 'Shop', href: '/shop' },
     { label: 'Gallery', href: '/company/project-gallery' },
+    { label: 'ASPN — Arizona Stone Network', href: '/aspn/' },
     { label: 'Contact', href: '/contact-us' },
     { label: 'My Account', href: '/account' },
     { label: 'Book Free Estimate', href: '/book/', isBook: true }
