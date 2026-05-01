@@ -78,7 +78,8 @@ class KibiScraper extends LiteScraper {
           vendor_cost: cost,
           retail_price: cost ? +(cost * 1.30).toFixed(2) : null,
           price_unit: 'each',
-          tags: p.tags ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map(t => String(t).trim()).filter(Boolean)
+              : (typeof p.tags === 'string' ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : []),
           vendor_url: `${this.baseUrl}/products/${p.handle}`,
           in_stock: variant.available !== false,
           sample_eligible: false,        // faucets/fixtures: full units only, no samples

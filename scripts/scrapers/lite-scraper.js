@@ -136,39 +136,74 @@ class LiteScraper {
   }
 
   /**
-   * Persist scraped products to Supabase via upsert on (vendor_id, sku).
-   * Also writes vendor_inventory time-series row for each.
+   * Persist scraped products to Supabase via direct PostgREST REST calls.
+   *
+   * NOTE: We bypass the supabase-js client entirely because Node 25 has a
+   * known fetch-implementation bug with that library (TypeError: fetch
+   * failed). Native fetch + raw REST calls work fine.
    */
+  async sbFetch(path, opts = {}) {
+    const url = process.env.SUPABASE_URL.replace(/\/$/, '') + path;
+    const res = await fetch(url, {
+      method: opts.method || 'GET',
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_KEY,
+        'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_KEY,
+        'Content-Type': 'application/json',
+        ...(opts.headers || {})
+      },
+      body: opts.body || undefined
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+    return { ok: res.ok, status: res.status, data };
+  }
+
   async persist() {
-    if (!this.supabase) {
-      this.log('warn', 'No Supabase client; skipping persist (dry run).');
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+      this.log('warn', 'No Supabase env; skipping persist (dry run).');
       return { upserted: 0, dryRun: true };
     }
     if (this.scrapedProducts.length === 0) {
       this.log('warn', 'No products scraped; skipping persist.');
       return { upserted: 0 };
     }
-    // Chunk inserts so a single bad row doesn't sink the whole run
+    // Dedupe by (vendor_id, sku) — last-write-wins. Prevents
+    // PostgREST 'ON CONFLICT DO UPDATE command cannot affect row a second time'
+    // errors when a single batch contains duplicate SKUs.
+    const dedupedMap = new Map();
+    for (const p of this.scrapedProducts) {
+      dedupedMap.set(`${p.vendor_id}::${p.sku}`, p);
+    }
+    if (dedupedMap.size < this.scrapedProducts.length) {
+      this.log('info', `Deduped: ${this.scrapedProducts.length} → ${dedupedMap.size}`);
+    }
+    this.scrapedProducts = [...dedupedMap.values()];
     const CHUNK = 50;
     let upserted = 0;
     for (let i = 0; i < this.scrapedProducts.length; i += CHUNK) {
       const chunk = this.scrapedProducts.slice(i, i + CHUNK);
-      const { data, error } = await this.supabase
-        .from('catalog_products')
-        .upsert(chunk, { onConflict: 'vendor_id,sku', ignoreDuplicates: false })
-        .select('id, sku');
-      if (error) {
-        this.log('error', `Upsert chunk ${i}-${i+chunk.length} failed: ${error.message}`);
-        this.errors.push({ stage: 'upsert', chunk: i, reason: error.message });
+      const upsertRes = await this.sbFetch('/rest/v1/catalog_products?on_conflict=vendor_id,sku', {
+        method: 'POST',
+        headers: {
+          'Prefer': 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify(chunk)
+      });
+      if (!upsertRes.ok) {
+        this.log('error', `Upsert chunk ${i}-${i+chunk.length} failed: HTTP ${upsertRes.status} ${JSON.stringify(upsertRes.data).slice(0,200)}`);
+        this.errors.push({ stage: 'upsert', chunk: i, status: upsertRes.status, reason: JSON.stringify(upsertRes.data).slice(0, 300) });
         continue;
       }
-      upserted += (data || []).length;
+      const data = Array.isArray(upsertRes.data) ? upsertRes.data : [];
+      upserted += data.length;
 
-      // Write vendor_inventory snapshots for the upserted batch
+      // Vendor_inventory snapshot for the batch
       const inventoryRows = chunk.map((p, idx) => ({
         vendor_id: this.vendorId,
         sku: p.sku,
-        product_id: data?.[idx]?.id || null,
+        product_id: data[idx]?.id || null,
         in_stock: p.in_stock,
         stock_quantity: p.stock_quantity,
         vendor_cost: p.vendor_cost,
@@ -176,15 +211,23 @@ class LiteScraper {
         source_url: p.vendor_url,
         scrape_run_id: this.scrapeRunId
       }));
-      const { error: invErr } = await this.supabase.from('vendor_inventory').insert(inventoryRows);
-      if (invErr) this.log('warn', `Inventory snapshot insert failed: ${invErr.message}`);
+      const invRes = await this.sbFetch('/rest/v1/vendor_inventory', {
+        method: 'POST',
+        body: JSON.stringify(inventoryRows)
+      });
+      if (!invRes.ok) {
+        this.log('warn', `Inventory snapshot insert failed: HTTP ${invRes.status}`);
+      }
     }
 
     // Update vendor_config last_scraped_at
-    await this.supabase
-      .from('vendor_config')
-      .update({ last_scraped_at: new Date().toISOString(), last_scrape_status: this.errors.length ? 'errors' : 'ok' })
-      .eq('vendor_id', this.vendorId);
+    await this.sbFetch(`/rest/v1/vendor_config?vendor_id=eq.${encodeURIComponent(this.vendorId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        last_scraped_at: new Date().toISOString(),
+        last_scrape_status: this.errors.length ? 'errors' : 'ok'
+      })
+    });
 
     return { upserted };
   }
