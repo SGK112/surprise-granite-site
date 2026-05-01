@@ -17,7 +17,7 @@
 -- workflow, which authenticates with a project-scoped PAT.
 -- ============================================================
 
-\echo '=== Applying migration 014: ASPN members ==='
+-- =========== Migration 014: ASPN members ===========
 
 -- (Migration 014 inlined — Arizona Stone Providers Network)
 CREATE TABLE IF NOT EXISTS public.aspn_members (
@@ -117,7 +117,7 @@ CREATE POLICY aspn_members_service_role_all ON public.aspn_members FOR ALL TO se
 GRANT SELECT ON public.aspn_members TO anon;
 GRANT ALL ON public.aspn_members TO service_role;
 
-\echo '=== Applying migration 015: products + vendor_inventory ==='
+-- =========== Migration 015: products + vendor_inventory ===========
 
 CREATE TABLE IF NOT EXISTS public.vendor_config (
   vendor_id        text PRIMARY KEY,
@@ -315,7 +315,7 @@ GRANT USAGE, SELECT ON SEQUENCE public.vendor_inventory_id_seq TO service_role;
 -- `.github/workflows/supabase-migrate.yml` GitHub Action +
 -- supabase/migrations/ directory. No exec_sql backdoor.
 
-\echo '=== DONE — verify ==='
+-- =========== DONE — verification select below ===========
 SELECT 'aspn_members' AS table_name, count(*) AS rows FROM public.aspn_members
 UNION ALL SELECT 'products', count(*) FROM public.products
 UNION ALL SELECT 'vendor_config', count(*) FROM public.vendor_config
