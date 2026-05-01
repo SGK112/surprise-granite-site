@@ -232,12 +232,15 @@
       </div>
     </div>
 
-    <!-- Source Tabs -->
+    <!-- Kind Tabs — separates ecommerce (samples, sinks, tile, faucets — needs
+         shipping) from project payments (deposits, balance, change orders —
+         link to estimate/invoice). Default is Store so the fulfillment queue
+         is the first thing you see. -->
     <div class="tab-bar">
-      <button class="tab-btn active" data-source="all" onclick="switchSource('all')">All<span class="count" id="countAll"></span></button>
-      <button class="tab-btn" data-source="store" onclick="switchSource('store')">Store<span class="count" id="countStore"></span></button>
-      <button class="tab-btn" data-source="shopify" onclick="switchSource('shopify')">Shopify<span class="count" id="countShopify"></span></button>
-      <button class="tab-btn" data-source="job" onclick="switchSource('job')">Jobs<span class="count" id="countJob"></span></button>
+      <button class="tab-btn active" data-source="store" onclick="switchSource('store')">📦 Store<span class="count" id="countStore"></span></button>
+      <button class="tab-btn" data-source="project" onclick="switchSource('project')">🔨 Project Payments<span class="count" id="countProject"></span></button>
+      <button class="tab-btn" data-source="all" onclick="switchSource('all')">All<span class="count" id="countAll"></span></button>
+      <button class="tab-btn" data-source="shopify" onclick="switchSource('shopify')">Legacy Shopify<span class="count" id="countShopify"></span></button>
     </div>
 
     <!-- Filters -->
@@ -295,7 +298,7 @@
     let allOrders = [];
     let filteredOrders = [];
     let currentPage = 1;
-    let currentSource = 'all';
+    let currentSource = 'store'; // default to ecommerce queue (needs fulfillment)
     const pageSize = 25;
     let currentUser = null;
     let authToken = null;
@@ -344,10 +347,25 @@
       container.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;"><h1 style="font-size:28px;margin-bottom:16px;color:var(--error);">Access Denied</h1><p style="color:var(--text-muted);margin-bottom:32px;">${msg}</p>${link}</div>`;
     }
 
+    // Classify an order from the `orders` table as 'store' (ecommerce — needs
+    // shipping) or 'project' (deposit / balance / change order — feeds CRM).
+    // Mirror of the SQL backfill in supabase/migrations/20260501000001_orders_kind_split.sql
+    // so this works even if the kind column hasn't been added yet.
+    const PROJECT_RE = /(deposit|final\s*payment|balance|EST-?\d|INV-?\d|countertop|backsplash|remodel|installation|f&i\s|change\s*order|materials\s*for)/i;
+    function classifyOrder(o) {
+      if (o.kind) return o.kind; // DB column wins once migrated
+      const md = o.metadata || {};
+      const items = Array.isArray(o.items) ? o.items : [];
+      const itemNames = items.map(i => i.name || i.title || '').join(' ');
+      if (PROJECT_RE.test(itemNames)) return 'project';
+      if (md.invoice_ref || md.lead_id) return 'project';
+      if (md.source === 'quick-pay') return 'project';
+      return 'store';
+    }
+
     async function loadOrders() {
       try {
-        // Load online orders + in-person jobs in parallel.
-        // Projects table = jobs that went through estimate/invoice (not ecommerce).
+        // Load online orders + legacy shopify + in-person jobs in parallel.
         const [storeRes, shopifyRes, jobsRes] = await Promise.all([
           db.from('orders').select('*').order('created_at', { ascending: false }).limit(1000),
           db.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000),
@@ -356,32 +374,41 @@
             .order('created_at', { ascending: false }).limit(1000)
         ]);
 
-        const storeOrders = (storeRes.data || []).map(o => ({ ...o, _source: 'store' }));
-        const shopifyOrders = (shopifyRes.data || []).map(o => ({ ...o, _source: 'shopify' }));
+        // Each order from the orders table gets classified store-vs-project.
+        const fromOrdersTable = (storeRes.data || []).map(o => ({
+          ...o,
+          _source: 'orders_table',
+          _kind: classifyOrder(o)
+        }));
+        const shopifyOrders = (shopifyRes.data || []).map(o => ({
+          ...o, _source: 'shopify', _kind: 'store' // shopify is always ecommerce
+        }));
 
-        // Normalize projects so they render in the same table as orders.
-        const jobs = (jobsRes.data || []).map(p => ({
+        // Project rows from the projects table are always project work.
+        const projectJobs = (jobsRes.data || []).map(p => ({
           ...p,
-          _source: 'job',
-          order_number: p.name,                                   // displayed in the Order column
-          total: p.value || p.contract_amount || 0,               // so revenue math works
-          status: p.status || 'pending',                          // reuse same badge system
+          _source: 'project_table',
+          _kind: 'project',
+          order_number: p.name,
+          total: p.value || p.contract_amount || 0,
+          status: p.status || 'pending',
           payment_status: p.balance_due && p.balance_due > 0 ? 'unpaid' : 'paid',
-          // items preview: description or project name
           line_items: p.description ? [{ title: p.description.slice(0, 80) }] : []
         }));
 
-        allOrders = [...storeOrders, ...shopifyOrders, ...jobs].sort((a, b) => {
+        allOrders = [...fromOrdersTable, ...shopifyOrders, ...projectJobs].sort((a, b) => {
           const da = new Date(a.created_at || a.shopify_created_at);
           const dbd = new Date(b.created_at || b.shopify_created_at);
           return dbd - da;
         });
 
+        // Tab counts now reflect kind, not source.
+        const storeCount = allOrders.filter(o => o._kind === 'store').length;
+        const projectCount = allOrders.filter(o => o._kind === 'project').length;
         document.getElementById('countAll').textContent = ` (${allOrders.length})`;
-        document.getElementById('countStore').textContent = ` (${storeOrders.length})`;
+        document.getElementById('countStore').textContent = ` (${storeCount})`;
+        document.getElementById('countProject').textContent = ` (${projectCount})`;
         document.getElementById('countShopify').textContent = ` (${shopifyOrders.length})`;
-        const jobCountEl = document.getElementById('countJob');
-        if (jobCountEl) jobCountEl.textContent = ` (${jobs.length})`;
 
         applyFilters();
         updateStats();
@@ -433,8 +460,11 @@
       const payment = document.getElementById('paymentFilter').value;
 
       filteredOrders = allOrders.filter(order => {
-        // Source filter
-        if (currentSource !== 'all' && order._source !== currentSource) return false;
+        // Tab filter — kind for store/project, source for legacy shopify
+        if (currentSource === 'store' && order._kind !== 'store') return false;
+        if (currentSource === 'project' && order._kind !== 'project') return false;
+        if (currentSource === 'shopify' && order._source !== 'shopify') return false;
+        // 'all' lets everything through
 
         // Search
         if (search) {
@@ -488,10 +518,12 @@
             const payStatus = order.payment_status || order.financial_status || 'unpaid';
             const hasTracking = !!order.tracking_number;
 
+            const kindIcon = order._kind === 'project' ? '🔨' : (order._source === 'shopify' ? '🛒' : '📦');
+            const kindLabel = order._kind === 'project' ? 'Project' : (order._source === 'shopify' ? 'Shopify' : 'Store');
             return `<tr onclick="viewOrder('${order.id}', '${order._source}')">
               <td>
                 <span class="order-number">${escapeHtml(order.order_number || order.id?.slice(0, 8))}</span>
-                <span class="source-tag source-${order._source}">${order._source}</span>
+                <span class="source-tag source-${order._kind}" title="${kindLabel}">${kindIcon} ${kindLabel}</span>
                 ${hasTracking ? '<span style="font-size:11px;margin-left:4px;">📦</span>' : ''}
               </td>
               <td><div class="customer-info"><span class="customer-name">${escapeHtml(order.customer_name || '-')}</span><span class="customer-email">${escapeHtml(order.customer_email || '')}</span></div></td>
