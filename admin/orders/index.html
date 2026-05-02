@@ -34,17 +34,23 @@
     }
     .header {
       background: var(--dark);
-      padding: 16px 24px;
       border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       position: sticky;
       top: 0;
       z-index: 100;
     }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
     .header h1 { font-size: 20px; font-weight: 700; color: var(--gold); }
-    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .btn {
       padding: 8px 16px;
       border-radius: 8px;
@@ -110,7 +116,7 @@
     .status-delivered { background: rgba(34,197,94,0.2); color: var(--success); }
     .order-total { font-weight: 700; font-size: 15px; }
     .order-date { font-size: 13px; color: var(--text-muted); }
-    .items-preview { font-size: 13px; color: var(--text-muted); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .items-preview { font-size: 13px; color: var(--text); max-width: 360px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
     .source-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
     .source-store { background: rgba(249,203,0,0.15); color: var(--gold); }
     .source-shopify { background: rgba(150,191,72,0.15); color: #96bf48; }
@@ -194,16 +200,18 @@
 </head>
 <body>
   <header class="header">
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <h1>Order Management</h1>
-      <span id="adminBadge" style="background: var(--gold); color: var(--dark); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Admin</span>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-sm btn-secondary" onclick="testEmail()" id="testEmailBtn">Test Email</button>
-      <a href="/admin/products/" class="btn btn-secondary">Products</a>
-      <button class="btn btn-primary" onclick="exportOrders()">Export CSV</button>
-      <a href="/account/" class="btn btn-secondary" style="border-color: rgba(255,255,255,0.3);">Back</a>
-      <button class="btn btn-secondary" onclick="handleLogout()" style="color: #ef4444; border-color: rgba(239,68,68,0.3);">Log Out</button>
+    <div class="header-inner">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <h1>Order Management</h1>
+        <span id="adminBadge" style="background: var(--gold); color: var(--dark); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Admin</span>
+      </div>
+      <div class="header-actions">
+        <a href="/admin/products/" class="btn btn-sm btn-secondary">Products</a>
+        <a href="/admin/catalog/" class="btn btn-sm btn-secondary">Catalog</a>
+        <button class="btn btn-sm btn-primary" onclick="exportOrders()">Export CSV</button>
+        <a href="/account/" class="btn btn-sm btn-secondary" style="border-color: rgba(255,255,255,0.3);">Back</a>
+        <button class="btn btn-sm btn-secondary" onclick="handleLogout()" style="color: #ef4444; border-color: rgba(239,68,68,0.3);">Log Out</button>
+      </div>
     </div>
   </header>
 
