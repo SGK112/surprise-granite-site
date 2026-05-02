@@ -691,9 +691,38 @@
           }
         }
 
-        const products = [...liveProducts, ...staticProducts];
+        let products = [...liveProducts, ...staticProducts];
+
+        // Drop products whose only image is a dead Webflow CDN URL.
+        const beforeFilter = products.length;
+        products = products.filter(p => {
+          if (!p) return false;
+          const imgs = p.images || [];
+          return imgs.some(u => u && !/cdn\.prod\.website-files\.com/.test(u));
+        });
+        if (products.length !== beforeFilter) {
+          console.log(`Flooring: hid ${beforeFilter - products.length} products with no live image`);
+        }
+
+        // Dedupe by normalised title — LVP especially has many entries
+        // for the same plank in different sizes / wear-layers / vendors.
+        // Keep the first occurrence (which is whichever source listed it
+        // first; live API products come before static).
+        const seenTitles = new Set();
+        const beforeDedupe = products.length;
+        products = products.filter(p => {
+          const key = String(p.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          if (!key) return true;
+          if (seenTitles.has(key)) return false;
+          seenTitles.add(key);
+          return true;
+        });
+        if (products.length !== beforeDedupe) {
+          console.log(`Flooring: deduped ${beforeDedupe - products.length} variants`);
+        }
+
         allProducts = products;
-        console.log(`Flooring: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+        console.log(`Flooring: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total (after filter+dedupe)`);
 
         // Render immediately, update when pricing changes
         renderProducts(products);

@@ -704,6 +704,21 @@
         let products = [...liveProducts, ...staticProducts];
         console.log(`Tile: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
 
+        // Drop products whose only image is a dead Webflow CDN URL
+        // (Monterrey Tile etc. — the API still returns these, but we
+        // killed the Webflow CDN dependency, so the cards rendered as
+        // empty placeholders next to fully-imaged neighbours).
+        const beforeFilter = products.length;
+        products = products.filter(p => {
+          if (!p) return false;
+          const imgs = p.images || [];
+          const hasReal = imgs.some(u => u && !/cdn\.prod\.website-files\.com/.test(u));
+          return hasReal;
+        });
+        if (products.length !== beforeFilter) {
+          console.log(`Tile: hid ${beforeFilter - products.length} products with no live image`);
+        }
+
         products = deduplicateProducts(products);
         allProducts = products;
 
