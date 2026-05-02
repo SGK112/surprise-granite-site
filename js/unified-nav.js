@@ -605,8 +605,12 @@
       if (path.startsWith('/account')) return; // logged-in CRM users don't need it
       if (path.startsWith('/cart') || path.startsWith('/checkout')) return;
 
-      // Honor dismissal — set when user clicks the X
-      if (localStorage.getItem('sg_promo_full_course_dismissed') === '1') return;
+      // If user previously dismissed the full callout, show the small
+      // re-open pill instead so the offer never fully disappears.
+      if (localStorage.getItem('sg_promo_full_course_dismissed') === '1') {
+        injectPromoReopenPill();
+        return;
+      }
     } catch (e) {}
 
     const styles = document.createElement('style');
@@ -666,6 +670,26 @@
       @media (max-width: 768px) {
         .sg-promo-callout { display: none !important; }
       }
+
+      /* Re-open pill — appears after user dismisses the full callout.
+         Small, low-noise, but the offer never fully disappears. */
+      .sg-promo-reopen {
+        position: fixed; right: 16px; bottom: 156px; z-index: 9998;
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #1a1a2e; color: #f9cb00;
+        border: 1px solid rgba(249,203,0,.5);
+        padding: 9px 14px 9px 12px; border-radius: 999px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        font-size: 12px; font-weight: 700; letter-spacing: .02em;
+        cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+        transition: background .2s, transform .15s;
+        animation: sg-promo-in .35s cubic-bezier(.2,.7,.3,1) both;
+      }
+      .sg-promo-reopen:hover { background: #2d2d44; transform: translateY(-1px); }
+      .sg-promo-reopen__icon { font-size: 14px; line-height: 1; }
+      @media (max-width: 768px) {
+        .sg-promo-reopen { display: none !important; }
+      }
     `;
     document.head.appendChild(styles);
 
@@ -685,8 +709,31 @@
     el.querySelector('.sg-promo-callout__close').addEventListener('click', () => {
       try { localStorage.setItem('sg_promo_full_course_dismissed', '1'); } catch (e) {}
       el.style.animation = 'sg-promo-in .25s reverse forwards';
-      setTimeout(() => el.remove(), 250);
+      setTimeout(() => {
+        el.remove();
+        // Drop in the small re-open pill so the offer is one tap away.
+        injectPromoReopenPill();
+      }, 250);
     });
+  }
+
+  // Small "3 Free Dinners" re-open pill. Shown:
+  //   1. After user X's the full callout (in the dismiss handler above)
+  //   2. On future page loads while the dismissed flag is still set
+  // Click it → wipe the flag and re-show the full callout.
+  function injectPromoReopenPill() {
+    if (document.querySelector('.sg-promo-reopen')) return;
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'sg-promo-reopen';
+    pill.setAttribute('aria-label', 'Re-open dinner promo');
+    pill.innerHTML = '<span class="sg-promo-reopen__icon">🍽</span> 3 Free Dinners';
+    pill.addEventListener('click', () => {
+      try { localStorage.removeItem('sg_promo_full_course_dismissed'); } catch (e) {}
+      pill.remove();
+      insertPromoCallout();
+    });
+    document.body.appendChild(pill);
   }
 
   // Sticky mobile action bar — Call + Get Quote always one thumb away.
