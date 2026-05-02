@@ -704,21 +704,25 @@
           console.log(`Flooring: hid ${beforeFilter - products.length} products with no live image`);
         }
 
-        // Dedupe by normalised title — LVP especially has many entries
-        // for the same plank in different sizes / wear-layers / vendors.
-        // Keep the first occurrence (which is whichever source listed it
-        // first; live API products come before static).
+        // Dedupe pass: catch BOTH same-title variants AND same-image
+        // products. Many SPC plank lines (Lions Floor Trenta etc.) ship
+        // multiple SKUs with different names but a single shared hero
+        // image — visually they read as duplicates. Keep first occurrence
+        // by title-or-image whichever conflicts first.
         const seenTitles = new Set();
+        const seenImages = new Set();
         const beforeDedupe = products.length;
         products = products.filter(p => {
-          const key = String(p.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
-          if (!key) return true;
-          if (seenTitles.has(key)) return false;
-          seenTitles.add(key);
+          const titleKey = String(p.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          const imgKey = (p.images && p.images[0]) || '';
+          if (titleKey && seenTitles.has(titleKey)) return false;
+          if (imgKey && seenImages.has(imgKey)) return false;
+          if (titleKey) seenTitles.add(titleKey);
+          if (imgKey) seenImages.add(imgKey);
           return true;
         });
         if (products.length !== beforeDedupe) {
-          console.log(`Flooring: deduped ${beforeDedupe - products.length} variants`);
+          console.log(`Flooring: deduped ${beforeDedupe - products.length} title/image dupes`);
         }
 
         allProducts = products;

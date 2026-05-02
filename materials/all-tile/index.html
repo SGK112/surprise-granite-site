@@ -719,6 +719,22 @@
           console.log(`Tile: hid ${beforeFilter - products.length} products with no live image`);
         }
 
+        // Image-URL dedupe — many SKUs share the same line-level hero
+        // image and read as visual duplicates. Keep first occurrence per
+        // unique image. Also dedupe by title via the existing helper.
+        const seenImages = new Set();
+        const beforeImgDedupe = products.length;
+        products = products.filter(p => {
+          const imgKey = (p.images && p.images[0]) || '';
+          if (!imgKey) return true;
+          if (seenImages.has(imgKey)) return false;
+          seenImages.add(imgKey);
+          return true;
+        });
+        if (products.length !== beforeImgDedupe) {
+          console.log(`Tile: deduped ${beforeImgDedupe - products.length} same-image variants`);
+        }
+
         products = deduplicateProducts(products);
         allProducts = products;
 
