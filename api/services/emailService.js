@@ -22,7 +22,7 @@ const COMPANY = {
   phone: '(602) 833-3189',
   address: '15464 W Aster Dr, Surprise, AZ 85379',
   website: 'https://www.surprisegranite.com',
-  logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
+  logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
   tagline: 'Premium Countertops & Expert Installation',
   license: 'AZ ROC# 341113',
   poweredBy: 'Powered by Remodely.ai',

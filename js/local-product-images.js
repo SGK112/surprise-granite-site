@@ -7,7 +7,7 @@
 (function() {
   'use strict';
 
-  const PLACEHOLDER = 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg';
+  const PLACEHOLDER = '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg';
 
   let slabsData = null;
   let productsData = null;

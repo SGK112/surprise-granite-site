@@ -8,7 +8,7 @@
 
   // Sample product data
   const SAMPLE_PRICE = 25.00;
-  const SAMPLE_IMAGE = 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif';
+  const SAMPLE_IMAGE = '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif';
 
   // Convert Order Sample links to direct cart add
   function convertSampleLinks() {

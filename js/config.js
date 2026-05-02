@@ -108,7 +108,7 @@
     ASSETS: {
       LOGO_GOLD: '/images/64a70d4b30e87feb388f004f_surprise-granite-profile-logo.svg',
       LOGO_WHITE: '/images/64a70d4b30e87feb388f004f_surprise-granite-profile-logo.svg',
-      FAVICON: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png',
+      FAVICON: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png',
       PLACEHOLDER_SLAB: 'https://via.placeholder.com/400x300?text=No+Image'
     },
 

@@ -69,7 +69,7 @@
 
   // Configuration
   const CONFIG = {
-    logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg',
+    logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg',
     phone: '(602) 833-3189',
     phoneHref: 'tel:+16028333189',
     tagline: 'Marble & Quartz'
@@ -204,33 +204,33 @@
   const PRODUCTS = {
     materials: [
       { name: 'Silestone by Cosentino', desc: 'Premium quartz · premium quartz alternative', href: '/silestone-installer-phoenix/', img: 'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=600&q=80' },
-      { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
       { name: 'Cabinets', desc: 'Custom, refacing, kitchen, bath', href: '/cabinets/', img: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=70' },
       { name: 'Custom Millwork', desc: 'Built-ins, mantels, paneling', href: '/millwork/', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=70' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
-      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
+      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
       { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
     ],
     services: [
-      { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
-      { name: 'Bathroom Remodeling', desc: 'Modern upgrades', href: '/services/home/bathroom-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
-      { name: 'Tile Shower Remodel', desc: 'Custom tile showers', href: '/services/tile-shower-remodel/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
+      { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
+      { name: 'Bathroom Remodeling', desc: 'Modern upgrades', href: '/services/home/bathroom-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
+      { name: 'Tile Shower Remodel', desc: 'Custom tile showers', href: '/services/tile-shower-remodel/', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
       { name: 'Tile Flooring', desc: 'Wood-look, stone-look porcelain', href: '/services/tile-flooring/', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
-      { name: 'Hardwood & LVP', desc: 'Engineered hardwood, premium LVP', href: '/services/hardwood-flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
-      { name: 'Natural Stone Flooring', desc: 'Travertine, marble, slate', href: '/services/natural-stone-flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
-      { name: 'Countertop Install', desc: 'Professional installation', href: '/services/countertop-installation/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
-      { name: 'Repair & Sink Replacement', desc: 'Polish, repair, restore', href: '/services/countertop-polish-repair/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c6dd1826b3168b6915efc_countertop-polish-and-repair-service_thumb.avif' },
-      { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
+      { name: 'Hardwood & LVP', desc: 'Engineered hardwood, premium LVP', href: '/services/hardwood-flooring/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
+      { name: 'Natural Stone Flooring', desc: 'Travertine, marble, slate', href: '/services/natural-stone-flooring/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Countertop Install', desc: 'Professional installation', href: '/services/countertop-installation/', img: '/migrated/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
+      { name: 'Repair & Sink Replacement', desc: 'Polish, repair, restore', href: '/services/countertop-polish-repair/', img: '/migrated/6456ce4476abb2d4f9fbad10/651c6dd1826b3168b6915efc_countertop-polish-and-repair-service_thumb.avif' },
+      { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ],
     marketplace: [
-      { name: 'Browse Slabs', desc: 'Granite, quartz, marble', href: '/marketplace/slabs/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/marketplace/tile/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
-      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/marketplace/flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
+      { name: 'Browse Slabs', desc: 'Granite, quartz, marble', href: '/marketplace/slabs/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/marketplace/tile/', img: '/migrated/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
+      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/marketplace/flooring/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
       { name: 'Sinks', desc: 'Kitchen & bathroom sinks', href: '/marketplace/sinks/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/Undermountsink18G50-50-3118.jpg' },
       { name: 'Faucets', desc: 'Kitchen & bath faucets', href: '/marketplace/faucets/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/KKF2015BG-1-1.jpg' },
-      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
+      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
     ]
   };
 

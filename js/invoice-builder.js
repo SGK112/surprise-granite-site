@@ -13,7 +13,7 @@
     phone: '(602) 833-3189',
     email: 'info@surprisegranite.com',
     address: '15464 W Aster Dr, Surprise, AZ 85379',
-    logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
+    logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
     license: 'AZ ROC# 341113',
     website: 'www.surprisegranite.com'
   };
