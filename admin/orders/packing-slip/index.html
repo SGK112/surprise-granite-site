@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Packing Slip — Surprise Granite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="/js/config.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #1a1a2e;
+      background: #f3f4f6;
+      line-height: 1.5;
+    }
+    .toolbar {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toolbar .btn {
+      background: #f9cb00;
+      color: #1a1a2e;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .toolbar .btn.secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    .slip {
+      max-width: 8.5in;
+      margin: 24px auto;
+      background: #fff;
+      padding: 0.5in;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      min-height: 11in;
+    }
+    .slip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 18px;
+      border-bottom: 3px solid #f9cb00;
+      margin-bottom: 24px;
+    }
+    .brand h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
+    .brand .tag { font-size: 12px; color: #64748b; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+    .slip-meta { text-align: right; font-size: 13px; }
+    .slip-meta .order-number { font-size: 22px; font-weight: 800; color: #1a1a2e; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+    .slip-meta .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+    .addresses { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+    .addr-block { padding: 16px 18px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #f9cb00; }
+    .addr-block h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 8px; font-weight: 700; }
+    .addr-block .name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .addr-block .line { font-size: 13px; color: #1a1a2e; line-height: 1.5; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .items-table th { text-align: left; padding: 10px 12px; background: #1a1a2e; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .items-table td { padding: 14px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; vertical-align: top; }
+    .items-table tr:last-child td { border-bottom: 2px solid #1a1a2e; }
+    .qty { text-align: center; font-weight: 700; font-size: 16px; }
+    .check-col { width: 36px; text-align: center; }
+    .check-box { width: 18px; height: 18px; border: 2px solid #1a1a2e; border-radius: 3px; display: inline-block; }
+    .notes-section { padding: 16px; background: #fffbe6; border-radius: 8px; border-left: 4px solid #f9cb00; margin-bottom: 24px; }
+    .notes-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #b45309; margin-bottom: 6px; font-weight: 700; }
+    .notes-section p { font-size: 13px; color: #1a1a2e; }
+    .footer-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding-top: 24px;
+      margin-top: 32px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .footer-info strong { color: #1a1a2e; font-size: 12px; display: block; margin-bottom: 4px; }
+    .barcode-area { text-align: center; margin: 16px 0 24px; padding: 12px; background: #fafafa; border-radius: 6px; }
+    .barcode-area .order-display { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 18px; font-weight: 700; letter-spacing: 4px; }
+    .loading { text-align: center; padding: 80px; color: #64748b; }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .slip { box-shadow: none; margin: 0; padding: 0.5in; max-width: 100%; }
+      @page { size: letter; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <a href="/admin/orders/" style="color: #fff; text-decoration: none; font-weight: 600;">← All Orders</a>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span id="order-display" style="font-family: 'SF Mono', Menlo, Consolas, monospace; opacity: 0.8; font-size: 13px;"></span>
+      <button class="btn" onclick="window.print()">🖨️ Print Packing Slip</button>
+      <a class="btn secondary" id="poLink" href="#">View Vendor PO</a>
+    </div>
+  </div>
+
+  <div id="slip-container">
+    <div class="loading">Loading packing slip…</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('id');
+
+    function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    function formatAddress(o) {
+      const lines = [
+        o.shipping_address_line1,
+        o.shipping_address_line2,
+        [o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', '),
+        o.shipping_country && o.shipping_country !== 'US' ? o.shipping_country : ''
+      ].filter(Boolean);
+      return lines.length ? lines.map(escapeHtml).join('<br>') : '<em style="color:#94a3b8">(no shipping address)</em>';
+    }
+
+    async function init() {
+      if (!orderId) {
+        document.getElementById('slip-container').innerHTML = '<div class="loading">Missing order id — go back to <a href="/admin/orders/" style="color:#1a1a2e;text-decoration:underline;">All Orders</a> and click an order.</div>';
+        return;
+      }
+
+      // Wait for auth init
+      let tries = 0;
+      while (!window.SGAuth && tries < 20) { await new Promise(r => setTimeout(r, 100)); tries++; }
+      const session = window.SGAuth ? await window.SGAuth.getSession() : null;
+      if (!session) {
+        document.getElementById('slip-container').innerHTML = '<div class="loading">You must be signed in. <a href="/account/?redirect=' + encodeURIComponent(location.pathname + location.search) + '" style="color:#1a1a2e;text-decoration:underline;">Sign in</a>.</div>';
+        return;
+      }
+
+      const db = window.supabase || window.sb;
+      if (!db) {
+        document.getElementById('slip-container').innerHTML = '<div class="loading">Database not initialized.</div>';
+        return;
+      }
+
+      const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).single();
+      if (error || !order) {
+        document.getElementById('slip-container').innerHTML = '<div class="loading">Order not found. <a href="/admin/orders/" style="color:#1a1a2e;text-decoration:underline;">Back to orders</a>.</div>';
+        return;
+      }
+
+      document.getElementById('order-display').textContent = order.order_number || order.id.slice(0, 8);
+      document.getElementById('poLink').href = '/admin/orders/po/?id=' + encodeURIComponent(order.id);
+      document.title = `Packing Slip — ${order.order_number || order.id.slice(0,8)}`;
+
+      const items = Array.isArray(order.items) ? order.items : [];
+      const date = new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+      document.getElementById('slip-container').innerHTML = `
+        <div class="slip">
+          <div class="slip-header">
+            <div class="brand">
+              <h1>Surprise Granite</h1>
+              <div class="tag">Marble · Quartz · Tile · Cabinets</div>
+            </div>
+            <div class="slip-meta">
+              <div class="label" style="margin-top:0">Packing Slip</div>
+              <div class="order-number">${escapeHtml(order.order_number || order.id.slice(0, 8))}</div>
+              <div class="label">Order Date</div>
+              <div>${date}</div>
+              <div class="label">Status</div>
+              <div style="text-transform: capitalize">${escapeHtml(order.status || 'pending')}</div>
+            </div>
+          </div>
+
+          <div class="addresses">
+            <div class="addr-block">
+              <h3>Ship From</h3>
+              <div class="name">Surprise Granite</div>
+              <div class="line">15464 W Aster Dr<br>Surprise, AZ 85379<br>(602) 833-3189<br>info@surprisegranite.com</div>
+            </div>
+            <div class="addr-block">
+              <h3>Ship To</h3>
+              <div class="name">${escapeHtml(order.customer_name || '(no name)')}</div>
+              <div class="line">${formatAddress(order)}</div>
+              ${order.customer_phone ? `<div class="line" style="margin-top:6px">${escapeHtml(order.customer_phone)}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="barcode-area">
+            <div class="order-display">${escapeHtml(order.order_number || order.id.slice(0, 8))}</div>
+            <div style="font-size: 10px; color: #64748b; margin-top: 4px; letter-spacing: 1px;">${escapeHtml((order.id || '').slice(0, 8))} · ${items.length} item${items.length === 1 ? '' : 's'}</div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th class="check-col">✓</th>
+                <th>Item</th>
+                <th style="width:80px;text-align:center">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.length === 0 ? '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:40px">No items in this order</td></tr>' : items.map(item => `
+                <tr>
+                  <td class="check-col"><span class="check-box"></span></td>
+                  <td>
+                    <div style="font-weight:600">${escapeHtml(item.name || item.title || 'Item')}</div>
+                    ${item.sku ? `<div style="font-size:11px;color:#64748b;margin-top:4px;font-family:'SF Mono',Menlo,monospace">SKU: ${escapeHtml(item.sku)}</div>` : ''}
+                    ${item.variant ? `<div style="font-size:11px;color:#64748b;margin-top:2px">${escapeHtml(item.variant)}</div>` : ''}
+                  </td>
+                  <td class="qty">${item.quantity || 1}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          ${order.customer_notes ? `
+            <div class="notes-section">
+              <h3>Customer Notes</h3>
+              <p>${escapeHtml(order.customer_notes)}</p>
+            </div>` : ''}
+
+          ${order.internal_notes ? `
+            <div class="notes-section" style="background:#f0f7ff;border-left-color:#3b82f6">
+              <h3 style="color:#1e40af">Internal Notes (do not include in shipment)</h3>
+              <p>${escapeHtml(order.internal_notes)}</p>
+            </div>` : ''}
+
+          <div class="footer-info">
+            <div>
+              <strong>Questions?</strong>
+              info@surprisegranite.com<br>
+              (602) 833-3189
+            </div>
+            <div style="text-align:right">
+              <strong>Order Total</strong>
+              $${(parseFloat(order.total) || 0).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    init();
+  </script>
+</body>
+</html>

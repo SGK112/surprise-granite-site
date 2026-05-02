@@ -599,6 +599,16 @@
       let actionsHtml = '';
       if (isStore) {
         actionsHtml = `
+          <!-- Print / Email shortcuts — top of modal so they're always one click away -->
+          <div class="action-panel" style="background:linear-gradient(135deg, rgba(249,203,0,0.06), rgba(249,203,0,0.02));">
+            <h4>Documents</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a class="btn btn-sm btn-primary" href="/admin/orders/packing-slip/?id=${orderId}" target="_blank">📦 Packing Slip</a>
+              <a class="btn btn-sm btn-info" href="/admin/orders/po/?id=${orderId}" target="_blank">🔗 Vendor PO</a>
+              ${order.customer_email ? `<a class="btn btn-sm btn-secondary" href="mailto:${escapeHtml(order.customer_email)}?subject=${encodeURIComponent('Your order ' + (order.order_number || ''))}">✉️ Email Customer</a>` : ''}
+            </div>
+          </div>
+
           <!-- Update Status -->
           <div class="action-panel">
             <h4>Update Status</h4>

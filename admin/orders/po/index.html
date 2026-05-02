@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Vendor Purchase Order — Surprise Granite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <script src="/js/config.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #1a1a2e;
+      background: #f3f4f6;
+      line-height: 1.5;
+    }
+    .toolbar {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toolbar .btn {
+      background: #f9cb00;
+      color: #1a1a2e;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .toolbar .btn.secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    .po-stack { max-width: 8.5in; margin: 24px auto; }
+    .po {
+      background: #fff;
+      padding: 0.5in;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      page-break-after: always;
+      margin-bottom: 24px;
+    }
+    .po:last-child { page-break-after: auto; margin-bottom: 0; }
+    .po-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 3px solid #1a1a2e; margin-bottom: 24px; }
+    .po-from h2 { font-size: 22px; font-weight: 900; }
+    .po-from .tag { font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+    .po-meta { text-align: right; }
+    .po-meta .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .po-meta .value { font-size: 16px; font-weight: 700; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+    .po-title { font-size: 14px; color: #f9cb00; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 4px; }
+    .addresses { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .addr-block { padding: 14px 16px; background: #f9fafb; border-radius: 6px; }
+    .addr-block h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 6px; font-weight: 700; }
+    .addr-block .name { font-size: 14px; font-weight: 700; }
+    .addr-block .line { font-size: 12px; color: #1a1a2e; line-height: 1.4; margin-top: 2px; }
+    .vendor-name-large { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+    .items-table th { text-align: left; padding: 8px 10px; background: #1a1a2e; color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .items-table td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    .items-table tr:last-child td { border-bottom: 2px solid #1a1a2e; }
+    .totals-row td { padding: 12px 10px; border-bottom: none; font-weight: 700; }
+    .ship-instructions { background: #fffbe6; padding: 14px 16px; border-radius: 6px; margin-bottom: 18px; border-left: 4px solid #f9cb00; }
+    .ship-instructions h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #b45309; margin-bottom: 6px; font-weight: 700; }
+    .ship-instructions p { font-size: 13px; color: #1a1a2e; }
+    .vendor-contact { padding: 12px 16px; background: #f0f7ff; border-radius: 6px; font-size: 12px; color: #1e40af; margin-bottom: 18px; border-left: 4px solid #3b82f6; }
+    .footer-stamp { margin-top: 30px; padding-top: 18px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #64748b; }
+    .loading { text-align: center; padding: 80px; color: #64748b; max-width: 600px; margin: 60px auto; background: #fff; border-radius: 12px; }
+    .unmatched { background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 16px; border-radius: 6px; margin-bottom: 18px; }
+    .unmatched h4 { color: #991b1b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .unmatched p { font-size: 13px; color: #7f1d1d; }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .po-stack { max-width: 100%; margin: 0; }
+      .po { box-shadow: none; margin: 0; padding: 0.5in; }
+      @page { size: letter; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <a href="/admin/orders/" style="color: #fff; text-decoration: none; font-weight: 600;">← All Orders</a>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span id="order-display" style="font-family: 'SF Mono', Menlo, Consolas, monospace; opacity: 0.8; font-size: 13px;"></span>
+      <button class="btn" onclick="window.print()">🖨️ Print POs</button>
+      <a class="btn secondary" id="slipLink" href="#">View Packing Slip</a>
+    </div>
+  </div>
+
+  <div id="po-container">
+    <div class="loading">Loading purchase orders…</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('id');
+
+    function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    function formatAddress(o) {
+      const lines = [
+        o.shipping_address_line1,
+        o.shipping_address_line2,
+        [o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', '),
+        o.shipping_country && o.shipping_country !== 'US' ? o.shipping_country : ''
+      ].filter(Boolean);
+      return lines.length ? lines.map(escapeHtml).join('<br>') : '<em style="color:#94a3b8">(no shipping address)</em>';
+    }
+
+    // Best-effort vendor detection: match item name against catalog_products.name (case-insensitive contains)
+    async function matchVendors(db, items) {
+      // Pull all catalog products into memory (~few thousand rows max — manageable for a one-shot lookup)
+      const { data: catalog } = await db.from('catalog_products').select('name,vendor_id,sku,brand').limit(3000);
+      const { data: vendors } = await db.from('vendor_config').select('vendor_id,vendor_name,vendor_url,notes,dropship_method');
+      const vendorMap = Object.fromEntries((vendors || []).map(v => [v.vendor_id, v]));
+
+      function findVendor(itemName) {
+        const norm = (itemName || '').toLowerCase().replace(/\s*\(sample\)\s*/i, '').trim();
+        if (!norm) return null;
+        // Exact phrase match within catalog product name
+        const hit = (catalog || []).find(p =>
+          (p.name || '').toLowerCase().includes(norm) ||
+          norm.includes((p.name || '').toLowerCase())
+        );
+        if (hit) return { vendor_id: hit.vendor_id, sku: hit.sku, brand: hit.brand, ...vendorMap[hit.vendor_id] };
+        return null;
+      }
+
+      // Group items by vendor_id (or 'unmatched')
+      const grouped = {};
+      const unmatched = [];
+      for (const item of items) {
+        const v = findVendor(item.name || item.title);
+        if (v && v.vendor_id) {
+          if (!grouped[v.vendor_id]) grouped[v.vendor_id] = { vendor: v, items: [] };
+          grouped[v.vendor_id].items.push({ ...item, _matched_sku: v.sku, _matched_brand: v.brand });
+        } else {
+          unmatched.push(item);
+        }
+      }
+      return { grouped, unmatched };
+    }
+
+    function renderPO(order, vendor, items, poNumber) {
+      const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      const subtotal = items.reduce((s, i) => s + (parseFloat(i.unit_price || 0) * (i.quantity || 1)), 0);
+      return `
+        <div class="po">
+          <div class="po-header">
+            <div class="po-from">
+              <div class="po-title">Purchase Order</div>
+              <h2>Surprise Granite</h2>
+              <div class="tag">15464 W Aster Dr · Surprise, AZ 85379</div>
+              <div class="tag" style="margin-top:2px">(602) 833-3189 · info@surprisegranite.com</div>
+              <div class="tag" style="margin-top:2px">AZ ROC #341113</div>
+            </div>
+            <div class="po-meta">
+              <div class="label">PO Number</div>
+              <div class="value">${escapeHtml(poNumber)}</div>
+              <div class="label" style="margin-top:10px">PO Date</div>
+              <div style="font-size:14px">${date}</div>
+              <div class="label" style="margin-top:10px">Customer Order</div>
+              <div style="font-size:14px;font-family:'SF Mono',Menlo,monospace">${escapeHtml(order.order_number || order.id.slice(0,8))}</div>
+            </div>
+          </div>
+
+          <div class="vendor-name-large">${escapeHtml(vendor.vendor_name || vendor.vendor_id)}</div>
+          ${vendor.vendor_url ? `<div style="font-size:13px;color:#64748b;margin-bottom:18px"><a href="${escapeHtml(vendor.vendor_url)}" style="color:#64748b">${escapeHtml(vendor.vendor_url)}</a></div>` : ''}
+
+          ${vendor.notes ? `<div class="vendor-contact">${escapeHtml(vendor.notes)}${vendor.dropship_method ? ' · Method: ' + escapeHtml(vendor.dropship_method) : ''}</div>` : ''}
+
+          <div class="ship-instructions">
+            <h4>⚠ Drop-Ship Direct to Customer</h4>
+            <p><strong>Do not ship to Surprise Granite.</strong> Ship the items below directly to the end customer at the address in the "Ship To" panel.</p>
+          </div>
+
+          <div class="addresses">
+            <div class="addr-block">
+              <h4>Bill To (Surprise Granite)</h4>
+              <div class="name">Surprise Granite</div>
+              <div class="line">15464 W Aster Dr<br>Surprise, AZ 85379<br>AP: ap@surprisegranite.com</div>
+            </div>
+            <div class="addr-block" style="background:#fffbe6">
+              <h4>Ship To (End Customer)</h4>
+              <div class="name">${escapeHtml(order.customer_name || '(no name)')}</div>
+              <div class="line">${formatAddress(order)}</div>
+              ${order.customer_phone ? `<div class="line" style="margin-top:4px">${escapeHtml(order.customer_phone)}</div>` : ''}
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>${vendor.vendor_id === 'kibi' || vendor.vendor_id === 'ruvati' ? 'SKU' : 'Color / Material'}</th>
+                <th style="text-align:center;width:60px">Qty</th>
+                <th style="text-align:right;width:100px">Unit</th>
+                <th style="text-align:right;width:100px">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td><strong>${escapeHtml(item.name || item.title || 'Item')}</strong>${item._matched_brand ? `<br><span style="font-size:11px;color:#64748b">${escapeHtml(item._matched_brand)}</span>` : ''}</td>
+                  <td style="font-family:'SF Mono',Menlo,monospace;font-size:12px">${escapeHtml(item._matched_sku || item.sku || '—')}</td>
+                  <td style="text-align:center;font-weight:700">${item.quantity || 1}</td>
+                  <td style="text-align:right">$${(parseFloat(item.unit_price) || 0).toFixed(2)}</td>
+                  <td style="text-align:right;font-weight:600">$${((parseFloat(item.unit_price) || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+              <tr class="totals-row">
+                <td colspan="4" style="text-align:right">Subtotal (vendor cost)</td>
+                <td style="text-align:right;font-size:16px">$${subtotal.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer-stamp">
+            <div>Authorized by: Surprise Granite Purchasing</div>
+            <div>Generated ${new Date().toLocaleString('en-US')}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function init() {
+      if (!orderId) {
+        document.getElementById('po-container').innerHTML = '<div class="loading">Missing order id — go back to <a href="/admin/orders/" style="color:#1a1a2e;text-decoration:underline;">All Orders</a> and click an order.</div>';
+        return;
+      }
+
+      let tries = 0;
+      while (!window.SGAuth && tries < 20) { await new Promise(r => setTimeout(r, 100)); tries++; }
+      const session = window.SGAuth ? await window.SGAuth.getSession() : null;
+      if (!session) {
+        document.getElementById('po-container').innerHTML = '<div class="loading">You must be signed in. <a href="/account/?redirect=' + encodeURIComponent(location.pathname + location.search) + '" style="color:#1a1a2e;text-decoration:underline;">Sign in</a>.</div>';
+        return;
+      }
+
+      const db = window.supabase || window.sb;
+      if (!db) {
+        document.getElementById('po-container').innerHTML = '<div class="loading">Database not initialized.</div>';
+        return;
+      }
+
+      const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).single();
+      if (error || !order) {
+        document.getElementById('po-container').innerHTML = '<div class="loading">Order not found.</div>';
+        return;
+      }
+
+      document.getElementById('order-display').textContent = order.order_number || order.id.slice(0, 8);
+      document.getElementById('slipLink').href = '/admin/orders/packing-slip/?id=' + encodeURIComponent(order.id);
+      document.title = `Vendor PO — ${order.order_number || order.id.slice(0,8)}`;
+
+      const items = Array.isArray(order.items) ? order.items : [];
+      if (items.length === 0) {
+        document.getElementById('po-container').innerHTML = '<div class="loading">This order has no items — no PO needed.</div>';
+        return;
+      }
+
+      const { grouped, unmatched } = await matchVendors(db, items);
+      const groupKeys = Object.keys(grouped);
+
+      let html = '<div class="po-stack">';
+
+      if (unmatched.length > 0) {
+        html += `
+          <div class="po">
+            <div class="unmatched">
+              <h4>${unmatched.length} item${unmatched.length === 1 ? '' : 's'} — vendor unknown</h4>
+              <p>These items did not match a known vendor in the catalog. Either fulfill in-house, add the vendor manually, or update <code>catalog_products</code> with the matching SKU and re-run the PO.</p>
+            </div>
+            <table class="items-table">
+              <thead><tr><th>Item</th><th style="text-align:center;width:60px">Qty</th></tr></thead>
+              <tbody>${unmatched.map(i => `<tr><td>${escapeHtml(i.name || i.title || 'Item')}</td><td style="text-align:center">${i.quantity || 1}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      groupKeys.forEach((vid, idx) => {
+        const { vendor, items } = grouped[vid];
+        const poNumber = `${order.order_number || order.id.slice(0,8)}-${vid.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${idx + 1}`;
+        html += renderPO(order, vendor, items, poNumber);
+      });
+
+      if (groupKeys.length === 0 && unmatched.length === 0) {
+        html += '<div class="loading">No vendor POs needed for this order.</div>';
+      }
+
+      html += '</div>';
+      document.getElementById('po-container').innerHTML = html;
+    }
+
+    init();
+  </script>
+</body>
+</html>
