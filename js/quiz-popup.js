@@ -138,24 +138,27 @@
         }
       }
 
-      /* Close Button - CSS X */
+      /* Close Button - high-contrast circle that stays visible
+         on white card or any theme override. Sits ABOVE card edge
+         so it's never clipped by border-radius. */
       .qp-close {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: #f1f5f9;
-        border-radius: 8px;
+        top: -14px;
+        right: -14px;
+        width: 36px;
+        height: 36px;
+        border: 2px solid #fff;
+        background: #0f172a;
+        border-radius: 50%;
         cursor: pointer;
         transition: background 0.15s, transform 0.15s;
-        z-index: 10;
+        z-index: 20;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       }
 
       .qp-close:hover {
-        background: #e2e8f0;
-        transform: scale(1.05);
+        background: #b45309;
+        transform: scale(1.08);
       }
 
       .qp-close:active {
@@ -170,7 +173,7 @@
         left: 50%;
         width: 14px;
         height: 2px;
-        background: #64748b;
+        background: #fff;
         border-radius: 1px;
       }
 
@@ -180,11 +183,6 @@
 
       .qp-close::after {
         transform: translate(-50%, -50%) rotate(-45deg);
-      }
-
-      .qp-close:hover::before,
-      .qp-close:hover::after {
-        background: #334155;
       }
 
       /* Header */

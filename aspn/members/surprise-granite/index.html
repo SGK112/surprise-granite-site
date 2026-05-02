@@ -7,7 +7,7 @@
   <meta name="robots" content="index, follow"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260502a"/>
   <style>
     .aspn-profile { max-width: 880px; margin: 0 auto; }
     .aspn-profile__header { background: #fff; border: 1px solid var(--aspn-line); border-radius: var(--aspn-radius-lg); padding: 48px; margin-bottom: 24px; position: relative; }
@@ -34,8 +34,8 @@
     .aspn-profile__socials a:hover { background: var(--aspn-amber); color: var(--aspn-stone); }
   </style>
   <script type="application/ld+json" id="profileSchema">{}</script>
-  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501b"/>
-  <script defer src="/js/image-fallback.js?v=20260501a"></script>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
+  <script defer src="/js/image-fallback.js?v=20260502a"></script>
 </head>
 <body>
   <header class="aspn-nav">
@@ -59,9 +59,39 @@
   </section>
 
   <footer class="aspn-footer">
-    <div class="aspn-footer__inner">
-      <div>© <span id="year"></span> Arizona Stone Providers Network</div>
-      <div><a href="/aspn/">Home</a> · <a href="/aspn/directory/">Directory</a></div>
+    <div class="aspn-footer__inner aspn-footer__cols">
+      <div class="aspn-footer__col aspn-footer__brand">
+        <div class="aspn-footer__logo">ASPN</div>
+        <p>Arizona Stone Providers Network — the public directory of fabricators, installers, designers, and surface professionals across Arizona.</p>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>For members</h4>
+        <ul>
+          <li><a href="/aspn/join/">Join free</a></li>
+          <li><a href="/aspn/members/">Member portal</a></li>
+          <li><a href="mailto:joshb@surprisegranite.com">Renew / update profile</a></li>
+        </ul>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>For visitors</h4>
+        <ul>
+          <li><a href="/aspn/directory/">Browse directory</a></li>
+          <li><a href="/aspn/">About ASPN</a></li>
+          <li><a href="/">Surprise Granite</a></li>
+        </ul>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:joshb@surprisegranite.com">joshb@surprisegranite.com</a></li>
+          <li><a href="tel:+16028333189">(602) 833-3189</a></li>
+          <li>Surprise, AZ</li>
+        </ul>
+      </div>
+    </div>
+    <div class="aspn-footer__bar">
+      <div>© <span id="year"></span> Arizona Stone Providers Network · Founded by <a href="/">Surprise Granite</a></div>
+      <div><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></div>
     </div>
   </footer>
 
@@ -152,23 +182,56 @@
       document.getElementById('profileContent').innerHTML = html;
     }
 
+    // Static fallback for surprise-granite — the founding member profile.
+    // Used when the remote ASPN API is unreachable (Render cold start, CORS,
+    // local dev). Without this, the founding member's own page showed
+    // "Couldn't load profile" which is the worst possible look.
+    const STATIC_FALLBACKS = {
+      'surprise-granite': {
+        slug: 'surprise-granite',
+        business_name: 'Surprise Granite',
+        service_category: 'fabricator',
+        founder_status: true,
+        featured: true,
+        city: 'Surprise', state: 'AZ', zip: '85388',
+        phone: '(602) 833-3189',
+        website: 'https://www.surprisegranite.com',
+        instagram_url: 'https://www.instagram.com/surprisegranite/',
+        facebook_url: 'https://www.facebook.com/SurpriseGranite/',
+        houzz_url: 'https://www.houzz.com/pro/surprisegranite',
+        yelp_url: 'https://www.yelp.com/biz/surprise-granite-surprise-2',
+        google_url: 'https://g.co/kgs/surprise-granite',
+        az_roc_license: '341113',
+        bonded_insured: true,
+        created_at: '2018-01-01',
+        short_description: 'Phoenix metro\'s premier service-area contractor for countertops, cabinets, tile, and stone — in your home, by appointment. Founding operator of the Arizona Stone Providers Network.',
+        long_description: 'Surprise Granite has been serving the Greater Phoenix area since 2018, specializing in granite, quartz, marble, and quartzite countertop fabrication and installation; custom cabinets and refacing; tile, stone, and hardwood flooring; tile showers; and full kitchen and bath remodels. We\'re the founding operator of the Arizona Stone Providers Network — the public directory connecting AZ stone yards, fabricators, designers, and surface professionals.',
+        specialties: ['Granite Countertops','Quartz Countertops','Marble','Quartzite','Custom Tile Showers','Cabinet Refacing','Kitchen Remodel','Bathroom Remodel','Free In-Home Estimates'],
+        service_areas: ['Surprise','Peoria','Glendale','Phoenix','Sun City','Litchfield Park','Goodyear','Buckeye','Avondale','Anthem']
+      }
+    };
+
     async function load() {
       const slug = getSlug();
       if (!slug) {
         document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>Profile not found.</h3><p><a href="/aspn/directory/">Browse the directory</a></p></div>';
         return;
       }
+      // Try the API; fall back to static if anything goes wrong.
       try {
-        const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(slug));
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+        const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(slug), { signal: ctrl.signal });
+        clearTimeout(t);
         const j = await r.json();
-        if (r.ok && j?.member) {
-          render(j.member);
-        } else {
-          document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>This member isn\'t in the directory yet.</h3><p>They may be pending approval, or the URL is wrong. <a href="/aspn/directory/">Browse the directory</a> or <a href="/aspn/join/">join ASPN</a>.</p></div>';
-        }
-      } catch (e) {
-        document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty">Couldn\'t load profile. Try refreshing.</div>';
+        if (r.ok && j?.member) { render(j.member); return; }
+      } catch (_) { /* fall through to static */ }
+
+      if (STATIC_FALLBACKS[slug]) {
+        render(STATIC_FALLBACKS[slug]);
+        return;
       }
+      document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>This member isn\'t in the directory yet.</h3><p>They may be pending approval, or the URL is wrong. <a href="/aspn/directory/">Browse the directory</a> or <a href="/aspn/join/">join ASPN</a>.</p></div>';
     }
     load();
   </script>

@@ -70,9 +70,9 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260131"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260502h"/>
   <link href="/css/marketplace-cards.css?v=20260426a" rel="stylesheet"/>
-  <script defer src="/js/unified-nav.js?v=20260501a"></script>
+  <script defer src="/js/unified-nav.js?v=20260502i"></script>
   <script src="/js/cart.js?v=20260401b"></script>
   <style>
     :root {
@@ -255,8 +255,8 @@
     .faq-section details[open] summary { border-bottom: 1px solid var(--border); }
     .faq-section .faq-answer { padding: 16px 20px; font-size: 14px; line-height: 1.7; color: var(--text-primary); }
   </style>
-  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501b"/>
-  <script defer src="/js/image-fallback.js?v=20260501a"></script>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
+  <script defer src="/js/image-fallback.js?v=20260502a"></script>
 </head>
 <body>
   <section class="hero">
@@ -290,7 +290,7 @@
     <!-- Membership Banner -->
     <div class="pricing-banner" style="background: linear-gradient(90deg, #1a2b3c 0%, #2d4356 100%); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-radius: 8px; margin-bottom: 24px;">
       <div style="color: #fff; font-size: 14px;">
-        🛒 <strong style="color: #f9cb00;">Free shipping</strong> on orders over $99 &nbsp;|&nbsp; <a href="/membership/" style="color: #f9cb00; text-decoration: underline;">Join for exclusive discounts</a>
+        🛒 <strong style="color: #f9cb00;">Free shipping</strong> on orders over $99 &nbsp;|&nbsp; <a href="/get-a-free-estimate" style="color: #f9cb00; text-decoration: underline;">Join for exclusive discounts</a>
       </div>
       <a href="/log-in/?redirect=/marketplace/bathroom/" style="background: #f9cb00; color: #1a2b3c; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px;">Sign In</a>
     </div>
@@ -352,10 +352,25 @@
         setupFilters(products);
       } catch (err) { console.error('Error:', err); }
     }
+    // Drop products missing the data needed for a clean card (title, image,
+    // price). Leaves only items we can show end-to-end. Also drops anything
+    // explicitly tagged discontinued / legacy.
+    function isCardReady(p) {
+      if (!p || !p.title || !p.title.trim()) return false;
+      if (!(p.images && p.images[0])) return false;
+      const priceNum = p.price ? parseFloat(p.price) : 0;
+      if (!(priceNum > 0)) return false;
+      const tagBlob = ((p.tags || []).join(' ') + ' ' + (p.status || '') + ' ' + (p.productType || '')).toLowerCase();
+      if (/discontinued|legacy|archived|deprecated|do.?not.?sell/.test(tagBlob)) return false;
+      return true;
+    }
     function renderProducts(products) {
       const grid = document.getElementById('products-grid');
-      document.getElementById('count').textContent = products.length;
-      grid.innerHTML = products.map(product => {
+      const ready = (products || []).filter(isCardReady);
+      const dropped = (products || []).length - ready.length;
+      if (dropped) console.warn(`[marketplace/bathroom] hid ${dropped} incomplete or discontinued products`);
+      document.getElementById('count').textContent = ready.length;
+      grid.innerHTML = ready.map(product => {
         const img = product.images?.[0] || '';
         const price = product.price ? parseFloat(product.price) : 0;
         const brand = product.brandDisplay || product.vendor || '';
@@ -396,6 +411,6 @@
     }
     loadProducts();
   </script>
-  <script src="/js/shop-cart-integration.js?v=20260426a"></script>
+  <script src="/js/shop-cart-integration.js?v=20260502a"></script>
 </body>
 </html>

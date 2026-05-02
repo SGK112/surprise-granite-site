@@ -467,24 +467,93 @@
       btn.disabled = true;
       btn.textContent = 'Adding...';
 
-      // Extract product info from the card
-      var card = btn.closest('[data-product-name], .product-card, [sf-data-product]');
-      var name = (card && (card.getAttribute('data-product-name') || card.querySelector('.product-name, .shop-product-name, h3, h4')?.textContent)) || 'Product';
-      var priceEl = card && card.querySelector('.product-price, .shop-product-price, [class*="price"]');
-      var price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
-      var imgEl = card && card.querySelector('img');
-      var image = imgEl ? imgEl.src : '';
-      // Fallback: try background-image on .product-image div
-      if (!image || !image.startsWith('http')) {
-        var bgEl = card && card.querySelector('.product-image');
-        if (bgEl) {
-          var bgImg = bgEl.style.backgroundImage;
-          if (bgImg) image = bgImg.replace(/url\(['"]?/, '').replace(/['"]?\)/, '');
+      // Caller may pass a full product object — preferred path. Fall back
+      // to DOM scrape so legacy callers that pass just an ID still work.
+      var providedObj = (productDataOrId && typeof productDataOrId === 'object') ? productDataOrId : null;
+
+      // Walk up to find the product card. Different marketplaces use
+      // different wrappers — try each.
+      var card = btn.closest('[data-product-name], .product-card, .shop-product, .slab-card, [sf-data-product], [data-variant-id], [data-product-id]');
+
+      // Name: explicit object > data-product-name > h3.product-title (sinks/tile/flooring) > .product-name > nearest h3/h4
+      var name = providedObj && providedObj.name;
+      if (!name && card) {
+        name = card.getAttribute('data-product-name')
+            || (card.querySelector('.product-title, .product-name, .shop-product-name, .slab-name, h3, h4') || {}).textContent;
+      }
+      name = (name || 'Product').trim();
+
+      // Price: explicit object > .product-price text > nearest [class*="price"]
+      var price = providedObj && typeof providedObj.price === 'number' ? providedObj.price : NaN;
+      if (isNaN(price) && card) {
+        var priceEl = card.querySelector('.product-price, .shop-product-price, .slab-price, [class*="price"]');
+        if (priceEl) {
+          // Strip thousands separators and dollar sign, take first number group
+          var raw = (priceEl.textContent || '').replace(/[^0-9.,]/g, '').replace(/,/g, '');
+          var match = raw.match(/[0-9]+(?:\.[0-9]+)?/);
+          price = match ? parseFloat(match[0]) : 0;
+        } else { price = 0; }
+      }
+
+      // Image: explicit object > <img src> > background-image on .product-image
+      var image = providedObj && providedObj.image;
+      if (!image && card) {
+        var imgEl = card.querySelector('img');
+        if (imgEl && imgEl.src) image = imgEl.src;
+        if (!image || !/^https?:|^\//.test(image)) {
+          var bgEl = card.querySelector('.product-image, [style*="background-image"]');
+          if (bgEl) {
+            var bgImg = (bgEl.style && bgEl.style.backgroundImage) || '';
+            if (bgImg) image = bgImg.replace(/^url\(['"]?/, '').replace(/['"]?\)\s*$/, '');
+          }
         }
       }
-      var id = (typeof productDataOrId === 'string' ? productDataOrId : '') || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-      window.SgCart.addToCart({ id: id, name: name.trim(), price: price, image: image, quantity: 1, variant: '', category: '', href: '' });
+      // Variant / color — for swatch pickers, color dropdowns, etc.
+      // Also captures the brand or material type as a secondary line.
+      var variant = providedObj && providedObj.variant;
+      if (!variant && card) {
+        // Check for currently-selected color swatch
+        var swatch = card.querySelector('.color-swatch.selected, .swatch.active, [data-selected-color], [data-color].active');
+        if (swatch) {
+          variant = swatch.getAttribute('data-color')
+                 || swatch.getAttribute('data-selected-color')
+                 || swatch.getAttribute('aria-label')
+                 || swatch.getAttribute('title')
+                 || swatch.textContent;
+        }
+        // Check for selected dropdown option
+        if (!variant) {
+          var sel = card.querySelector('select.color-select, select[name*="color"], select[name*="variant"]');
+          if (sel && sel.value) variant = sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text;
+        }
+        // Fall back to brand label so the cart line at least shows useful context
+        if (!variant) {
+          var brandEl = card.querySelector('.product-brand, .shop-product-brand, [data-brand]');
+          if (brandEl) variant = (brandEl.textContent || brandEl.getAttribute('data-brand') || '').trim();
+        }
+      }
+      variant = (variant || '').trim();
+
+      // ID: explicit object > string arg > slug from name
+      var id = (providedObj && providedObj.id)
+            || (typeof productDataOrId === 'string' ? productDataOrId : '')
+            || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      // href so the user can click back to the product from the cart line
+      var href = providedObj && providedObj.href;
+      if (!href && card && card.tagName === 'A') href = card.getAttribute('href') || '';
+
+      window.SgCart.addToCart({
+        id: id,
+        name: name,
+        price: price,
+        image: image || '',
+        variant: variant,
+        quantity: 1,
+        category: (providedObj && providedObj.category) || '',
+        href: href || '',
+      });
 
       btn.textContent = 'Added!';
       btn.style.background = '#22c55e';

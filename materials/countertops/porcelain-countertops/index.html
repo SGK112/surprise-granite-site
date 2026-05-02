@@ -73,10 +73,15 @@
   }
 
   /* Force no truncation on all filter text */
+  /* Wildcard rule edited 2026-05-02 — was forcing white-space:normal on
+     every descendant which broke labels like "Black/Gold" mid-word.
+     Switched to nowrap + keep-all so the full label stays on one line. */
   .filters2_filter-options *,
   .filters_checkbox-grid *,
   .filters2_list * {
-    white-space: normal !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
     overflow: visible !important;
     text-overflow: clip !important;
   }
@@ -521,11 +526,11 @@ a.product1_details {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/css/webflow-form.css">
 <link rel="stylesheet" href="/css/mobile-optimizations.css">
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
-<script defer src="/js/unified-nav.js?v=20260501a"></script>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260502h">
+<script defer src="/js/unified-nav.js?v=20260502i"></script>
 
 <!-- Custom Countertop Filter System -->
-<link rel="stylesheet" href="/css/countertop-filters.css?v=20260129">
+<link rel="stylesheet" href="/css/countertop-filters.css?v=20260502d">
 <script defer src="/js/countertop-filters.js?v=20260107"></script> 
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/nocode/webflow-form.js"></script>
 
@@ -688,8 +693,8 @@ a, button {
 .sg-mobile-menu-phone svg { width: 22px; height: 22px; }
 @media (min-width: 992px) { .sg-mobile-menu-overlay { display: none !important; } }
 </style>
-  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501b"/>
-  <script defer src="/js/image-fallback.js?v=20260501a"></script>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
+  <script defer src="/js/image-fallback.js?v=20260502a"></script>
 </head><body><!-- Custom Mobile Menu Overlay -->
 <div class="sg-mobile-menu-overlay" id="sgMobileMenu">
   <div class="sg-mobile-menu-header">
@@ -1843,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/js/shopify-products.js"></script>
 <script src="/js/site-search.js?v=3"></script>
 <script src="/js/sample-order.js"></script>
-<script src="/js/shop-cart-integration.js?v=20260426a"></script>
+<script src="/js/shop-cart-integration.js?v=20260502a"></script>
 <script src="/js/radianz-unavailable.js"></script>
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>

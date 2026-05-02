@@ -164,7 +164,9 @@ label.w-checkbox.filters_form-checkbox1:hover {
 span.filters_form-checkbox1-label.w-form-label,
 .filters_form-checkbox1-label.w-form-label,
 .filters_form-checkbox1 .w-form-label,
-.filters_form-checkbox1 span {
+.filters_form-checkbox1 span,
+.filters_form-checkbox1 *,
+.w-checkbox.filters_form-checkbox1 * {
   font-size: 13px !important;
   color: #333 !important;
   line-height: 1.2 !important;
@@ -172,10 +174,39 @@ span.filters_form-checkbox1-label.w-form-label,
   padding: 0 !important;
   text-align: left !important;
   flex: 1 1 auto !important;
-  white-space: normal !important;
+  /* No mid-word breaks. "Black/Gold" must stay on one line — never
+     split into "Black" + "/Gold". If the column is too narrow, the
+     full label still shows because we don't truncate; the cell can
+     wrap to the next line as a whole word. */
+  white-space: nowrap !important;
   overflow: visible !important;
-  text-overflow: clip !important;
-  word-break: break-word !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+  -webkit-hyphens: none !important;
+}
+
+/* Force the parent grid to a single column so each row gets the full
+   sidebar width — no more 2-column squeeze that was breaking labels.
+   The ACTUAL grid class is `.filters_list.is-grid` (Webflow's checkbox
+   list); `.filters_checkbox-grid` is a sibling internal wrapper. Stack
+   each option vertically so multi-word labels like "Black/Gold" or
+   "White/Black" never get squeezed into half a column. */
+.filters_filters-wrapper .filters_list.is-grid,
+.filters_list.is-grid,
+.filters_filters-wrapper .filters_checkbox-grid,
+.filters_checkbox-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  grid-template-columns: 1fr !important;
+}
+/* Each option fills the full row */
+.filters_list.is-grid .filters_item,
+.filters_filters-wrapper .filters_list.is-grid .filters_item {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 auto !important;
 }
 
 /* Checked label highlight */

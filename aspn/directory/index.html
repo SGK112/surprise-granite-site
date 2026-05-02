@@ -11,13 +11,13 @@
   <link href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/aspn/aspn.css?v=20260429a"/>
+  <link rel="stylesheet" href="/aspn/aspn.css?v=20260502a"/>
 
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.surprisegranite.com/"},{"@type":"ListItem","position":2,"name":"ASPN","item":"https://www.surprisegranite.com/aspn/"},{"@type":"ListItem","position":3,"name":"Directory","item":"https://www.surprisegranite.com/aspn/directory/"}]}
   </script>
-  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260501b"/>
-  <script defer src="/js/image-fallback.js?v=20260501a"></script>
+  <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
+  <script defer src="/js/image-fallback.js?v=20260502a"></script>
 </head>
 <body>
   <header class="aspn-nav">
@@ -70,9 +70,39 @@
   </section>
 
   <footer class="aspn-footer">
-    <div class="aspn-footer__inner">
+    <div class="aspn-footer__inner aspn-footer__cols">
+      <div class="aspn-footer__col aspn-footer__brand">
+        <div class="aspn-footer__logo">ASPN</div>
+        <p>Arizona Stone Providers Network — the public directory of fabricators, installers, designers, and surface professionals across Arizona.</p>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>For members</h4>
+        <ul>
+          <li><a href="/aspn/join/">Join free</a></li>
+          <li><a href="/aspn/members/">Member portal</a></li>
+          <li><a href="mailto:joshb@surprisegranite.com">Renew / update profile</a></li>
+        </ul>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>For visitors</h4>
+        <ul>
+          <li><a href="/aspn/directory/">Browse directory</a></li>
+          <li><a href="/aspn/">About ASPN</a></li>
+          <li><a href="/">Surprise Granite</a></li>
+        </ul>
+      </div>
+      <div class="aspn-footer__col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:joshb@surprisegranite.com">joshb@surprisegranite.com</a></li>
+          <li><a href="tel:+16028333189">(602) 833-3189</a></li>
+          <li>Surprise, AZ</li>
+        </ul>
+      </div>
+    </div>
+    <div class="aspn-footer__bar">
       <div>© <span id="year"></span> Arizona Stone Providers Network · Founded by <a href="/">Surprise Granite</a></div>
-      <div><a href="/aspn/">Home</a> · <a href="/aspn/join/">Join</a></div>
+      <div><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></div>
     </div>
   </footer>
 
@@ -87,6 +117,52 @@
       'designer':'Designer','general-contractor':'General Contractor',
       'sealer-restorer':'Sealer / Restorer','distributor':'Distributor','other':'Other'
     };
+
+    /* SG is the founding member — bake it in fully so the directory
+       always shows at least one card, even when the API is cold or
+       down. Hard-coded entries are merged with API results (deduped
+       by slug), so live additions still take priority. */
+    const FOUNDING_MEMBERS = [
+      {
+        slug: 'surprise-granite',
+        business_name: 'Surprise Granite',
+        service_category: 'fabricator',
+        founder_status: true,
+        featured: true,
+        city: 'Surprise',
+        state: 'AZ',
+        short_description: 'In-house fabrication & installation of granite, quartz, marble, and porcelain countertops. AZ ROC #341113. Family-owned since 2018.'
+      }
+    ];
+
+    function mergeMembers(apiMembers) {
+      const seen = new Set();
+      const out = [];
+      // API results first so live data wins on conflict.
+      for (const m of (apiMembers || [])) {
+        if (m && m.slug && !seen.has(m.slug)) { seen.add(m.slug); out.push(m); }
+      }
+      for (const m of FOUNDING_MEMBERS) {
+        if (!seen.has(m.slug)) { seen.add(m.slug); out.push(m); }
+      }
+      // Founders to the top.
+      out.sort((a, b) => (b.founder_status === true) - (a.founder_status === true));
+      return out;
+    }
+
+    function matchesFilters(m, { search, category, city }) {
+      if (category && m.service_category !== category) return false;
+      if (city) {
+        const c = (m.city || '').toLowerCase();
+        if (!c.includes(city.toLowerCase())) return false;
+      }
+      if (search) {
+        const hay = [m.business_name, m.short_description, m.service_category]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(search.toLowerCase())) return false;
+      }
+      return true;
+    }
 
     function renderCard(m) {
       const badge = m.founder_status ? '<div class="aspn-dir-card__badge">FOUNDER</div>' : '';
@@ -115,18 +191,36 @@
       if (category) q.set('category', category);
       if (city) q.set('city', city);
       grid.innerHTML = '<div class="aspn-dir-empty">Searching…</div>';
+
+      const filters = { search, category, city };
+      let apiMembers = [];
+      let apiOk = false;
       try {
-        const r = await fetch(API_BASE + '/api/aspn/members?' + q.toString());
-        const j = await r.json();
-        const members = j?.members || [];
-        memberCountEl.textContent = j?.total ?? members.length;
-        if (!members.length) {
-          grid.innerHTML = '<div class="aspn-dir-empty"><h3>No members match your search yet.</h3><p style="margin-top:8px;">Try a different filter, or <a href="/aspn/join/" style="color:var(--aspn-amber-deep);font-weight:600;">be the first to join</a> in this category.</p></div>';
-          return;
+        const r = await fetch(API_BASE + '/api/aspn/members?' + q.toString(), { cache: 'no-store' });
+        if (r.ok) {
+          const j = await r.json();
+          apiMembers = j?.members || [];
+          apiOk = true;
         }
-        grid.innerHTML = members.map(renderCard).join('');
-      } catch (e) {
-        grid.innerHTML = '<div class="aspn-dir-empty">Couldn\'t load directory. Try refreshing — or <a href="mailto:joshb@surprisegranite.com" style="color:var(--aspn-amber-deep);">email us</a>.</div>';
+      } catch (e) { /* fall through to founding-only */ }
+
+      // Always merge in founding members so SG never disappears,
+      // then re-apply current filters so search/category/city behave.
+      const merged = mergeMembers(apiMembers).filter(m => matchesFilters(m, filters));
+      memberCountEl.textContent = merged.length;
+
+      if (!merged.length) {
+        grid.innerHTML = '<div class="aspn-dir-empty"><h3>No members match your search yet.</h3><p style="margin-top:8px;">Try a different filter, or <a href="/aspn/join/" style="color:var(--aspn-amber-deep);font-weight:600;">be the first to join</a> in this category.</p></div>';
+        return;
+      }
+      grid.innerHTML = merged.map(renderCard).join('');
+
+      if (!apiOk) {
+        // Soft notice at top: directory is in "founding-member-only" mode.
+        const notice = document.createElement('div');
+        notice.style.cssText = 'grid-column:1/-1;background:#fef3c7;border:1px solid #fde68a;color:#78350f;padding:10px 14px;border-radius:8px;font-size:.85rem;margin-bottom:8px;';
+        notice.innerHTML = 'Live directory is warming up — showing founding members. <a href="javascript:load()" style="color:#b45309;font-weight:600;">Refresh</a>';
+        grid.prepend(notice);
       }
     }
 

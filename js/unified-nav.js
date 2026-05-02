@@ -75,32 +75,34 @@
     tagline: 'Marble & Quartz'
   };
 
-  // Menu items - Consolidated minimal nav
+  // Menu items - Consolidated minimal nav. Stone Yards removed 2026-05-01
+  // (phased out as a brand — visit-in-person discovery now lives under
+  // ASPN's public member directory at /aspn/directory/).
   const MENU_ITEMS = [
     { label: 'Materials', href: '/materials/all-countertops', hasMenu: true, menuType: 'materials' },
     { label: 'Marketplace', href: '/marketplace/', hasMenu: true, isMarketplace: true },
-    { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Tools', href: '/tools/' },
     { label: 'ASPN', href: '/aspn/', isAspn: true },
-    { label: 'Contact', href: '/contact-us' },
-    { label: 'Book Estimate', href: '/get-a-free-estimate', isBook: true }
+    { label: 'Contact', href: '/contact-us' }
+    // 'Book Estimate' removed 2026-05-02 — duplicated the yellow "Free
+    // Estimate" button in the top right. One primary CTA per header.
   ];
 
   // Mobile menu - simplified with collapsible categories
   const MOBILE_MENU_CATEGORIES = [
     {
+      // Materials = pickable products only (countertop slabs, tile, flooring).
+      // Cabinets / Custom Millwork / Silestone install moved out — those are
+      // services, surfaced under the Services menu instead.
       label: 'Materials',
       icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>',
       items: [
         { label: 'All Countertops', href: '/materials/all-countertops' },
         { label: 'Compare Materials (Quartz vs Granite vs…)', href: '/compare/' },
-        { label: '✨ Silestone by Cosentino — premium quartz Alternative', href: '/silestone-installer-phoenix/' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
-        { label: 'Cabinets', href: '/cabinets/' },
-        { label: 'Custom Millwork', href: '/millwork/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
         { label: 'LVP Flooring', href: '/materials/flooring' }
       ]
@@ -110,24 +112,22 @@
       icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>',
       isHighlighted: true,
       items: [
-        { label: 'Browse Slabs', href: '/marketplace/slabs/' },
-        { label: 'Tile', href: '/marketplace/tile/' },
-        { label: 'Flooring', href: '/marketplace/flooring/' },
+        // Slabs / Tile / Flooring moved to /materials/ — those marketplace
+        // URLs redirect there now.
         { label: 'Sinks', href: '/marketplace/sinks/' },
         { label: 'Faucets', href: '/marketplace/faucets/' },
+        { label: 'Bathroom', href: '/marketplace/bathroom/' },
+        { label: 'Kitchen Accessories', href: '/marketplace/kitchen-accessories/' },
         { label: 'Remnants', href: '/marketplace/remnants/' }
       ]
     },
     {
-      label: 'Stone Yards',
+      label: 'ASPN Directory',
       icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-      isStoneYards: true,
       items: [
-        { label: '✨ How Slab Selection Works (10 partner yards)', href: '/stone-yards-we-work-with/' },
-        { label: 'Find Stone Yards', href: '/stone-yards/' },
-        { label: 'Arizona Tile', href: '/stone-yards/arizona-tile/' },
-        { label: 'MSI Surfaces', href: '/stone-yards/msi/' },
-        { label: 'Cosentino', href: '/stone-yards/cosentino/' }
+        { label: 'Browse Directory', href: '/aspn/directory/' },
+        { label: 'About ASPN', href: '/aspn/' },
+        { label: 'Join Free', href: '/aspn/join/' }
       ]
     },
     {
@@ -141,7 +141,6 @@
         { label: '🎨 Countertop Edge Visualizer', href: '/tools/countertop-edge-visualizer/' },
         { label: '🏠 Room Designer', href: '/tools/room-designer/' },
         { label: '✨ Multi-Surface Visualizer', href: '/tools/multi-surface-room-visualizer/' },
-        { label: '🍳 Virtual Kitchen Design Tool', href: '/tools/virtual-kitchen-design-tool/' },
         { label: '🛁 Virtual Bathroom Design Tool', href: '/tools/virtual-bathroom-design-tool/' },
         { label: '🖼️ Interior Design Gallery', href: '/tools/interior-design-gallery/' },
         { label: '📋 Blueprint Takeoff', href: '/tools/blueprint-takeoff/' },
@@ -178,7 +177,7 @@
 
   // Quick action items (always visible at top)
   const MOBILE_QUICK_ACTIONS = [
-    { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
+    { label: 'ASPN Directory', href: '/aspn/directory/' },
     { label: 'Book Estimate', href: '/book/', isBook: true }
   ];
 
@@ -196,26 +195,29 @@
     { label: 'Gallery', href: '/company/project-gallery' },
     { label: 'ASPN — Arizona Stone Network', href: '/aspn/' },
     { label: 'Contact', href: '/contact-us' },
-    { label: 'My Account', href: '/account' },
+    // 'My Account' removed from public mobile nav 2026-05-01 — /account/
+    // is internal-crew-only. Public users go to ASPN or Book Estimate.
     { label: 'Book Free Estimate', href: '/book/', isBook: true }
   ];
 
   // Product data for mega menus
   const PRODUCTS = {
     materials: [
-      { name: 'Silestone by Cosentino', desc: 'Premium quartz · premium quartz alternative', href: '/silestone-installer-phoenix/', img: 'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=600&q=80' },
+      // Materials = pickable products only. Cabinets / Millwork / Silestone
+      // install relocated to services per owner direction (2026-05-02).
+      { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' },
       { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
-      { name: 'Cabinets', desc: 'Custom, refacing, kitchen, bath', href: '/cabinets/', img: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=70' },
-      { name: 'Custom Millwork', desc: 'Built-ins, mantels, paneling', href: '/millwork/', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=70' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
-      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
-      { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
+      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' }
     ],
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
       { name: 'Bathroom Remodeling', desc: 'Modern upgrades', href: '/services/home/bathroom-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
+      { name: 'Cabinets', desc: 'Custom, refacing, kitchen, bath', href: '/services/cabinets/', img: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=70' },
+      { name: 'Custom Millwork', desc: 'Built-ins, mantels, paneling', href: '/millwork/', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=70' },
+      { name: 'Silestone Installer', desc: 'Premium quartz installation', href: '/services/silestone-installer-phoenix/', img: 'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=600&q=80' },
       { name: 'Tile Shower Remodel', desc: 'Custom tile showers', href: '/services/tile-shower-remodel/', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
       { name: 'Tile Flooring', desc: 'Wood-look, stone-look porcelain', href: '/services/tile-flooring/', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
       { name: 'Hardwood & LVP', desc: 'Engineered hardwood, premium LVP', href: '/services/hardwood-flooring/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
@@ -350,9 +352,16 @@
         <!-- Top Bar (Desktop) -->
         <div class="unified-nav-top">
           <div class="unified-nav-top-left">
-            <a href="/get-a-free-estimate" class="unified-nav-promo">
-              <strong>Free In-Home Estimates</strong> - Book your consultation today!
-            </a>
+            <!-- "Free In-Home Estimates" copy removed 2026-05-02. It was
+                 a third estimate CTA in the same header alongside the
+                 yellow "Free Estimate" button + the green "Book Estimate"
+                 sub-nav button. Three CTAs for the same action diluted
+                 the conversion path. Top-left is now the trade signal
+                 line — short, factual, no call to action. -->
+            <span class="unified-nav-promo">
+              <strong style="color:#fbbf24;font-weight:800;letter-spacing:.02em;">AZ ROC #341113</strong>
+              <span style="color:rgba(255,255,255,.55);font-weight:500;margin-left:6px;">· Bonded &amp; Insured · Family-Owned Since 2018</span>
+            </span>
           </div>
           <div class="unified-nav-top-right">
             <a href="${CONFIG.phoneHref}" class="unified-nav-phone">
@@ -620,12 +629,23 @@
       }
       @keyframes sg-promo-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       .sg-promo-callout__close {
-        position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
-        background: rgba(255,255,255,.08); border: none; border-radius: 50%;
-        color: rgba(255,255,255,.7); font-size: 16px; line-height: 1; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
+        position: absolute !important; top: 10px !important; right: 10px !important;
+        width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
+        max-width: 28px !important; max-height: 28px !important;
+        background: #fff !important; border: none !important; border-radius: 50% !important;
+        color: #1a1a2e !important; font-size: 0 !important; line-height: 0 !important;
+        cursor: pointer; padding: 0 !important; z-index: 5;
+        transition: transform .15s, background .15s;
+        box-shadow: 0 2px 8px rgba(0,0,0,.3);
       }
-      .sg-promo-callout__close:hover { background: rgba(255,255,255,.18); color: #fff; }
+      .sg-promo-callout__close::before,
+      .sg-promo-callout__close::after {
+        content: ''; position: absolute; top: 50%; left: 50%;
+        width: 12px; height: 2px; background: #1a1a2e; border-radius: 1px;
+      }
+      .sg-promo-callout__close::before { transform: translate(-50%, -50%) rotate(45deg); }
+      .sg-promo-callout__close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+      .sg-promo-callout__close:hover { background: #f9cb00 !important; transform: scale(1.08); }
       .sg-promo-callout__badge {
         display: inline-block; background: rgba(249,203,0,.18); color: #f9cb00;
         padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
@@ -656,8 +676,8 @@
     el.innerHTML = `
       <button class="sg-promo-callout__close" aria-label="Dismiss promo">×</button>
       <span class="sg-promo-callout__badge">Dinner's On Us</span>
-      <p class="sg-promo-callout__title">Free Dinners with Your <em>Remodel</em></p>
-      <p class="sg-promo-callout__sub">1 dinner with new countertops · 2 with kitchen remodel · 3 with the Full Course (kitchen + bath).</p>
+      <p class="sg-promo-callout__title">Up to <em>3 Free Dinners</em> with Your Remodel</p>
+      <p class="sg-promo-callout__sub">1 with new countertops · 2 with a kitchen remodel · 3 with the Full Course (kitchen + bath).</p>
       <a class="sg-promo-callout__cta" href="/special-offers/full-remodel-dinner/?src=promo-callout">See the tiers →</a>
     `;
     document.body.appendChild(el);

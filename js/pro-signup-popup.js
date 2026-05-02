@@ -27,14 +27,25 @@
   function create() {
     const el = document.createElement('div');
     el.id = 'sgProPopup';
+    // Repurposed 2026-05-01: was driving signups for the in-house "design
+    // pro" account which nobody used. Now promotes ASPN (Arizona Stone
+    // Providers Network). Visual rebuild 2026-05-02 — cleaner hierarchy,
+    // scannable benefits, stronger CTA. Was a wall of text; now a card
+    // that reads in 2 seconds.
     el.innerHTML = `
       <div class="sg-popup-card">
         <button class="sg-popup-x" aria-label="Close">&times;</button>
-        <span class="sg-popup-tag">Pro Account</span>
-        <h2>Join as a Pro</h2>
-        <p>List remnants, connect with homeowners, get featured in our directory.</p>
-        <a href="/account?signup=pro" class="sg-popup-btn">Get Started Free</a>
-        <button class="sg-popup-skip">Not now</button>
+        <div class="sg-popup-logo">ASPN</div>
+        <div class="sg-popup-eyebrow">Arizona Stone Providers Network</div>
+        <h2>Get found by Arizona homeowners.</h2>
+        <p class="sg-popup-sub">Public directory for fabricators, designers, installers, and suppliers. Free founding seat for the first 50 — no credit card.</p>
+        <ul class="sg-popup-bullets">
+          <li><span class="sg-popup-check">✓</span> Public profile + leads</li>
+          <li><span class="sg-popup-check">✓</span> 60-second signup, 3 fields</li>
+          <li><span class="sg-popup-check">✓</span> Free for the first 50 members</li>
+        </ul>
+        <a href="/aspn/join/" class="sg-popup-btn">Claim a Founding Seat →</a>
+        <button class="sg-popup-skip">Maybe later</button>
       </div>
     `;
 
@@ -87,52 +98,96 @@
         transition: all 0.2s;
       }
       .sg-popup-x:hover { background: #e0e0e0; border-color: #d0d0d0; }
-      .sg-popup-tag {
+      .sg-popup-card { padding: 36px 32px 28px; max-width: 380px; text-align: left; }
+      .sg-popup-logo {
         display: inline-block;
-        background: #f9cb00;
-        color: #1a2b3c;
-        padding: 4px 12px;
-        border-radius: 20px;
+        background: #d97706;
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: .04em;
+      }
+      .sg-popup-eyebrow {
         font-size: 11px;
-        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 16px;
+        letter-spacing: .12em;
+        color: #999;
+        font-weight: 700;
+        margin: 14px 0 10px;
       }
       .sg-popup-card h2 {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 26px;
+        font-weight: 800;
         color: #1a2b3c;
-        margin: 0 0 8px;
+        margin: 0 0 12px;
+        line-height: 1.2;
+        letter-spacing: -.01em;
       }
-      .sg-popup-card p {
+      .sg-popup-sub {
         font-size: 14px;
-        color: #666;
+        color: #555;
+        margin: 0 0 20px;
+        line-height: 1.55;
+      }
+      .sg-popup-bullets {
+        list-style: none;
         margin: 0 0 24px;
-        line-height: 1.5;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .sg-popup-bullets li {
+        font-size: 14px;
+        color: #1a2b3c;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sg-popup-check {
+        flex: 0 0 22px;
+        width: 22px;
+        height: 22px;
+        background: #fef3c7;
+        color: #d97706;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
       }
       .sg-popup-btn {
         display: block;
-        background: #1a2b3c;
+        background: #d97706;
         color: #fff;
         padding: 14px 24px;
-        border-radius: 8px;
+        border-radius: 10px;
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
         font-size: 15px;
-        margin-bottom: 12px;
-        transition: background 0.2s;
+        margin-bottom: 8px;
+        text-align: center;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(217,119,6,0.3);
       }
-      .sg-popup-btn:hover { background: #2d4a5e; }
+      .sg-popup-btn:hover { background: #b45309; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(217,119,6,0.4); }
       .sg-popup-skip {
+        display: block;
+        width: 100%;
         background: none;
         border: none;
         color: #999;
         font-size: 13px;
         cursor: pointer;
         padding: 8px;
+        margin: 0 auto;
+        text-align: center;
       }
-      .sg-popup-skip:hover { color: #666; }
+      .sg-popup-skip:hover { color: #555; }
     `;
     document.head.appendChild(css);
     document.body.appendChild(el);
