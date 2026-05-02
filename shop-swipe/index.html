@@ -182,6 +182,23 @@
   <script defer src="/js/unified-nav.js?v=20260502j"></script>
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
+
+  <!-- Desktop redirect — the entire swipe-cards.css is wrapped in
+       @media (max-width:768px), so on desktop the page renders as raw
+       unstyled HTML. Send desktop users to the same catalogue in its
+       proper grid layout instead. Touch devices keep the swipe UX. -->
+  <script>
+    (function() {
+      try {
+        var w = window.innerWidth || document.documentElement.clientWidth;
+        var hasTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+        // Treat as desktop only if viewport is wide AND no touch support.
+        if (w > 768 && !hasTouch) {
+          window.location.replace('/materials/all-countertops/?from=shop-swipe');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body data-swipe-mode="universal">
 
