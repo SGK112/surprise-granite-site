@@ -175,7 +175,7 @@ Higher-end materials like Dekton and exotic granite hold value regardless of col
 
 Viewing countertops on a screen never captures their true beauty. Colors look different under various lighting conditions, and the texture and depth of real stone can't be photographed.
 
-Visit our Surprise showroom to see full-size slabs of 2026's hottest colors. Our design team can help you find the perfect color to match your vision, lifestyle, and budget.
+Browse full-size slabs of 2026's hottest colors at our partner stone yards (Arizona Tile, MSI, Cosentino), then schedule a free in-home consultation — our design team will bring samples to your project and help you find the perfect color to match your vision, lifestyle, and budget.
 
 **What to bring to your appointment:**
 - Cabinet door samples or photos

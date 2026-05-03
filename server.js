@@ -662,7 +662,7 @@ app.post('/api/calendar/book', async (req, res) => {
       .from('calendar_events')
       .insert([{
         created_by: calendarOwnerId,
-        title: `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${escapeHtml(name)}`,
+        title: `${event_type === 'consultation' ? 'Phone Consultation' : 'In-Home Estimate'}: ${escapeHtml(name)}`,
         description: `Project: ${escapeHtml(project_type || 'Countertops')}\nPhone: ${escapeHtml(phone || 'N/A')}\nEmail: ${escapeHtml(email)}\nAddress: ${escapeHtml(address || 'N/A')}\n\nNotes: ${escapeHtml(notes || 'None')}`,
         event_type: event_type || 'appointment',
         start_time: startTime.toISOString(),

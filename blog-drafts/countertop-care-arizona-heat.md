@@ -183,7 +183,7 @@ We offer professional cleaning, sealing, polishing, and repair services for all 
 
 Arizona's unique climate demands slightly more attention to countertop care than more temperate regions. However, with the right materials and proper maintenance, your surfaces will remain beautiful for decades. The key is choosing materials suited to their location (indoor vs. outdoor, sunny vs. shaded) and following a consistent care routine.
 
-**Need help choosing the right countertop for your Arizona home?** Our experts can recommend materials that will thrive in your specific environment. Schedule a free consultation at our Surprise showroom.
+**Need help choosing the right countertop for your Arizona home?** Our experts can recommend materials that will thrive in your specific environment. Schedule a free in-home consultation and we'll bring samples directly to you.
 
 ---
 

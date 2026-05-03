@@ -76,14 +76,14 @@ White or cream-colored Calacatta countertops look stunning against warm wood cab
 Keep your backsplash simple to let your Calacatta countertops shine. Subway tiles, solid slabs, or subtle patterns work best.
 
 ### Consider Your Lighting
-Calacatta's veining looks different under various lighting conditions. Visit our Surprise showroom to see how different countertops look under natural and artificial light.
+Calacatta's veining looks different under various lighting conditions. Schedule a free in-home consultation and we'll bring slab samples to your project so you can see how the veining reads under your own natural and artificial light.
 
 ### Match Your Fixtures
 Gold-veined Calacatta pairs beautifully with brass or gold fixtures, while gray-veined options complement chrome or nickel hardware.
 
 ## See Calacatta Slabs in Person
 
-Ready to see Calacatta countertops in person? Our Surprise, Arizona showroom features full-size slabs of all our Calacatta options. Our design experts can help you find the perfect match for your vision and budget.
+Ready to see Calacatta countertops in person? Browse full-size Calacatta slabs at one of our partner stone yards (Arizona Tile, MSI, Cosentino), then schedule a free in-home consultation — our design experts will bring samples to your project and help you find the perfect match for your vision and budget.
 
 **Schedule a free consultation** to explore our complete collection of Calacatta countertops and get a personalized quote for your project.
 

@@ -3867,8 +3867,8 @@
       <div class="brand">
         <h1>Surprise Granite</h1>
         <div class="meta">
-          11175 W Bell Rd, Ste 117<br>
-          Surprise, AZ 85378<br>
+          15464 W Aster Dr<br>
+          Surprise, AZ 85379<br>
           (602) 833-3189 &middot; info@surprisegranite.com<br>
           www.surprisegranite.com
         </div>
@@ -7774,7 +7774,7 @@
           const apptTypeLabels = {
             'estimate': 'Free In-Home Estimate',
             'measure': 'Measurement Visit',
-            'showroom': 'Showroom Visit',
+            'showroom': 'Sample Drop-Off',
             'consultation': 'Design Consultation',
             'installation': 'Installation'
           };
@@ -8233,7 +8233,7 @@
       const apptTypeLabels = {
         'estimate': 'Free In-Home Estimate',
         'measure': 'Measurement Visit',
-        'showroom': 'Showroom Visit',
+        'showroom': 'Sample Drop-Off',
         'consultation': 'Design Consultation',
         'installation': 'Installation'
       };
@@ -8471,7 +8471,7 @@
           const apptTypeLabels = {
             'estimate': 'Free In-Home Estimate',
             'measure': 'Measurement Visit',
-            'showroom': 'Showroom Visit',
+            'showroom': 'Sample Drop-Off',
             'consultation': 'Design Consultation',
             'installation': 'Installation'
           };
@@ -12791,7 +12791,7 @@
                   <td width="50%" valign="top" align="right">
                     <p style="margin: 0 0 5px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">From</p>
                     <p style="margin: 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">Surprise Granite Marble & Quartz</p>
-                    <p style="margin: 5px 0 0; color: #666; font-size: 13px;">14155 W. Bell Road, Suite 100</p>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 13px;">15464 W Aster Dr, Surprise, AZ 85379</p>
                   </td>
                 </tr>
               </table>
@@ -12947,7 +12947,7 @@
           <tr>
             <td style="padding: 40px 0; border-top: 1px solid #eee; text-align: center;">
               <p style="margin: 0; color: #888; font-size: 13px;">Surprise Granite Marble & Quartz</p>
-              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;">14155 W. Bell Road, Suite 100, Surprise, AZ 85374</p>
+              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
               <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;"><a href="javascript:void(0)" style="color: #f9cb00; text-decoration: none;">info@surprisegranite.com</a> • <a href="javascript:void(0)" style="color: #f9cb00; text-decoration: none;">(602) 833-3189</a></p>
             </td>
           </tr>
@@ -13072,7 +13072,7 @@
           <tr>
             <td style="background-color: #0a0a12; padding: 40px 50px; text-align: center;">
               <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 2px;">Surprise Granite Marble & Quartz</p>
-              <p style="margin: 15px 0 0; color: #666; font-size: 12px;">14155 W. Bell Road, Suite 100, Surprise, AZ 85374</p>
+              <p style="margin: 15px 0 0; color: #666; font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
               <p style="margin: 10px 0 0; color: #666; font-size: 12px;">info@surprisegranite.com • (602) 833-3189</p>
               <p style="margin: 20px 0 0; color: #444; font-size: 11px;">Thank you for choosing Surprise Granite for your project.</p>
             </td>

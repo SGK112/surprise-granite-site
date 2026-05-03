@@ -34,9 +34,9 @@ Kitchen and bath remodelers often prioritize consultations and planning to fill 
 
 ![6760B8C7B0Edea726B4B5788 6760B73B80B3E47F54A4F9E4 Surprise%2520Showroom%2520Surprise%2520Granite countertop sample](https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6760b8c7b0edea726b4b5788_6760b73b80b3e47f54a4f9e4_Surprise%2520Showroom%2520Surprise%2520Granite.jpeg)
 
-Surprise Granite Showroom
+Surprise Granite design samples
 
-[Visit a showroom ](https://g.co/kgs/jD3fbUv)between December 1st and December 23rd, as many contractors wind down during the last week of the month for Christmas and New Years.
+[Schedule a free in-home consultation](/book-appointment)between December 1st and December 23rd, as many contractors wind down during the last week of the month for Christmas and New Years.
 
 Considering these reasons, December is the perfect time to [talk with a designer](https://form.jotform.com/221357778919068) and start planning your kitchen or bath remodel. If you wait until the new year, you may find yourself competing for time and availability as schedules quickly fill up.
 

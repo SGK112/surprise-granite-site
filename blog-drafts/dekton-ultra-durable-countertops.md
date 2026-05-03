@@ -164,9 +164,9 @@ Many homeowners find the investment worthwhile, especially for outdoor applicati
 - Prefer traditional natural stone patterns
 - Only need indoor countertops with standard use
 
-## See Dekton at Our Showroom
+## See Dekton in Person
 
-Experience the difference in person at our Surprise, Arizona showroom. We have full-size Dekton samples you can touch, feel, and even test with heat and sharp objects. Our design team can show you how Dekton would look in your specific project.
+Experience the difference at the Cosentino Center partner showroom in Tempe, where you can view full-size Dekton slabs and even test them with heat and sharp objects. Then schedule a free in-home consultation and we'll bring Dekton samples directly to your project — our design team can show you how Dekton would look in your specific space.
 
 **Schedule your free consultation** to explore our Dekton collection and get a custom quote for your indoor or outdoor project.
 

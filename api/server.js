@@ -3777,7 +3777,7 @@ app.post('/api/calendar/book', leadRateLimiter, async (req, res) => {
     if (!adminUser) return res.status(500).json({ error: 'No admin user configured' });
 
     // Create calendar event
-    const eventTitle = `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${name}`;
+    const eventTitle = `${event_type === 'consultation' ? 'Phone Consultation' : 'In-Home Estimate'}: ${name}`;
     const { data: event, error: eventError } = await supabase
       .from('calendar_events')
       .insert([{

@@ -142,7 +142,7 @@ For outdoor living spaces around pools:
 
 ## See Both Options in Person
 
-The best way to decide between quartz and granite is to see them side by side. Visit our Surprise showroom to view full-size slabs of both materials. Our countertop experts can help you weigh the pros and cons based on your specific needs.
+The best way to decide between quartz and granite is to see them side by side. Browse full-size slabs at one of our partner stone yards (Arizona Tile, MSI, Cosentino), then schedule a free in-home consultation — our countertop experts will bring samples to your project and help you weigh the pros and cons based on your specific needs.
 
 **Schedule your free consultation** to explore our complete selection and get accurate pricing for your project.
 
