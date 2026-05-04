@@ -5104,6 +5104,97 @@ form.addEventListener('submit', async (e) => {
   </div>
 </section>
 
+<!-- Stone Yards + ASPN Map Section -->
+<section class="stone-yards-section">
+  <div id="sy-home-map" class="sy-bg-map"></div>
+  <div class="sy-content-overlay">
+    <div class="sy-content-card">
+      <div class="sy-label">Stone Yards &amp; ASPN Network</div>
+      <h2 class="sy-title">See real slabs at our partner stone yards across Phoenix.</h2>
+      <p class="sy-desc">We're a service-area contractor — we don't have a public showroom. Instead, we work with 10+ partner stone yards (MSI, Arizona Tile, Cosentino, Daltile, and more) where you can browse full-size slabs in person. We also founded the Arizona Stone Providers Network (ASPN) — every fabricator, designer, and stone pro in Arizona, in one map.</p>
+      <div class="sy-stats-row">
+        <div class="sy-stat"><strong>10+</strong><span>Partner Yards</span></div>
+        <div class="sy-stat"><strong>1000s</strong><span>Slabs Available</span></div>
+        <div class="sy-stat"><strong>AZ-wide</strong><span>ASPN Network</span></div>
+      </div>
+      <div class="sy-buttons">
+        <a href="/stone-yards/" class="sy-btn-primary">View Map &amp; Yards →</a>
+        <a href="/aspn/directory/" class="sy-btn-secondary">Browse ASPN Pros</a>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+(function() {
+  // Lazy-init mini map only when the section scrolls into view
+  function initSyMap() {
+    if (window.SY_MAP_INITED) return;
+    window.SY_MAP_INITED = true;
+    const el = document.getElementById('sy-home-map');
+    if (!el || typeof L === 'undefined') return;
+
+    const yards = [
+      { name: 'MSI Surfaces',       lat: 33.4583, lng: -112.1407 },
+      { name: 'Arizona Tile',       lat: 33.3456, lng: -111.9606 },
+      { name: 'Cactus Stone & Tile',lat: 33.4438, lng: -111.9811 },
+      { name: 'Cosentino Center',   lat: 33.3511, lng: -111.9606 },
+      { name: 'Daltile',            lat: 33.4317, lng: -111.9642 },
+      { name: 'Bolder Image Stone', lat: 33.4516, lng: -112.1306 },
+      { name: 'Aracruz Granite',    lat: 33.4283, lng: -112.0964 },
+      { name: 'Classic Surfaces',   lat: 33.4650, lng: -112.1378 },
+      { name: 'Architectural Surfaces', lat: 33.6114, lng: -111.8867 },
+      { name: 'ESI - Edgebanding',  lat: 33.3062, lng: -111.9418 }
+    ];
+    const aspn = [
+      { name: 'Surprise Granite (founder)', lat: 33.6363, lng: -112.4317, type: 'aspn' }
+    ];
+
+    const map = L.map('sy-home-map', {
+      scrollWheelZoom: false,
+      zoomControl: false,
+      dragging: !L.Browser.mobile,
+      tap: false
+    }).setView([33.48, -112.05], 9);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '',
+      maxZoom: 19
+    }).addTo(map);
+
+    const yardIcon = L.divIcon({ className: 'sy-pin', html: '<div class="sy-pin-marker"></div>', iconSize: [24,24], iconAnchor: [12,24] });
+    const aspnIcon = L.divIcon({ className: 'sy-pin', html: '<div class="sy-pin-marker" style="background:linear-gradient(180deg,#14b8a6 0%,#0f766e 100%);"></div>', iconSize: [24,24], iconAnchor: [12,24] });
+
+    yards.forEach(p => L.marker([p.lat, p.lng], { icon: yardIcon }).addTo(map).bindPopup('<strong>'+p.name+'</strong>'));
+    aspn.forEach(p  => L.marker([p.lat, p.lng], { icon: aspnIcon }).addTo(map).bindPopup('<strong>'+p.name+'</strong><br><a href="/aspn/" style="color:#0f766e;">ASPN Network</a>'));
+  }
+
+  function loadLeafletAndInit() {
+    if (typeof L !== 'undefined') return initSyMap();
+    if (document.querySelector('script[data-leaflet]')) return; // already loading
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.dataset.leaflet = '1';
+    js.onload = initSyMap;
+    document.head.appendChild(js);
+  }
+
+  const section = document.querySelector('.stone-yards-section');
+  if (!section) return;
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { loadLeafletAndInit(); io.disconnect(); } });
+    }, { rootMargin: '200px' });
+    io.observe(section);
+  } else {
+    loadLeafletAndInit();
+  }
+})();
+</script>
+
 <!-- Why Choose Us Section -->
 <section class="why-choose-us">
   <div class="wcu-inner">

@@ -298,6 +298,60 @@
       left: 50%;
       transform: translate(-50%, -50%);
     }
+    /* ASPN member marker variant (teal) */
+    .marker-pin-aspn .marker-pin-inner {
+      background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+    }
+
+    /* Map Legend */
+    .map-legend {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 500;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      max-width: 220px;
+    }
+    .map-legend__row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0;
+    }
+    .map-legend__dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .map-legend__dot--yard { background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%); }
+    .map-legend__dot--aspn { background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%); }
+    .map-legend__title {
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    @media (max-width: 600px) {
+      .map-legend {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        max-width: none;
+        padding: 10px;
+        font-size: 12px;
+      }
+    }
 
     /* Map Popups */
     .leaflet-popup-content-wrapper {
@@ -1019,6 +1073,17 @@
 
   <section class="map-section">
     <div id="partner-map"></div>
+    <div class="map-legend" id="map-legend" aria-label="Map legend">
+      <div class="map-legend__title">On the map</div>
+      <div class="map-legend__row">
+        <span class="map-legend__dot map-legend__dot--yard"></span>
+        <span>Stone yards (browse slabs)</span>
+      </div>
+      <div class="map-legend__row">
+        <span class="map-legend__dot map-legend__dot--aspn"></span>
+        <span><a href="/aspn/" style="color:inherit;text-decoration:underline;">ASPN</a> fabricators &amp; pros</span>
+      </div>
+    </div>
     <div class="map-cta">
       <span>Are you a stone yard?</span>
       <a href="/distributor/signup/?partner=stone-yard" class="map-cta-btn">Become a Partner</a>
@@ -1119,7 +1184,66 @@
       return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
-    function renderMap(partners) {
+    // City centroid lookup for ASPN members that don't ship lat/lng yet.
+    // Used as a fallback so a member with only city/state can still appear.
+    const AZ_CITY_CENTROIDS = {
+      'surprise':       [33.6292, -112.3679],
+      'sun city':       [33.5806, -112.2716],
+      'sun city west':  [33.6628, -112.3493],
+      'peoria':         [33.5806, -112.2374],
+      'glendale':       [33.5387, -112.1860],
+      'phoenix':        [33.4484, -112.0740],
+      'scottsdale':     [33.4942, -111.9261],
+      'mesa':           [33.4152, -111.8315],
+      'tempe':          [33.4255, -111.9400],
+      'chandler':       [33.3062, -111.8413],
+      'gilbert':        [33.3528, -111.7890],
+      'goodyear':       [33.4355, -112.3576],
+      'avondale':       [33.4356, -112.3496],
+      'litchfield park':[33.4914, -112.3580],
+      'buckeye':        [33.3703, -112.5838],
+      'anthem':         [33.8675, -112.1430]
+    };
+
+    // Specific overrides (better than city centroid for known addresses)
+    const ASPN_LAT_LNG_OVERRIDES = {
+      'surprise-granite': [33.6363, -112.4317]  // 15464 W Aster Dr
+    };
+
+    async function fetchAspnMembers() {
+      const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+      try {
+        const r = await fetch(API_BASE + '/api/aspn/members?limit=200', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const json = await r.json();
+        const list = Array.isArray(json) ? json : (json.members || json.data || []);
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        console.warn('ASPN API unreachable, using static fallback:', err.message);
+        return null;
+      }
+    }
+
+    // Founding ASPN member always shown (Surprise Granite itself)
+    const ASPN_FALLBACK = [{
+      slug: 'surprise-granite',
+      business_name: 'Surprise Granite',
+      service_category: 'fabricator',
+      founder_status: true,
+      city: 'Surprise', state: 'AZ',
+      phone: '(602) 833-3189',
+      website: 'https://www.surprisegranite.com',
+      short_description: 'Founding ASPN operator. In-house countertop fabrication, custom cabinets, tile, and flooring across the Phoenix metro.'
+    }];
+
+    function geocodeAspnMember(m) {
+      if (m.slug && ASPN_LAT_LNG_OVERRIDES[m.slug]) return ASPN_LAT_LNG_OVERRIDES[m.slug];
+      if (m.latitude && m.longitude) return [parseFloat(m.latitude), parseFloat(m.longitude)];
+      const key = (m.city || '').toLowerCase().trim();
+      return AZ_CITY_CENTROIDS[key] || null;
+    }
+
+    function renderMap(partners, aspnMembers) {
       const map = L.map('partner-map', {
         scrollWheelZoom: false,
         zoomControl: true
@@ -1130,7 +1254,7 @@
         maxZoom: 19
       }).addTo(map);
 
-      const pinIcon = L.divIcon({
+      const pinIconYard = L.divIcon({
         className: 'marker-pin-wrapper',
         html: '<div class="marker-pin"><div class="marker-pin-inner"></div></div>',
         iconSize: [30, 42],
@@ -1138,9 +1262,19 @@
         popupAnchor: [0, -38]
       });
 
+      const pinIconAspn = L.divIcon({
+        className: 'marker-pin-wrapper marker-pin-aspn',
+        html: '<div class="marker-pin"><div class="marker-pin-inner"></div></div>',
+        iconSize: [30, 42],
+        iconAnchor: [15, 42],
+        popupAnchor: [0, -38]
+      });
+
       const markers = [];
+
+      // Stone yards (gold pins)
       partners.forEach(p => {
-        const marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+        const marker = L.marker([p.lat, p.lng], { icon: pinIconYard }).addTo(map);
         const phoneHtml = p.phone ? `
             <div class="popup-phone">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
@@ -1148,6 +1282,7 @@
             </div>` : '';
         marker.bindPopup(`
           <div class="popup-card">
+            <div class="popup-tag" style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:6px;margin-bottom:6px;">Stone Yard</div>
             <h4>${p.name}</h4>
             <div class="popup-address">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -1157,6 +1292,32 @@
             <a href="https://maps.google.com/maps?daddr=${encodeURIComponent(p.address)}" target="_blank" class="popup-btn">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Get Directions
+            </a>
+          </div>
+        `, { maxWidth: 280 });
+        markers.push(marker);
+      });
+
+      // ASPN members (teal pins)
+      (aspnMembers || []).forEach(m => {
+        const coords = geocodeAspnMember(m);
+        if (!coords) return;
+        const marker = L.marker(coords, { icon: pinIconAspn }).addTo(map);
+        const cityLine = m.city ? (m.city + (m.state ? ', ' + m.state : '')) : '';
+        const phoneHtml = m.phone ? `
+            <div class="popup-phone">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              <a href="tel:${m.phone.replace(/[^0-9]/g, '')}">${formatPhoneDisplay(m.phone)}</a>
+            </div>` : '';
+        const founderBadge = m.founder_status ? '<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:4px;margin-left:6px;">FOUNDER</span>' : '';
+        marker.bindPopup(`
+          <div class="popup-card">
+            <div class="popup-tag" style="display:inline-block;background:#ccfbf1;color:#0f766e;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:6px;margin-bottom:6px;">ASPN ${m.service_category || 'Member'}${founderBadge ? '' : ''}</div>${founderBadge}
+            <h4>${m.business_name}</h4>
+            ${cityLine ? `<div class="popup-address"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span>${cityLine}</span></div>` : ''}
+            ${phoneHtml}
+            <a href="/aspn/members/${m.slug}/" class="popup-btn">
+              View ASPN Profile →
             </a>
           </div>
         `, { maxWidth: 280 });
@@ -1218,10 +1379,14 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
-      const livePartners = await fetchDistributorsFromSupabase();
+      const [livePartners, liveAspn] = await Promise.all([
+        fetchDistributorsFromSupabase(),
+        fetchAspnMembers()
+      ]);
       const partners = livePartners || fallbackPartners;
+      const aspnMembers = liveAspn || ASPN_FALLBACK;
 
-      renderMap(partners);
+      renderMap(partners, aspnMembers);
       renderYardCards(partners);
     });
   </script>
