@@ -20,16 +20,45 @@ services:
       - path: /css/*.css
         name: Cache-Control
         value: no-cache, must-revalidate
-      - path: /tools/*
+      # Render globs: /* matches single segment only; /** matches multi-segment.
+      # All HTML hub paths use /** so subdirectories like /materials/flooring/ get the no-cache headers too.
+      - path: /tools/**
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
-      - path: /materials/*
+      - path: /materials/**
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
-      - path: /marketplace/*
+      - path: /marketplace/**
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
-      - path: /account/*
+      - path: /account/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /flooring/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /stone-yards/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /aspn/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /special-offers/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /locations/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /services/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /blog/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /vendors/**
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /company/**
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
     routes:
@@ -96,9 +125,6 @@ services:
       - type: rewrite
         source: /materials/all-tile
         destination: /materials_all-tile.html
-      - type: rewrite
-        source: /materials/flooring
-        destination: /materials_flooring.html
       - type: rewrite
         source: /materials/premium-sinks
         destination: /materials_premium-sinks.html

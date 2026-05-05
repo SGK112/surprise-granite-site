@@ -5,7 +5,7 @@
  * Supports UNIVERSAL mode with all products combined
  */
 
-(function() {
+function __sgInitSwipeCards() {
   'use strict';
 
   // Check for universal swipe mode (dedicated swipe page)
@@ -1636,4 +1636,11 @@
     }, 3000);
   }
 
-})();
+}
+
+// Defensive: if script loads in <head> before body is parsed, defer until DOM ready
+if (document.body) {
+  __sgInitSwipeCards();
+} else {
+  document.addEventListener('DOMContentLoaded', __sgInitSwipeCards, { once: true });
+}
