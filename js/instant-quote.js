@@ -1,9 +1,19 @@
 /**
  * Surprise Granite Instant Quote Widget
  * Self-contained IIFE — drop on any page via <script src="/js/instant-quote.js"></script>
+ *
+ * DISABLED 2026-05-04: The floating "Get Instant Quote" badge was conflicting
+ * with the favorites badge, the Aria/tools hub, the dinner promo strip, and
+ * the booking CTAs on mobile — too many elements fighting for the same screen
+ * space. The pricing-quote flow lives at /tools/countertop-calculator/ and the
+ * lead-gen path is /book-appointment/. Re-enable here if a single floating CTA
+ * is wanted again — and remove the other competing widgets first.
  */
 (function () {
   'use strict';
+
+  // Floating widget intentionally disabled — see comment above.
+  return;
 
   // No dismiss — widget always shows. Close just hides it on current page.
 

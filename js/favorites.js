@@ -60,8 +60,10 @@
     // Add heart to individual product detail pages
     addHeartToProductDetailPage();
 
-    // Add floating favorites badge
-    addFavoritesBadge();
+    // Floating site-wide favorites badge intentionally disabled — too noisy on mobile.
+    // Per-product heart buttons (added by addHeartToCards / addHeartToProductDetailPage)
+    // and the favorites count in the user account header are the only surfaces now.
+    // addFavoritesBadge();
 
     // Re-run when DOM changes (for dynamically loaded content)
     observeDOMChanges();
