@@ -12,6 +12,14 @@
   // Don't show on room designer workspace
   if (window.location.pathname.includes('/tools/room-designer')) return;
 
+  // Don't show on admin/CRM surfaces — they have their own contextual FABs
+  // (add lead, new estimate, new invoice, etc.) and stacking the Aria hub on top
+  // creates the same widget-overlap problem we just cleaned up on public pages.
+  if (window.location.pathname.startsWith('/account')) return;
+  if (window.location.pathname.startsWith('/admin')) return;
+  if (window.location.pathname.startsWith('/contractor-portal')) return;
+  if (window.location.pathname.startsWith('/distributor')) return;
+
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
   const WIDGET_VERSION = '20260121a'; // v8 premium chat
