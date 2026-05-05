@@ -5886,6 +5886,10 @@
     });
 
     function toggleSidebar() {
+      // Mobile uses the bottom tab bar + More drawer as the sole nav;
+      // sidebar is desktop-only. Bail so stray taps don't half-open it
+      // behind a CSS display:none rule.
+      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
       const sidebar = document.getElementById('sidebar');
       const overlay = document.querySelector('.sidebar-overlay');
       if (sidebar) sidebar.classList.toggle('open');

@@ -50,6 +50,37 @@
 
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
+
+  <!--
+    MOBILE NAV CONSOLIDATION (2026-05-04)
+    ONE menu on mobile, not three. The CRM had three competing nav surfaces:
+      1. Public-site nav (killed elsewhere via unified-nav.js skip)
+      2. Side sidebar drawer (this used to slide in via top hamburger)
+      3. Bottom tab bar + "More" sheet drawer
+    On mobile we keep ONLY the bottom tab bar. Sidebar is for desktop only.
+    These rules override anything in /css/account/main.css.
+  -->
+  <style>
+    @media (max-width: 768px) {
+      .sidebar,
+      .sidebar-overlay,
+      .mobile-menu-btn { display: none !important; }
+      .main-content {
+        margin-left: 0 !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        width: 100% !important;
+        transform: none !important;
+        left: 0 !important;
+      }
+      /* Topbar shouldn't have a hamburger gap on mobile */
+      .topbar { padding-left: 0 !important; }
+      .topbar-title { padding-left: 4px; }
+      /* Belt-and-suspenders: even if sidebar somehow gets .open class, don't let it slide in */
+      .sidebar.open { transform: translateX(-100%) !important; }
+      body.sidebar-open { overflow: auto !important; }
+    }
+  </style>
 </head>
 <body>
   <!-- Loading Screen -->
@@ -7975,7 +8006,7 @@
   </div>
 
   <script src="/js/invoice-builder.js?v=20260424k"></script>
-  <script src="/js/account/main.js?v=20260424j"></script>
+  <script src="/js/account/main.js?v=20260504g"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js?v=3"></script>
 
