@@ -865,6 +865,20 @@
 
   // Initialize navigation
   function init() {
+    // Skip on admin/CRM/portal surfaces — they have their own header.
+    // Loading the public-site nav on top creates the "double menu" stacking
+    // visible on /account/ (Surprise Granite header + cart/phone/☰ AND the
+    // CRM's Leads/bell/+ header right below it).
+    var path = window.location.pathname || '';
+    if (path.startsWith('/account')
+        || path.startsWith('/admin')
+        || path.startsWith('/contractor-portal')
+        || path.startsWith('/distributor')
+        || path.startsWith('/log-in')
+        || path.startsWith('/sign-up')) {
+      return;
+    }
+
     // Remove old navigation first
     removeOldNavigation();
 
