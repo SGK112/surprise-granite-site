@@ -69,6 +69,61 @@
           </select>
         </div>
 
+        <!-- Stone-yard-only conditional fields. Hidden by default; shown via JS when service_category=stone-yard or distributor. -->
+        <div id="stoneYardFields" class="aspn-form__field" style="display:none;background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.25);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+          <div style="font-weight:700;color:#0f766e;font-size:.9rem;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;">Stone yard details</div>
+          <p style="font-size:.88rem;color:var(--aspn-text-2);margin:0 0 16px 0;">Helps fabricators and homeowners find your yard for the right material.</p>
+
+          <div class="aspn-form__field">
+            <label class="aspn-form__label" for="yard_subtype">Yard type</label>
+            <select id="yard_subtype" name="yard_subtype" class="aspn-form__select">
+              <option value="">Choose one…</option>
+              <option value="slab_distributor">Slab Distributor (full slabs to trade)</option>
+              <option value="wholesaler">Wholesaler / Importer</option>
+              <option value="bone_yard">Bone Yard / Remnants</option>
+              <option value="fabricator_yard">Fabricator with Public Slab Yard</option>
+            </select>
+          </div>
+
+          <div class="aspn-form__field" style="margin-top:14px;">
+            <label class="aspn-form__label">Materials carried <span class="aspn-form__hint">check all that apply</span></label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 16px;margin-top:8px;">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="granite"> Granite</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="quartz"> Quartz</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="quartzite"> Quartzite</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="marble"> Marble</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="porcelain"> Porcelain</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="soapstone"> Soapstone</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="travertine"> Travertine</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="onyx"> Onyx</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="dekton"> Dekton / Sintered</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;"><input type="checkbox" name="materials" value="remnants"> Remnants</label>
+            </div>
+          </div>
+
+          <div class="aspn-form__row" style="margin-top:14px;">
+            <div class="aspn-form__field">
+              <label class="aspn-form__label" for="slab_count">Approx slabs in stock</label>
+              <select id="slab_count" name="slab_count" class="aspn-form__select">
+                <option value="">Choose one…</option>
+                <option value="under_100">Under 100</option>
+                <option value="100_500">100–500</option>
+                <option value="500_1000">500–1,000</option>
+                <option value="1000_plus">1,000+</option>
+              </select>
+            </div>
+            <div class="aspn-form__field">
+              <label class="aspn-form__label" for="public_access">Public access</label>
+              <select id="public_access" name="public_access" class="aspn-form__select">
+                <option value="">Choose one…</option>
+                <option value="open_public">Open to public</option>
+                <option value="by_appointment">By appointment</option>
+                <option value="trade_only">Trade only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <details class="aspn-form__field" style="margin-bottom:24px;">
           <summary style="cursor:pointer;color:var(--aspn-text-2);font-size:.92rem;font-weight:600;padding:8px 0;">Optional — add details now (or later)</summary>
           <div style="padding-top:16px;">
@@ -157,12 +212,41 @@
     const msg = document.getElementById('signupMsg');
     const btn = document.getElementById('submitBtn');
 
+    // Stone-yard conditional fields: show/hide based on service category, pre-select from ?role=stone-yard
+    const categorySelect = document.getElementById('service_category');
+    const stoneYardFields = document.getElementById('stoneYardFields');
+    const STONE_YARD_CATEGORIES = new Set(['stone-yard', 'distributor']);
+
+    function syncStoneYardVisibility() {
+      const isYard = STONE_YARD_CATEGORIES.has(categorySelect.value);
+      stoneYardFields.style.display = isYard ? 'block' : 'none';
+    }
+    categorySelect.addEventListener('change', syncStoneYardVisibility);
+
+    // Pre-select category from ?role= query param (e.g., /aspn/join/?role=stone-yard from the map CTA)
+    (function preselectFromQuery() {
+      const role = new URLSearchParams(window.location.search).get('role');
+      if (!role) return;
+      const map = { 'stone-yard': 'stone-yard', 'stoneyard': 'stone-yard', 'distributor': 'distributor', 'fabricator': 'fabricator', 'designer': 'designer', 'installer': 'tile-installer' };
+      const target = map[role.toLowerCase()];
+      if (target && [...categorySelect.options].some(o => o.value === target)) {
+        categorySelect.value = target;
+        syncStoneYardVisibility();
+      }
+    })();
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       msg.innerHTML = '';
       btn.disabled = true;
       btn.textContent = 'Joining…';
-      const data = Object.fromEntries(new FormData(form).entries());
+      const fd = new FormData(form);
+      // Build payload — use getAll() for the materials checkbox group so all selections are captured
+      const data = {};
+      for (const key of new Set(fd.keys())) {
+        const all = fd.getAll(key);
+        data[key] = all.length > 1 ? all : all[0];
+      }
       try {
         const r = await fetch(API_BASE + '/api/aspn/signup', {
           method: 'POST',
