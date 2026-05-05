@@ -81,6 +81,32 @@
       .topbar-title { padding-left: 4px; }
       .sidebar.open { transform: translateX(-100%) !important; }
       body.sidebar-open { overflow: auto !important; }
+
+      /* Filter pills: even 4-column grid instead of left-anchored flex-wrap */
+      .filter-pills {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 6px !important;
+        padding: 0 !important;
+      }
+      .filter-pill {
+        padding: 10px 6px !important;
+        font-size: 12px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;       /* override the left-border style on Archived */
+        padding-left: 6px !important;
+        border-left: 1px solid var(--border-subtle) !important;
+      }
+      .filter-pill svg { display: none; }  /* archived has an icon — drop it on mobile so widths stay even */
+
+      /* Lead cards: tighten side padding so they don't get squeezed by the FAB */
+      .table-container { padding-left: 12px !important; padding-right: 12px !important; }
+
+      /* FAB: nudge slightly so it doesn't sit directly on lead-card right edge */
+      .fab-modern { right: 16px !important; bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
     }
   </style>
 </head>
