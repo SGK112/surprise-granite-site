@@ -715,11 +715,12 @@
         const seenImages = new Set();
         const beforeDedupe = products.length;
         products = products.filter(p => {
-          const titleKey = String(p.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
-          const imgKey = (p.images && p.images[0]) || '';
-          if (titleKey && seenTitles.has(titleKey)) return false;
+          // Static data uses primaryImage (string); live API uses images[] (array). Both shapes feed dedup.
+          const nameKey = String(p.title || p.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          const imgKey = String(p.primaryImage || (p.images && p.images[0]) || p.image || '').trim();
+          if (nameKey && seenTitles.has(nameKey)) return false;
           if (imgKey && seenImages.has(imgKey)) return false;
-          if (titleKey) seenTitles.add(titleKey);
+          if (nameKey) seenTitles.add(nameKey);
           if (imgKey) seenImages.add(imgKey);
           return true;
         });
