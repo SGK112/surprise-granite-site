@@ -1520,6 +1520,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;     /* keep "Free Tool" on one line */
+    flex-shrink: 0;          /* don't let the label squeeze us into a wrap */
+    align-self: center;
+}
+@media (max-width: 480px) {
+    /* Stack the price-card header vertically on phones so the label has room
+       and the badge doesn't get pushed off-screen */
+    .sg-price-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .sg-price-label { font-size: 0.95rem; line-height: 1.2; }
 }
 
 .sg-price-range {

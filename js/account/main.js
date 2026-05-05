@@ -3043,6 +3043,7 @@
       const shopSection = document.getElementById('favorites-shop');
       const quoteBtn = document.getElementById('request-quote-btn');
       const clearAllBtn = document.getElementById('clear-all-btn');
+      const shareBtn = document.getElementById('share-favorites-btn');
 
       try {
         const { data, error } = await supabaseClient
@@ -3070,10 +3071,12 @@
           if (shopSection) shopSection.style.display = 'none';
           quoteBtn.style.display = 'none';
           if (clearAllBtn) clearAllBtn.style.display = 'none';
+          if (shareBtn) shareBtn.style.display = 'none';
         } else {
           emptyEl.style.display = 'none';
           quoteBtn.style.display = 'inline-flex';
           if (clearAllBtn) clearAllBtn.style.display = 'inline-flex';
+          if (shareBtn) shareBtn.style.display = 'inline-flex';
 
           // Show/render countertops section
           if (countertopFavorites.length > 0) {
