@@ -18319,10 +18319,13 @@
       };
 
       // Main analysis function
-      // API base for AI endpoints - use deployed server when running locally from file://
-      const AI_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost')
-        ? 'https://surprise-granite-email-api.onrender.com'
-        : '';
+      // API base for AI endpoints — ALWAYS the email-api host. Previously empty
+      // string was used for the production case to "hit same origin", but the
+      // static site doesn't proxy /api/* anywhere, so POSTs landed on Render's
+      // static handler and silently returned 200 + empty body, looking like
+      // "AI server returned an empty 200 response" in the user's browser.
+      const AI_API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE)
+        || 'https://surprise-granite-email-api.onrender.com';
 
       window.analyzeRoomImage = async function() {
         if (!uploadedImageData && uploadedMultiImages.length === 0) {
