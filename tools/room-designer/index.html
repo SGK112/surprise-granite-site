@@ -18199,17 +18199,65 @@
         });
       }
 
+      // Render a single PDF page to a JPEG dataURL using the already-loaded PDF.js.
+      // scale=2 gives ~2x DPI which is enough for AI vision to read dimension text.
+      async function rasterizePdfPage(pdfDoc, pageNum, scale) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: scale || 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        return canvas.toDataURL('image/jpeg', 0.92);
+      }
+
+      // PDF → array of JPEG dataURLs (one per page, capped at remaining slots).
+      async function pdfDataUrlToJpegPages(dataUrl, maxPages) {
+        if (typeof pdfjsLib === 'undefined') {
+          throw new Error('PDF.js not loaded — refresh the page and try again');
+        }
+        const b64 = dataUrl.split(',')[1] || '';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        const n = Math.min(pdf.numPages, maxPages || 4);
+        const pages = [];
+        for (let p = 1; p <= n; p++) pages.push(await rasterizePdfPage(pdf, p, 2));
+        return pages;
+      }
+
       function handleMultiFile(file) {
         // Accept image/* (including HEIC with empty type) and PDFs
         const isImage = file.type.startsWith('image/') || /\.(heic|heif|jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(file.name);
-        if (!isImage && file.type !== 'application/pdf') return;
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        if (!isImage && !isPdf) return;
         if (uploadedMultiImages.length >= 4) {
           showToast('Maximum 4 images allowed', 'error');
           return;
         }
         const reader = new FileReader();
-        reader.onload = (e) => {
-          uploadedMultiImages.push({ data: e.target.result, label: '' });
+        reader.onload = async (e) => {
+          let added = 0;
+          if (isPdf) {
+            // Rasterize PDF pages to JPEGs (one per page, up to remaining slots).
+            // Vision APIs can't read PDF data URLs directly, so we convert here.
+            const remaining = 4 - uploadedMultiImages.length;
+            try {
+              const pages = await pdfDataUrlToJpegPages(e.target.result, remaining);
+              pages.forEach(jpegUrl => {
+                uploadedMultiImages.push({ data: jpegUrl, label: '' });
+                added++;
+              });
+              if (added > 1) showToast(`Imported ${added} pages from PDF`, 'success');
+            } catch (err) {
+              showToast('Could not read PDF: ' + err.message, 'error');
+              return;
+            }
+          } else {
+            uploadedMultiImages.push({ data: e.target.result, label: '' });
+            added = 1;
+          }
           uploadedImageData = null;
           renderSlotGrid();
           const countEl = document.getElementById('multiImageCount');
