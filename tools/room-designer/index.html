@@ -18240,16 +18240,17 @@
         reader.onload = async (e) => {
           let added = 0;
           if (isPdf) {
-            // Rasterize PDF pages to JPEGs (one per page, up to remaining slots).
-            // Vision APIs can't read PDF data URLs directly, so we convert here.
-            const remaining = 4 - uploadedMultiImages.length;
+            // Rasterize the FIRST page only by default — single-image scan endpoint
+            // is more reliable than multi-image (smaller payload, faster vision call).
+            // For multi-page blueprints, drop the PDF again and we'll add the next
+            // page, OR drop additional images manually into open slots.
             try {
-              const pages = await pdfDataUrlToJpegPages(e.target.result, remaining);
+              const pages = await pdfDataUrlToJpegPages(e.target.result, 1);
               pages.forEach(jpegUrl => {
-                uploadedMultiImages.push({ data: jpegUrl, label: '' });
+                uploadedMultiImages.push({ data: jpegUrl, label: 'PDF page 1' });
                 added++;
               });
-              if (added > 1) showToast(`Imported ${added} pages from PDF`, 'success');
+              showToast('Imported page 1 of PDF — drop additional images in open slots if needed', 'success');
             } catch (err) {
               showToast('Could not read PDF: ' + err.message, 'error');
               return;
@@ -18391,6 +18392,19 @@
               throw new Error('Server CORS error (403) — the backend may still be deploying. Try again in 1-2 minutes.');
             }
             const text = await response.text();
+            // Diagnostic: log full response details whenever something looks off,
+            // so the next time this fails we can see exactly what the API returned.
+            if (!response.ok || !text) {
+              const headerSummary = {};
+              try { response.headers.forEach((v, k) => { headerSummary[k] = v; }); } catch {}
+              console.error('[AI Scanner]', endpointName, 'response problem:', {
+                status: response.status,
+                statusText: response.statusText,
+                bodyLength: text.length,
+                bodyPreview: text.substring(0, 500),
+                headers: headerSummary
+              });
+            }
             let parsed;
             try {
               parsed = JSON.parse(text);
@@ -18398,7 +18412,7 @@
               if (!response.ok) {
                 throw new Error(`Server error (${response.status}): ${text.substring(0, 200) || 'empty response'}`);
               }
-              throw new Error(`Invalid JSON from ${endpointName}: ${text.substring(0, 200) || 'empty response'}`);
+              throw new Error(`AI scan returned an empty response — the vision model may have timed out. Try a simpler upload (single page, fewer details) or try again in a moment.`);
             }
             if (!response.ok && response.status !== 404) {
               const errMsg = parsed.error || parsed.message || `Server error (${response.status})`;
