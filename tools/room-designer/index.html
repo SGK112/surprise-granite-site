@@ -18392,18 +18392,10 @@
               throw new Error('Server CORS error (403) — the backend may still be deploying. Try again in 1-2 minutes.');
             }
             const text = await response.text();
-            // Diagnostic: log full response details whenever something looks off,
-            // so the next time this fails we can see exactly what the API returned.
+            // FLAT diagnostic — everything in one console.error line so it's
+            // easy to copy/paste without expanding nested objects.
             if (!response.ok || !text) {
-              const headerSummary = {};
-              try { response.headers.forEach((v, k) => { headerSummary[k] = v; }); } catch {}
-              console.error('[AI Scanner]', endpointName, 'response problem:', {
-                status: response.status,
-                statusText: response.statusText,
-                bodyLength: text.length,
-                bodyPreview: text.substring(0, 500),
-                headers: headerSummary
-              });
+              console.error(`[AI Scanner] ${endpointName} HTTP=${response.status} ${response.statusText} bodyLen=${text.length} body="${text.substring(0, 400).replace(/"/g, '\\"').replace(/\n/g, ' ')}"`);
             }
             let parsed;
             try {
@@ -18412,7 +18404,10 @@
               if (!response.ok) {
                 throw new Error(`Server error (${response.status}): ${text.substring(0, 200) || 'empty response'}`);
               }
-              throw new Error(`AI scan returned an empty response — the vision model may have timed out. Try a simpler upload (single page, fewer details) or try again in a moment.`);
+              // 200 status but no parseable body → almost always cold-start or proxy timeout.
+              // The Render service spins down after 15 min of no traffic; first request
+              // back can return 200 with empty body while the container boots.
+              throw new Error(`AI server returned an empty 200 response — usually a cold-start (server was idle and is spinning back up). Wait 30 seconds and click Scan again. If it persists past 2 retries, paste the [AI Scanner] console line so we can fix the server.`);
             }
             if (!response.ok && response.status !== 404) {
               const errMsg = parsed.error || parsed.message || `Server error (${response.status})`;
