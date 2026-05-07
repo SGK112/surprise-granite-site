@@ -55,6 +55,16 @@
     .drop .subtitle{color:var(--text-muted);font-size:13px}
     .drop input[type=file]{display:none}
 
+    .url-row{margin-top:18px}
+    .url-divider{display:flex;align-items:center;gap:12px;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+    .url-divider::before,.url-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+    .url-input-row{display:flex;gap:8px}
+    .url-input-row input{flex:1;padding:11px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:13px;font-family:'Menlo',monospace}
+    .url-input-row input:focus{outline:none;border-color:var(--sg-blue)}
+    .url-hint{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+    .url-hint code{background:var(--sg-darker);padding:1px 6px;border-radius:4px;font-size:11px;color:var(--sg-gold)}
+    @media (max-width:520px){.url-input-row{flex-direction:column}.url-input-row input{width:100%}}
+
     .progress{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:14px}
     .progress .bar{height:100%;background:var(--gradient-blue);width:0;transition:width .25s}
     .progress-label{font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center}
@@ -141,6 +151,14 @@
         <div class="subtitle">PDF up to 50MB. Image fallback (JPG/PNG) coming soon.</div>
         <input type="file" id="fileInput" accept="application/pdf,.pdf">
       </label>
+      <div class="url-row">
+        <span class="url-divider"><span>or paste a Dropbox / Google Drive link</span></span>
+        <div class="url-input-row">
+          <input type="url" id="urlInput" placeholder="https://www.dropbox.com/scl/fi/...  or  https://drive.google.com/file/d/...">
+          <button class="btn btn-primary" id="btnLoadUrl" type="button">Load</button>
+        </div>
+        <div class="url-hint">Single-file shares only. Folder-preview links (<code>scl/fo/</code>) won't work — right-click the file in Dropbox and "Copy link" to get a direct file URL.</div>
+      </div>
       <div id="parseProgress" hidden>
         <div class="progress"><div class="bar" id="parseBar"></div></div>
         <div class="progress-label" id="parseLabel">Parsing…</div>
@@ -262,6 +280,96 @@
   fileInput.addEventListener('change', e => {
     if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
   });
+
+  // ---- URL paste / rewrite ----
+  // Returns { url, hint } where url is a direct-download URL (or null if input is unrecognized)
+  // and hint is a friendly message for when we can't rewrite cleanly.
+  function rewriteShareUrl(raw) {
+    let url;
+    try { url = new URL(raw.trim()); }
+    catch { return { url: null, hint: 'That doesn\'t look like a valid URL.' }; }
+
+    const host = url.hostname.toLowerCase();
+
+    // ---- Dropbox ----
+    if (/(^|\.)dropbox\.com$/.test(host) || host === 'dl.dropboxusercontent.com') {
+      // Folder-preview shares (scl/fo/) — Dropbox doesn't expose individual files
+      // through a direct URL on these without the API.
+      if (/\/scl\/fo\//.test(url.pathname)) {
+        return { url: null, hint:
+          'That\'s a Dropbox folder link, not a file. Open the PDF in Dropbox, ' +
+          'right-click it → "Copy link" — that gives a /scl/fi/ URL that works here.' };
+      }
+      // Single-file: /scl/fi/<id>/<filename>?rlkey=...&dl=0  (modern)
+      //              /s/<id>/<filename>?dl=0                 (older)
+      if (/\/scl\/fi\//.test(url.pathname) || /^\/s\//.test(url.pathname)) {
+        url.hostname = 'dl.dropboxusercontent.com';
+        url.searchParams.set('dl', '1');
+        return { url: url.toString(), hint: null };
+      }
+      return { url: null, hint: 'Unrecognized Dropbox URL shape — paste a /scl/fi/ or /s/ file link.' };
+    }
+
+    // ---- Google Drive ----
+    if (/(^|\.)drive\.google\.com$/.test(host) || /(^|\.)docs\.google\.com$/.test(host)) {
+      // Patterns:
+      //   drive.google.com/file/d/<id>/view
+      //   drive.google.com/open?id=<id>
+      //   drive.google.com/uc?id=<id>
+      let id = null;
+      const m = url.pathname.match(/\/file\/d\/([a-zA-Z0-9_-]{20,})/);
+      if (m) id = m[1];
+      else if (url.searchParams.get('id')) id = url.searchParams.get('id');
+      if (!id) return { url: null, hint: 'Couldn\'t find a file ID in that Google Drive URL — make sure the link is shareable and points to a single file.' };
+      return {
+        url: `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`,
+        hint: 'Google Drive blocks direct download for files >100MB — if loading fails, download locally and drop the PDF instead.',
+      };
+    }
+
+    // ---- Other URLs ----
+    // Allow any https URL ending in .pdf — covers permit-set CDNs etc.
+    if (url.protocol === 'https:' && /\.pdf(\?|$)/i.test(url.pathname + url.search)) {
+      return { url: url.toString(), hint: null };
+    }
+    return { url: null, hint: 'Only Dropbox, Google Drive, and direct .pdf URLs are supported right now.' };
+  }
+
+  $('btnLoadUrl').addEventListener('click', loadFromUrl);
+  $('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); loadFromUrl(); } });
+
+  async function loadFromUrl() {
+    const raw = $('urlInput').value;
+    if (!raw.trim()) return;
+    $('parseError').hidden = true;
+    $('parseProgress').hidden = false;
+    setParseProgress(0.05, 'Resolving share link…');
+
+    const { url, hint } = rewriteShareUrl(raw);
+    if (!url) { showParseError(hint || 'Could not understand that URL.'); return; }
+
+    try {
+      setParseProgress(0.15, 'Fetching PDF…');
+      const resp = await fetch(url, { redirect: 'follow', mode: 'cors' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const ctype = (resp.headers.get('content-type') || '').toLowerCase();
+      // Google Drive returns text/html for the virus-scan-warning page on big files
+      if (ctype.includes('text/html')) {
+        throw new Error('The host returned an HTML page instead of a PDF (likely a "this file is too large for virus scan" warning). Download the file locally and drop it instead.');
+      }
+      const blob = await resp.blob();
+      // Synthesize a File so the existing handleFile path Just Works
+      const fname = decodeURIComponent((new URL(url)).pathname.split('/').pop() || 'blueprint.pdf');
+      const file = new File([blob], fname, { type: 'application/pdf' });
+      await handleFile(file);
+    } catch (err) {
+      console.error('URL load error:', err);
+      const msg = /Failed to fetch|NetworkError/i.test(err.message)
+        ? 'Browser blocked the download (CORS). The file is shareable but the host won\'t let us read it directly. Download the PDF and drop it here, or paste a different share link.'
+        : err.message;
+      showParseError(msg + (hint ? ` — ${hint}` : ''));
+    }
+  }
 
   async function handleFile(file) {
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
