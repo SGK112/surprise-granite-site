@@ -17034,9 +17034,6 @@
     }
 
     // Check if element is stone/countertop
-    function isCountertopType(type) {
-      return isElementCategory(type, 'countertops') || type.startsWith('countertop');
-    }
 
     // ===== UTILITY FUNCTIONS =====
     // Centralized click-outside handler for dropdowns/modals
@@ -17079,25 +17076,7 @@
     }
 
     // Safe localStorage operations
-    function safeLocalStorageGet(key, fallback = null) {
-      try {
-        const value = localStorage.getItem(key);
-        return value ? safeJSONParse(value, fallback) : fallback;
-      } catch (e) {
-        debugLog('Storage', `Failed to get ${key}:`, e.message);
-        return fallback;
-      }
-    }
 
-    function safeLocalStorageSet(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-      } catch (e) {
-        debugLog('Storage', `Failed to set ${key}:`, e.message);
-        return false;
-      }
-    }
 
     // Debounce utility for performance
     function debounce(func, wait) {
@@ -17631,31 +17610,7 @@
     // ===== REALTIME SYNC TEST FUNCTIONS =====
     // Call these from browser console to test realtime functionality
 
-    window.testRealtimeStatus = function() {
-      console.log('=== REALTIME SYNC STATUS ===');
-      console.log('Design ID:', SHARE_STATE.designId);
-      console.log('Is Shared View:', SHARE_STATE.isSharedView);
-      console.log('Is Live Connected:', SHARE_STATE.isLiveConnected);
-      console.log('Realtime Channel:', SHARE_STATE.realtimeChannel ? 'Active' : 'Not subscribed');
-      console.log('Last Sync Time:', SHARE_STATE.lastSyncTime);
-      console.log('Supabase Client:', getSupabaseClient() ? 'Available' : 'Not available');
-      return SHARE_STATE;
-    };
 
-    window.testRealtimeUpdate = async function() {
-      if (!SHARE_STATE.designId) {
-        console.log('No design ID - save design to cloud first');
-        return;
-      }
-
-      console.log('=== TESTING REALTIME UPDATE ===');
-      console.log('Triggering cloud sync...');
-
-      // Force a sync to trigger realtime for any connected viewers
-      await syncDesignToCloud();
-
-      console.log('Sync triggered - check connected viewer for update');
-    };
 
     window.testRealtimeSubscribe = function(designId) {
       const id = designId || SHARE_STATE.designId;
@@ -17669,48 +17624,10 @@
       console.log('Check console for subscription status messages');
     };
 
-    window.simulateRealtimeUpdate = function() {
-      console.log('=== SIMULATING REALTIME UPDATE ===');
-      // Simulate what happens when a realtime update is received
-      handleRealtimeUpdate({
-        elements: elements.map(el => ({
-          ...el,
-          color: '#' + Math.floor(Math.random()*16777215).toString(16) // Random color
-        })),
-        room_width: roomWidth,
-        room_depth: roomDepth
-      });
-      console.log('Simulated update applied - elements should have random colors');
-    };
 
     // Test comment notification (for debugging)
-    window.testCommentNotification = function(message = 'This is a test comment from the customer!') {
-      console.log('=== TESTING COMMENT NOTIFICATION ===');
-      console.log('showCommentNotification exists:', typeof window.showCommentNotification);
-      const customerName = SHARE_STATE.customerName || 'Test Customer';
-      window.showCommentNotification(customerName, message);
-      console.log('Notification should appear. Click it to go to comments section.');
-    };
 
     // Debug notification status
-    window.debugNotifications = function() {
-      console.log('=== NOTIFICATION DEBUG ===');
-      console.log('Design ID:', SHARE_STATE.designId);
-      console.log('Lead ID:', SHARE_STATE.leadId);
-      console.log('Customer Name:', SHARE_STATE.customerName);
-      console.log('Is Shared View:', SHARE_STATE.isSharedView);
-      console.log('Comments Channel:', SHARE_STATE.commentsChannel ? 'Active' : 'Not subscribed');
-      console.log('Realtime Channel:', SHARE_STATE.realtimeChannel ? 'Active' : 'Not subscribed');
-      console.log('showCommentNotification:', typeof window.showCommentNotification);
-      return {
-        designId: SHARE_STATE.designId,
-        leadId: SHARE_STATE.leadId,
-        customerName: SHARE_STATE.customerName,
-        isSharedView: SHARE_STATE.isSharedView,
-        commentsSubscribed: !!SHARE_STATE.commentsChannel,
-        realtimeSubscribed: !!SHARE_STATE.realtimeChannel
-      };
-    };
 
     // Pricing access control - only paid subscribers see pricing
     const PRICING_ACCESS = {
@@ -17848,37 +17765,6 @@
     }
 
     // Generic coming soon modal for restricted features
-    function showComingSoonModal(featureName, description) {
-      const existing = document.getElementById('comingSoonModal');
-      if (existing) existing.remove();
-
-      const modal = document.createElement('div');
-      modal.id = 'comingSoonModal';
-      modal.className = 'cabinet-library-modal';
-      modal.innerHTML = `
-        <div class="cabinet-library-content" style="max-width: 450px;">
-          <div class="cabinet-library-header">
-            <h3>🚀 ${featureName}</h3>
-            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
-          </div>
-          <div class="cabinet-library-body" style="text-align: center; padding: 40px;">
-            <div style="font-size: 64px; margin-bottom: 20px;">🔮</div>
-            <h4 style="margin: 0 0 12px; color: var(--primary);">Coming Soon!</h4>
-            <p style="color: var(--text-muted); margin: 0; line-height: 1.6;">
-              ${description}
-            </p>
-            <div style="margin-top: 24px; padding: 16px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
-              <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
-                Want early access? Contact us at<br>
-                <a href="mailto:info@surprisegranite.com" style="color: var(--primary);">info@surprisegranite.com</a>
-              </p>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    }
 
     // ============================================
     // AI ROOM SCANNER - Universal Image to Quote
@@ -25716,34 +25602,6 @@
      * @param {function} onLoad - Callback with texture
      * @param {function} onError - Callback on error
      */
-    function loadTextureWithCors(url, onLoad, onError) {
-      // Apply proxy if needed
-      const finalUrl = getProxiedUrl(url);
-
-      // Check LRU cache first
-      const cached = getTextureFromCache(finalUrl);
-      if (cached) {
-        if (onLoad) onLoad(cached.clone());
-        return;
-      }
-
-      textureLoader.load(
-        finalUrl,
-        (texture) => {
-          // Cache the loaded texture
-          addTextureToCache(finalUrl, texture);
-          if (url !== finalUrl) {
-            addTextureToCache(url, texture);
-          }
-          if (onLoad) onLoad(texture);
-        },
-        undefined,
-        (err) => {
-          console.warn('Texture load failed:', url, err);
-          if (onError) onError(err);
-        }
-      );
-    }
 
     // Cabinet Catalogs from Manufacturers
     const CABINET_CATALOGS = {
@@ -26740,31 +26598,6 @@
     /**
      * Remove element from 3D cache and scene
      */
-    function removeElement3D(elementId) {
-      const cached = meshCache3D.get(elementId);
-      if (cached && cached.group) {
-        // Dispose geometry and materials
-        cached.group.traverse(obj => {
-          if (obj.geometry) obj.geometry.dispose();
-          if (obj.material) {
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach(m => {
-                if (m.map) m.map.dispose();
-                m.dispose();
-              });
-            } else {
-              if (obj.material.map) obj.material.map.dispose();
-              obj.material.dispose();
-            }
-          }
-        });
-        // Remove from scene
-        if (scene) scene.remove(cached.group);
-      }
-      meshCache3D.delete(elementId);
-      elementVersions.delete(elementId);
-      dirtyElements3D.delete(elementId);
-    }
 
     /**
      * Clear all 3D caches (for full cleanup)
@@ -27818,16 +27651,6 @@
     }
 
     // Check if there's saved work
-    function hasSavedWork() {
-      try {
-        const saved = localStorage.getItem(AUTOSAVE_KEY);
-        if (!saved) return false;
-        const data = JSON.parse(saved);
-        return data.elements && data.elements.length > 0;
-      } catch (e) {
-        return false;
-      }
-    }
 
     // ===== UNDO/REDO =====
     function saveUndoState() {
@@ -28092,11 +27915,6 @@
     }
 
     // Legacy compat
-    function filterMaterialsByBrand(brand) {
-      currentBrandFilter = brand;
-      renderMaterials(currentMaterialCategory);
-    }
-    function clearBrandFilter() { clearAllMaterialFilters(); }
 
     function renderMaterials(category = 'granite') {
       currentMaterialCategory = category;
@@ -36937,45 +36755,9 @@
     // Track hidden categories
     let hiddenCategories = {};
 
-    function toggleCategoryVisibility(category, visible) {
-      if (visible) {
-        delete hiddenCategories[category];
-      } else {
-        hiddenCategories[category] = true;
-      }
-      draw();
-      update3DScene();
-    }
 
-    function showAllCategories() {
-      hiddenCategories = {};
-      // Reset all checkboxes
-      document.querySelectorAll('.visibility-toggle input[type="checkbox"]').forEach(cb => {
-        cb.checked = true;
-      });
-      draw();
-      update3DScene();
-    }
 
-    function hideElement(el) {
-      if (el) {
-        el.hidden = true;
-        if (el === selectedElement) {
-          selectedElement = null;
-          updateProperties();
-        }
-        draw();
-        update3DScene();
-      }
-    }
 
-    function showElement(el) {
-      if (el) {
-        el.hidden = false;
-        draw();
-        update3DScene();
-      }
-    }
 
     // Cache for texture patterns (performance optimization)
     const texturePatternCache = new Map();
@@ -39587,16 +39369,6 @@
       }
     }
 
-    function resetLayering() {
-      if (selectedElement) {
-        selectedElement.zIndexOffset = 0;
-        // Note: Array position stays the same - only resets zIndex offset
-        saveUndoState();
-        draw();
-        update3DScene();
-        showSnapFeedback('Layering reset');
-      }
-    }
 
     // ===== ELEMENT LOCKING (Multi-element link mode) =====
 
@@ -40531,36 +40303,8 @@
     }
 
     // Toggle element type expansion
-    function toggleElementType(type) {
-      if (expandedElementType === type) {
-        // Collapse if already expanded
-        expandedElementType = null;
-      } else {
-        // Expand this type
-        expandedElementType = type;
-
-        // Auto-select first element of this type if nothing selected
-        const firstOfType = elements.find(el => el.type === type);
-        if (firstOfType && (!selectedElement || selectedElement.type !== type)) {
-          selectedElement = firstOfType;
-          updateProperties();
-          draw();
-        }
-      }
-      updateElementSelector();
-    }
 
     // Select element by index
-    function selectElementByIndex(idx) {
-      if (idx >= 0 && idx < elements.length) {
-        selectedElement = elements[idx];
-        expandedElementType = selectedElement.type;
-        updateProperties();
-        updateElementList();
-        updateElementSelector();
-        draw();
-      }
-    }
 
     // Select element and focus on it - called from element list
     function selectAndFocusElement(idx) {
@@ -40581,23 +40325,8 @@
     }
 
     // Handle selection from dropdown (legacy - keeping for compatibility)
-    function selectElementFromDropdown() {
-      // This function is now replaced by the type selector
-      // Keeping for backward compatibility
-      if (!selectedElement) return;
-      updateProperties();
-      updateElementList();
-      draw();
-    }
 
     // Focus/center view on selected element
-    function focusSelectedElement() {
-      if (!selectedElement) return;
-      const idx = elements.indexOf(selectedElement);
-      if (idx >= 0) {
-        centerOnElement(idx);
-      }
-    }
 
     // Duplicate selected element
     // NOTE: duplicateSelectedElement and deleteSelectedElement are defined earlier
@@ -40627,28 +40356,8 @@
     }
 
     // Move selected element up in layer order (higher z-index)
-    function moveLayerUp() {
-      if (selectedElement) {
-        selectedElement.zIndexOffset = (selectedElement.zIndexOffset || 0) + 10;
-        saveUndoState();
-        draw();
-        update3DScene();
-        updateElementList();
-        showSnapFeedback('Moved layer up');
-      }
-    }
 
     // Move selected element down in layer order (lower z-index)
-    function moveLayerDown() {
-      if (selectedElement) {
-        selectedElement.zIndexOffset = (selectedElement.zIndexOffset || 0) - 10;
-        saveUndoState();
-        draw();
-        update3DScene();
-        updateElementList();
-        showSnapFeedback('Moved layer down');
-      }
-    }
 
     // Delete with undo toast - allows quick undo without confirmation dialog
     let lastDeletedElement = null;
@@ -41800,9 +41509,6 @@
     }
 
     // Legacy function for compatibility
-    function handleLayoutClick(screenX, screenY) {
-      startLayoutDraw(screenX, screenY);
-    }
 
     function finalizeLayoutRun() {
       finishLayoutDraw();
@@ -42825,39 +42531,6 @@
     }
 
     // Generate cap/top for a single selected element (wall, cabinet, etc.)
-    function generateCapForSelected() {
-      if (!selectedElement) {
-        showSnapFeedback('Select an element first');
-        return;
-      }
-
-      const wallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall', 'wall', 'wall-block', 'wall-concrete', 'wall-brick'];
-      const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'sink-base-apron', 'corner-cabinet', 'lazy-susan', 'island'];
-
-      if (wallTypes.includes(selectedElement.type)) {
-        const created = generateWallCaps([selectedElement]);
-        if (created > 0) {
-          saveUndoState();
-          draw();
-          update3DScene();
-          showSnapFeedback('Wall cap added');
-        } else {
-          showSnapFeedback('Cap already exists on this wall');
-        }
-      } else if (cabinetTypes.includes(selectedElement.type)) {
-        // Generate countertop just for this cabinet
-        const counter = generateCountertopForRun([selectedElement]);
-        if (counter) {
-          elements.push(counter);
-          saveUndoState();
-          draw();
-          update3DScene();
-          showSnapFeedback('Countertop added');
-        }
-      } else {
-        showSnapFeedback('Select a wall or cabinet first');
-      }
-    }
 
     // Alignment menu for selected elements
     function showAlignMenu() {
@@ -43087,15 +42760,6 @@
       }
     }
 
-    function toggleMoreCategories(header) {
-      const container = document.getElementById('moreCategoriesContainer');
-      const toggle = header.querySelector('.sidebar-toggle');
-      if (container) {
-        const isHidden = container.style.display === 'none';
-        container.style.display = isHidden ? 'block' : 'none';
-        if (toggle) toggle.textContent = isHidden ? '▼' : '▶';
-      }
-    }
 
     // Element palette tab switching
     function showPaletteTab(tabName, btn) {
@@ -43225,16 +42889,6 @@
       });
     }
 
-    function togglePanelSectionOld(header) {
-      // Toggle collapsible panel sections in the right panel (legacy)
-      const section = header.parentElement;
-      const content = section.querySelector('.panel-content');
-      const toggle = header.querySelector('.panel-toggle');
-      if (content) {
-        content.classList.toggle('collapsed');
-        toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
-      }
-    }
 
     // ===== VIEW =====
     function setView(view) {
@@ -43289,9 +42943,6 @@
     }
 
     // Helper function to check if 3D mode is active
-    function get3DMode() {
-      return currentView === '3d';
-    }
 
     // Expose is3DMode as a getter
     Object.defineProperty(window, 'is3DMode', {
@@ -43877,47 +43528,6 @@
       };
 
       // Adjust post-processing quality
-      window.setPostProcessingQuality = function(quality) {
-        if (!window._postProcessing) return;
-
-        const { saoPass, bloomPass } = window._postProcessing;
-
-        switch (quality) {
-          case 'high':
-            if (saoPass) {
-              saoPass.params.saoIntensity = 0.003;
-              saoPass.params.saoKernelRadius = 50;
-              saoPass.params.saoBlurRadius = 16;
-            }
-            if (bloomPass) {
-              bloomPass.strength = 0.2;
-              bloomPass.threshold = 0.8;
-            }
-            break;
-          case 'medium':
-            if (saoPass) {
-              saoPass.params.saoIntensity = 0.002;
-              saoPass.params.saoKernelRadius = 30;
-              saoPass.params.saoBlurRadius = 12;
-            }
-            if (bloomPass) {
-              bloomPass.strength = 0.15;
-              bloomPass.threshold = 0.85;
-            }
-            break;
-          case 'low':
-            if (saoPass) {
-              saoPass.params.saoIntensity = 0.001;
-              saoPass.params.saoKernelRadius = 15;
-              saoPass.params.saoBlurRadius = 8;
-            }
-            if (bloomPass) {
-              bloomPass.strength = 0.1;
-              bloomPass.threshold = 0.9;
-            }
-            break;
-        }
-      };
 
       function requestPointerLock() {
         const threeContainer = document.getElementById('three-container');
@@ -44641,49 +44251,6 @@
 
     // Helper: Get the actual top surface height of an element (what sits ON TOP of it)
     // Walks the stacking chain: cabinet -> countertop -> sink, etc.
-    function getElementTopSurface(targetEl) {
-      if (!targetEl) return 0;
-      const type = targetEl.type || '';
-
-      // Pony walls
-      const ponyWallTypes = ['pony-wall', 'pony-wall-bar', 'knee-wall'];
-      if (ponyWallTypes.includes(type)) {
-        return targetEl.wallHeight || (type === 'knee-wall' ? 2.5 : 3.5);
-      }
-
-      // Base cabinets — use custom cabinetHeight or standard
-      const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet',
-                                'lazy-susan', 'blind-corner', 'filler', 'scribe'];
-      if (baseCabinetTypes.some(t => type === t || type.startsWith(t + '-'))) {
-        return targetEl.cabinetHeight || STD_BASE_CAB_HEIGHT;
-      }
-
-      // Island
-      if (type === 'island') {
-        return targetEl.cabinetHeight || 3; // 36" island height
-      }
-
-      // Tall cabinet
-      if (type === 'tall-cabinet' || type.startsWith('tall-cabinet-')) {
-        return targetEl.cabinetHeight || 7;
-      }
-
-      // Countertop — find what it sits on, add thickness
-      if (type === 'countertop' || type === 'countertop-l' || type === 'countertop-corner' || type === 'countertop-u') {
-        const supportHeight = findSupportSurfaceHeight(targetEl);
-        return supportHeight + (targetEl.thickness || STD_COUNTER_THICKNESS);
-      }
-
-      // Backsplash — sits on countertop surface + extends verticalHeight
-      if (type === 'backsplash') {
-        const ctSurface = findCounterSurfaceBelow(targetEl);
-        const bsH = targetEl.verticalHeight || STD_BACKSPLASH_HEIGHT;
-        return ctSurface + bsH;
-      }
-
-      // Default: use get3DHeight which returns the element's full height
-      return get3DHeight(targetEl);
-    }
 
     // Helper: Find the height of the surface supporting a countertop (cabinet/pony wall below it)
     function findSupportSurfaceHeight(countertopEl) {
@@ -45381,14 +44948,6 @@
     /**
      * Get cache statistics
      */
-    function getTextureCacheStats() {
-      return {
-        ...textureCacheStats,
-        size: textureCacheOrder.length,
-        maxSize: TEXTURE_CACHE_MAX_SIZE,
-        hitRate: textureCacheStats.hits / (textureCacheStats.hits + textureCacheStats.misses) || 0
-      };
-    }
 
     // ===== GEOMETRY POOLING FOR PERFORMANCE =====
     // Reuses geometries for elements with same dimensions
@@ -45426,33 +44985,10 @@
     /**
      * Get or create a PlaneGeometry from the pool
      */
-    function getPooledPlaneGeometry(width, height) {
-      const w = Math.round(width * 100) / 100;
-      const h = Math.round(height * 100) / 100;
-      const key = `plane_${w}_${h}`;
-
-      if (geometryPool.has(key)) {
-        geometryPoolStats.hits++;
-        return geometryPool.get(key);
-      }
-
-      const geometry = new THREE.PlaneGeometry(w, h);
-      geometryPool.set(key, geometry);
-      geometryPoolStats.misses++;
-      geometryPoolStats.poolSize = geometryPool.size;
-
-      return geometry;
-    }
 
     /**
      * Get geometry pool statistics
      */
-    function getGeometryPoolStats() {
-      return {
-        ...geometryPoolStats,
-        hitRate: geometryPoolStats.hits / (geometryPoolStats.hits + geometryPoolStats.misses) || 0
-      };
-    }
 
     /**
      * Clear geometry pool (call on cleanup)
@@ -45480,357 +45016,6 @@
     // Cache for 2D-rendered textures
     const texture2DCache = {};
 
-    function render2DElementToTexture(el, canvasWidth = 256, canvasHeight = 256) {
-      // Use cached texture if available
-      const cacheKey = `${el.id}_${el.type}_${canvasWidth}x${canvasHeight}`;
-      if (texture2DCache[cacheKey]) {
-        return texture2DCache[cacheKey];
-      }
-
-      // Create offscreen canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      const ctx = canvas.getContext('2d');
-
-      // Set up drawing context
-      ctx.fillStyle = el.color || '#808080';
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-
-      const x = 0;
-      const y = 0;
-      const w = canvasWidth;
-      const h = canvasHeight;
-      const padding = Math.min(w, h) * 0.08;
-
-      // Fill background
-      ctx.fillRect(x, y, w, h);
-
-      // Draw element-specific details based on type
-      switch (el.type) {
-        case 'sink':
-        case 'sink-double':
-        case 'sink-farmhouse': {
-          const isDouble = el.type === 'sink-double';
-          const isFarmhouse = el.type === 'sink-farmhouse';
-          const basinPadding = Math.min(w, h) * 0.12;
-
-          // Background - sink body color
-          ctx.fillStyle = isFarmhouse ? '#F5F5DC' : '#C0C0C0';
-          ctx.fillRect(x, y, w, h);
-
-          // Outer rim
-          ctx.strokeStyle = isFarmhouse ? 'rgba(200,180,140,0.9)' : 'rgba(180,180,180,0.9)';
-          ctx.lineWidth = isFarmhouse ? 6 : 3;
-          ctx.strokeRect(x + basinPadding/2, y + basinPadding/2, w - basinPadding, h - basinPadding);
-
-          if (isDouble) {
-            // Double basin
-            const basinW = (w - basinPadding * 2 - 8) / 2;
-            // Left basin
-            ctx.fillStyle = 'rgba(50,50,50,0.5)';
-            ctx.fillRect(x + basinPadding, y + basinPadding, basinW, h - basinPadding * 2);
-            // Right basin
-            ctx.fillRect(x + basinPadding + basinW + 8, y + basinPadding, basinW, h - basinPadding * 2);
-            // Divider
-            ctx.fillStyle = 'rgba(180,180,180,0.7)';
-            ctx.fillRect(x + w/2 - 4, y + basinPadding, 8, h - basinPadding * 2);
-            // Drains
-            ctx.fillStyle = 'rgba(40,40,40,0.8)';
-            ctx.beginPath();
-            ctx.arc(x + basinPadding + basinW/2, y + h/2, Math.min(w, h) * 0.06, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(x + w - basinPadding - basinW/2, y + h/2, Math.min(w, h) * 0.06, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            // Single basin
-            ctx.fillStyle = isFarmhouse ? 'rgba(245,245,220,0.6)' : 'rgba(50,50,50,0.5)';
-            ctx.fillRect(x + basinPadding, y + basinPadding, w - basinPadding * 2, h - basinPadding * 2);
-            // Inner basin shadow
-            ctx.fillStyle = isFarmhouse ? 'rgba(200,180,140,0.35)' : 'rgba(30,30,30,0.35)';
-            ctx.fillRect(x + basinPadding + 6, y + basinPadding + 6, w - basinPadding * 2 - 12, h - basinPadding * 2 - 12);
-            // Drain
-            ctx.fillStyle = 'rgba(40,40,40,0.8)';
-            ctx.beginPath();
-            ctx.arc(x + w/2, y + h/2 + 8, Math.min(w, h) * 0.07, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          // Faucet (centered at back)
-          ctx.fillStyle = 'rgba(210,210,210,0.95)';
-          ctx.fillRect(x + w/2 - 12, y + basinPadding/2 - 8, 24, 12);
-          // Faucet spout
-          ctx.beginPath();
-          ctx.arc(x + w/2, y + basinPadding/2 - 8, 12, Math.PI, 0);
-          ctx.fill();
-          // Handles
-          ctx.fillStyle = 'rgba(190,190,190,0.9)';
-          ctx.beginPath();
-          ctx.arc(x + w/2 - 30, y + basinPadding/2, 7, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(x + w/2 + 30, y + basinPadding/2, 7, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-        }
-
-        case 'grill-builtin':
-        case 'grill-42': {
-          // === BBQ GRILL - Stainless steel body with grill grates ===
-          // Stainless steel body
-          const grillGrad = ctx.createLinearGradient(x, y, x, y + h);
-          grillGrad.addColorStop(0, '#B0B0B0');
-          grillGrad.addColorStop(0.5, '#C8C8C8');
-          grillGrad.addColorStop(1, '#A0A0A0');
-          ctx.fillStyle = grillGrad;
-          ctx.fillRect(x, y, w, h);
-          ctx.strokeStyle = 'rgba(120,120,120,0.6)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(x, y, w, h);
-
-          // Cooking area (dark recessed grill area)
-          const grillPad = Math.max(4, w * 0.06);
-          const apronH = Math.max(8, h * 0.18);
-          const cookX = x + grillPad;
-          const cookY = y + grillPad;
-          const cookW = w - grillPad * 2;
-          const cookH = h - grillPad - apronH;
-          ctx.fillStyle = '#1a1a1a';
-          ctx.fillRect(cookX, cookY, cookW, cookH);
-
-          // Horizontal grill grate lines
-          ctx.strokeStyle = '#555';
-          ctx.lineWidth = 2;
-          const grateCount = Math.max(4, Math.floor(cookH / 6));
-          for (let i = 1; i < grateCount; i++) {
-            const gy = cookY + (cookH * i / grateCount);
-            ctx.beginPath();
-            ctx.moveTo(cookX + 2, gy);
-            ctx.lineTo(cookX + cookW - 2, gy);
-            ctx.stroke();
-          }
-
-          // Cross grate supports (2 vertical bars)
-          ctx.strokeStyle = '#666';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.moveTo(cookX + cookW * 0.33, cookY + 2);
-          ctx.lineTo(cookX + cookW * 0.33, cookY + cookH - 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(cookX + cookW * 0.67, cookY + 2);
-          ctx.lineTo(cookX + cookW * 0.67, cookY + cookH - 2);
-          ctx.stroke();
-
-          // Front apron panel (stainless with knobs)
-          const apronY = y + h - apronH;
-          const apronGrad = ctx.createLinearGradient(x, apronY, x, apronY + apronH);
-          apronGrad.addColorStop(0, '#999');
-          apronGrad.addColorStop(0.3, '#C0C0C0');
-          apronGrad.addColorStop(1, '#888');
-          ctx.fillStyle = apronGrad;
-          ctx.fillRect(x + 1, apronY, w - 2, apronH);
-          ctx.strokeStyle = 'rgba(100,100,100,0.5)';
-          ctx.strokeRect(x + 1, apronY, w - 2, apronH);
-
-          // Control knobs on apron
-          const knobCount2 = el.type === 'grill-42' ? 5 : 4;
-          const knobSpacing2 = w / (knobCount2 + 1);
-          ctx.fillStyle = '#E0E0E0';
-          ctx.strokeStyle = '#888';
-          ctx.lineWidth = 1;
-          for (let i = 1; i <= knobCount2; i++) {
-            const kx = x + i * knobSpacing2;
-            const ky = apronY + apronH / 2;
-            ctx.beginPath();
-            ctx.arc(kx, ky, 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            // Knob indicator line
-            ctx.beginPath();
-            ctx.moveTo(kx, ky - 3);
-            ctx.lineTo(kx, ky - 5);
-            ctx.stroke();
-          }
-
-          // Lid handle (rear edge)
-          ctx.fillStyle = '#888';
-          ctx.fillRect(x + w * 0.3, y + 1, w * 0.4, 3);
-          break;
-        }
-
-        case 'stove':
-        case 'range':
-        case 'cooktop':
-        case 'side-burner':
-        case 'power-burner': {
-          // Background - stove surface
-          ctx.fillStyle = '#2a2a2a';
-          ctx.fillRect(x, y, w, h);
-
-          // Draw stove burners
-          ctx.strokeStyle = 'rgba(60,60,60,0.9)';
-          ctx.lineWidth = 3;
-          const burnerRadius = Math.min(w, h) * 0.16;
-          const positions = [
-            [x + w * 0.3, y + h * 0.38],
-            [x + w * 0.7, y + h * 0.38],
-            [x + w * 0.3, y + h * 0.72],
-            [x + w * 0.7, y + h * 0.72]
-          ];
-          positions.forEach(([bx, by]) => {
-            // Outer ring
-            ctx.beginPath();
-            ctx.arc(bx, by, burnerRadius, 0, Math.PI * 2);
-            ctx.stroke();
-            // Inner ring
-            ctx.beginPath();
-            ctx.arc(bx, by, burnerRadius * 0.6, 0, Math.PI * 2);
-            ctx.stroke();
-            // Grate lines
-            ctx.beginPath();
-            ctx.moveTo(bx - burnerRadius, by);
-            ctx.lineTo(bx + burnerRadius, by);
-            ctx.moveTo(bx, by - burnerRadius);
-            ctx.lineTo(bx, by + burnerRadius);
-            ctx.stroke();
-          });
-          // Control panel area
-          ctx.fillStyle = 'rgba(50,50,50,0.7)';
-          ctx.fillRect(x + padding, y + padding, w - padding * 2, h * 0.12);
-          break;
-        }
-
-        case 'refrigerator': {
-          // Background
-          ctx.fillStyle = '#D0D0D0';
-          ctx.fillRect(x, y, w, h);
-
-          ctx.strokeStyle = 'rgba(150,150,150,0.6)';
-          ctx.lineWidth = 3;
-          const fridgeMid = y + h * 0.65;
-          // Upper section (freezer)
-          ctx.strokeRect(x + padding, y + padding, w - padding * 2, fridgeMid - y - padding * 1.5);
-          // Lower section (fridge)
-          ctx.strokeRect(x + padding, fridgeMid, w - padding * 2, y + h - fridgeMid - padding);
-          // Handles
-          ctx.fillStyle = 'rgba(200,200,200,0.7)';
-          ctx.fillRect(x + w - padding - 8, y + (fridgeMid - y) / 2 - 15, 4, 30);
-          ctx.fillRect(x + w - padding - 8, fridgeMid + (y + h - fridgeMid) / 2 - 18, 4, 36);
-          break;
-        }
-
-        case 'wine-cooler':
-        case 'beverage-center': {
-          // Dark body with glass door look
-          ctx.fillStyle = '#2a2a2a';
-          ctx.fillRect(x, y, w, h);
-
-          // Glass door (tinted)
-          ctx.fillStyle = el.type === 'wine-cooler' ? 'rgba(40,30,50,0.7)' : 'rgba(30,50,50,0.7)';
-          ctx.fillRect(x + padding, y + padding, w - padding * 2, h - padding * 2);
-
-          // Shelves
-          ctx.strokeStyle = 'rgba(80,80,80,0.6)';
-          ctx.lineWidth = 1;
-          const shelfRows = 4;
-          for (let s = 1; s < shelfRows; s++) {
-            const shelfY = y + padding + s * ((h - padding * 2) / shelfRows);
-            ctx.beginPath();
-            ctx.moveTo(x + padding + 4, shelfY);
-            ctx.lineTo(x + w - padding - 4, shelfY);
-            ctx.stroke();
-          }
-
-          // Bottles/cans
-          if (el.type === 'wine-cooler') {
-            ctx.fillStyle = 'rgba(100,40,40,0.6)';
-            for (let r = 0; r < 3; r++) {
-              const bottleY = y + padding + 8 + r * ((h - padding * 2) / shelfRows);
-              for (let b = 0; b < 3; b++) {
-                ctx.beginPath();
-                ctx.ellipse(x + w/2 - 15 + b * 15, bottleY + 8, 5, 10, 0, 0, Math.PI * 2);
-                ctx.fill();
-              }
-            }
-          } else {
-            const canColors = ['rgba(255,100,50,0.6)', 'rgba(65,105,225,0.6)', 'rgba(34,139,34,0.6)'];
-            for (let r = 0; r < 3; r++) {
-              const canY = y + padding + 6 + r * ((h - padding * 2) / shelfRows);
-              for (let c = 0; c < 4; c++) {
-                ctx.fillStyle = canColors[(r + c) % canColors.length];
-                ctx.fillRect(x + padding + 6 + c * 12, canY, 8, 14);
-              }
-            }
-          }
-
-          // Handle
-          ctx.fillStyle = 'rgba(180,180,180,0.7)';
-          ctx.fillRect(x + w - padding - 6, y + h/2 - 15, 3, 30);
-          break;
-        }
-
-        case 'outdoor-fridge':
-        case 'kegerator':
-        case 'outdoor-ice-maker': {
-          // Stainless body
-          ctx.fillStyle = '#A8A8A8';
-          ctx.fillRect(x, y, w, h);
-
-          ctx.strokeStyle = 'rgba(100,100,100,0.6)';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x + padding, y + padding, w - padding * 2, h - padding * 2);
-
-          // Handle
-          ctx.fillStyle = 'rgba(180,180,180,0.8)';
-          ctx.fillRect(x + w * 0.2, y + h * 0.25, w * 0.6, 5);
-
-          // Type indicator
-          ctx.fillStyle = '#4169E1';
-          ctx.font = '10px Inter, sans-serif';
-          ctx.textAlign = 'center';
-          if (el.type === 'kegerator') {
-            ctx.fillText('🍺', x + w/2, y + h/2 + 4);
-          } else if (el.type === 'outdoor-ice-maker') {
-            ctx.fillText('❄', x + w/2, y + h/2 + 4);
-          } else {
-            ctx.fillText('❄', x + w/2, y + h * 0.7);
-          }
-          break;
-        }
-
-        case 'dishwasher': {
-          ctx.fillStyle = '#E0E0E0';
-          ctx.fillRect(x, y, w, h);
-          ctx.strokeStyle = 'rgba(150,150,150,0.6)';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x + padding, y + padding, w - padding * 2, h - padding * 2);
-          // Handle
-          ctx.fillStyle = 'rgba(180,180,180,0.8)';
-          ctx.fillRect(x + w * 0.2, y + padding + 5, w * 0.6, 6);
-          break;
-        }
-
-        default:
-          // Default: just fill with color
-          ctx.fillStyle = el.color || '#808080';
-          ctx.fillRect(x, y, w, h);
-      }
-
-      // Create Three.js texture from canvas
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.encoding = THREE.sRGBEncoding;
-      texture.needsUpdate = true;
-
-      // Cache the texture
-      texture2DCache[cacheKey] = texture;
-
-      return texture;
-    }
 
     /**
      * Create a 3D element using 2D texture rendering (simpler, cleaner look)
@@ -45840,63 +45025,6 @@
      * @param {number} d - Depth in feet
      * @returns {THREE.Group} The 3D group containing the element
      */
-    function create3DElementWith2DTexture(el, w, h, d) {
-      const group = new THREE.Group();
-
-      // Render 2D appearance to texture (higher res for quality)
-      const textureSize = 512;
-      const texture = render2DElementToTexture(el, textureSize, textureSize);
-
-      // Get base color for sides
-      let sideColor = 0x808080;
-      const typeColors = {
-        'sink': 0xC0C0C0,
-        'sink-double': 0xC0C0C0,
-        'sink-farmhouse': 0xF5F5DC,
-        'stove': 0x2a2a2a,
-        'range': 0x2a2a2a,
-        'cooktop': 0x2a2a2a,
-        'refrigerator': 0xD0D0D0,
-        'dishwasher': 0xE0E0E0
-      };
-      sideColor = typeColors[el.type] || sideColor;
-
-      // Create material with the 2D texture for top face
-      const topMaterial = new THREE.MeshStandardMaterial({
-        map: texture,
-        roughness: 0.5,
-        metalness: 0.15
-      });
-
-      // Create material for sides (solid color matching the element type)
-      const sideMaterial = new THREE.MeshStandardMaterial({
-        color: sideColor,
-        roughness: 0.6,
-        metalness: 0.1
-      });
-
-      // Materials array: [right, left, top, bottom, front, back]
-      // For a countertop-level element, the TOP (index 2) shows the 2D texture
-      const materials = [
-        sideMaterial,  // right (+X)
-        sideMaterial,  // left (-X)
-        topMaterial,   // top (+Y) - this shows the 2D appearance
-        sideMaterial,  // bottom (-Y)
-        sideMaterial,  // front (+Z)
-        sideMaterial   // back (-Z)
-      ];
-
-      // Create the main box geometry
-      const boxGeo = new THREE.BoxGeometry(w, h, d);
-
-      // Create mesh with multi-material
-      const mesh = new THREE.Mesh(boxGeo, materials);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-
-      return group;
-    }
 
     // Preload textures for elements that have them
     function preload3DTextures() {
@@ -45987,51 +45115,6 @@
       }
 
       // Helper to create realistic edge profile geometry for countertops
-      function createEdgeProfile(width, thickness, profile = 'eased') {
-        const profiles = {
-          'eased': { bevel: 0.02, rounded: true },
-          'bullnose': { bevel: thickness / 2, rounded: true },
-          'half-bullnose': { bevel: thickness / 3, rounded: true },
-          'ogee': { bevel: 0.04, curved: true },
-          'bevel': { bevel: 0.03, angled: true },
-          'dupont': { bevel: 0.025, curved: true },
-          'waterfall': { bevel: 0, rounded: false }, // Perfect 90° corner - NO bevel for waterfall
-          'square': { bevel: 0, rounded: false }
-        };
-
-        const p = profiles[profile] || profiles['eased'];
-        const shape = new THREE.Shape();
-
-        // Create edge profile shape
-        if (p.rounded && p.bevel > 0) {
-          // Rounded edge (bullnose, eased)
-          shape.moveTo(0, 0);
-          shape.lineTo(width, 0);
-          shape.lineTo(width, thickness - p.bevel);
-          shape.quadraticCurveTo(width, thickness, width - p.bevel, thickness);
-          shape.lineTo(p.bevel, thickness);
-          shape.quadraticCurveTo(0, thickness, 0, thickness - p.bevel);
-          shape.lineTo(0, 0);
-        } else if (p.angled && p.bevel > 0) {
-          // Beveled edge (chamfer)
-          shape.moveTo(0, p.bevel);
-          shape.lineTo(p.bevel, 0);
-          shape.lineTo(width - p.bevel, 0);
-          shape.lineTo(width, p.bevel);
-          shape.lineTo(width, thickness);
-          shape.lineTo(0, thickness);
-          shape.lineTo(0, p.bevel);
-        } else {
-          // Square edge
-          shape.moveTo(0, 0);
-          shape.lineTo(width, 0);
-          shape.lineTo(width, thickness);
-          shape.lineTo(0, thickness);
-          shape.lineTo(0, 0);
-        }
-
-        return shape;
-      }
 
       // Load and apply texture to countertop material with enhanced quality settings
       function loadCountertopTexture(material, textureUrl, options, hdMode = false) {
@@ -62820,37 +61903,6 @@
     }
 
     // Show dimension labels for selected element in 3D
-    function show3DDimensions(element) {
-      clear3DDimensions();
-      if (!element || !scene) return;
-
-      const w = element.width;
-      const h = element.height || element.depth;
-      const d = element.depth || 0.5;
-      const x = element.x + w / 2;
-      const z = element.y + h / 2;
-      const height3D = get3DHeight(element);
-
-      // Width label (front edge)
-      const widthLabel = createTextSprite(formatDimension(w), { bgColor: 'rgba(99, 102, 241, 0.9)' });
-      widthLabel.position.set(x, height3D - 0.3, z + h / 2 + 0.5);
-      scene.add(widthLabel);
-      dimensionSprites.push(widthLabel);
-
-      // Depth label (side edge)
-      const depthLabel = createTextSprite(formatDimension(h), { bgColor: 'rgba(16, 185, 129, 0.9)' });
-      depthLabel.position.set(x + w / 2 + 0.5, height3D - 0.3, z);
-      scene.add(depthLabel);
-      dimensionSprites.push(depthLabel);
-
-      // Height label (vertical)
-      if (height3D > 0.5) {
-        const heightLabel = createTextSprite(formatDimension(get3DHeight(element) * 2), { bgColor: 'rgba(245, 158, 11, 0.9)' });
-        heightLabel.position.set(x - w / 2 - 0.5, height3D / 2, z - h / 2 - 0.3);
-        scene.add(heightLabel);
-        dimensionSprites.push(heightLabel);
-      }
-    }
 
     // Clear dimension labels
     function clear3DDimensions() {
@@ -63343,10 +62395,6 @@
     }
 
     // Toggle interactive mode
-    window.toggleInteractiveMode = function() {
-      interactiveModeEnabled = !interactiveModeEnabled;
-      showToast(interactiveModeEnabled ? 'Interactive mode ON - Double-click doors/drawers to open' : 'Interactive mode OFF', 'info');
-    };
 
     // Initialize cabinet interaction when 3D view is set up
     setTimeout(setupCabinetInteraction, 1000);
@@ -65225,9 +64273,6 @@
       });
     }
 
-    function getElementsForCurrentFloor() {
-      return elements.filter(el => !el.floorLevel || el.floorLevel === cabinetSettings.currentFloor);
-    }
 
     // ===== FLOATING TOOLBAR =====
     function updateFloatingToolbar() {
@@ -67754,552 +66799,6 @@
     }
 
     // Legacy inline slab layout code — deprecated, kept as no-op for backward compat
-    function _legacySlabLayoutModal_DEPRECATED() {
-      const plan = generateFabricationPlan();
-      const hasDesignPieces = plan && plan.cutList && plan.cutList.length > 0;
-
-      const slabSizes = FABRICATION_STANDARDS.slabSizes;
-      let currentSlabSize = slabSizes.standard;
-      let pieceCounter = 0;
-
-      let pieces = hasDesignPieces ? plan.cutList.map((p, i) => ({
-        ...p,
-        id: `piece-${pieceCounter++}`,
-        x: 10 + (i % 3) * 35,
-        y: 10 + Math.floor(i / 3) * 25,
-        rotation: 0,
-        slabNumber: null
-      })) : [];
-
-      const modal = document.createElement('div');
-      modal.className = 'fabrication-plan-modal';
-      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-      modal.innerHTML = `
-        <div style="background: var(--dark-surface, #1a1a2e); border-radius: 12px; width: 95vw; max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1);">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <div style="display: flex; align-items: center; gap: 20px;">
-              <h3 style="margin: 0; font-size: 18px; color: #fff;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                  <rect x="2" y="2" width="20" height="20" rx="1"/>
-                  <rect x="4" y="4" width="7" height="5" rx="0.5" fill="currentColor" opacity="0.3"/>
-                  <rect x="13" y="4" width="7" height="8" rx="0.5" fill="currentColor" opacity="0.3"/>
-                  <rect x="4" y="11" width="7" height="9" rx="0.5" fill="currentColor" opacity="0.3"/>
-                </svg>
-                Slab Layout Tool
-              </h3>
-              <select id="slabSizeSelect" style="padding: 6px 12px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 13px;">
-                <option value="standard">${slabSizes.standard.name} (${slabSizes.standard.width}"×${slabSizes.standard.depth}")</option>
-                <option value="jumbo">${slabSizes.jumbo.name} (${slabSizes.jumbo.width}"×${slabSizes.jumbo.depth}")</option>
-                <option value="compact">${slabSizes.compact.name} (${slabSizes.compact.width}"×${slabSizes.compact.depth}")</option>
-              </select>
-              <span id="slabUtilization" style="font-size: 12px; color: rgba(255,255,255,0.6); padding: 4px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">Utilization: 0%</span>
-            </div>
-            <button onclick="this.closest('.fabrication-plan-modal').remove()" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 20px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">×</button>
-          </div>
-
-          <div style="display: flex; flex: 1; overflow: hidden;">
-            <!-- Slab Canvas -->
-            <div style="flex: 1; padding: 20px; overflow: auto; background: rgba(0,0,0,0.2);">
-              <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div id="slabContainer" style="position: relative; background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%); border: 3px solid rgba(255,255,255,0.3); border-radius: 4px; box-shadow: inset 0 0 30px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.3); margin: 30px;">
-                  <!-- Slab pieces will be rendered here -->
-                </div>
-                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                  <button onclick="slabAutoArrange()" style="padding: 8px 16px; border-radius: 6px; background: rgba(34,197,94,0.3); border: 1px solid rgba(34,197,94,0.5); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(34,197,94,0.5)'" onmouseout="this.style.background='rgba(34,197,94,0.3)'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                    Auto-Arrange
-                  </button>
-                  <button onclick="slabOptimize()" style="padding: 8px 16px; border-radius: 6px; background: rgba(99,102,241,0.3); border: 1px solid rgba(99,102,241,0.5); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.5)'" onmouseout="this.style.background='rgba(99,102,241,0.3)'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                    Optimize
-                  </button>
-                  <button onclick="slabReset()" style="padding: 8px 16px; border-radius: 6px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.3); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                    Reset
-                  </button>
-                  <button onclick="slabClearAll()" style="padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-                    Clear All
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Piece Library Panel -->
-            <div style="width: 320px; border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
-              <!-- Add Piece Form -->
-              <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
-                <h4 style="margin: 0 0 12px; font-size: 14px; color: rgba(255,255,255,0.9); display: flex; align-items: center; gap: 8px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-                  Add New Piece
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                  <div>
-                    <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Width (inches)</label>
-                    <input type="number" id="newPieceWidth" value="36" min="1" max="200" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;">
-                  </div>
-                  <div>
-                    <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Depth (inches)</label>
-                    <input type="number" id="newPieceDepth" value="26" min="1" max="200" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;">
-                  </div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Label (optional)</label>
-                  <input type="text" id="newPieceLabel" placeholder="e.g., Kitchen Island" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 13px; box-sizing: border-box;">
-                </div>
-                <div style="display: flex; gap: 8px;">
-                  <button onclick="slabAddPiece()" style="flex: 1; padding: 10px; border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-weight: 500; cursor: pointer; font-size: 13px; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-                    + Add Piece
-                  </button>
-                  <button onclick="slabImportFromDesign()" style="padding: 10px 14px; border-radius: 6px; background: rgba(245,158,11,0.3); border: 1px solid rgba(245,158,11,0.5); color: #fff; cursor: pointer; font-size: 13px;" title="Import countertops from room design">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Piece List -->
-              <div style="flex: 1; overflow-y: auto; padding: 16px;">
-                <h4 style="margin: 0 0 12px; font-size: 14px; color: rgba(255,255,255,0.8); display: flex; justify-content: space-between; align-items: center;">
-                  Cut Pieces
-                  <span id="pieceCount" style="font-size: 12px; color: rgba(255,255,255,0.5); font-weight: normal;">0 pieces</span>
-                </h4>
-                <div id="pieceLibrary" style="display: flex; flex-direction: column; gap: 8px;">
-                  <!-- Pieces will be rendered here -->
-                </div>
-                <div id="emptyPieceMessage" style="text-align: center; padding: 30px 20px; color: rgba(255,255,255,0.4); font-size: 13px; ${pieces.length > 0 ? 'display: none;' : ''}">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom: 12px; opacity: 0.5;"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
-                  <div>No pieces yet</div>
-                  <div style="font-size: 11px; margin-top: 4px;">Add pieces manually or import from your design</div>
-                </div>
-              </div>
-
-              <!-- Stats -->
-              <div style="padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
-                <div id="layoutStats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px;">
-                  <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; text-align: center;">
-                    <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Total Sq Ft</div>
-                    <div id="totalSqFt" style="color: #fff; font-size: 18px; font-weight: 600;">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; text-align: center;">
-                    <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Waste</div>
-                    <div id="wastePercent" style="color: #fff; font-size: 18px; font-weight: 600;">0%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; gap: 16px; align-items: center;">
-              <span style="font-size: 11px; color: rgba(255,255,255,0.5);">
-                <strong>Drag</strong> pieces to position • <strong>Double-click</strong> to rotate • <strong>Right-click</strong> to delete
-              </span>
-            </div>
-            <div style="display: flex; gap: 10px;">
-              <button onclick="slabExportPDF()" style="padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 13px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Export
-              </button>
-              <button onclick="slabSaveLayout()" style="padding: 8px 20px; border-radius: 6px; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; color: #fff; font-weight: 500; cursor: pointer; font-size: 13px;">
-                Save Layout
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      // Initialize the slab canvas
-      const slabContainer = modal.querySelector('#slabContainer');
-      const slabSelect = modal.querySelector('#slabSizeSelect');
-      let scale = 5; // pixels per inch
-
-      function renderPieceLibrary() {
-        const library = modal.querySelector('#pieceLibrary');
-        const emptyMsg = modal.querySelector('#emptyPieceMessage');
-        const countEl = modal.querySelector('#pieceCount');
-
-        countEl.textContent = pieces.length + ' piece' + (pieces.length !== 1 ? 's' : '');
-        emptyMsg.style.display = pieces.length === 0 ? 'block' : 'none';
-
-        library.innerHTML = pieces.map(p => `
-          <div class="layout-piece-card" data-piece-id="${p.id}" draggable="true" style="padding: 10px; background: ${p.slabNumber ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)'}; border: 1px solid ${p.slabNumber ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}; border-radius: 6px; cursor: move; transition: all 0.2s;">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-              <div>
-                <div style="font-weight: 500; font-size: 13px; color: #fff;">${p.label || p.countertopLabel || 'Piece'} #${p.pieceNumber || pieces.indexOf(p) + 1}</div>
-                <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px;">${p.width.toFixed(1)}" × ${p.depth.toFixed(1)}"</div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px;">${((p.width * p.depth) / 144).toFixed(2)} sq ft</div>
-              </div>
-              <button onclick="slabRemovePiece('${p.id}')" style="width: 24px; height: 24px; border-radius: 4px; background: rgba(239,68,68,0.2); border: none; color: #ef4444; cursor: pointer; font-size: 14px;" title="Remove piece">×</button>
-            </div>
-            ${p.slabNumber ? '<div style="font-size: 10px; color: #22c55e; margin-top: 6px;">✓ Placed on slab</div>' : '<div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 6px;">Drag to slab →</div>'}
-          </div>
-        `).join('');
-
-        // Re-attach drag handlers
-        library.querySelectorAll('.layout-piece-card').forEach(card => {
-          card.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', card.dataset.pieceId);
-            card.style.opacity = '0.5';
-          });
-          card.addEventListener('dragend', () => {
-            card.style.opacity = '1';
-          });
-        });
-
-        updateStats();
-      }
-
-      function renderSlab() {
-        const size = slabSizes[slabSelect.value];
-        currentSlabSize = size;
-        const containerWidth = size.width * scale;
-        const containerHeight = size.depth * scale;
-
-        slabContainer.style.width = containerWidth + 'px';
-        slabContainer.style.height = containerHeight + 'px';
-        slabContainer.innerHTML = '';
-
-        // Draw grid
-        const gridSize = 12 * scale; // 12" grid
-        for (let x = gridSize; x < containerWidth; x += gridSize) {
-          const line = document.createElement('div');
-          line.style.cssText = `position: absolute; width: 1px; height: 100%; background: rgba(255,255,255,${x % (24 * scale) === 0 ? '0.1' : '0.05'}); pointer-events: none;`;
-          line.style.left = x + 'px';
-          slabContainer.appendChild(line);
-        }
-        for (let y = gridSize; y < containerHeight; y += gridSize) {
-          const line = document.createElement('div');
-          line.style.cssText = `position: absolute; width: 100%; height: 1px; background: rgba(255,255,255,${y % (24 * scale) === 0 ? '0.1' : '0.05'}); pointer-events: none;`;
-          line.style.top = y + 'px';
-          slabContainer.appendChild(line);
-        }
-
-        // Render dimension labels
-        const widthLabel = document.createElement('div');
-        widthLabel.style.cssText = 'position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;';
-        widthLabel.textContent = size.width + '"';
-        slabContainer.appendChild(widthLabel);
-
-        const heightLabel = document.createElement('div');
-        heightLabel.style.cssText = 'position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;';
-        heightLabel.textContent = size.depth + '"';
-        slabContainer.appendChild(heightLabel);
-
-        // Render placed pieces
-        pieces.filter(p => p.slabNumber === 1).forEach(piece => {
-          const pieceEl = createPieceElement(piece);
-          slabContainer.appendChild(pieceEl);
-        });
-
-        updateStats();
-      }
-
-      function createPieceElement(piece) {
-        const el = document.createElement('div');
-        const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
-        const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
-
-        el.dataset.pieceId = piece.id;
-        el.style.cssText = `
-          position: absolute;
-          left: ${piece.x}px;
-          top: ${piece.y}px;
-          width: ${w * scale}px;
-          height: ${h * scale}px;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.7), rgba(139, 92, 246, 0.7));
-          border: 2px solid #6366f1;
-          border-radius: 3px;
-          cursor: move;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          color: #fff;
-          user-select: none;
-          transition: box-shadow 0.2s, border-color 0.2s;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        `;
-        el.innerHTML = `<span style="text-shadow: 0 1px 3px rgba(0,0,0,0.7); text-align: center; line-height: 1.3;">${piece.label || 'Piece'}<br><strong>${w.toFixed(0)}×${h.toFixed(0)}</strong></span>`;
-
-        // Drag functionality
-        let isDragging = false;
-        let startX, startY, startPieceX, startPieceY;
-
-        el.addEventListener('mousedown', (e) => {
-          if (e.button === 2) return; // Right click
-          isDragging = true;
-          startX = e.clientX;
-          startY = e.clientY;
-          startPieceX = piece.x;
-          startPieceY = piece.y;
-          el.style.zIndex = '100';
-          el.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
-          el.style.transform = 'scale(1.02)';
-        });
-
-        const moveHandler = (e) => {
-          if (!isDragging) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          piece.x = Math.max(0, Math.min(startPieceX + dx, currentSlabSize.width * scale - w * scale));
-          piece.y = Math.max(0, Math.min(startPieceY + dy, currentSlabSize.depth * scale - h * scale));
-          el.style.left = piece.x + 'px';
-          el.style.top = piece.y + 'px';
-          checkOverlap(el, piece);
-        };
-
-        const upHandler = () => {
-          if (isDragging) {
-            isDragging = false;
-            el.style.zIndex = '';
-            el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-            el.style.transform = '';
-            updateStats();
-            document.removeEventListener('mousemove', moveHandler);
-            document.removeEventListener('mouseup', upHandler);
-          }
-        };
-
-        el.addEventListener('mousedown', () => {
-          document.addEventListener('mousemove', moveHandler);
-          document.addEventListener('mouseup', upHandler);
-        });
-
-        // Double-click to rotate
-        el.addEventListener('dblclick', () => {
-          piece.rotation = (piece.rotation + 90) % 360;
-          renderSlab();
-          renderPieceLibrary();
-        });
-
-        // Right-click to remove from slab
-        el.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          piece.slabNumber = null;
-          piece.x = 10;
-          piece.y = 10;
-          renderSlab();
-          renderPieceLibrary();
-        });
-
-        return el;
-      }
-
-      function checkOverlap(el, piece) {
-        const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
-        const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
-        const rect1 = { x: piece.x, y: piece.y, w: w * scale, h: h * scale };
-
-        let hasOverlap = false;
-        pieces.filter(p => p.slabNumber === 1 && p.id !== piece.id).forEach(other => {
-          const ow = other.rotation % 180 === 0 ? other.width : other.depth;
-          const oh = other.rotation % 180 === 0 ? other.depth : other.width;
-          const rect2 = { x: other.x, y: other.y, w: ow * scale, h: oh * scale };
-
-          if (rect1.x < rect2.x + rect2.w && rect1.x + rect1.w > rect2.x &&
-              rect1.y < rect2.y + rect2.h && rect1.y + rect1.h > rect2.y) {
-            hasOverlap = true;
-          }
-        });
-
-        el.style.background = hasOverlap
-          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.7), rgba(220, 38, 38, 0.7))'
-          : 'linear-gradient(135deg, rgba(34, 197, 94, 0.7), rgba(22, 163, 74, 0.7))';
-        el.style.borderColor = hasOverlap ? '#ef4444' : '#22c55e';
-      }
-
-      function updateStats() {
-        const slabArea = currentSlabSize.width * currentSlabSize.depth;
-        const placedPieces = pieces.filter(p => p.slabNumber === 1);
-        const usedArea = placedPieces.reduce((sum, p) => sum + p.width * p.depth, 0);
-        const totalArea = pieces.reduce((sum, p) => sum + p.width * p.depth, 0);
-        const utilization = slabArea > 0 ? ((usedArea / slabArea) * 100).toFixed(1) : 0;
-        const waste = slabArea > 0 ? (100 - parseFloat(utilization)).toFixed(1) : 0;
-
-        modal.querySelector('#slabUtilization').textContent = 'Utilization: ' + utilization + '%';
-        modal.querySelector('#totalSqFt').textContent = (totalArea / 144).toFixed(1);
-        modal.querySelector('#wastePercent').textContent = waste + '%';
-      }
-
-      // Drop zone for slab
-      slabContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        slabContainer.style.borderColor = 'rgba(99,102,241,0.8)';
-      });
-      slabContainer.addEventListener('dragleave', () => {
-        slabContainer.style.borderColor = 'rgba(255,255,255,0.3)';
-      });
-      slabContainer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        slabContainer.style.borderColor = 'rgba(255,255,255,0.3)';
-        const pieceId = e.dataTransfer.getData('text/plain');
-        const piece = pieces.find(p => p.id === pieceId);
-        if (piece && piece.slabNumber === null) {
-          const rect = slabContainer.getBoundingClientRect();
-          const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
-          const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
-          piece.x = Math.max(0, Math.min(e.clientX - rect.left - (w * scale / 2), currentSlabSize.width * scale - w * scale));
-          piece.y = Math.max(0, Math.min(e.clientY - rect.top - (h * scale / 2), currentSlabSize.depth * scale - h * scale));
-          piece.slabNumber = 1;
-          renderSlab();
-          renderPieceLibrary();
-          showToast('Piece placed on slab', 'success');
-        }
-      });
-
-      slabSelect.addEventListener('change', () => {
-        renderSlab();
-        renderPieceLibrary();
-      });
-
-      // Window functions for buttons
-      window.slabAddPiece = () => {
-        const width = parseFloat(modal.querySelector('#newPieceWidth').value) || 36;
-        const depth = parseFloat(modal.querySelector('#newPieceDepth').value) || 26;
-        const label = modal.querySelector('#newPieceLabel').value || `Piece ${pieces.length + 1}`;
-
-        if (width < 1 || depth < 1 || width > 200 || depth > 200) {
-          showToast('Invalid dimensions (1-200 inches)', 'error');
-          return;
-        }
-
-        pieces.push({
-          id: `piece-${pieceCounter++}`,
-          width: width,
-          depth: depth,
-          label: label,
-          pieceNumber: pieces.length + 1,
-          x: 10,
-          y: 10,
-          rotation: 0,
-          slabNumber: null,
-          sqFt: (width * depth) / 144
-        });
-
-        modal.querySelector('#newPieceLabel').value = '';
-        renderPieceLibrary();
-        showToast(`Added ${label} (${width}" × ${depth}")`, 'success');
-      };
-
-      window.slabRemovePiece = (id) => {
-        pieces = pieces.filter(p => p.id !== id);
-        renderSlab();
-        renderPieceLibrary();
-      };
-
-      window.slabImportFromDesign = () => {
-        const plan = generateFabricationPlan();
-        if (!plan || plan.cutList.length === 0) {
-          showToast('No countertops in design to import', 'warning');
-          return;
-        }
-
-        const newPieces = plan.cutList.map((p, i) => ({
-          ...p,
-          id: `piece-${pieceCounter++}`,
-          label: p.countertopLabel || `Counter ${i + 1}`,
-          x: 10,
-          y: 10,
-          rotation: 0,
-          slabNumber: null
-        }));
-
-        pieces = [...pieces, ...newPieces];
-        renderPieceLibrary();
-        showToast(`Imported ${newPieces.length} pieces from design`, 'success');
-      };
-
-      window.slabAutoArrange = () => {
-        if (pieces.length === 0) {
-          showToast('Add pieces first', 'warning');
-          return;
-        }
-        // Sort by area (largest first) for better packing
-        const sortedPieces = [...pieces].sort((a, b) => (b.width * b.depth) - (a.width * a.depth));
-        let x = 5, y = 5, rowHeight = 0;
-
-        sortedPieces.forEach(p => {
-          const w = p.width * scale;
-          const h = p.depth * scale;
-          if (x + w > currentSlabSize.width * scale - 5) {
-            x = 5;
-            y += rowHeight + 5;
-            rowHeight = 0;
-          }
-          p.x = x;
-          p.y = y;
-          p.slabNumber = 1;
-          p.rotation = 0;
-          x += w + 5;
-          rowHeight = Math.max(rowHeight, h);
-        });
-
-        renderSlab();
-        renderPieceLibrary();
-        showToast('Auto-arranged ' + pieces.length + ' pieces', 'success');
-      };
-
-      window.slabOptimize = () => {
-        if (pieces.length === 0) {
-          showToast('Add pieces first', 'warning');
-          return;
-        }
-        // Try both orientations and pick better fit
-        pieces.forEach(p => {
-          const normalFit = p.width <= currentSlabSize.width && p.depth <= currentSlabSize.depth;
-          const rotatedFit = p.depth <= currentSlabSize.width && p.width <= currentSlabSize.depth;
-
-          if (!normalFit && rotatedFit) {
-            p.rotation = 90;
-          } else if (normalFit && rotatedFit) {
-            // Choose orientation that wastes less
-            const normalWaste = (currentSlabSize.width - p.width) + (currentSlabSize.depth - p.depth);
-            const rotatedWaste = (currentSlabSize.width - p.depth) + (currentSlabSize.depth - p.width);
-            p.rotation = rotatedWaste < normalWaste ? 90 : 0;
-          }
-        });
-
-        window.slabAutoArrange();
-        showToast('Optimized piece orientations', 'success');
-      };
-
-      window.slabReset = () => {
-        pieces.forEach(p => {
-          p.slabNumber = null;
-          p.x = 10;
-          p.y = 10;
-          p.rotation = 0;
-        });
-        renderSlab();
-        renderPieceLibrary();
-        showToast('Layout reset', 'info');
-      };
-
-      window.slabClearAll = () => {
-        if (pieces.length === 0) return;
-        if (!confirm('Remove all pieces?')) return;
-        pieces = [];
-        pieceCounter = 0;
-        renderSlab();
-        renderPieceLibrary();
-        showToast('All pieces cleared', 'info');
-      };
-
-      window.slabExportPDF = () => {
-        showToast('Export feature coming soon!', 'info');
-      };
-
-      window.slabSaveLayout = () => {
-        const placedCount = pieces.filter(p => p.slabNumber).length;
-        showToast(`Layout saved! ${placedCount}/${pieces.length} pieces placed.`, 'success');
-        modal.remove();
-      };
-
-      // Initial render
-      renderSlab();
-      renderPieceLibrary();
-    }
 
     // Export fabrication plan as PDF (simplified - creates printable view)
     function exportFabricationPlan() {
@@ -68605,59 +67104,6 @@
     }
 
     // Add countertop on top of selected cabinet
-    function addCountertopToCabinet() {
-      if (!selectedElement) return;
-
-      // Check if selected element is a cabinet type
-      const cabinetTypes = ['base-cabinet', 'corner-cabinet', 'lazy-susan', 'drawer-base', 'sink-base', 'sink-base-apron', 'island'];
-      if (!cabinetTypes.includes(selectedElement.type) && !selectedElement.type.startsWith('base-')) return;
-
-      const cabinet = selectedElement;
-      const cabX = cabinet.x;
-      const cabY = cabinet.y;
-      const cabinetDepth = cabinet.height || cabinet.depth || 2; // Cabinet depth in feet
-
-      // Proper overhang: 2" front (covers cabinet face), 1.5" sides, 0" back (against wall)
-      // For islands, use 2" on all sides so cabinet faces are recessed
-      const isIsland = cabinet.type === 'island' || cabinet.type === 'base-cabinet' && cabinet.y > roomDepth * pixelsPerFoot * 0.3;
-
-      const frontOverhang = 0.167; // 2 inches in feet - covers cabinet door faces
-      const backOverhang = isIsland ? 0.167 : 0; // Islands get overhang all around, wall cabinets don't need back
-      const sideOverhang = 0.125; // 1.5 inches in feet
-
-      // Calculate countertop dimensions with proper overhang
-      // Depth: cabinet depth + front overhang + back overhang
-      const countertopDepth = cabinetDepth + frontOverhang + backOverhang;
-
-      // Create countertop element that fits the cabinet with proper overhang
-      const countertop = {
-        id: generateId(),
-        type: 'countertop',
-        name: 'Countertop',
-        x: cabX - (sideOverhang * pixelsPerFoot),
-        y: cabY - (backOverhang * pixelsPerFoot),
-        width: cabinet.width + (sideOverhang * 2),  // Add 1.5" each side = 3" total
-        height: countertopDepth, // 2" front + cabinet depth (+ 2" back for islands)
-        rotation: cabinet.rotation || 0,
-        color: '#a0a0a0',
-        roomId: currentRoom,
-        edgeProfile: 'eased',
-        thickness: '3cm',
-        overhangFront: frontOverhang,
-        overhangBack: backOverhang,
-        overhangLeft: sideOverhang,
-        overhangRight: sideOverhang
-      };
-
-      elements.push(countertop);
-      selectedElement = countertop;
-
-      draw();
-      update3DScene();
-      calculateQuote();
-      updateProperties();
-      showSnapFeedback(`Countertop added (${Math.round(countertopDepth * 12)}" deep with ${Math.round(frontOverhang * 12)}" front overhang)`);
-    }
 
     // Update sink properties (color, mount type)
     function updateSinkProperties() {
@@ -69268,21 +67714,6 @@
     }
 
     // Show seam requirement notification
-    function showSeamRequirementCheck() {
-      if (!selectedElement) return;
-
-      const countertopTypes = ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island'];
-      if (!countertopTypes.includes(selectedElement.type)) return;
-
-      const req = calculateSeamRequirements(selectedElement);
-      const currentSeams = selectedElement.seams?.length || 0;
-
-      if (req.needsSeam && currentSeams < req.minSeams) {
-        showToast(`⚠️ ${req.reason}. Need at least ${req.minSeams} seam${req.minSeams > 1 ? 's' : ''}.`, 'warning', 5000);
-      } else if (!req.needsSeam && currentSeams === 0) {
-        showToast('✓ Countertop fits within standard slab dimensions - no seam required', 'success', 3000);
-      }
-    }
 
     // Get standard sizes for element type
     function getStandardSizesForType(type) {
@@ -69813,10 +68244,6 @@
     }
 
     // Invalidate quote cache (call when elements or prices change)
-    function invalidateQuoteCache() {
-      window.currentQuoteTotal = undefined;
-      window._quoteCacheElementCount = undefined;
-    }
 
     // Get effective price for an element (priority: override -> catalog -> material -> custom -> default)
     function getElementPrice(element) {
@@ -71252,18 +69679,6 @@
       checkApprovalStatus();
     });
 
-    function generateQuote() {
-      const projectName = document.getElementById('projectName').value;
-      const roomType = document.getElementById('roomType').value;
-
-      let text = `QUOTE: ${projectName}\nRoom: ${roomType} (${Math.round(roomWidth * 12)}" × ${Math.round(roomDepth * 12)}")\n${'='.repeat(30)}\n\n`;
-      elements.forEach(el => {
-        text += `${el.label}: ${Math.round(el.width * 12)}" × ${Math.round(el.height * 12)}"\n`;
-      });
-      text += `\n${'='.repeat(30)}\nTotal: ${document.getElementById('quoteTotal').textContent}`;
-
-      alert(text);
-    }
 
     // ===== MODALS =====
     function openShareModal() {
@@ -72711,38 +71126,7 @@
       document.getElementById('priceListFile').value = '';
     }
 
-    function renderCurrentPrices() {
-      const list = document.getElementById('currentPricesList');
-      if (!list) return;
 
-      let html = '';
-      for (const category in MATERIALS) {
-        const materials = MATERIALS[category].filter(m => m.price);
-        if (materials.length === 0) continue;
-
-        html += `<div class="price-category-header">${category.charAt(0).toUpperCase() + category.slice(1)}</div>`;
-        materials.forEach(m => {
-          html += `
-            <div class="current-price-item">
-              <span class="price-item-name">${m.name}</span>
-              <span class="price-item-sku">${m.sku || '-'}</span>
-              <span class="price-item-value">$${m.price.toFixed(2)}</span>
-            </div>
-          `;
-        });
-      }
-
-      list.innerHTML = html || '<p class="empty-state">No priced materials</p>';
-    }
-
-    function filterCurrentPrices() {
-      const query = document.getElementById('priceSearchInput').value.toLowerCase();
-      const items = document.querySelectorAll('.current-price-item');
-      items.forEach(item => {
-        const name = item.querySelector('.price-item-name').textContent.toLowerCase();
-        item.style.display = name.includes(query) ? 'flex' : 'none';
-      });
-    }
 
     // ===== LABOR RATES MANAGEMENT =====
     // Store for user-modified labor rates (loaded from localStorage)
@@ -73153,13 +71537,6 @@
     }
 
     // Assign element to room
-    function assignElementToRoom(elementId, roomId) {
-      const el = elements.find(e => e.id === elementId);
-      if (el) {
-        el.roomId = roomId;
-        calculateQuote();
-      }
-    }
 
     // ===== QUOTE PREVIEW MODAL =====
     let quotePreviewData = {};
@@ -76486,27 +74863,6 @@
       setTimeout(() => { if (badge.parentNode) badge.style.opacity = '0.5'; }, 5000);
     }
 
-    function showPermissionNotice(permission) {
-      const permInfo = PERMISSION_LEVELS[permission];
-      if (!permInfo) return;
-
-      const notice = document.createElement('div');
-      notice.className = 'permission-notice';
-      notice.innerHTML = `
-        <div class="notice-content">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 16v-4"/>
-            <path d="M12 8h.01"/>
-          </svg>
-          <span>Viewing as: <strong>${permInfo.name}</strong></span>
-          <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:16px;">×</button>
-        </div>
-      `;
-      document.body.appendChild(notice);
-
-      setTimeout(() => notice.remove(), 8000);
-    }
 
     // Load active shares for current design
     async function loadActiveShares() {
@@ -77673,56 +76029,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     // =============================================
     // PRO TOOLS - Approval Workflow
     // =============================================
-    function showApprovalWorkflow() {
-      // Check if design is saved first
-      if (!currentDesignId) {
-        showToast('Please save your design first before sending for approval', 'warning');
-        return;
-      }
-
-      const existing = document.getElementById('approvalWorkflowModal');
-      if (existing) existing.remove();
-
-      const modal = document.createElement('div');
-      modal.id = 'approvalWorkflowModal';
-      modal.className = 'cabinet-library-modal';
-      modal.innerHTML = `
-        <div class="cabinet-library-content" style="max-width: 500px;">
-          <div class="cabinet-library-header">
-            <h3>✅ Send for Approval</h3>
-            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
-          </div>
-          <div class="cabinet-library-body">
-            <div style="margin-bottom: 20px;">
-              <label style="display: block; margin-bottom: 8px; font-weight: 500;">Recipient Email</label>
-              <input type="email" id="approvalEmail" placeholder="customer@example.com"
-                style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--dark-elevated); color: var(--text);" />
-            </div>
-            <div style="margin-bottom: 20px;">
-              <label style="display: block; margin-bottom: 8px; font-weight: 500;">Message (optional)</label>
-              <textarea id="approvalMessage" rows="3" placeholder="Please review this design and let me know your thoughts..."
-                style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--dark-elevated); color: var(--text); resize: vertical;"></textarea>
-            </div>
-            <div style="display: flex; gap: 12px;">
-              <button class="btn btn-secondary" onclick="this.closest('.cabinet-library-modal').remove()" style="flex: 1;">Cancel</button>
-              <button class="btn btn-primary" onclick="sendForApproval()" style="flex: 1;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-      modal.onkeydown = (e) => e.stopPropagation();
-
-      // Focus email input
-      setTimeout(() => document.getElementById('approvalEmail')?.focus(), 100);
-    }
 
     async function sendForApproval() {
       const email = document.getElementById('approvalEmail')?.value?.trim();
@@ -79130,58 +77436,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Return to user's own workspace (from viewing a shared design)
-    function returnToMyWorkspace() {
-      // Try to restore from protected auto-save first
-      const protectedSave = localStorage.getItem(AUTOSAVE_KEY + '_protected');
-      const regularSave = localStorage.getItem(AUTOSAVE_KEY);
-
-      let savedDesign = null;
-      if (protectedSave) {
-        try {
-          savedDesign = JSON.parse(protectedSave);
-          console.log('Restoring from protected save:', savedDesign.elements?.length, 'elements');
-        } catch (e) { /* ignore */ }
-      }
-
-      if (!savedDesign && regularSave) {
-        try {
-          savedDesign = JSON.parse(regularSave);
-          console.log('Restoring from regular save:', savedDesign.elements?.length, 'elements');
-        } catch (e) { /* ignore */ }
-      }
-
-      if (savedDesign && savedDesign.elements) {
-        // Clear share state
-        SHARE_STATE.isSharedView = false;
-        SHARE_STATE.designId = null;
-        SHARE_STATE.designToken = null;
-
-        // Load the design seamlessly
-        loadDesignToWorkspace(savedDesign, { showPreloaderUI: false, updateURL: true });
-
-        // Clear URL parameters
-        history.pushState({}, '', window.location.pathname);
-
-        showToast('Returned to your workspace', 'success');
-      } else {
-        // Start fresh workspace
-        elements.length = 0;
-        walls.length = 0;
-        roomWidth = 12;
-        roomDepth = 10;
-
-        SHARE_STATE.isSharedView = false;
-        SHARE_STATE.designId = null;
-        SHARE_STATE.designToken = null;
-
-        // Clear URL parameters
-        history.pushState({}, '', window.location.pathname);
-
-        fitToScreen();
-        draw();
-        showToast('Started new workspace', 'info');
-      }
-    }
 
     // Quick switch between designs without page reload
     async function quickSwitchDesign(designId, isShared = false) {
@@ -79428,46 +77682,8 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Toggle messages panel collapse/expand
-    function toggleMessagesPanel() {
-      const content = document.getElementById('messagesContent');
-      if (content) {
-        if (content.style.display === 'none') {
-          content.style.display = 'block';
-        } else {
-          content.style.display = 'none';
-        }
-      }
-    }
 
     // Show the designer messages panel with customer linked
-    function showDesignerMessagesPanel() {
-      const content = document.getElementById('messagesContent');
-      const inputArea = document.getElementById('messageInputArea');
-      const noCustomerMsg = document.getElementById('noCustomerMessage');
-      const section = document.getElementById('messagesSection');
-
-      // Make sure panel is expanded when customer is linked
-      if (content) {
-        content.style.display = 'block';
-      }
-      if (section) {
-        section.style.display = 'block';
-      }
-
-      // Show the reply input and hide the "no customer" message
-      if (inputArea) {
-        inputArea.style.display = 'flex';
-      }
-      if (noCustomerMsg) {
-        noCustomerMsg.style.display = 'none';
-      }
-
-      // Update panel header to show customer name if available
-      const panelTitle = document.querySelector('#messagesSection .panel-title span:first-child');
-      if (panelTitle && SHARE_STATE.customerName) {
-        panelTitle.textContent = `💬 ${SHARE_STATE.customerName}`;
-      }
-    }
 
     // Load messages for designer view
     async function loadDesignerMessages(leadId) {
@@ -80195,17 +78411,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Render message templates dropdown
-    function renderMessageTemplates(containerId = 'messageTemplatesDropdown') {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      container.innerHTML = MESSAGE_TEMPLATES.map(t => `
-        <div class="template-item" onclick="insertMessageTemplate('${t.id}')">
-          <span class="template-label">${t.label}</span>
-          <span class="template-preview">${t.text.substring(0, 40)}...</span>
-        </div>
-      `).join('');
-    }
 
     // Attach design snapshot to message
     async function attachDesignSnapshot(inputId = 'chatMessageInput') {
@@ -80244,19 +78449,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Enhanced notification with desktop + sound
-    function triggerNotification(notif) {
-      // Play sound
-      playNotificationSound();
-
-      // Show desktop notification
-      showDesktopNotification(
-        `${notif.type === 'chat' ? '💬' : '👥'} ${notif.source}`,
-        `${notif.author}: ${notif.message}`
-      );
-
-      // Show in-app toast
-      showNotificationToast(notif);
-    }
 
     // Render notification hub list
     function renderNotificationHub() {
@@ -80503,27 +78695,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Clear a single notification
-    function clearNotification(notificationId) {
-      // Save to appropriate localStorage based on ID type
-      if (String(notificationId).startsWith('share-comment-')) {
-        const cleared = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
-        if (!cleared.includes(notificationId)) {
-          cleared.push(notificationId);
-          localStorage.setItem('clearedShareComments', JSON.stringify(cleared));
-        }
-      } else {
-        // Database notification - save ID to cleared list
-        const clearedDbIds = JSON.parse(localStorage.getItem('clearedNotificationIds') || '[]');
-        if (!clearedDbIds.includes(notificationId)) {
-          clearedDbIds.push(notificationId);
-          localStorage.setItem('clearedNotificationIds', JSON.stringify(clearedDbIds));
-        }
-      }
-
-      NOTIFICATION_HUB.notifications = NOTIFICATION_HUB.notifications.filter(n => n.id !== notificationId);
-      renderNotificationHub();
-      updateHubBadge();
-    }
 
     // Open full inbox (redirect to account CRM messages page)
     function openFullInbox() {
@@ -81627,21 +79798,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     }
 
     // Add recent design tracking
-    function trackRecentDesign(design) {
-      let recent = JSON.parse(localStorage.getItem('recent_designs') || '[]');
-      // Remove if already exists
-      recent = recent.filter(r => r.id !== design.id);
-      // Add to front
-      recent.unshift({
-        id: design.id,
-        name: design.name,
-        share_token: design.share_token,
-        created_at: new Date().toISOString()
-      });
-      // Keep only last 10
-      recent = recent.slice(0, 10);
-      localStorage.setItem('recent_designs', JSON.stringify(recent));
-    }
 
     // ===== NOTIFICATIONS =====
     function requestNotificationPermission() {
@@ -81678,14 +79834,6 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     // Note: playNotificationSound() is defined earlier in the notification hub section
 
     // Helper function for consistent color from string
-    function stringToColor(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const hue = hash % 360;
-      return `hsl(${hue}, 65%, 45%)`;
-    }
 
     // Note: escapeHtml is defined earlier (around line 49675)
 
