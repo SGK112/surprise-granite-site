@@ -175,6 +175,21 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   const usableSfPerSlab = Number.isFinite(options.usableSfPerSlab) ? options.usableSfPerSlab : USABLE_SF_PER_SLAB;
   const tileSfPerCarton = Number.isFinite(options.tileSfPerCarton) ? options.tileSfPerCarton : TILE_SF_PER_CARTON;
 
+  // userRates: { rateKey: { material, labor } } — overlays INDUSTRY_RATES per
+  // category. Lets a user save their actual SG pricing once and have every
+  // future estimate use those numbers instead of the Phoenix industry avg.
+  const userRates = (options.userRates && typeof options.userRates === 'object') ? options.userRates : {};
+  const ratesFor = key => {
+    const base = INDUSTRY_RATES[key] || {};
+    const ovr = userRates[key] || {};
+    return {
+      material: Number.isFinite(+ovr.material) ? +ovr.material : base.material,
+      labor:    Number.isFinite(+ovr.labor)    ? +ovr.labor    : base.labor,
+      unit:     base.unit || ovr.unit,
+      _override: !!(Number.isFinite(+ovr.material) || Number.isFinite(+ovr.labor)),
+    };
+  };
+
   const wasteFor = key => (wasteOverride !== null ? wasteOverride : (WASTE_BY_CATEGORY[key] ?? 0.10));
 
   const lineItems = [];
@@ -187,22 +202,22 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const ctMat = pickMaterial(materials, m => /quartz|granite|marble|quartzite|stone/i.test(m.category) || /quartz|granite|marble|quartzite/i.test(m.spec || ''));
     const refined = ctMat ? (refineCategory(ctMat.spec, ctMat.category) || 'stone') : 'quartz';
     const rateKey = `${refined}_countertop`;
-    const rates = INDUSTRY_RATES[rateKey] || INDUSTRY_RATES.stone_countertop;
+    const rates = ratesFor(rateKey).material != null ? ratesFor(rateKey) : ratesFor('stone_countertop');
     const wf = wasteFor(refined);
     const qty = ctSqft * (1 + wf);
     const slabsToOrder = Math.ceil(qty / usableSfPerSlab);
 
     // V2: try to match the spec against SG's catalog. If we hit, use the
     // catalog price (per sf slab cost) — labor stays at industry avg since
-    // the catalog only carries product cost.
+    // the catalog only carries product cost. User override beats catalog.
     const hit = ctMat ? matchCatalog(ctMat.spec, refined) : null;
-    const matRate = hit?.item?.price > 0 ? hit.item.price : rates.material;
+    const matRate = rates._override ? rates.material : (hit?.item?.price > 0 ? hit.item.price : rates.material);
     const description = hit
       ? `${hit.item.name}${hit.item.brand ? ' — ' + hit.item.brand : ''}${hit.item.tier ? ' (' + hit.item.tier + ')' : ''}`
       : (ctMat?.spec || `${refined.charAt(0).toUpperCase()}${refined.slice(1)} countertop`);
-    const source = hit
-      ? `SG catalog (${hit.confidence} match: ${hit.matchedOn})`
-      : 'industry avg (Phoenix mid-range)';
+    const source = rates._override
+      ? 'My Pricing (saved override)'
+      : (hit ? `SG catalog (${hit.confidence} match: ${hit.matchedOn})` : 'industry avg (Phoenix mid-range)');
 
     lineItems.push(lineItem({
       category: 'countertop',
@@ -235,7 +250,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   // ---- Countertop edge ----
   const ctLf = num(takeoff.countertop_lf);
   if (ctLf > 0) {
-    const rates = INDUSTRY_RATES.edge_eased;
+    const rates = ratesFor('edge_eased');
     lineItems.push(lineItem({
       category: 'countertop_edge',
       trade: 'countertops',
@@ -244,7 +259,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       unit: 'lf',
       matRate: rates.material,
       labRate: rates.labor,
-      source: 'industry avg',
+      source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'self',
     }));
   }
@@ -256,7 +271,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const cabMat = pickMaterial(materials, m => /cabinet|millwork/i.test(m.category));
     const refined = cabMat ? (refineCategory(cabMat.spec, cabMat.category) || 'cabinet_stock') : 'cabinet_stock';
     const rateKey = `${refined}_install`;
-    const rates = INDUSTRY_RATES[rateKey] || INDUSTRY_RATES.cabinet_stock_install;
+    const rates = ratesFor(rateKey).labor != null ? ratesFor(rateKey) : ratesFor('cabinet_stock_install');
     lineItems.push(lineItem({
       category: 'cabinet',
       trade: 'cabinets',
@@ -266,7 +281,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       unit: 'lf',
       matRate: 0,
       labRate: rates.labor,
-      source: 'industry avg (install only)',
+      source: rates._override ? 'My Pricing' : 'industry avg (install only)',
       selfPerform: 'sub',
       extra: { cabinet_count: cabCount },
     }));
@@ -278,7 +293,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   if (flSqft > 0) {
     const flMat = pickMaterial(materials, m => /flooring/i.test(m.category));
     const refined = flMat ? (refineCategory(flMat.spec, flMat.category) || 'flooring_lvp') : 'flooring_lvp';
-    const rates = INDUSTRY_RATES[refined] || INDUSTRY_RATES.flooring_lvp;
+    const rates = ratesFor(refined).material != null ? ratesFor(refined) : ratesFor('flooring_lvp');
     const wf = wasteFor(refined);
     const qty = flSqft * (1 + wf);
     lineItems.push(lineItem({
@@ -290,7 +305,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       unit: 'sf',
       matRate: rates.material,
       labRate: rates.labor,
-      source: 'industry avg',
+      source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'sub',
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
     }));
@@ -301,7 +316,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   if (tileSqft > 0) {
     const tileMat = pickMaterial(materials, m => /tile/i.test(m.category));
     const refined = tileMat ? (refineCategory(tileMat.spec, tileMat.category) || 'tile') : 'tile';
-    const rates = INDUSTRY_RATES[refined] || INDUSTRY_RATES.tile_floor;
+    const rates = ratesFor(refined).material != null ? ratesFor(refined) : ratesFor('tile_floor');
     const wf = wasteFor(refined === 'tile_lg_format' ? 'tile_lg_format' : 'tile');
     const qty = tileSqft * (1 + wf);
     const cartons = Math.ceil(qty / tileSfPerCarton);
@@ -314,7 +329,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       unit: 'sf',
       matRate: rates.material,
       labRate: rates.labor,
-      source: 'industry avg',
+      source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'sub',
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
     }));

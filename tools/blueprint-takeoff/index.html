@@ -62,7 +62,22 @@
     .byok-key-input input:focus{outline:none;border-color:var(--sg-blue)}
     .byok-key-input .help{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5}
     .byok-key-input .help a{color:var(--sg-gold);text-decoration:none}
-    .byok-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+    .byok-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;align-items:center}
+
+    .pricing-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:60vh;overflow-y:auto}
+    .pricing-section{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700;margin:10px 0 4px;padding-top:8px;border-top:1px solid var(--border)}
+    .pricing-section:first-child{border-top:0;margin-top:0;padding-top:0}
+    .pricing-row{display:grid;grid-template-columns:1fr 90px 90px 50px;gap:10px;align-items:center;padding:6px 8px;background:var(--sg-darker);border:1px solid var(--border);border-radius:6px}
+    .pricing-row .pname{font-size:13px;font-weight:500;color:#fff}
+    .pricing-row .pmeta{font-size:10px;color:var(--text-muted);display:block;margin-top:1px}
+    .pricing-row input{width:100%;padding:7px 10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:5px;color:#fff;font-size:13px;font-family:'Menlo',monospace;text-align:right}
+    .pricing-row input:focus{outline:none;border-color:var(--sg-blue)}
+    .pricing-row .punit{font-size:11px;color:var(--text-muted);text-align:left}
+
+    .estimate-table .editable-cell{cursor:text;border-bottom:1px dashed transparent;transition:border-color .15s,background .15s;padding:1px 4px;border-radius:3px}
+    .estimate-table .editable-cell:hover{border-color:rgba(59,130,246,.4)}
+    .estimate-table .editable-cell:focus{outline:none;border-color:var(--sg-blue);background:rgba(59,130,246,.08)}
+    .estimate-table .editable-cell.edited{color:var(--sg-blue);font-weight:700}
 
     main{max-width:1100px;margin:0 auto;padding:18px 20px 60px}
 
@@ -262,6 +277,10 @@
         <span>Pages<strong id="hPages">—</strong></span>
         <span>Selected<strong id="hSelected">—</strong></span>
         <span>Extracted<strong id="hExtracted">—</strong></span>
+        <button class="hero-key-btn" id="btnPricingSettings" type="button" title="Save your real SG rates per category">
+          <span class="hero-key-icon">💲</span>
+          <span id="pricingStatus">Industry rates</span>
+        </button>
         <button class="hero-key-btn" id="btnByokSettings" type="button" title="Bring your own AI key — uses your tokens instead of ours">
           <span class="hero-key-icon">🔑</span>
           <span id="byokStatus">Use platform AI</span>
@@ -438,6 +457,23 @@
     </section>
   </main>
 
+  <!-- My Pricing modal -->
+  <div class="byok-modal" id="pricingModal" role="dialog" aria-modal="true" aria-labelledby="pricingTitle">
+    <div class="byok-card" style="max-width:680px">
+      <h3 id="pricingTitle">My Pricing</h3>
+      <div class="byok-sub">
+        Save your real SG rates per category — they replace the Phoenix industry averages on every estimate. Stored in <strong>your browser only</strong>. Leave a field empty to fall back to industry avg.
+      </div>
+      <div class="pricing-grid" id="pricingGrid"></div>
+      <div class="byok-actions">
+        <button class="btn btn-ghost" id="btnPricingClear" type="button">Clear all</button>
+        <div style="flex:1"></div>
+        <button class="btn" id="btnPricingCancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="btnPricingSave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BYOK modal -->
   <div class="byok-modal" id="byokModal" role="dialog" aria-modal="true" aria-labelledby="byokTitle">
     <div class="byok-card">
@@ -604,6 +640,117 @@
     if (k) headers['x-user-openai-key'] = k;
     return headers;
   }
+
+  // ---- My Pricing — saved per-category rate overrides ----
+  // localStorage shape: { rateKey: { material?: number, labor?: number } }
+  // rateKeys mirror estimator.js INDUSTRY_RATES keys.
+  const PRICING_STORAGE_KEY = 'sg_my_pricing';
+
+  // Display config — order, labels, units, which fields to expose.
+  const PRICING_FIELDS = [
+    { section: 'Slabs (per sf installed)' },
+    { key: 'quartz_countertop',      label: 'Quartz countertop',     unit: 'sf', mat: true, lab: true },
+    { key: 'granite_countertop',     label: 'Granite countertop',    unit: 'sf', mat: true, lab: true },
+    { key: 'marble_countertop',      label: 'Marble countertop',     unit: 'sf', mat: true, lab: true },
+    { key: 'quartzite_countertop',   label: 'Quartzite countertop',  unit: 'sf', mat: true, lab: true },
+    { section: 'Edge profile (per lf)' },
+    { key: 'edge_eased',             label: 'Eased edge',            unit: 'lf', mat: false, lab: true },
+    { key: 'edge_bullnose',          label: 'Bullnose edge',         unit: 'lf', mat: false, lab: true },
+    { section: 'Tile (per sf installed)' },
+    { key: 'tile_floor',             label: 'Tile — floor',          unit: 'sf', mat: true, lab: true },
+    { key: 'tile_wall',              label: 'Tile — wall',           unit: 'sf', mat: true, lab: true },
+    { key: 'tile_lg_format',         label: 'Tile — large format',   unit: 'sf', mat: true, lab: true },
+    { key: 'porcelain_slab',         label: 'Porcelain slab',        unit: 'sf', mat: true, lab: true },
+    { section: 'Flooring (per sf installed)' },
+    { key: 'flooring_lvp',           label: 'LVP / vinyl plank',     unit: 'sf', mat: true, lab: true },
+    { key: 'flooring_engineered',    label: 'Engineered hardwood',   unit: 'sf', mat: true, lab: true },
+    { key: 'flooring_hardwood',      label: 'Solid hardwood',        unit: 'sf', mat: true, lab: true },
+    { key: 'flooring_carpet',        label: 'Carpet',                unit: 'sf', mat: true, lab: true },
+    { section: 'Cabinet install (per lf, install only)' },
+    { key: 'cabinet_stock_install',       label: 'Stock cabinets',         unit: 'lf', mat: false, lab: true },
+    { key: 'cabinet_semi_custom_install', label: 'Semi-custom cabinets',   unit: 'lf', mat: false, lab: true },
+    { key: 'cabinet_custom_install',      label: 'Full custom cabinets',   unit: 'lf', mat: false, lab: true },
+  ];
+
+  function getUserRates() {
+    try { return JSON.parse(localStorage.getItem(PRICING_STORAGE_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+  function setUserRates(rates) {
+    try { localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(rates || {})); }
+    catch (_) {}
+    refreshPricingStatus();
+  }
+  function refreshPricingStatus() {
+    const r = getUserRates();
+    const count = Object.keys(r).reduce((n, k) => n + (Number.isFinite(+r[k]?.material) || Number.isFinite(+r[k]?.labor) ? 1 : 0), 0);
+    const btn = $('btnPricingSettings');
+    btn.classList.toggle('active', count > 0);
+    $('pricingStatus').textContent = count > 0 ? `My Pricing (${count})` : 'Industry rates';
+  }
+
+  function openPricingModal() {
+    const r = getUserRates();
+    const grid = $('pricingGrid');
+    grid.innerHTML = '';
+    PRICING_FIELDS.forEach(f => {
+      if (f.section) {
+        const h = document.createElement('div');
+        h.className = 'pricing-section';
+        h.textContent = f.section;
+        grid.appendChild(h);
+        return;
+      }
+      const cur = r[f.key] || {};
+      const row = document.createElement('div');
+      row.className = 'pricing-row';
+      row.innerHTML = `
+        <div>
+          <div class="pname">${escapeHtml(f.label)}</div>
+          <span class="pmeta">${escapeHtml(f.key)}</span>
+        </div>
+        ${f.mat
+          ? `<input type="number" step="0.01" min="0" placeholder="mat $" value="${cur.material ?? ''}" data-key="${f.key}" data-fld="material">`
+          : `<div></div>`}
+        ${f.lab
+          ? `<input type="number" step="0.01" min="0" placeholder="lab $" value="${cur.labor ?? ''}" data-key="${f.key}" data-fld="labor">`
+          : `<div></div>`}
+        <div class="punit">/${escapeHtml(f.unit)}</div>
+      `;
+      grid.appendChild(row);
+    });
+    $('pricingModal').classList.add('open');
+  }
+  function closePricingModal() { $('pricingModal').classList.remove('open'); }
+
+  $('btnPricingSettings').addEventListener('click', openPricingModal);
+  $('btnPricingCancel').addEventListener('click', closePricingModal);
+  $('pricingModal').addEventListener('click', e => { if (e.target === $('pricingModal')) closePricingModal(); });
+  $('btnPricingClear').addEventListener('click', () => {
+    if (confirm('Clear all saved pricing? Industry averages will apply on next estimate.')) {
+      setUserRates({});
+      closePricingModal();
+    }
+  });
+  $('btnPricingSave').addEventListener('click', () => {
+    const rates = {};
+    $('pricingGrid').querySelectorAll('input[data-key]').forEach(inp => {
+      const key = inp.dataset.key;
+      const fld = inp.dataset.fld;
+      const v = inp.value.trim();
+      if (v === '') return;
+      const n = parseFloat(v);
+      if (!Number.isFinite(n) || n < 0) return;
+      if (!rates[key]) rates[key] = {};
+      rates[key][fld] = n;
+    });
+    setUserRates(rates);
+    closePricingModal();
+    // If an estimate already exists, re-generate so the saved rates apply.
+    if (window.__lastEstimate) generateEstimate();
+  });
+
+  refreshPricingStatus();
 
   // ---- Drag/drop wiring ----
   ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => {
@@ -1195,6 +1342,8 @@
     try {
       const opts = { margin, gcOverhead };
       if (waste !== null) opts.waste = waste;
+      const userRates = getUserRates();
+      if (Object.keys(userRates).length) opts.userRates = userRates;
       const resp = await fetch(API_BASE + '/api/ai/blueprint/estimate', {
         method: 'POST',
         headers: aiHeaders(),
@@ -1236,9 +1385,9 @@
       </div>
     `).join('');
 
-    // Line-item table with ordering info + self-perform badges
+    // Line-item table with ordering info + self-perform badges + inline editable rates
     $('estTableWrap').hidden = items.length === 0;
-    $('estTableBody').innerHTML = items.map(li => {
+    $('estTableBody').innerHTML = items.map((li, i) => {
       const meta = [li.code, li.source].filter(Boolean).join(' · ');
       const sp = li.self_perform || 'sub';
       const ord = li.ordering;
@@ -1250,8 +1399,11 @@
         if (ord.raw_sf && ord.waste_pct != null) parts.push(`${ord.raw_sf.toLocaleString()}sf raw + ${ord.waste_pct}% waste`);
         if (parts.length) orderHtml = `<span class="order-info">${parts.join(' · ')}</span>`;
       }
+      // GC overhead line is computed downstream — don't expose as editable.
+      const isGc = li.category === 'general_conditions';
+      const editable = isGc ? '' : 'contenteditable="true" spellcheck="false"';
       return `
-      <tr>
+      <tr data-i="${i}">
         <td class="desc">
           ${escapeHtml(li.description || li.category)}
           <span class="self-perform ${sp}">${sp}</span>
@@ -1262,12 +1414,31 @@
           ${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}
           ${orderHtml}
         </td>
-        <td class="num" style="font-size:11px;color:var(--text-muted)">${fmt(li.material_unit)} / ${fmt(li.labor_unit)}</td>
+        <td class="num" style="font-size:11px;color:var(--text-muted)">
+          <span class="editable-cell" data-fld="material_unit" ${editable} title="Click to edit material unit price">${(li.material_unit||0).toFixed(2)}</span>
+          <span> / </span>
+          <span class="editable-cell" data-fld="labor_unit" ${editable} title="Click to edit labor unit price">${(li.labor_unit||0).toFixed(2)}</span>
+        </td>
         <td class="num">${fmt(li.material_cost)}</td>
         <td class="num">${fmt(li.labor_cost)}</td>
         <td class="num"><strong>${fmt(li.total)}</strong></td>
       </tr>`;
     }).join('');
+
+    // Wire inline-edit listeners
+    $('estTableBody').querySelectorAll('.editable-cell[contenteditable]').forEach(cell => {
+      cell.addEventListener('blur', onUnitPriceEdit);
+      cell.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); cell.blur(); }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          const i = +cell.closest('tr').dataset.i;
+          const li = window.__lastEstimate.line_items[i];
+          cell.textContent = (li[cell.dataset.fld] || 0).toFixed(2);
+          cell.blur();
+        }
+      });
+    });
     $('estTableFoot').innerHTML = `
       <tr><td colspan="3">Subtotal (cost)</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
       <tr><td colspan="5">Overhead &amp; profit (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
@@ -1417,6 +1588,78 @@
   function renderProposal(md) {
     $('proposalDoc').hidden = false;
     $('proposalBody').innerHTML = mdToHtml(md);
+  }
+
+  // Inline-edit handler: parse new unit price, mutate line item, recalc
+  // material/labor/total + subtotals + GC overhead + grand total + range,
+  // then re-render the estimate. No backend round-trip — math is deterministic.
+  function onUnitPriceEdit(e) {
+    const cell = e.target;
+    const tr = cell.closest('tr');
+    if (!tr || !window.__lastEstimate) return;
+    const i = +tr.dataset.i;
+    const fld = cell.dataset.fld; // 'material_unit' | 'labor_unit'
+    const li = window.__lastEstimate.line_items[i];
+    if (!li) return;
+
+    const raw = cell.textContent.replace(/[^0-9.\-]/g, '');
+    const v = parseFloat(raw);
+    if (!Number.isFinite(v) || v < 0) {
+      cell.textContent = (li[fld] || 0).toFixed(2);
+      return;
+    }
+    if (v === li[fld]) {
+      cell.textContent = v.toFixed(2);
+      return;
+    }
+    li[fld] = v;
+    li.material_cost = Math.round(li.qty * (li.material_unit || 0));
+    li.labor_cost    = Math.round(li.qty * (li.labor_unit || 0));
+    li.total         = li.material_cost + li.labor_cost;
+    li.source = (li.source || '') + ' · edited';
+
+    recalcEstimateTotals(window.__lastEstimate);
+    renderEstimate(window.__lastEstimate);
+  }
+
+  // Recompute subtotals, GC overhead (re-derived from non-GC lines), trade
+  // rollup, O&P, total bid, and margin range from the current line items.
+  function recalcEstimateTotals(est) {
+    if (!est || !est.line_items) return;
+
+    // Recompute GC overhead — it's a percentage of trade subtotal, so when
+    // any other line changes, GC must recompute too.
+    const gcPct = est.gc_overhead_factor ?? 0.08;
+    const gcIdx = est.line_items.findIndex(li => li.category === 'general_conditions');
+    const tradeSub = est.line_items
+      .filter((li, idx) => idx !== gcIdx)
+      .reduce((s, li) => s + li.total, 0);
+    if (gcIdx >= 0) {
+      const gc = est.line_items[gcIdx];
+      gc.labor_unit = Math.round(tradeSub * gcPct);
+      gc.labor_cost = gc.labor_unit;
+      gc.total = gc.labor_unit;
+    }
+
+    const matSub = est.line_items.reduce((s, li) => s + li.material_cost, 0);
+    const labSub = est.line_items.reduce((s, li) => s + li.labor_cost, 0);
+    const subtotal = matSub + labSub;
+    const overhead = Math.round(subtotal * (est.margin_factor || 0));
+    est.subtotals = { material: matSub, labor: labSub, overhead, subtotal, gc_overhead_pct: gcPct };
+    est.total = subtotal + overhead;
+    est.margin_range = { low: Math.round(est.total * 0.85), high: Math.round(est.total * 1.15) };
+
+    // Rebuild trade rollup
+    const trades = {};
+    for (const li of est.line_items) {
+      const t = li.trade || 'other';
+      if (!trades[t]) trades[t] = { trade: t, material: 0, labor: 0, total: 0, items: 0 };
+      trades[t].material += li.material_cost;
+      trades[t].labor += li.labor_cost;
+      trades[t].total += li.total;
+      trades[t].items += 1;
+    }
+    est.trade_rollup = Object.values(trades).sort((a, b) => b.total - a.total);
   }
 
   $('btnEditProposal').addEventListener('click', () => {
