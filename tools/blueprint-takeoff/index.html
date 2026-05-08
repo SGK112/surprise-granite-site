@@ -269,7 +269,13 @@
     .proposal-controls input:focus{outline:none;border-color:var(--sg-blue)}
 
     .proposal-doc{margin-top:14px}
-    .proposal-toolbar{display:flex;gap:8px;margin-bottom:10px;justify-content:flex-end}
+    .proposal-toolbar{display:flex;gap:8px;margin-bottom:10px;justify-content:flex-end;flex-wrap:wrap}
+    .proposal-send-row{display:flex;gap:8px;margin-bottom:12px;padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;align-items:center}
+    .proposal-send-row input{flex:1;min-width:180px;padding:9px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px}
+    .proposal-send-row input:focus{outline:none;border-color:var(--sg-blue)}
+    .prop-send-status{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:10px}
+    .prop-send-status.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+    .prop-send-status.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
     .proposal-body{background:#fff;color:#1a1a2e;padding:48px 56px;border-radius:8px;line-height:1.7;font-size:14px;min-height:600px;font-family:'Inter',sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.4)}
     .proposal-body[contenteditable="true"]{outline:2px solid var(--sg-blue)}
     .proposal-body h1{font-family:'Space Grotesk',sans-serif;font-size:28px;margin-bottom:6px;color:#0f0f1a}
@@ -507,10 +513,18 @@
       </div>
       <div class="proposal-doc" id="proposalDoc" hidden>
         <div class="proposal-toolbar">
+          <button class="btn btn-primary" id="btnSendProposal">Send to customer →</button>
           <button class="btn" id="btnEditProposal">Edit</button>
           <button class="btn" id="btnPrintProposal">Print / Save PDF</button>
           <button class="btn btn-ghost" id="btnCopyProposal">Copy markdown</button>
         </div>
+        <div class="proposal-send-row" id="proposalSendRow" hidden>
+          <input type="email" id="propTo" placeholder="customer@example.com">
+          <input type="email" id="propCc" placeholder="cc (optional)">
+          <button class="btn btn-primary" id="btnDoSend">Send</button>
+          <button class="btn btn-ghost" id="btnCancelSend">Cancel</button>
+        </div>
+        <div id="propSendStatus" class="prop-send-status" hidden></div>
         <div class="proposal-body" id="proposalBody" contenteditable="false"></div>
       </div>
     </section>
@@ -2278,6 +2292,61 @@ flooring_lvp,5,3"></textarea>
       trades[t].items += 1;
     }
     est.trade_rollup = Object.values(trades).sort((a, b) => b.total - a.total);
+  }
+
+  // ---- Send proposal email ----
+  $('btnSendProposal').addEventListener('click', () => {
+    $('proposalSendRow').hidden = false;
+    $('propSendStatus').hidden = true;
+    // Pre-fill cc with the SG ops email if blank
+    if (!$('propCc').value) $('propCc').value = '';
+    $('propTo').focus();
+  });
+  $('btnCancelSend').addEventListener('click', () => {
+    $('proposalSendRow').hidden = true;
+  });
+  $('btnDoSend').addEventListener('click', sendProposalEmail);
+
+  async function sendProposalEmail() {
+    const to = $('propTo').value.trim();
+    const cc = $('propCc').value.trim();
+    const status = $('propSendStatus');
+    status.hidden = true;
+    if (!to) { status.className = 'prop-send-status err'; status.textContent = 'Recipient email required.'; status.hidden = false; return; }
+
+    const html_body = $('proposalBody').innerHTML;
+    const customer = $('propCustomer').value.trim();
+    const project  = $('propProject').value.trim();
+    const total    = window.__lastEstimate?.total;
+
+    const btn = $('btnDoSend');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, cc: cc || undefined, customer, project, html_body, total }),
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`API ${resp.status}: ${txt.slice(0, 200)}`);
+      }
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      status.className = 'prop-send-status ok';
+      status.textContent = `Sent to ${to}${cc ? ' (cc ' + cc + ')' : ''} at ${new Date().toLocaleTimeString()}.`;
+      status.hidden = false;
+      $('proposalSendRow').hidden = true;
+    } catch (err) {
+      console.error('Proposal send error:', err);
+      status.className = 'prop-send-status err';
+      status.textContent = 'Send failed: ' + err.message;
+      status.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+    }
   }
 
   $('btnEditProposal').addEventListener('click', () => {

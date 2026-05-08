@@ -643,6 +643,91 @@ ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
   }
 });
 
+/**
+ * Email a generated proposal to the customer.
+ * Frontend supplies the rendered HTML body (it already has the md→html
+ * converter for the on-screen view) plus the customer / project context.
+ * We wrap it in a branded shell and send via the existing SMTP transporter.
+ */
+router.post('/blueprint/proposal/send', async (req, res) => {
+  try {
+    const { to, cc, customer = '', project = '', html_body, total } = req.body || {};
+    if (!to || typeof to !== 'string') return res.status(400).json({ error: 'to (recipient email) is required' });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.status(400).json({ error: 'recipient email looks invalid' });
+    if (!html_body) return res.status(400).json({ error: 'html_body is required' });
+
+    // Reuse the SMTP transporter from the email router. We don't import it
+    // directly to avoid coupling — instead require it lazily.
+    let transporter;
+    try {
+      const path = require('path');
+      const nodemailer = require('nodemailer');
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '465', 10),
+        secure: (process.env.SMTP_SECURE !== 'false'),
+        auth: {
+          user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
+          pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
+        },
+      });
+    } catch (e) {
+      return res.status(503).json({ error: 'SMTP transport unavailable: ' + e.message });
+    }
+    if (!process.env.SMTP_PASS && !process.env.GMAIL_APP_PASSWORD) {
+      return res.status(503).json({ error: 'SMTP_PASS / GMAIL_APP_PASSWORD not configured on server' });
+    }
+
+    const subject = `Proposal — ${project || 'your project'}${customer ? ' for ' + customer : ''}`;
+    const totalLine = (total != null && Number.isFinite(+total))
+      ? `<p style="font-size:20px;font-weight:700;color:#0f0f1a;margin:0 0 16px">Total bid: $${(+total).toLocaleString()}</p>`
+      : '';
+
+    const wrapped = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${escapeHtmlServer(subject)}</title></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
+  <div style="max-width:780px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+    <div style="background:#1a1a2e;padding:24px 32px;border-bottom:3px solid #f9cb00">
+      <div style="color:#f9cb00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Surprise Granite · AZ ROC #341113</div>
+      <div style="color:#fff;font-size:22px;font-weight:700;margin-top:4px;font-family:'Space Grotesk',sans-serif">Project Proposal</div>
+    </div>
+    <div style="padding:32px">
+      ${customer ? `<p style="margin:0 0 4px;color:#0f0f1a"><strong>Prepared for:</strong> ${escapeHtmlServer(customer)}</p>` : ''}
+      ${project  ? `<p style="margin:0 0 16px;color:#0f0f1a"><strong>Project:</strong> ${escapeHtmlServer(project)}</p>` : ''}
+      ${totalLine}
+      <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0">
+      ${html_body}
+      <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 16px">
+      <p style="margin:0;color:#666;font-size:13px;line-height:1.6">
+        Questions? Reply to this email or call <a href="tel:+16028333189" style="color:#0f0f1a">(602) 833-3189</a>.<br>
+        <strong>Surprise Granite</strong> · 15464 W Aster Dr, Surprise AZ 85379 · <a href="https://www.surprisegranite.com" style="color:#0f0f1a">surprisegranite.com</a>
+      </p>
+    </div>
+  </div>
+</body></html>`;
+
+    const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+    await transporter.sendMail({
+      from: `"Surprise Granite" <${fromEmail}>`,
+      to,
+      cc: cc || undefined,
+      replyTo: process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com',
+      subject,
+      html: wrapped,
+    });
+
+    logger.info('Proposal emailed', { to, customer, project });
+    res.json({ ok: true, sent_at: new Date().toISOString() });
+  } catch (err) {
+    logger.error('Proposal send error:', err);
+    return handleApiError(res, err, 'Proposal send');
+  }
+});
+
+function escapeHtmlServer(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // ============ AI ROOM SCANNER ============
 
 /**
