@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Blueprint Takeoff | Multi-Page PDF Extraction | Surprise Granite</title>
-  <meta name="description" content="Drop a 1–100 page blueprint PDF. We auto-classify each sheet (plan, schedule, elevation), then pull countertop, cabinet, flooring, and tile takeoffs from the relevant pages.">
+  <title>AI Quantity Takeoff &amp; Estimating | Construction Plans → Priced Proposal | Surprise Granite</title>
+  <meta name="description" content="AI-powered construction takeoff. Drop your plans (PDF, Dropbox, Google Drive), get auto-classified sheet index, quantity takeoffs, material schedule, line-item estimate, and proposal — in minutes.">
   <link rel="canonical" href="https://www.surprisegranite.com/tools/blueprint-takeoff/">
   <link rel="icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
 
@@ -168,6 +168,46 @@
     .estimate-table tfoot td{padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600;background:rgba(0,0,0,.2)}
     .estimate-table tfoot tr.grand td{font-size:15px;color:var(--sg-blue);background:rgba(59,130,246,.1)}
 
+    .trade-rollup-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;color:var(--text-secondary)}
+    .trade-rollup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+    .trade-card{padding:10px 12px;background:var(--sg-darker);border:1px solid var(--border);border-radius:6px;border-left:3px solid var(--sg-blue)}
+    .trade-card .name{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);font-weight:600}
+    .trade-card .amt{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-top:2px}
+    .trade-card .meta{font-size:10px;color:var(--text-muted);margin-top:2px}
+
+    .estimate-table .order-info{display:block;font-size:11px;color:var(--sg-gold);margin-top:2px;font-family:'Menlo',monospace}
+    .estimate-table .self-perform{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
+    .self-perform.self{background:rgba(34,197,94,.18);color:#4ade80}
+    .self-perform.sub{background:rgba(156,163,175,.18);color:#9ca3af}
+    .self-perform.material{background:rgba(251,191,36,.18);color:#fbbf24}
+
+    .proposal-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;padding:14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
+    .proposal-controls label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600;flex:1;min-width:200px}
+    .proposal-controls input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;padding:8px 10px;font-size:13px;font-family:inherit}
+    .proposal-controls input:focus{outline:none;border-color:var(--sg-blue)}
+
+    .proposal-doc{margin-top:14px}
+    .proposal-toolbar{display:flex;gap:8px;margin-bottom:10px;justify-content:flex-end}
+    .proposal-body{background:#fff;color:#1a1a2e;padding:48px 56px;border-radius:8px;line-height:1.7;font-size:14px;min-height:600px;font-family:'Inter',sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+    .proposal-body[contenteditable="true"]{outline:2px solid var(--sg-blue)}
+    .proposal-body h1{font-family:'Space Grotesk',sans-serif;font-size:28px;margin-bottom:6px;color:#0f0f1a}
+    .proposal-body h2{font-family:'Space Grotesk',sans-serif;font-size:18px;margin:24px 0 8px;color:#0f0f1a;border-bottom:2px solid #f9cb00;padding-bottom:4px}
+    .proposal-body h3{font-size:14px;font-weight:700;margin:18px 0 6px;color:#0f0f1a}
+    .proposal-body p{margin-bottom:10px}
+    .proposal-body ul,.proposal-body ol{margin:8px 0 12px 24px}
+    .proposal-body li{margin-bottom:4px}
+    .proposal-body table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+    .proposal-body th,.proposal-body td{border:1px solid #ddd;padding:8px 12px;text-align:left}
+    .proposal-body th{background:#f5f5f5;font-weight:700}
+    .proposal-body .num,.proposal-body td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .proposal-body strong{color:#0f0f1a}
+    @media print {
+      body > *:not(.proposal-doc){display:none !important}
+      .proposal-toolbar{display:none !important}
+      .proposal-doc{margin:0;padding:0}
+      .proposal-body{box-shadow:none;padding:0;min-height:auto}
+    }
+
     .estimate-notes{font-size:12px;color:var(--text-secondary);background:var(--sg-darker);border:1px solid var(--border);border-left:3px solid var(--sg-blue);border-radius:6px;padding:12px 16px;line-height:1.6}
     .estimate-notes ul{list-style:none;padding:0;margin:6px 0 0}
     .estimate-notes li{padding:3px 0}
@@ -191,9 +231,9 @@
   <section class="hero">
     <div class="hero-content">
       <div class="hero-meta">
-        <div class="hero-eyebrow">Blueprint Takeoff · Multi-page</div>
-        <h1>Drop a permit set. Get takeoffs.</h1>
-        <p>Auto-classifies every sheet (plan / schedule / elevation), then extracts countertop, cabinet, flooring, tile quantities and material specs only from the pages that matter.</p>
+        <div class="hero-eyebrow">AI Takeoff · Estimating · Proposal</div>
+        <h1>From plans to priced proposal — in minutes.</h1>
+        <p>Quantity takeoff, material schedule, line-item estimate, and customer-ready proposal. AI reads the drawings; the math stays deterministic so every number on your bid is auditable.</p>
       </div>
       <div class="hero-status">
         <span>Pages<strong id="hPages">—</strong></span>
@@ -206,8 +246,8 @@
   <main>
     <!-- STEP 1 -->
     <section class="step" id="step1">
-      <h2><span class="num">1</span> Ingest blueprint</h2>
-      <div class="hint">Upload a PDF, or paste a Dropbox / Google Drive single-file share link. Text layer is parsed locally to build the sheet index — no AI tokens spent yet.</div>
+      <h2><span class="num">1</span> Plans</h2>
+      <div class="hint">Upload a PDF, or paste a Dropbox / Google Drive single-file share link. Text layer is parsed locally to build the sheet index — no AI cost yet.</div>
       <div class="ingest-grid">
         <label class="drop" id="dropZone">
           <div class="icon">📐</div>
@@ -255,7 +295,7 @@
 
     <!-- STEP 2 -->
     <section class="step" id="step2" hidden>
-      <h2><span class="num">2</span> Confirm which sheets to extract</h2>
+      <h2><span class="num">2</span> Sheet Index</h2>
       <div class="hint">We pre-checked the pages most likely to carry takeoffs (floor plans + schedules). Untick what you don't need — every checked page costs ~1 AI call.</div>
       <div class="summary-bar" id="summaryBar"></div>
       <div class="row-actions">
@@ -272,7 +312,7 @@
 
     <!-- STEP 3 -->
     <section class="step" id="step3" hidden>
-      <h2><span class="num">3</span> Takeoff totals</h2>
+      <h2><span class="num">3</span> Quantity Takeoff</h2>
       <div class="hint" id="step3hint">Aggregated across all extracted pages. Click any line to see the source page.</div>
       <div id="extractError" class="error-box" hidden></div>
       <div id="extractProgress" hidden>
@@ -305,7 +345,7 @@
     <!-- STEP 4 — Estimate -->
     <section class="step" id="step4" hidden>
       <h2><span class="num">4</span> Estimate</h2>
-      <div class="hint" id="step4hint">Industry-average pricing (Phoenix mid-range). Edit any number above and re-generate to refine. Catalog matching against SG stock comes next.</div>
+      <div class="hint" id="step4hint">SG slab catalog matched where possible; industry averages elsewhere. Per-category waste applied (granite/quartz 15%, quartzite 25%, tile 10-15%, LVP 8%). Adjust margin / GC overhead and recalculate to refine.</div>
       <div id="estError" class="error-box" hidden></div>
       <div class="estimate-controls">
         <label>Project type
@@ -318,25 +358,56 @@
             <option value="residential-bath">Residential — bath</option>
           </select>
         </label>
-        <label>Margin
-          <input type="number" id="estMargin" min="0" max="100" step="1" value="30"> <span>%</span>
-        </label>
-        <label>Waste
-          <input type="number" id="estWaste" min="0" max="50" step="1" value="10"> <span>%</span>
-        </label>
+        <label>Margin <input type="number" id="estMargin" min="0" max="100" step="1" value="30"> <span>%</span></label>
+        <label>GC overhead <input type="number" id="estGcOverhead" min="0" max="30" step="1" value="8"> <span>%</span></label>
+        <label>Waste <input type="number" id="estWaste" min="0" max="50" step="1" placeholder="auto"> <span>%</span></label>
         <button class="btn btn-primary" id="btnRecalc">Recalculate</button>
       </div>
       <div class="estimate-summary" id="estSummary" hidden></div>
+      <div id="tradeRollup" hidden>
+        <h3 class="trade-rollup-title">Trade Breakout</h3>
+        <div class="trade-rollup-grid" id="tradeRollupGrid"></div>
+      </div>
       <div class="estimate-table-wrap" id="estTableWrap" hidden>
         <table class="estimate-table">
           <thead>
-            <tr><th>Item</th><th>Qty</th><th>Unit $ (mat / lab)</th><th class="num">Material</th><th class="num">Labor</th><th class="num">Total</th></tr>
+            <tr><th>Item</th><th>Qty / Order</th><th>Unit $ (mat / lab)</th><th class="num">Material</th><th class="num">Labor</th><th class="num">Total</th></tr>
           </thead>
           <tbody id="estTableBody"></tbody>
           <tfoot id="estTableFoot"></tfoot>
         </table>
       </div>
       <div class="estimate-notes" id="estNotes"></div>
+      <div class="row-actions" style="margin-top:18px" id="estActions" hidden>
+        <button class="btn btn-primary" id="btnGenerateProposal">Generate proposal →</button>
+        <button class="btn" id="btnExportCsv">Export CSV</button>
+        <button class="btn btn-ghost" id="btnExportEstJson">Export JSON</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 — Proposal -->
+    <section class="step" id="step5" hidden>
+      <h2><span class="num">5</span> Proposal</h2>
+      <div class="hint">AI-drafted client-ready proposal: cover, scope of work, exclusions, payment schedule, and assumptions. Edit anything before sending.</div>
+      <div class="proposal-controls">
+        <label>Customer name <input type="text" id="propCustomer" placeholder="Better Buzz Coffee"></label>
+        <label>Project name <input type="text" id="propProject" placeholder="Surprise State Farm — Memorabilia &amp; Waiting"></label>
+        <label>Project address <input type="text" id="propAddress" placeholder="optional"></label>
+        <button class="btn btn-primary" id="btnDraftProposal">Draft proposal →</button>
+      </div>
+      <div id="propError" class="error-box" hidden></div>
+      <div id="propProgress" hidden>
+        <div class="progress"><div class="bar" id="propBar"></div></div>
+        <div class="progress-label">Drafting proposal…</div>
+      </div>
+      <div class="proposal-doc" id="proposalDoc" hidden>
+        <div class="proposal-toolbar">
+          <button class="btn" id="btnEditProposal">Edit</button>
+          <button class="btn" id="btnPrintProposal">Print / Save PDF</button>
+          <button class="btn btn-ghost" id="btnCopyProposal">Copy markdown</button>
+        </div>
+        <div class="proposal-body" id="proposalBody" contenteditable="false"></div>
+      </div>
     </section>
   </main>
 
@@ -979,7 +1050,10 @@
     }));
     const projectType = $('estProjectType').value;
     const margin = (parseFloat($('estMargin').value) || 30) / 100;
-    const waste  = (parseFloat($('estWaste').value)  || 10) / 100;
+    const gcOverhead = (parseFloat($('estGcOverhead').value) || 8) / 100;
+    // Empty waste → use per-category defaults (server applies them).
+    const wasteRaw = $('estWaste').value;
+    const waste  = wasteRaw === '' ? null : (parseFloat(wasteRaw) || 0) / 100;
 
     $('step4').hidden = false;
     $('estError').hidden = true;
@@ -989,10 +1063,12 @@
     $('step4').scrollIntoView({ behavior:'smooth', block:'start' });
 
     try {
+      const opts = { margin, gcOverhead };
+      if (waste !== null) opts.waste = waste;
       const resp = await fetch(API_BASE + '/api/ai/blueprint/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ takeoff, materials, projectType, options: { margin, waste } }),
+        body: JSON.stringify({ takeoff, materials, projectType, options: opts }),
       });
       if (!resp.ok) throw new Error(`API ${resp.status}`);
       const est = await resp.json();
@@ -1011,35 +1087,63 @@
     const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
     const items = est.line_items || [];
 
-    // Summary cards
     $('estSummary').hidden = false;
     $('estSummary').innerHTML = `
       <div class="est-stat"><div class="lbl">Material</div><div class="val">${fmt(est.subtotals?.material)}</div></div>
       <div class="est-stat"><div class="lbl">Labor</div><div class="val">${fmt(est.subtotals?.labor)}</div></div>
-      <div class="est-stat"><div class="lbl">Margin (${Math.round((est.margin_factor||0)*100)}%)</div><div class="val">${fmt(est.subtotals?.overhead)}</div></div>
-      <div class="est-stat total"><div class="lbl">Total</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
+      <div class="est-stat"><div class="lbl">O&amp;P (${Math.round((est.margin_factor||0)*100)}%)</div><div class="val">${fmt(est.subtotals?.overhead)}</div></div>
+      <div class="est-stat total"><div class="lbl">Total Bid</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
     `;
 
-    // Line-item table
+    // Per-trade rollup
+    const trades = est.trade_rollup || [];
+    $('tradeRollup').hidden = trades.length === 0;
+    $('tradeRollupGrid').innerHTML = trades.map(t => `
+      <div class="trade-card">
+        <div class="name">${escapeHtml(t.trade.replace(/_/g,' '))}</div>
+        <div class="amt">${fmt(t.total)}</div>
+        <div class="meta">${t.items} item${t.items>1?'s':''} · mat ${fmt(t.material)} · lab ${fmt(t.labor)}</div>
+      </div>
+    `).join('');
+
+    // Line-item table with ordering info + self-perform badges
     $('estTableWrap').hidden = items.length === 0;
-    $('estTableBody').innerHTML = items.map(li => `
+    $('estTableBody').innerHTML = items.map(li => {
+      const meta = [li.code, li.source].filter(Boolean).join(' · ');
+      const sp = li.self_perform || 'sub';
+      const ord = li.ordering;
+      let orderHtml = '';
+      if (ord) {
+        const parts = [];
+        if (ord.slabs)   parts.push(`order <strong>${ord.slabs}</strong> slab${ord.slabs>1?'s':''}`);
+        if (ord.cartons) parts.push(`order <strong>${ord.cartons}</strong> carton${ord.cartons>1?'s':''}`);
+        if (ord.raw_sf && ord.waste_pct != null) parts.push(`${ord.raw_sf.toLocaleString()}sf raw + ${ord.waste_pct}% waste`);
+        if (parts.length) orderHtml = `<span class="order-info">${parts.join(' · ')}</span>`;
+      }
+      return `
       <tr>
         <td class="desc">
           ${escapeHtml(li.description || li.category)}
-          <span class="desc-meta">${escapeHtml((li.code ? `${li.code} · ` : '') + (li.source || ''))}${li.cabinet_count ? ` · ${li.cabinet_count} cabinets` : ''}</span>
+          <span class="self-perform ${sp}">${sp}</span>
+          ${meta ? `<span class="desc-meta">${escapeHtml(meta)}</span>` : ''}
+          ${li.cabinet_count ? `<span class="desc-meta">${li.cabinet_count} cabinets</span>` : ''}
         </td>
-        <td class="num">${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}</td>
+        <td class="num">
+          ${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}
+          ${orderHtml}
+        </td>
         <td class="num" style="font-size:11px;color:var(--text-muted)">${fmt(li.material_unit)} / ${fmt(li.labor_unit)}</td>
         <td class="num">${fmt(li.material_cost)}</td>
         <td class="num">${fmt(li.labor_cost)}</td>
         <td class="num"><strong>${fmt(li.total)}</strong></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
     $('estTableFoot').innerHTML = `
-      <tr><td colspan="3">Subtotal</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
-      <tr><td colspan="5">Overhead &amp; margin (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
-      <tr class="grand"><td colspan="5">Total</td><td class="num">${fmt(est.total)}</td></tr>
+      <tr><td colspan="3">Subtotal (cost)</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
+      <tr><td colspan="5">Overhead &amp; profit (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
+      <tr class="grand"><td colspan="5">Total bid</td><td class="num">${fmt(est.total)}</td></tr>
     `;
+    $('estActions').hidden = items.length === 0;
 
     // Notes + unbilled materials
     const noteParts = [];
@@ -1054,12 +1158,212 @@
     $('estNotes').innerHTML = noteParts.join('');
   }
 
+  // ---- Step 5 — Proposal ----
+  $('btnGenerateProposal').addEventListener('click', () => {
+    $('step5').hidden = false;
+    $('step5').scrollIntoView({ behavior:'smooth', block:'start' });
+    $('propCustomer').focus();
+  });
+
+  $('btnDraftProposal').addEventListener('click', draftProposal);
+
+  async function draftProposal() {
+    const est = window.__lastEstimate;
+    if (!est) { showPropError('Generate the estimate first.'); return; }
+    const customer = $('propCustomer').value.trim();
+    const project  = $('propProject').value.trim();
+    const address  = $('propAddress').value.trim();
+
+    $('propError').hidden = true;
+    $('propProgress').hidden = false;
+    $('proposalDoc').hidden = true;
+    $('propBar').style.width = '15%';
+
+    const headers = { 'Content-Type': 'application/json' };
+    const userKey = (localStorage.getItem('sg_byok_openai_key') || '').trim();
+    if (userKey) headers['x-user-openai-key'] = userKey;
+
+    try {
+      $('propBar').style.width = '40%';
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          estimate: est,
+          customer, project, address,
+          materials: window.__lastMaterials || [],
+        }),
+      });
+      $('propBar').style.width = '85%';
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`API ${resp.status}: ${txt.slice(0,300)}`);
+      }
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      $('propBar').style.width = '100%';
+      window.__lastProposalMarkdown = data.markdown || '';
+      renderProposal(data.markdown || '');
+      setTimeout(() => { $('propProgress').hidden = true; }, 300);
+    } catch (err) {
+      console.error('Proposal error:', err);
+      showPropError('Could not draft proposal: ' + err.message);
+    }
+  }
+
+  function showPropError(msg) {
+    $('propError').textContent = msg;
+    $('propError').hidden = false;
+    $('propProgress').hidden = true;
+  }
+
+  // Minimal markdown → HTML (handles headings, bold, italics, lists, tables,
+  // paragraphs). Good enough for a proposal doc; we don't need a full parser.
+  function mdToHtml(md) {
+    if (!md) return '';
+    const escape = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const lines = md.split('\n');
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+      const ln = lines[i];
+
+      // Tables (very simple — header | --- | rows)
+      if (/^\s*\|.*\|\s*$/.test(ln) && i+1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i+1])) {
+        const headers = ln.split('|').slice(1,-1).map(c => c.trim());
+        i += 2;
+        const rows = [];
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+          rows.push(lines[i].split('|').slice(1,-1).map(c => c.trim()));
+          i++;
+        }
+        out.push('<table><thead><tr>' + headers.map((h,idx) => `<th${idx>0?' class="num"':''}>${inline(h)}</th>`).join('') + '</tr></thead><tbody>'
+          + rows.map(r => '<tr>' + r.map((c,idx) => `<td${idx>0?' class="num"':''}>${inline(c)}</td>`).join('') + '</tr>').join('')
+          + '</tbody></table>');
+        continue;
+      }
+
+      // Headings
+      const h = ln.match(/^(#{1,3})\s+(.*)$/);
+      if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+
+      // Lists
+      if (/^\s*[-*]\s+/.test(ln)) {
+        const items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+          items.push(lines[i].replace(/^\s*[-*]\s+/, ''));
+          i++;
+        }
+        out.push('<ul>' + items.map(it => `<li>${inline(it)}</li>`).join('') + '</ul>');
+        continue;
+      }
+      if (/^\s*\d+\.\s+/.test(ln)) {
+        const items = [];
+        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+          items.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
+          i++;
+        }
+        out.push('<ol>' + items.map(it => `<li>${inline(it)}</li>`).join('') + '</ol>');
+        continue;
+      }
+
+      // Blank line
+      if (!ln.trim()) { i++; continue; }
+
+      // Paragraph
+      const para = [ln];
+      i++;
+      while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|\s*[-*]\s|\s*\d+\.\s|\s*\|)/.test(lines[i])) {
+        para.push(lines[i]); i++;
+      }
+      out.push('<p>' + inline(para.join(' ')) + '</p>');
+    }
+    return out.join('\n');
+
+    function inline(s) {
+      return escape(s)
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+  }
+
+  function renderProposal(md) {
+    $('proposalDoc').hidden = false;
+    $('proposalBody').innerHTML = mdToHtml(md);
+  }
+
+  $('btnEditProposal').addEventListener('click', () => {
+    const body = $('proposalBody');
+    const editing = body.contentEditable === 'true';
+    body.contentEditable = editing ? 'false' : 'true';
+    $('btnEditProposal').textContent = editing ? 'Edit' : 'Done editing';
+    if (!editing) body.focus();
+  });
+
+  $('btnPrintProposal').addEventListener('click', () => window.print());
+
+  $('btnCopyProposal').addEventListener('click', async () => {
+    const md = window.__lastProposalMarkdown || '';
+    try {
+      await navigator.clipboard.writeText(md);
+      $('btnCopyProposal').textContent = 'Copied ✓';
+      setTimeout(() => { $('btnCopyProposal').textContent = 'Copy markdown'; }, 1500);
+    } catch (_) {
+      alert('Copy failed — your browser blocked clipboard access.');
+    }
+  });
+
+  // ---- CSV export ----
+  $('btnExportCsv').addEventListener('click', () => {
+    const est = window.__lastEstimate;
+    if (!est || !est.line_items) return;
+    const headers = ['Trade','Description','Code','Qty','Unit','Material $/u','Labor $/u','Material Total','Labor Total','Line Total','Source','Self-Perform'];
+    const rows = est.line_items.map(li => [
+      li.trade || li.category, li.description || '', li.code || '',
+      li.qty ?? '', li.unit ?? '',
+      li.material_unit ?? '', li.labor_unit ?? '',
+      li.material_cost ?? '', li.labor_cost ?? '', li.total ?? '',
+      li.source || '', li.self_perform || '',
+    ]);
+    rows.push([]);
+    rows.push(['', '', '', '', '', '', 'Subtotal', est.subtotals?.material ?? '', est.subtotals?.labor ?? '', est.subtotals?.subtotal ?? '', '', '']);
+    rows.push(['', '', '', '', '', '', `O&P (${Math.round((est.margin_factor||0)*100)}%)`, '', '', est.subtotals?.overhead ?? '', '', '']);
+    rows.push(['', '', '', '', '', '', 'TOTAL BID', '', '', est.total ?? '', '', '']);
+
+    const csv = [headers, ...rows].map(r => r.map(cell => {
+      const s = String(cell ?? '');
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `estimate-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $('btnExportEstJson').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({
+      estimate: window.__lastEstimate || null,
+      materials: window.__lastMaterials || [],
+      sheets,
+    }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `estimate-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
   $('btnNewPdf').addEventListener('click', () => {
     pdfDoc = null; sheets = [];
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
     $('step4').hidden = true;
+    $('step5').hidden = true;
+    $('proposalDoc').hidden = true;
     $('howStrip').hidden = false;
     $('parseError').hidden = true;
     $('parseProgress').hidden = true;

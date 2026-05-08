@@ -390,6 +390,142 @@ router.post('/blueprint/estimate', async (req, res) => {
   }
 });
 
+/**
+ * Blueprint takeoff → AI-drafted proposal.
+ * Takes the calculated estimate + customer/project context and generates
+ * professional client-ready proposal markdown. The model NEVER invents
+ * pricing — it narrates the deterministic numbers we feed it.
+ */
+router.post('/blueprint/proposal', async (req, res) => {
+  try {
+    const { estimate, customer = '', project = '', address = '', materials = [], userKey } = req.body || {};
+    if (!estimate || !estimate.line_items) {
+      return res.status(400).json({ error: 'estimate object with line_items is required' });
+    }
+
+    // BYOK: caller's key wins over server key. Header form: x-user-openai-key
+    const headerKey = req.get('x-user-openai-key') || req.get('x-openai-key');
+    const apiKey = (userKey || headerKey || process.env.OPENAI_API_KEY || '').trim();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key available — provide one via Settings (BYOK) or configure OPENAI_API_KEY on the server.' });
+
+    const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Compose the structured estimate as a compact JSON block the model can
+    // read, plus a deterministic line-item table so it doesn't have to do math.
+    const lineTable = estimate.line_items.map(li =>
+      `${li.description} | qty ${li.qty} ${li.unit} | ${fmt(li.material_cost)} mat | ${fmt(li.labor_cost)} lab | ${fmt(li.total)} total${li.code ? ' | code ' + li.code : ''}`
+    ).join('\n');
+
+    const tradeLines = (estimate.trade_rollup || []).map(t =>
+      `- ${t.trade}: ${fmt(t.total)} (${t.items} item${t.items>1?'s':''})`
+    ).join('\n');
+
+    const materialLines = materials.length
+      ? materials.map(m => `- ${m.code || '—'} (${m.category}): ${m.spec || '(no spec)'}`).join('\n')
+      : '(no materials extracted)';
+
+    const systemPrompt = `You are an experienced construction estimator drafting a professional client-ready proposal for a general contractor. You write in clean, plain-English business prose — no marketing fluff, no exclamation marks.
+
+CRITICAL RULES:
+1. NEVER invent or change any dollar amount, quantity, or material spec. Use ONLY the numbers in the line-item table provided.
+2. NEVER guess prices for items not listed. If something is missing, omit it or note it in Exclusions.
+3. Output Markdown only. Use ## headings, bullet lists, tables.
+4. Tone: confident, concise, professional. Like a real GC estimator wrote it, not a marketing copywriter.
+5. Length: 1-2 pages. Brevity is professional.
+
+Return the proposal in this structure:
+
+# Project Proposal — {Project Name}
+**Prepared for:** {Customer}
+**Date:** {Today}
+**Project address:** {address or "TBD"}
+
+## Scope of Work
+2-4 sentence overview of what the contractor is doing, derived from the trades present in the estimate.
+
+## Materials & Specifications
+A clean bulleted list of the material codes and their specs from the materials section. If specs are missing, write "to be selected from contractor allowance."
+
+## Pricing Summary
+A markdown table with columns: Trade | Description | Total. Use ONLY the line items provided.
+Include a final row with the total bid amount.
+
+## Inclusions
+Bulleted list of what IS in the bid. Derive from the line items.
+
+## Exclusions
+Standard exclusions a GC would call out: permits, design fees, hazardous-material abatement, structural changes not shown, owner-supplied materials, items beyond the takeoff. List 4-7 typical items.
+
+## Schedule & Payment
+Standard 50% deposit / balance on substantial completion language. Mention typical lead times for slabs (2-3 weeks), tile (1-2 weeks), cabinets (4-8 weeks).
+
+## Assumptions
+Any assumption notes from the estimate (waste %, GC overhead %, industry-avg vs catalog pricing). Be transparent.
+
+## Acceptance
+Standard signature/date block.`;
+
+    const userPrompt = `Draft the proposal using these facts:
+
+CUSTOMER: ${customer || '(not provided)'}
+PROJECT: ${project || '(not provided)'}
+ADDRESS: ${address || 'TBD'}
+TODAY: ${today}
+
+TRADE BREAKOUT:
+${tradeLines || '(no trades)'}
+
+LINE ITEMS (DO NOT CHANGE THESE NUMBERS):
+${lineTable}
+
+SUBTOTAL: ${fmt(estimate.subtotals?.subtotal)}
+OVERHEAD & PROFIT (${Math.round((estimate.margin_factor||0)*100)}%): ${fmt(estimate.subtotals?.overhead)}
+TOTAL BID: ${fmt(estimate.total)}
+RANGE: ${fmt(estimate.margin_range?.low)} — ${fmt(estimate.margin_range?.high)}
+
+WASTE STRATEGY: ${estimate.waste_strategy || 'per-category defaults'}
+GC OVERHEAD: ${Math.round((estimate.gc_overhead_factor||0)*100)}%
+
+MATERIALS SPECIFIED:
+${materialLines}
+
+ASSUMPTION NOTES:
+${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
+
+    const fetch = (await import('node-fetch')).default;
+    const oai = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        temperature: 0.4, // some warmth in prose, but tight to the facts
+        max_tokens: 2200,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+    });
+    if (!oai.ok) {
+      const errText = await oai.text();
+      logger.error('Proposal OpenAI error:', oai.status, errText.slice(0, 400));
+      return res.status(502).json({ error: `OpenAI ${oai.status}: ${errText.slice(0, 200)}` });
+    }
+    const data = await oai.json();
+    const markdown = data.choices?.[0]?.message?.content || '';
+    res.json({
+      markdown,
+      generated_at: new Date().toISOString(),
+      model: 'gpt-4o',
+      key_source: userKey || headerKey ? 'user (BYOK)' : 'server',
+    });
+  } catch (err) {
+    logger.error('Proposal generation error:', err);
+    return handleApiError(res, err, 'Proposal generation');
+  }
+});
+
 // ============ AI ROOM SCANNER ============
 
 /**
