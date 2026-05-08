@@ -73,6 +73,19 @@
     .pricing-row input{width:100%;padding:7px 10px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:5px;color:#fff;font-size:13px;font-family:'Menlo',monospace;text-align:right}
     .pricing-row input:focus{outline:none;border-color:var(--sg-blue)}
     .pricing-row .punit{font-size:11px;color:var(--text-muted);text-align:left}
+    .pricing-csv{margin-top:14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
+    .pricing-csv summary{padding:10px 14px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-secondary);list-style:none;text-transform:uppercase;letter-spacing:.4px}
+    .pricing-csv summary::-webkit-details-marker{display:none}
+    .pricing-csv summary::before{content:"+ ";color:var(--sg-blue);font-weight:700}
+    .pricing-csv[open] summary::before{content:"− "}
+    .pricing-csv-body{padding:0 14px 14px}
+    .pricing-csv-help{font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5}
+    .pricing-csv-help code{background:rgba(0,0,0,.4);padding:1px 5px;border-radius:3px;color:var(--sg-gold);font-size:10px}
+    .pricing-csv textarea{width:100%;padding:10px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:'Menlo',monospace;font-size:12px;resize:vertical}
+    .pricing-csv textarea:focus{outline:none;border-color:var(--sg-blue)}
+    .csv-result{font-size:12px;color:var(--text-secondary);align-self:center}
+    .csv-result.ok{color:#4ade80}
+    .csv-result.err{color:#fca5a5}
 
     .project-strip{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sg-surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
     .project-strip .ps-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700}
@@ -592,6 +605,25 @@
         Save your real SG rates per category — they replace the Phoenix industry averages on every estimate. Stored in <strong>your browser only</strong>. Leave a field empty to fall back to industry avg.
       </div>
       <div class="pricing-grid" id="pricingGrid"></div>
+
+      <details class="pricing-csv">
+        <summary>Or paste a CSV / spreadsheet → bulk-fill the form</summary>
+        <div class="pricing-csv-body">
+          <div class="pricing-csv-help">
+            Format: <code>key,material,labor</code> per line (header row optional). Use any of the rate keys shown next to each field above.
+            <button class="btn btn-ghost" id="btnPricingDownloadTpl" type="button" style="margin-left:8px">Download template</button>
+          </div>
+          <textarea id="pricingCsv" rows="6" placeholder="key,material,labor
+quartz_countertop,75,30
+tile_floor,9,8
+flooring_lvp,5,3"></textarea>
+          <div class="row-actions" style="margin-top:8px">
+            <button class="btn" id="btnPricingApplyCsv" type="button">Apply to form</button>
+            <span class="csv-result" id="pricingCsvResult"></span>
+          </div>
+        </div>
+      </details>
+
       <div class="byok-actions">
         <button class="btn btn-ghost" id="btnPricingClear" type="button">Clear all</button>
         <div style="flex:1"></div>
@@ -859,6 +891,60 @@
       closePricingModal();
     }
   });
+  // CSV bulk-fill — parse pasted CSV, fill the form fields without saving.
+  // User then reviews and clicks Save as normal. Format:
+  //   key,material,labor   (header row optional)
+  // Whitespace tolerant; missing material or labor leaves that field alone.
+  $('btnPricingApplyCsv').addEventListener('click', () => {
+    const raw = $('pricingCsv').value.trim();
+    const result = $('pricingCsvResult');
+    if (!raw) { result.className = 'csv-result err'; result.textContent = 'Paste some CSV first.'; return; }
+
+    const validKeys = new Set(PRICING_FIELDS.filter(f => f.key).map(f => f.key));
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let applied = 0, skipped = 0;
+    const skippedKeys = [];
+
+    for (const line of lines) {
+      // Split on tab OR comma (lets users paste from sheets directly)
+      const parts = line.split(/\t|,/).map(p => p.trim());
+      const [keyRaw, matRaw, labRaw] = parts;
+      // Skip header
+      if (!keyRaw || /^key$/i.test(keyRaw)) continue;
+      const key = keyRaw.toLowerCase().replace(/\s+/g, '_');
+      if (!validKeys.has(key)) { skipped++; skippedKeys.push(key); continue; }
+
+      const matInp = $('pricingGrid').querySelector(`input[data-key="${key}"][data-fld="material"]`);
+      const labInp = $('pricingGrid').querySelector(`input[data-key="${key}"][data-fld="labor"]`);
+      const matN = parseFloat(matRaw);
+      const labN = parseFloat(labRaw);
+      if (matInp && Number.isFinite(matN) && matN >= 0) matInp.value = matN;
+      if (labInp && Number.isFinite(labN) && labN >= 0) labInp.value = labN;
+      if (matInp || labInp) applied++;
+    }
+    if (applied) {
+      result.className = 'csv-result ok';
+      result.textContent = `Filled ${applied} row${applied>1?'s':''}${skipped ? ` (${skipped} unknown key${skipped>1?'s':''} skipped)` : ''}. Click Save to persist.`;
+    } else {
+      result.className = 'csv-result err';
+      result.textContent = `Nothing applied. ${skipped ? `Unknown keys: ${skippedKeys.slice(0,3).join(', ')}${skippedKeys.length>3?'…':''}` : 'Check the format.'}`;
+    }
+  });
+
+  $('btnPricingDownloadTpl').addEventListener('click', e => {
+    e.preventDefault();
+    const lines = ['key,material,labor'];
+    PRICING_FIELDS.filter(f => f.key).forEach(f => {
+      lines.push(`${f.key},,`);
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sg-pricing-template.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
   $('btnPricingSave').addEventListener('click', () => {
     const rates = {};
     $('pricingGrid').querySelectorAll('input[data-key]').forEach(inp => {
