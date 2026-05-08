@@ -50,6 +50,14 @@
     .ingest-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media (max-width:720px){.ingest-grid{grid-template-columns:1fr}}
 
+    .how-strip h2 .num{background:rgba(59,130,246,.15);color:var(--sg-blue);font-weight:700;font-style:italic}
+    .how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    @media (max-width:720px){.how-grid{grid-template-columns:1fr}}
+    .how-card{padding:14px 16px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
+    .how-num{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--sg-blue);line-height:1;margin-bottom:8px}
+    .how-title{font-size:13px;font-weight:700;margin-bottom:4px}
+    .how-body{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
     .drop{border:1.5px dashed rgba(59,130,246,.3);border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(59,130,246,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px}
     .drop:hover,.drop.dragover{border-color:var(--sg-blue);background:rgba(59,130,246,.08)}
     .drop .icon{font-size:24px;margin-bottom:6px;opacity:.85}
@@ -190,6 +198,28 @@
         <div class="progress-label" id="parseLabel">Parsing…</div>
       </div>
       <div id="parseError" class="error-box" hidden></div>
+    </section>
+
+    <!-- HOW IT WORKS — visible until first upload, hidden afterward -->
+    <section class="step how-strip" id="howStrip">
+      <h2><span class="num">i</span> How it works</h2>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-num">1</div>
+          <div class="how-title">Drop a PDF</div>
+          <div class="how-body">Up to 100 pages. We read the text layer in your browser to build a sheet index — zero AI cost yet.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-num">2</div>
+          <div class="how-title">Pick the pages that matter</div>
+          <div class="how-body">Floor plans + finish/cabinet schedules are pre-checked. Untick anything you don't need.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-num">3</div>
+          <div class="how-title">Get takeoffs + material specs</div>
+          <div class="how-body">Countertop sf/lf, cabinet count/lf, flooring sf, tile sf — plus every material code called out in the schedules.</div>
+        </div>
+      </div>
     </section>
 
     <!-- STEP 2 -->
@@ -463,6 +493,7 @@
   // ---- Step 2: sheet index UI ----
   function showSheetIndex() {
     $('parseProgress').hidden = true;
+    $('howStrip').hidden = true;
     $('step2').hidden = false;
     $('step2').scrollIntoView({ behavior:'smooth', block:'start' });
     $('hPages').textContent = sheets.length;
@@ -821,8 +852,12 @@
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
+    $('howStrip').hidden = false;
     $('parseError').hidden = true;
     $('parseProgress').hidden = true;
+    $('hPages').textContent = '—';
+    $('hSelected').textContent = '—';
+    $('hExtracted').textContent = '—';
     $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
   });
 

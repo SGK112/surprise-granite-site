@@ -604,6 +604,9 @@
       if (path.startsWith('/get-a-free-estimate')) return;
       if (path.startsWith('/account')) return; // logged-in CRM users don't need it
       if (path.startsWith('/cart') || path.startsWith('/checkout')) return;
+      // Pro tools (blueprint takeoff, room designer, calculators) are workspace
+      // surfaces — keep marketing widgets off them.
+      if (path.startsWith('/tools/')) return;
 
       // If user previously dismissed the full callout, show the small
       // re-open pill instead so the offer never fully disappears.
