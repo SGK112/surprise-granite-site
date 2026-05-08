@@ -312,19 +312,23 @@ router.post('/blueprint', async (req, res) => {
         }
       }
 
-      const hasOpenAI = !!process.env.OPENAI_API_KEY;
+      // BYOK: caller's key (header) wins over server's. Frontend forwards
+      // the user's OpenAI key as x-user-openai-key when set.
+      const userKey = (req.get('x-user-openai-key') || req.get('x-openai-key') || '').trim();
+      const effectiveKey = userKey || process.env.OPENAI_API_KEY || '';
+      const hasOpenAI = !!effectiveKey;
       const hasOllama = useOllama;
 
       if (blueprintData && (hasOpenAI || hasOllama)) {
         const provider = hasOllama ? 'ollama' : 'openai';
-        logger.info(`Analyzing blueprint with ${provider}...`);
+        logger.info(`Analyzing blueprint with ${provider}${userKey ? ' (BYOK)' : ''}...`);
 
         try {
           const aiResult = await analyzeBlueprint({
             image: blueprintData,
             projectType: projectType || 'full-home',
             provider: provider,
-            apiKey: process.env.OPENAI_API_KEY,
+            apiKey: effectiveKey,
             rates: materialPricing,
             wasteFactor: 0.10,
             userContext: userContext // Pass user-provided context to enhance AI understanding
