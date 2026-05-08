@@ -932,6 +932,7 @@
       lastMaterials: window.__lastMaterials || null,
       lastEstimate: window.__lastEstimate || null,
       lastProposalMarkdown: window.__lastProposalMarkdown || null,
+      lastCoverInfo: window.__lastCoverInfo || null,
       perPage: window.__lastPerPage || null,
       stages: {
         index: sheets.length > 0,
@@ -977,6 +978,7 @@
     window.__lastMaterials = p.lastMaterials || null;
     window.__lastEstimate = p.lastEstimate || null;
     window.__lastProposalMarkdown = p.lastProposalMarkdown || null;
+    window.__lastCoverInfo = p.lastCoverInfo || null;
     window.__lastPerPage = p.perPage || null;
     window.__lastSourceLabel = p.source || '';
 
@@ -1317,6 +1319,7 @@
     window.__lastMaterials = null;
     window.__lastEstimate = null;
     window.__lastProposalMarkdown = null;
+    window.__lastCoverInfo = null;
     window.__lastPerPage = null;
 
     $('parseError').hidden = true;
@@ -1924,11 +1927,57 @@
   }
 
   // ---- Step 5 — Proposal ----
-  $('btnGenerateProposal').addEventListener('click', () => {
+  $('btnGenerateProposal').addEventListener('click', async () => {
     $('step5').hidden = false;
     $('step5').scrollIntoView({ behavior:'smooth', block:'start' });
-    $('propCustomer').focus();
+
+    // Auto-fill from cover sheet if we have a PDF loaded, a COVER page,
+    // and we haven't already extracted the metadata for this project.
+    const coverSheet = sheets.find(s => s.type === 'COVER');
+    const alreadyHasMetadata = window.__lastCoverInfo;
+    const fieldsAreEmpty = !$('propCustomer').value && !$('propProject').value && !$('propAddress').value;
+
+    if (alreadyHasMetadata) {
+      applyCoverInfo(alreadyHasMetadata);
+    } else if (coverSheet && pdfDoc && fieldsAreEmpty) {
+      await tryAutoFillFromCover(coverSheet);
+    }
+    if (!$('propCustomer').value) $('propCustomer').focus();
   });
+
+  async function tryAutoFillFromCover(coverSheet) {
+    const btn = $('btnDraftProposal');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Reading cover sheet…';
+    try {
+      const jpegDataUrl = await rasterizePage(coverSheet.pageNum, 1.4);
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/cover', {
+        method: 'POST',
+        headers: aiHeaders(),
+        body: JSON.stringify({ image: jpegDataUrl }),
+      });
+      if (!resp.ok) throw new Error(`cover API ${resp.status}`);
+      const info = await resp.json();
+      if (info.error) throw new Error(info.error);
+      window.__lastCoverInfo = info;
+      applyCoverInfo(info);
+      autoSave();
+    } catch (err) {
+      console.warn('Cover auto-fill failed:', err.message);
+      // Silent failure — user just types it in. No need to alarm.
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  function applyCoverInfo(info) {
+    if (!info) return;
+    if (info.customer && !$('propCustomer').value) $('propCustomer').value = info.customer;
+    if (info.project_name && !$('propProject').value) $('propProject').value = info.project_name;
+    if (info.project_address && !$('propAddress').value) $('propAddress').value = info.project_address;
+  }
 
   $('btnDraftProposal').addEventListener('click', draftProposal);
 
@@ -2199,6 +2248,7 @@
     window.__lastMaterials = null;
     window.__lastEstimate = null;
     window.__lastProposalMarkdown = null;
+    window.__lastCoverInfo = null;
     window.__lastPerPage = null;
     fileInput.value = '';
     $('step2').hidden = true;

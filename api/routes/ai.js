@@ -395,6 +395,70 @@ router.post('/blueprint/estimate', async (req, res) => {
 });
 
 /**
+ * Cover-sheet metadata extractor.
+ * One vision call against the project's cover/title sheet. Returns the
+ * project name, owner/customer, project address, GC and architect names.
+ * Used to auto-fill the proposal customer/project fields.
+ */
+router.post('/blueprint/cover', async (req, res) => {
+  try {
+    const { image } = req.body || {};
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'image (base64 data URL) is required' });
+    }
+    const headerKey = req.get('x-user-openai-key') || req.get('x-openai-key');
+    const apiKey = ((req.body.userKey || headerKey || process.env.OPENAI_API_KEY) || '').trim();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key available — provide one via Settings (BYOK) or configure OPENAI_API_KEY on the server.' });
+
+    const fetch = (await import('node-fetch')).default;
+    const oai = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        temperature: 0,
+        max_tokens: 500,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'You read the cover/title sheet of an architectural drawing set and extract project metadata. Return ONLY a JSON object with these fields (use empty string when not visible — never invent): {"project_name":"","customer":"","project_address":"","gc":"","architect":"","date":""}. project_name is the building or project title. customer is the owner / client / tenant. project_address is the street address of the work site. gc is the general contractor name (if listed). architect is the design firm. date is the issue date. Use exact text from the drawing.',
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract project metadata from this cover sheet.' },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!oai.ok) {
+      const errText = await oai.text();
+      logger.error('Cover extract OpenAI error:', oai.status, errText.slice(0, 300));
+      return res.status(502).json({ error: `OpenAI ${oai.status}: ${errText.slice(0, 200)}` });
+    }
+    const data = await oai.json();
+    let parsed = {};
+    try { parsed = JSON.parse(data.choices?.[0]?.message?.content || '{}'); }
+    catch (_) { parsed = {}; }
+    res.json({
+      project_name: parsed.project_name || '',
+      customer: parsed.customer || '',
+      project_address: parsed.project_address || '',
+      gc: parsed.gc || '',
+      architect: parsed.architect || '',
+      date: parsed.date || '',
+      key_source: headerKey || req.body.userKey ? 'user (BYOK)' : 'server',
+    });
+  } catch (err) {
+    logger.error('Cover extract error:', err);
+    return handleApiError(res, err, 'Cover extract');
+  }
+});
+
+/**
  * Blueprint takeoff → AI-drafted proposal.
  * Takes the calculated estimate + customer/project context and generates
  * professional client-ready proposal markdown. The model NEVER invents
