@@ -538,11 +538,13 @@
       `Sheet ${sheet.sheetNum}: ${sheet.title}`,
       `Drawing type: ${sheet.type}.`,
       sheet.type === 'SCHEDULE'
-        ? 'This is a SCHEDULE / table page. Read every row. Return material counts and dimensions exactly as written. Do not estimate from visual area.'
+        ? 'This is a SCHEDULE / table page. Read every row of the finish or cabinet schedule. Return material counts and dimensions EXACTLY as written in the table. Do NOT estimate from visual area.'
         : sheet.type === 'PLAN'
-        ? 'This is a FLOOR PLAN. Estimate countertop linear feet and square footage from labeled dimensions, cabinet runs, room areas. Read room labels for surface scope.'
-        : 'Extract any explicit material quantities visible on this sheet.',
-      'Return countertop_sqft, countertop_lf, cabinet_count, cabinet_lf, flooring_sqft, tile_sqft when present. Skip mechanical/electrical/plumbing.',
+        ? 'This is a FLOOR PLAN. Return flooring_sqft ONLY for explicitly labeled interior finished rooms (dining, prep, kitchen, restroom, office, retail). ' +
+          'DO NOT return building footprint, exterior wall dimensions, gross site area, lot area, or property-line dimensions as flooring. ' +
+          'Count cabinets only if they appear in plan view with a label (B36, W3030, etc) — do not infer cabinets from elevations on this page.'
+        : 'Extract only explicit, labeled material quantities. If you cannot see an explicit quantity label, return 0 for that field — do not estimate.',
+      'Return countertop_sqft, countertop_lf, cabinet_count, cabinet_lf, flooring_sqft, tile_sqft when present. Skip mechanical/electrical/plumbing. When in doubt, return 0 — under-reporting is correct, over-estimating is wrong.',
     ].join(' ');
 
     const resp = await fetch(API_BASE + '/api/ai/blueprint', {
@@ -566,40 +568,81 @@
   }
 
   function renderTotals(perPage) {
-    const totals = { countertop_sqft:0, countertop_lf:0, cabinet_count:0, cabinet_lf:0, flooring_sqft:0, tile_sqft:0 };
-    const sources = { countertop_sqft:[], countertop_lf:[], cabinet_count:[], cabinet_lf:[], flooring_sqft:[], tile_sqft:[] };
+    // Per-page contributions: each metric tracks {sheet, value} per page.
+    // We aggregate intelligently below — never naive SUM across sheet types.
+    const contribs = {
+      countertop_sqft:[], countertop_lf:[], cabinet_count:[],
+      cabinet_lf:[], flooring_sqft:[], tile_sqft:[],
+    };
+
+    function add(key, val, sheet) {
+      const n = +val;
+      if (Number.isFinite(n) && n > 0) contribs[key].push({ sheet, value: n });
+    }
 
     for (const p of perPage) {
       if (!p.ok || !p.result) continue;
       const r = p.result;
-      // Top-level totals from convertAIResultToLegacy (camelCase)
-      addIfNum(totals, sources, 'countertop_sqft', r.countertopSqft ?? r.countertop_sqft, p.sheet);
-      addIfNum(totals, sources, 'flooring_sqft',   r.flooringSqft   ?? r.flooring_sqft,   p.sheet);
-      addIfNum(totals, sources, 'tile_sqft',       r.tileSqft       ?? r.tile_sqft,       p.sheet);
 
-      // Cabinet count + linear feet derived from rooms[].cabinets[]
-      // Backend schema: cabinet.width is in INCHES, cabinet.type tags base/wall/etc.
+      add('countertop_sqft', r.countertopSqft ?? r.countertop_sqft, p.sheet);
+      add('flooring_sqft',   r.flooringSqft   ?? r.flooring_sqft,   p.sheet);
+      add('tile_sqft',       r.tileSqft       ?? r.tile_sqft,       p.sheet);
+
+      // Cabinet metrics derived from rooms[].cabinets[] — accumulate per page,
+      // then add ONE entry per page (so we can dedupe correctly across sheets).
       if (Array.isArray(r.rooms)) {
+        let pgCabCount = 0, pgCabLf = 0, pgCounterLf = 0;
         for (const room of r.rooms) {
           if (Array.isArray(room.cabinets)) {
             for (const c of room.cabinets) {
-              addIfNum(totals, sources, 'cabinet_count', 1, p.sheet);
+              pgCabCount += 1;
               const wIn = +c.width || 0;
               if (wIn > 0) {
-                addIfNum(totals, sources, 'cabinet_lf', wIn / 12, p.sheet);
-                // Countertops sit on base cabinets (incl. sink/drawer/corner bases) — sum their widths
+                pgCabLf += wIn / 12;
                 if (/^(base|sink|drawer|corner|appliance)/i.test(c.type || '')) {
-                  addIfNum(totals, sources, 'countertop_lf', wIn / 12, p.sheet);
+                  pgCounterLf += wIn / 12;
                 }
               }
             }
           }
-          // Fall-through for legacy room shapes that name surfaces directly
-          addIfNum(totals, sources, 'countertop_sqft', room.countertopSqft ?? room.countertop_sqft, p.sheet);
-          addIfNum(totals, sources, 'flooring_sqft',   room.flooringSqft   ?? room.flooring_sqft,   p.sheet);
-          addIfNum(totals, sources, 'tile_sqft',       room.tileSqft       ?? room.tile_sqft,       p.sheet);
+          add('countertop_sqft', room.countertopSqft ?? room.countertop_sqft, p.sheet);
+          add('flooring_sqft',   room.flooringSqft   ?? room.flooring_sqft,   p.sheet);
+          add('tile_sqft',       room.tileSqft       ?? room.tile_sqft,       p.sheet);
         }
+        if (pgCabCount > 0)  contribs.cabinet_count.push({ sheet: p.sheet, value: pgCabCount });
+        if (pgCabLf > 0)     contribs.cabinet_lf.push   ({ sheet: p.sheet, value: pgCabLf });
+        if (pgCounterLf > 0) contribs.countertop_lf.push({ sheet: p.sheet, value: pgCounterLf });
       }
+    }
+
+    // ---- Aggregation strategy ----
+    // 1. SCHEDULE pages are authoritative when present (sum line items across schedules)
+    // 2. Fall back to PLAN pages only:
+    //      - sqft fields → MAX (multiple plans of same space; biggest reading wins)
+    //      - count/lf fields → SUM (different rooms per plan, no overlap)
+    // 3. ELEVATION / SECTION / DETAIL / RCP are IGNORED in totals (they double-count
+    //    fixtures already shown in plan/schedule)
+    // 4. If no plan or schedule contributed, fall back to whatever we got with a warning.
+    const sum = arr => arr.reduce((s,c) => s + c.value, 0);
+    const max = arr => arr.reduce((m,c) => Math.max(m, c.value), 0);
+
+    function aggregate(key) {
+      const all = contribs[key];
+      if (!all.length) return { value: 0, sources: [], strategy: 'none' };
+      const isSqft = /sqft$/.test(key);
+      const sched = all.filter(c => c.sheet.type === 'SCHEDULE');
+      if (sched.length) return { value: sum(sched), sources: sched, strategy: 'schedule sum' };
+      const plan = all.filter(c => c.sheet.type === 'PLAN');
+      if (plan.length) {
+        return isSqft
+          ? { value: max(plan), sources: plan, strategy: 'plan max (deduped overlays)' }
+          : { value: sum(plan), sources: plan, strategy: 'plan sum' };
+      }
+      return {
+        value: isSqft ? max(all) : sum(all),
+        sources: all,
+        strategy: 'fallback — no plan/schedule pages contributed',
+      };
     }
 
     const cards = [
@@ -611,11 +654,19 @@
       { key:'tile_sqft',       label:'Tile',      unit:'sf' },
     ];
 
+    // Stash for export
+    window.__lastTotals = {};
+    cards.forEach(c => { window.__lastTotals[c.key] = aggregate(c.key); });
+
     $('totalsGrid').innerHTML = cards.map(c => {
-      const v = totals[c.key];
-      const pages = [...new Set(sources[c.key].map(s => s.sheetNum))];
-      const breakdown = pages.length
-        ? `from ${pages.length} sheet${pages.length>1?'s':''}: ${pages.slice(0,4).join(', ')}${pages.length>4?'…':''}`
+      const agg = window.__lastTotals[c.key];
+      const v = agg.value;
+      const sample = agg.sources.slice(0,3)
+        .map(s => `${s.sheet.sheetNum}=${s.value.toLocaleString(undefined,{maximumFractionDigits:1})}`)
+        .join(', ');
+      const more = agg.sources.length > 3 ? `, +${agg.sources.length-3} more` : '';
+      const breakdown = agg.sources.length
+        ? `<div style="font-weight:600;color:var(--text-secondary);margin-bottom:2px">${escapeHtml(agg.strategy)}</div>${escapeHtml(sample)}${escapeHtml(more)}`
         : 'not detected';
       return `
         <div class="total-card">
@@ -624,14 +675,6 @@
           <div class="breakdown">${breakdown}</div>
         </div>`;
     }).join('');
-  }
-
-  function addIfNum(totals, sources, key, val, sheet) {
-    const n = +val;
-    if (Number.isFinite(n) && n > 0) {
-      totals[key] += n;
-      sources[key].push(sheet);
-    }
   }
 
   function renderPerPage(perPage) {
