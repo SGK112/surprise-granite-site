@@ -395,6 +395,79 @@ router.post('/blueprint/estimate', async (req, res) => {
 });
 
 /**
+ * Vendor price-sheet parser.
+ * Takes a vendor catalog page (rasterized to base64 image) and returns a
+ * structured list of products: brand, line, color/pattern, size, finish,
+ * sku, price, unit. Used to build per-tenant custom catalogs the estimator
+ * can match material specs against — no scraping, no third-party APIs.
+ */
+router.post('/blueprint/catalog/parse', async (req, res) => {
+  try {
+    const { image, vendorHint } = req.body || {};
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'image (base64 data URL) is required' });
+    }
+    const headerKey = req.get('x-user-openai-key') || req.get('x-openai-key');
+    const apiKey = ((req.body.userKey || headerKey || process.env.OPENAI_API_KEY) || '').trim();
+    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key available — provide one via Settings (BYOK).' });
+
+    const fetch = (await import('node-fetch')).default;
+    const oai = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        temperature: 0,
+        max_tokens: 3000,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `You read vendor price-sheet pages from material suppliers (tile, flooring, cabinets, stone, paint, etc.) and extract structured product data. Return ONLY a JSON object: {"vendor":"","category":"","products":[]}.
+
+vendor: the supplier brand (e.g., "Daltile", "MSI Surfaces", "Mohawk", "Wilsonart", "Daltile Marazzi").
+category: one of tile, flooring, cabinet, stone, paint, fixture, other.
+products: array of {sku, name, line, color, size, finish, thickness, price, price_unit} — fields empty when not visible. price is a number (no $ sign). price_unit is sf, lf, each, box, slab, gallon, etc.
+
+Rules:
+- Read EVERY product row in the visible price list / catalog page.
+- Use exact text from the page — never invent a sku or price.
+- If multiple price tiers shown (e.g., per-box vs per-sf), prefer per-sf for tile/flooring, per-each for cabinets/fixtures.
+- If the page is NOT a product price list (e.g., it's a marketing splash page), return {"vendor":"","category":"","products":[]} with no entries.
+- Limit to first 50 products if the page is dense.`,
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: `Extract products from this catalog page.${vendorHint ? ' Vendor hint: ' + vendorHint : ''}` },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!oai.ok) {
+      const errText = await oai.text();
+      logger.error('Catalog parse OpenAI error:', oai.status, errText.slice(0, 300));
+      return res.status(502).json({ error: `OpenAI ${oai.status}: ${errText.slice(0, 200)}` });
+    }
+    const data = await oai.json();
+    let parsed = { vendor: '', category: '', products: [] };
+    try { parsed = JSON.parse(data.choices?.[0]?.message?.content || '{}'); }
+    catch (_) { /* keep default */ }
+    res.json({
+      vendor: parsed.vendor || vendorHint || '',
+      category: parsed.category || '',
+      products: Array.isArray(parsed.products) ? parsed.products : [],
+      key_source: headerKey || req.body.userKey ? 'user (BYOK)' : 'server',
+    });
+  } catch (err) {
+    logger.error('Catalog parse error:', err);
+    return handleApiError(res, err, 'Catalog parse');
+  }
+});
+
+/**
  * Cover-sheet metadata extractor.
  * One vision call against the project's cover/title sheet. Returns the
  * project name, owner/customer, project address, GC and architect names.

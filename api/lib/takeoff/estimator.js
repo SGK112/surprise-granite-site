@@ -215,6 +215,10 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   // category. Lets a user save their actual SG pricing once and have every
   // future estimate use those numbers instead of the Phoenix industry avg.
   const userRates = (options.userRates && typeof options.userRates === 'object') ? options.userRates : {};
+  // materialPriceOverrides: { [materialCode]: { material: $/u, source: "Vendor SKU" } }
+  // Set by frontend after matching extracted materials against vendor catalogs.
+  // Wins over both userRates and industry avg for the matching line.
+  const matOverrides = (options.materialPriceOverrides && typeof options.materialPriceOverrides === 'object') ? options.materialPriceOverrides : {};
   const crewRate = Number.isFinite(options.crewRate) && options.crewRate > 0 ? options.crewRate : DEFAULT_CREW_RATE;
   const ratesFor = key => {
     const base = INDUSTRY_RATES[key] || {};
@@ -244,15 +248,24 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const qty = ctSqft * (1 + wf);
     const slabsToOrder = Math.ceil(qty / usableSfPerSlab);
 
-    // V2: try to match the spec against SG's catalog. If we hit, use the
-    // catalog price (per sf slab cost) — labor stays at industry avg since
-    // the catalog only carries product cost. User override beats catalog.
-    const hit = ctMat ? matchCatalog(ctMat.spec, refined) : null;
-    const matRate = rates._override ? rates.material : (hit?.item?.price > 0 ? hit.item.price : rates.material);
-    const description = hit
+    // Priority order for material price:
+    //   1. Frontend-resolved vendor catalog match (matOverrides[code])
+    //   2. User My Pricing override (rates._override)
+    //   3. SG slab catalog match (matchCatalog)
+    //   4. Industry avg (rates.material)
+    const codeOverride = ctMat?.code ? matOverrides[ctMat.code] : null;
+    const hit = ctMat && !codeOverride ? matchCatalog(ctMat.spec, refined) : null;
+    const matRate = codeOverride ? Number(codeOverride.material)
+                  : rates._override ? rates.material
+                  : (hit?.item?.price > 0 ? hit.item.price : rates.material);
+    const description = codeOverride && codeOverride.source
+      ? codeOverride.source
+      : hit
       ? `${hit.item.name}${hit.item.brand ? ' — ' + hit.item.brand : ''}${hit.item.tier ? ' (' + hit.item.tier + ')' : ''}`
       : (ctMat?.spec || `${refined.charAt(0).toUpperCase()}${refined.slice(1)} countertop`);
-    const source = rates._override
+    const source = codeOverride
+      ? `Vendor catalog match (${codeOverride.source})`
+      : rates._override
       ? 'My Pricing (saved override)'
       : (hit ? `SG catalog (${hit.confidence} match: ${hit.matchedOn})` : 'industry avg (Phoenix mid-range)');
 
@@ -336,16 +349,18 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const rates = ratesFor(refined).material != null ? ratesFor(refined) : ratesFor('flooring_lvp');
     const wf = wasteFor(refined);
     const qty = flSqft * (1 + wf);
+    const codeOverride = flMat?.code ? matOverrides[flMat.code] : null;
+    const matRate = codeOverride ? Number(codeOverride.material) : rates.material;
     lineItems.push(lineItem({
       category: 'flooring',
       trade: 'flooring',
-      description: flMat?.spec || refined.replace(/_/g, ' '),
+      description: codeOverride?.source || flMat?.spec || refined.replace(/_/g, ' '),
       code: flMat?.code,
       qty,
       unit: 'sf',
-      matRate: rates.material,
+      matRate,
       labRate: rates.labor,
-      source: rates._override ? 'My Pricing' : 'industry avg',
+      source: codeOverride ? `Vendor catalog match (${codeOverride.source})` : (rates._override ? 'My Pricing' : 'industry avg'),
       selfPerform: 'sub',
       rateKey: refined, crewRate,
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
@@ -361,16 +376,18 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const wf = wasteFor(refined === 'tile_lg_format' ? 'tile_lg_format' : 'tile');
     const qty = tileSqft * (1 + wf);
     const cartons = Math.ceil(qty / tileSfPerCarton);
+    const codeOverride = tileMat?.code ? matOverrides[tileMat.code] : null;
+    const matRate = codeOverride ? Number(codeOverride.material) : rates.material;
     lineItems.push(lineItem({
       category: 'tile',
       trade: 'tile',
-      description: tileMat?.spec || 'Tile (assumed floor — adjust for wall/backsplash)',
+      description: codeOverride?.source || tileMat?.spec || 'Tile (assumed floor — adjust for wall/backsplash)',
       code: tileMat?.code,
       qty,
       unit: 'sf',
-      matRate: rates.material,
+      matRate,
       labRate: rates.labor,
-      source: rates._override ? 'My Pricing' : 'industry avg',
+      source: codeOverride ? `Vendor catalog match (${codeOverride.source})` : (rates._override ? 'My Pricing' : 'industry avg'),
       selfPerform: 'sub',
       rateKey: refined, crewRate,
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
