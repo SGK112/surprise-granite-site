@@ -74,6 +74,20 @@
     .pricing-row input:focus{outline:none;border-color:var(--sg-blue)}
     .pricing-row .punit{font-size:11px;color:var(--text-muted);text-align:left}
 
+    .projects-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:60vh;overflow-y:auto}
+    .projects-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--sg-darker);border:1px dashed var(--border);border-radius:8px}
+    .project-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
+    .project-row:hover{border-color:var(--sg-blue);background:rgba(59,130,246,.06)}
+    .project-row .pr-name{font-weight:600;font-size:14px;color:#fff;display:block;margin-bottom:3px}
+    .project-row .pr-meta{font-size:11px;color:var(--text-muted);display:block}
+    .project-row .pr-stages{display:flex;gap:4px}
+    .pr-stage{font-size:9px;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+    .pr-stage.pr-on{background:rgba(34,197,94,.18);color:#4ade80}
+    .pr-stage.pr-off{background:rgba(75,85,99,.2);color:#6b7280}
+    .pr-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:4px}
+    .pr-del:hover{color:var(--sg-red);background:rgba(239,68,68,.1)}
+    .project-bid{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--sg-blue);font-size:14px;text-align:right;white-space:nowrap}
+
     .estimate-table .editable-cell{cursor:text;border-bottom:1px dashed transparent;transition:border-color .15s,background .15s;padding:1px 4px;border-radius:3px}
     .estimate-table .editable-cell:hover{border-color:rgba(59,130,246,.4)}
     .estimate-table .editable-cell:focus{outline:none;border-color:var(--sg-blue);background:rgba(59,130,246,.08)}
@@ -277,6 +291,10 @@
         <span>Pages<strong id="hPages">—</strong></span>
         <span>Selected<strong id="hSelected">—</strong></span>
         <span>Extracted<strong id="hExtracted">—</strong></span>
+        <button class="hero-key-btn" id="btnProjects" type="button" title="Saved projects on this device">
+          <span class="hero-key-icon">📁</span>
+          <span id="projectsStatus">No saved projects</span>
+        </button>
         <button class="hero-key-btn" id="btnPricingSettings" type="button" title="Save your real SG rates per category">
           <span class="hero-key-icon">💲</span>
           <span id="pricingStatus">Industry rates</span>
@@ -456,6 +474,22 @@
       </div>
     </section>
   </main>
+
+  <!-- Projects modal -->
+  <div class="byok-modal" id="projectsModal" role="dialog" aria-modal="true" aria-labelledby="projectsTitle">
+    <div class="byok-card" style="max-width:640px">
+      <h3 id="projectsTitle">Saved Projects</h3>
+      <div class="byok-sub">
+        Your projects are saved automatically as you work — sheet index, takeoffs, materials, estimate, proposal. Stored in <strong>this browser only</strong>. Click to resume; PDF won't restore but cached extraction results will, so you can pick up at the estimate or proposal step.
+      </div>
+      <div class="projects-list" id="projectsList"></div>
+      <div class="byok-actions">
+        <button class="btn btn-ghost" id="btnProjectsClear" type="button">Clear all</button>
+        <div style="flex:1"></div>
+        <button class="btn" id="btnProjectsClose" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- My Pricing modal -->
   <div class="byok-modal" id="pricingModal" role="dialog" aria-modal="true" aria-labelledby="pricingTitle">
@@ -752,6 +786,235 @@
 
   refreshPricingStatus();
 
+  // ---- Project save / restore ----
+  // Single localStorage key holds an index map: { [projectId]: snapshot }.
+  // Snapshot omits the PDF binary (too big) and the per-page text layer
+  // (large + only needed for initial classification). Cached extraction
+  // results ARE saved — that's the expensive part to recover.
+  const PROJECTS_STORAGE_KEY = 'sg_takeoff_projects';
+  const PROJECT_FORMAT_VERSION = 1;
+  let currentProjectId = null;
+  let autosaveTimer = null;
+
+  function getProjects() {
+    try { return JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+  function setProjects(map) {
+    try { localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(map)); }
+    catch (e) {
+      console.warn('Project save failed (likely localStorage full):', e);
+      // Best-effort: drop the oldest project and retry once.
+      try {
+        const entries = Object.entries(map).sort((a,b) => (a[1].updatedAt||0) - (b[1].updatedAt||0));
+        if (entries.length > 1) {
+          delete map[entries[0][0]];
+          localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(map));
+        }
+      } catch (_) {}
+    }
+    refreshProjectsStatus();
+  }
+  function refreshProjectsStatus() {
+    const all = getProjects();
+    const n = Object.keys(all).length;
+    const btn = $('btnProjects');
+    btn.classList.toggle('active', n > 0);
+    $('projectsStatus').textContent = n > 0 ? `Projects (${n})` : 'No saved projects';
+  }
+
+  function snapshotCurrent(name) {
+    if (!sheets.length) return null;
+    const sheetsLite = sheets.map(s => ({
+      pageNum: s.pageNum, sheetNum: s.sheetNum, type: s.type,
+      title: s.title, selected: s.selected,
+    }));
+    return {
+      v: PROJECT_FORMAT_VERSION,
+      id: currentProjectId || `p_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      name: name || (currentProjectId && getProjects()[currentProjectId]?.name) || 'Untitled project',
+      source: window.__lastSourceLabel || '',
+      sheets: sheetsLite,
+      lastTotals: window.__lastTotals || null,
+      lastMaterials: window.__lastMaterials || null,
+      lastEstimate: window.__lastEstimate || null,
+      lastProposalMarkdown: window.__lastProposalMarkdown || null,
+      perPage: window.__lastPerPage || null,
+      stages: {
+        index: sheets.length > 0,
+        extracted: !!(window.__lastTotals && Object.keys(window.__lastTotals).length),
+        estimated: !!window.__lastEstimate,
+        proposed: !!window.__lastProposalMarkdown,
+      },
+      createdAt: (currentProjectId && getProjects()[currentProjectId]?.createdAt) || Date.now(),
+      updatedAt: Date.now(),
+    };
+  }
+
+  function autoSave(name) {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      const snap = snapshotCurrent(name);
+      if (!snap) return;
+      const all = getProjects();
+      all[snap.id] = snap;
+      setProjects(all);
+      currentProjectId = snap.id;
+    }, 400);
+  }
+
+  function deleteProject(id) {
+    const all = getProjects();
+    delete all[id];
+    setProjects(all);
+    if (currentProjectId === id) currentProjectId = null;
+    renderProjectsList();
+  }
+
+  function loadProject(id) {
+    const all = getProjects();
+    const p = all[id];
+    if (!p) return;
+    currentProjectId = id;
+
+    pdfDoc = null; // PDF binary not saved
+    sheets = (p.sheets || []).map(s => ({ ...s, text: '' }));
+
+    window.__lastTotals = p.lastTotals || null;
+    window.__lastMaterials = p.lastMaterials || null;
+    window.__lastEstimate = p.lastEstimate || null;
+    window.__lastProposalMarkdown = p.lastProposalMarkdown || null;
+    window.__lastPerPage = p.perPage || null;
+    window.__lastSourceLabel = p.source || '';
+
+    $('howStrip').hidden = true;
+    $('parseProgress').hidden = true;
+    $('parseError').hidden = true;
+    $('hPages').textContent = sheets.length;
+
+    if (sheets.length) {
+      $('step2').hidden = false;
+      renderSummary();
+      renderSheetList();
+      updateExtractButton();
+    }
+    if (window.__lastTotals && Object.keys(window.__lastTotals).length) {
+      $('step3').hidden = false;
+      renderTotalsFromCache();
+      if (window.__lastMaterials?.length) renderMaterials();
+      if (window.__lastPerPage) renderPerPage(window.__lastPerPage);
+      $('hExtracted').textContent = (window.__lastPerPage || []).filter(p => p.ok).length;
+    }
+    if (window.__lastEstimate) {
+      $('step4').hidden = false;
+      renderEstimate(window.__lastEstimate);
+    }
+    if (window.__lastProposalMarkdown) {
+      $('step5').hidden = false;
+      $('proposalDoc').hidden = false;
+      $('proposalBody').innerHTML = mdToHtml(window.__lastProposalMarkdown);
+    }
+
+    closeProjectsModal();
+    $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // Render totals grid from cached __lastTotals — used on resume.
+  function renderTotalsFromCache() {
+    const t = window.__lastTotals || {};
+    const cards = [
+      { key:'countertop_sqft', label:'Countertops', unit:'sf' },
+      { key:'countertop_lf',   label:'Countertop runs', unit:'lf' },
+      { key:'cabinet_count',   label:'Cabinets',  unit:'count' },
+      { key:'cabinet_lf',      label:'Cabinet runs',  unit:'lf' },
+      { key:'flooring_sqft',   label:'Flooring',  unit:'sf' },
+      { key:'tile_sqft',       label:'Tile',      unit:'sf' },
+    ];
+    $('totalsGrid').innerHTML = cards.map(c => {
+      const agg = t[c.key] || { value: 0, sources: [], strategy: 'restored' };
+      const v = agg.value;
+      const sample = (agg.sources || []).slice(0,3)
+        .map(s => `${s.sheet?.sheetNum || '?'}=${(s.value||0).toLocaleString(undefined,{maximumFractionDigits:1})}`)
+        .join(', ');
+      const more = (agg.sources || []).length > 3 ? `, +${agg.sources.length-3} more` : '';
+      const breakdown = (agg.sources || []).length
+        ? `<div style="font-weight:600;color:var(--text-secondary);margin-bottom:2px">${escapeHtml(agg.strategy || '')}</div>${escapeHtml(sample)}${escapeHtml(more)}`
+        : 'restored from saved project';
+      return `
+        <div class="total-card">
+          <div class="label">${c.label}</div>
+          <div class="value">${v ? v.toLocaleString(undefined, {maximumFractionDigits:1}) : '—'}<span class="unit">${v ? c.unit : ''}</span></div>
+          <div class="breakdown">${breakdown}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderProjectsList() {
+    const list = $('projectsList');
+    const all = getProjects();
+    const arr = Object.values(all).sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+    if (!arr.length) {
+      list.innerHTML = '<div class="projects-empty">No saved projects yet. Drop a PDF to start — it auto-saves as you work.</div>';
+      return;
+    }
+    const fmtDate = ts => {
+      const d = new Date(ts), now = new Date(), diffMs = now - d;
+      if (diffMs < 60_000) return 'just now';
+      if (diffMs < 3600_000) return Math.floor(diffMs / 60_000) + 'm ago';
+      if (diffMs < 86400_000) return Math.floor(diffMs / 3600_000) + 'h ago';
+      return d.toLocaleDateString();
+    };
+    list.innerHTML = arr.map(p => {
+      const st = p.stages || {};
+      const stage = (label, on) => `<span class="pr-stage ${on ? 'pr-on' : 'pr-off'}">${label}</span>`;
+      const bid = p.lastEstimate?.total ? '$' + p.lastEstimate.total.toLocaleString() : '';
+      return `
+        <div class="project-row" data-id="${p.id}">
+          <div>
+            <span class="pr-name">${escapeHtml(p.name)}</span>
+            <span class="pr-meta">${escapeHtml(p.source || '')}${p.source ? ' · ' : ''}${(p.sheets||[]).length} sheets · updated ${fmtDate(p.updatedAt)}</span>
+            <div class="pr-stages" style="margin-top:6px">
+              ${stage('index', st.index)}
+              ${stage('takeoff', st.extracted)}
+              ${stage('estimate', st.estimated)}
+              ${stage('proposal', st.proposed)}
+            </div>
+          </div>
+          <div class="project-bid">${bid}</div>
+          <button class="pr-del" type="button" data-del="${p.id}" aria-label="Delete project">×</button>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.project-row').forEach(row => {
+      row.addEventListener('click', e => {
+        if (e.target.classList.contains('pr-del')) return;
+        loadProject(row.dataset.id);
+      });
+    });
+    list.querySelectorAll('.pr-del').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm('Delete this project? Cannot be undone.')) deleteProject(btn.dataset.del);
+      });
+    });
+  }
+
+  function openProjectsModal() { renderProjectsList(); $('projectsModal').classList.add('open'); }
+  function closeProjectsModal() { $('projectsModal').classList.remove('open'); }
+
+  $('btnProjects').addEventListener('click', openProjectsModal);
+  $('btnProjectsClose').addEventListener('click', closeProjectsModal);
+  $('projectsModal').addEventListener('click', e => { if (e.target === $('projectsModal')) closeProjectsModal(); });
+  $('btnProjectsClear').addEventListener('click', () => {
+    if (confirm('Delete ALL saved projects? Cannot be undone.')) {
+      setProjects({});
+      renderProjectsList();
+    }
+  });
+
+  refreshProjectsStatus();
+
   // ---- Drag/drop wiring ----
   ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => {
     e.preventDefault(); dropZone.classList.add('dragover');
@@ -869,6 +1132,17 @@
       return;
     }
 
+    // Fresh upload = new project. Track filename as source label for the
+    // saved-project list. Reset extraction caches so we don't accidentally
+    // attribute old results to a new PDF.
+    currentProjectId = null;
+    window.__lastSourceLabel = file.name;
+    window.__lastTotals = null;
+    window.__lastMaterials = null;
+    window.__lastEstimate = null;
+    window.__lastProposalMarkdown = null;
+    window.__lastPerPage = null;
+
     $('parseError').hidden = true;
     $('parseProgress').hidden = false;
     setParseProgress(0, 'Reading PDF…');
@@ -891,6 +1165,9 @@
         setParseProgress(i / pdfDoc.numPages, `Indexed ${i} of ${pdfDoc.numPages} pages`);
       }
       showSheetIndex();
+      // Auto-save: project name = filename (no extension)
+      const niceName = (window.__lastSourceLabel || 'Untitled').replace(/\.pdf$/i, '');
+      autoSave(niceName);
     } catch (err) {
       console.error('PDF parse error:', err);
       showParseError('Could not parse PDF: ' + (err.message || err));
@@ -1008,10 +1285,12 @@
     }
 
     $('extractProgress').hidden = true;
+    window.__lastPerPage = perPage;
     renderTotals(perPage);
     renderMaterials(perPage);
     renderPerPage(perPage);
     $('hExtracted').textContent = perPage.filter(p => p.ok).length;
+    autoSave();
   }
 
   // ---- Materials aggregation ----
@@ -1354,6 +1633,7 @@
       if (est.error) throw new Error(est.error);
       window.__lastEstimate = est;
       renderEstimate(est);
+      autoSave();
     } catch (err) {
       console.error('Estimate error:', err);
       $('estError').textContent = 'Could not generate estimate: ' + err.message;
@@ -1502,6 +1782,7 @@
       window.__lastProposalMarkdown = data.markdown || '';
       renderProposal(data.markdown || '');
       setTimeout(() => { $('propProgress').hidden = true; }, 300);
+      autoSave();
     } catch (err) {
       console.error('Proposal error:', err);
       showPropError('Could not draft proposal: ' + err.message);
@@ -1620,6 +1901,7 @@
 
     recalcEstimateTotals(window.__lastEstimate);
     renderEstimate(window.__lastEstimate);
+    autoSave();
   }
 
   // Recompute subtotals, GC overhead (re-derived from non-GC lines), trade
@@ -1727,6 +2009,13 @@
 
   $('btnNewPdf').addEventListener('click', () => {
     pdfDoc = null; sheets = [];
+    currentProjectId = null;
+    window.__lastSourceLabel = '';
+    window.__lastTotals = null;
+    window.__lastMaterials = null;
+    window.__lastEstimate = null;
+    window.__lastProposalMarkdown = null;
+    window.__lastPerPage = null;
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
