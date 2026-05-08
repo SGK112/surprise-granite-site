@@ -471,10 +471,16 @@ router.post('/blueprint/proposal', async (req, res) => {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
     }
 
-    // BYOK: caller's key wins over server key. Header form: x-user-openai-key
-    const headerKey = req.get('x-user-openai-key') || req.get('x-openai-key');
-    const apiKey = (userKey || headerKey || process.env.OPENAI_API_KEY || '').trim();
-    if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key available — provide one via Settings (BYOK) or configure OPENAI_API_KEY on the server.' });
+    // BYOK: caller's key wins over server key. We support TWO providers for
+    // the proposal writer — Anthropic (Claude) is preferred when its key is
+    // set since it tends to write tighter business prose. OpenAI is fallback.
+    const headerKey       = req.get('x-user-openai-key') || req.get('x-openai-key');
+    const anthropicHeader = req.get('x-user-anthropic-key') || req.get('x-anthropic-key');
+    const userAnthKey     = req.body.userAnthKey || anthropicHeader || '';
+    const userOpenAiKey   = userKey || headerKey || '';
+    const useAnthropic    = !!userAnthKey;
+    const apiKey = (useAnthropic ? userAnthKey : (userOpenAiKey || process.env.OPENAI_API_KEY) || '').trim();
+    if (!apiKey) return res.status(400).json({ error: 'No AI key available — provide an OpenAI or Anthropic key via Settings (BYOK), or configure OPENAI_API_KEY on the server.' });
 
     const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -566,31 +572,70 @@ ASSUMPTION NOTES:
 ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
 
     const fetch = (await import('node-fetch')).default;
-    const oai = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        temperature: 0.4, // some warmth in prose, but tight to the facts
-        max_tokens: 2200,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
-    if (!oai.ok) {
-      const errText = await oai.text();
-      logger.error('Proposal OpenAI error:', oai.status, errText.slice(0, 400));
-      return res.status(502).json({ error: `OpenAI ${oai.status}: ${errText.slice(0, 200)}` });
+    let markdown = '';
+    let modelUsed = '';
+    let provider = '';
+
+    if (useAnthropic) {
+      // Anthropic Messages API — system goes in a top-level field, not a role.
+      provider = 'anthropic';
+      modelUsed = 'claude-sonnet-4-5';
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: modelUsed,
+          max_tokens: 2400,
+          temperature: 0.4,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+      if (!r.ok) {
+        const errText = await r.text();
+        logger.error('Proposal Anthropic error:', r.status, errText.slice(0, 400));
+        return res.status(502).json({ error: `Anthropic ${r.status}: ${errText.slice(0, 200)}` });
+      }
+      const data = await r.json();
+      // Claude returns content as an array of blocks; concatenate text blocks.
+      markdown = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    } else {
+      provider = 'openai';
+      modelUsed = 'gpt-4o';
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: modelUsed,
+          temperature: 0.4,
+          max_tokens: 2200,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      });
+      if (!r.ok) {
+        const errText = await r.text();
+        logger.error('Proposal OpenAI error:', r.status, errText.slice(0, 400));
+        return res.status(502).json({ error: `OpenAI ${r.status}: ${errText.slice(0, 200)}` });
+      }
+      const data = await r.json();
+      markdown = data.choices?.[0]?.message?.content || '';
     }
-    const data = await oai.json();
-    const markdown = data.choices?.[0]?.message?.content || '';
+
     res.json({
       markdown,
       generated_at: new Date().toISOString(),
-      model: 'gpt-4o',
-      key_source: userKey || headerKey ? 'user (BYOK)' : 'server',
+      provider,
+      model: modelUsed,
+      key_source: useAnthropic
+        ? 'user Anthropic (BYOK)'
+        : (userOpenAiKey ? 'user OpenAI (BYOK)' : 'server'),
     });
   } catch (err) {
     logger.error('Proposal generation error:', err);

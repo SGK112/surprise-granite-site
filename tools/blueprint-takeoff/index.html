@@ -58,6 +58,8 @@
     .byok-radio .meta{font-size:12px;color:var(--text-muted);line-height:1.5}
     .byok-key-input{margin-top:10px;display:none}
     .byok-radio:has(input[value="user"]:checked) .byok-key-input{display:block}
+    .byok-key-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .byok-key-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700;width:60px;flex-shrink:0}
     .byok-key-input input{width:100%;padding:10px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:'Menlo',monospace;font-size:12px}
     .byok-key-input input:focus{outline:none;border-color:var(--sg-blue)}
     .byok-key-input .help{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5}
@@ -645,18 +647,25 @@ flooring_lvp,5,3"></textarea>
           <input type="radio" name="byokMode" value="platform" id="byokPlatform">
           <div>
             <div class="label">Use platform AI</div>
-            <div class="meta">SG covers tokens. Pay-as-you-go billed at your subscription rate. Easiest start.</div>
+            <div class="meta">SG covers tokens. Pay-as-you-go billed at your subscription rate.</div>
           </div>
         </label>
         <label class="byok-radio">
           <input type="radio" name="byokMode" value="user" id="byokUser">
           <div style="flex:1">
-            <div class="label">Bring your own OpenAI key</div>
-            <div class="meta">Use your existing OpenAI account. Tokens bill direct to you. We charge for the platform only.</div>
+            <div class="label">Bring your own keys</div>
+            <div class="meta">Tokens bill direct to your account. We charge for the platform only. Add either or both — proposal writer auto-prefers Claude when an Anthropic key is set.</div>
             <div class="byok-key-input">
-              <input type="password" id="byokKey" placeholder="sk-…" autocomplete="off" spellcheck="false">
+              <div class="byok-key-row">
+                <span class="byok-key-label">OpenAI</span>
+                <input type="password" id="byokKey" placeholder="sk-…" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="byok-key-row">
+                <span class="byok-key-label">Anthropic</span>
+                <input type="password" id="byokAnthKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+              </div>
               <div class="help">
-                Get a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.
+                OpenAI: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> · Anthropic: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
                 Stored in <code>localStorage</code> on this device only — never sent to SG servers.
               </div>
             </div>
@@ -735,35 +744,43 @@ flooring_lvp,5,3"></textarea>
   const fileInput = $('fileInput');
 
   // ---- BYOK (Bring Your Own Key) ----
-  // User's OpenAI key, if provided, is stored in localStorage and forwarded
-  // on AI requests as the x-user-openai-key header. Never sent to or stored
-  // by our backend.
-  const BYOK_STORAGE_KEY = 'sg_byok_openai_key';
+  // OpenAI + Anthropic keys, stored in localStorage on this device only.
+  // Forwarded as x-user-openai-key / x-user-anthropic-key headers. Backend
+  // proposal route prefers Anthropic (Claude) when its key is set; vision
+  // calls (extraction, cover) always go through OpenAI.
+  const BYOK_STORAGE_KEY      = 'sg_byok_openai_key';
+  const BYOK_ANTH_STORAGE_KEY = 'sg_byok_anthropic_key';
 
-  function getUserKey() {
-    try { return (localStorage.getItem(BYOK_STORAGE_KEY) || '').trim(); }
-    catch (_) { return ''; }
-  }
-  function setUserKey(k) {
+  function getUserKey()     { try { return (localStorage.getItem(BYOK_STORAGE_KEY) || '').trim(); }      catch (_) { return ''; } }
+  function getUserAnthKey() { try { return (localStorage.getItem(BYOK_ANTH_STORAGE_KEY) || '').trim(); } catch (_) { return ''; } }
+
+  function setUserKeys(openai, anthropic) {
     try {
-      if (k) localStorage.setItem(BYOK_STORAGE_KEY, k);
-      else localStorage.removeItem(BYOK_STORAGE_KEY);
+      if (openai)    localStorage.setItem(BYOK_STORAGE_KEY, openai);      else localStorage.removeItem(BYOK_STORAGE_KEY);
+      if (anthropic) localStorage.setItem(BYOK_ANTH_STORAGE_KEY, anthropic); else localStorage.removeItem(BYOK_ANTH_STORAGE_KEY);
     } catch (_) {}
     refreshByokStatus();
   }
   function refreshByokStatus() {
-    const has = !!getUserKey();
+    const oa = !!getUserKey(), an = !!getUserAnthKey();
     const btn = $('btnByokSettings');
-    btn.classList.toggle('active', has);
-    $('byokStatus').textContent = has ? 'Your AI key' : 'Use platform AI';
+    btn.classList.toggle('active', oa || an);
+    $('byokStatus').textContent =
+      oa && an ? 'OpenAI + Claude' :
+      oa       ? 'Your OpenAI key'  :
+      an       ? 'Your Claude key'   :
+                 'Use platform AI';
   }
 
   function openByokModal() {
-    const has = !!getUserKey();
-    $('byokPlatform').checked = !has;
-    $('byokUser').checked = has;
-    $('byokKey').value = ''; // never echo the stored key for privacy
-    if (has) $('byokKey').placeholder = 'sk-•••••••••••••••• (saved — paste new to replace)';
+    const oa = !!getUserKey(), an = !!getUserAnthKey();
+    const hasAny = oa || an;
+    $('byokPlatform').checked = !hasAny;
+    $('byokUser').checked = hasAny;
+    $('byokKey').value = '';
+    $('byokAnthKey').value = '';
+    $('byokKey').placeholder    = oa ? 'sk-•••••••••••••••• (saved — paste new to replace)' : 'sk-…';
+    $('byokAnthKey').placeholder = an ? 'sk-ant-•••••••••••••• (saved — paste new to replace)' : 'sk-ant-…';
     $('byokModal').classList.add('open');
   }
   function closeByokModal() { $('byokModal').classList.remove('open'); }
@@ -774,29 +791,29 @@ flooring_lvp,5,3"></textarea>
   $('btnByokSave').addEventListener('click', () => {
     const mode = document.querySelector('input[name=byokMode]:checked')?.value;
     if (mode === 'user') {
-      const newKey = $('byokKey').value.trim();
-      if (newKey) {
-        if (!/^sk-/.test(newKey)) {
-          alert('That doesn\'t look like an OpenAI key (should start with "sk-"). Saved anyway, but double-check.');
-        }
-        setUserKey(newKey);
-      }
-      // If they selected "user" but left the field empty AND a key is already
-      // saved, keep the existing one — no-op.
+      const newOa = $('byokKey').value.trim();
+      const newAn = $('byokAnthKey').value.trim();
+      // Empty = keep what's already saved (don't clobber on no-input).
+      const finalOa = newOa || getUserKey();
+      const finalAn = newAn || getUserAnthKey();
+      if (newOa && !/^sk-/.test(newOa)) alert('OpenAI key should start with "sk-". Saved anyway — double-check.');
+      if (newAn && !/^sk-ant-/.test(newAn)) alert('Anthropic key should start with "sk-ant-". Saved anyway — double-check.');
+      setUserKeys(finalOa, finalAn);
     } else {
-      setUserKey(''); // Switch to platform = clear stored key
+      setUserKeys('', ''); // Platform mode = clear both
     }
     closeByokModal();
   });
 
-  // Initial status
   refreshByokStatus();
 
-  // Helper: build headers with the BYOK key when set
+  // Helper: build headers with whichever BYOK keys are set
   function aiHeaders() {
     const headers = { 'Content-Type': 'application/json' };
-    const k = getUserKey();
-    if (k) headers['x-user-openai-key'] = k;
+    const oa = getUserKey();
+    const an = getUserAnthKey();
+    if (oa) headers['x-user-openai-key'] = oa;
+    if (an) headers['x-user-anthropic-key'] = an;
     return headers;
   }
 
