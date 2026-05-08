@@ -251,6 +251,17 @@
     .estimate-table tfoot tr.grand td{font-size:15px;color:var(--sg-blue);background:rgba(59,130,246,.1)}
 
     .trade-rollup-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;color:var(--text-secondary)}
+    .similar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:14px}
+    .similar-card{padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .15s}
+    .similar-card:hover{border-color:var(--sg-blue)}
+    .similar-card .sc-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .similar-card .sc-bid{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--sg-blue);line-height:1}
+    .similar-card .sc-meta{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5}
+    .similar-card .sc-trades{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+    .sc-trade{font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(59,130,246,.12);color:#93c5fd;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+    .sc-delta{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px}
+    .sc-delta.over{background:rgba(239,68,68,.15);color:#fca5a5}
+    .sc-delta.under{background:rgba(34,197,94,.15);color:#4ade80}
     .trade-rollup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px}
     .trade-card{padding:10px 12px;background:var(--sg-darker);border:1px solid var(--border);border-radius:6px;border-left:3px solid var(--sg-blue)}
     .trade-card .name{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);font-weight:600}
@@ -471,6 +482,10 @@
         <button class="btn btn-primary" id="btnRecalc">Recalculate</button>
       </div>
       <div class="estimate-summary" id="estSummary" hidden></div>
+      <div id="similarProjects" hidden>
+        <h3 class="trade-rollup-title">Similar past projects (your history)</h3>
+        <div class="similar-grid" id="similarGrid"></div>
+      </div>
       <div id="tradeRollup" hidden>
         <h3 class="trade-rollup-title">Trade Breakout</h3>
         <div class="trade-rollup-grid" id="tradeRollupGrid"></div>
@@ -1951,6 +1966,12 @@ flooring_lvp,5,3"></textarea>
       <div class="est-stat total"><div class="lbl">Total Bid</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
     `;
 
+    // Similar past projects — pulled from saved-projects history. Filters
+    // out the current project. Similarity = trade-mix overlap × inverse total
+    // distance. Useful for sanity-checking: "is this estimate way off from
+    // what I billed last 5 similar jobs?"
+    renderSimilarProjects(est);
+
     // Per-trade rollup
     const trades = est.trade_rollup || [];
     $('tradeRollup').hidden = trades.length === 0;
@@ -2292,6 +2313,74 @@ flooring_lvp,5,3"></textarea>
       trades[t].items += 1;
     }
     est.trade_rollup = Object.values(trades).sort((a, b) => b.total - a.total);
+  }
+
+  // ---- Similar past projects (comparison) ----
+  function tradesIn(est) {
+    if (!est?.trade_rollup) return new Set();
+    return new Set(est.trade_rollup.filter(t => t.trade !== 'general_conditions').map(t => t.trade));
+  }
+
+  function findSimilarProjects(currentEst) {
+    const all = getProjects();
+    const projects = Object.values(all).filter(p => p.lastEstimate?.total > 0 && p.id !== currentProjectId);
+    if (!projects.length) return [];
+    const curTrades = tradesIn(currentEst);
+    const curTotal = currentEst?.total || 0;
+
+    return projects.map(p => {
+      const pTrades = tradesIn(p.lastEstimate);
+      const overlap = [...curTrades].filter(t => pTrades.has(t)).length;
+      const union = new Set([...curTrades, ...pTrades]).size || 1;
+      const jaccard = overlap / union; // 0..1
+      const sizeRatio = curTotal && p.lastEstimate.total
+        ? Math.min(curTotal, p.lastEstimate.total) / Math.max(curTotal, p.lastEstimate.total)
+        : 0; // 0..1
+      // 70% trade overlap, 30% size proximity
+      const score = jaccard * 0.7 + sizeRatio * 0.3;
+      return { project: p, score };
+    })
+    .filter(x => x.score > 0.15) // need at least one shared trade or near-size
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  }
+
+  function renderSimilarProjects(currentEst) {
+    const block = $('similarProjects');
+    const grid = $('similarGrid');
+    const matches = findSimilarProjects(currentEst);
+    if (!matches.length) { block.hidden = true; return; }
+    block.hidden = false;
+    const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+    const curTotal = currentEst?.total || 0;
+    grid.innerHTML = matches.map(({ project: p, score }) => {
+      const e = p.lastEstimate;
+      const trades = (e.trade_rollup || []).filter(t => t.trade !== 'general_conditions').map(t => t.trade);
+      const tradesHtml = trades.slice(0, 4).map(t => `<span class="sc-trade">${escapeHtml(t.replace(/_/g,' '))}</span>`).join('');
+      // Delta badge: how does THIS bid compare to that one?
+      let deltaHtml = '';
+      if (curTotal && e.total) {
+        const deltaPct = Math.round(((curTotal - e.total) / e.total) * 100);
+        if (Math.abs(deltaPct) >= 5) {
+          const cls = deltaPct > 0 ? 'over' : 'under';
+          deltaHtml = `<span class="sc-delta ${cls}">${deltaPct > 0 ? '+' : ''}${deltaPct}%</span>`;
+        }
+      }
+      const hours = (e.total_hours || 0).toLocaleString(undefined, {maximumFractionDigits:0});
+      const matchPct = Math.round(score * 100);
+      return `
+        <div class="similar-card" data-id="${p.id}" title="Click to load this project">
+          <div class="sc-name">${escapeHtml(p.name)}</div>
+          <div class="sc-bid">${fmt(e.total)}${deltaHtml}</div>
+          <div class="sc-meta">${hours} hrs · ${matchPct}% trade match</div>
+          <div class="sc-trades">${tradesHtml}${trades.length>4?`<span class="sc-trade">+${trades.length-4}</span>`:''}</div>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.similar-card').forEach(card => {
+      card.addEventListener('click', () => loadProject(card.dataset.id));
+    });
   }
 
   // ---- Send proposal email ----
