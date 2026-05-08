@@ -453,7 +453,11 @@ A clean bulleted list of the material codes and their specs from the materials s
 
 ## Pricing Summary
 A markdown table with columns: Trade | Description | Total. Use ONLY the line items provided.
-Include a final row with the total bid amount.
+After the trade rows, include these summary rows IN THIS ORDER so the math reconciles:
+- "Subtotal (trade cost)" row showing the trade subtotal
+- "Overhead & Profit (X%)" row showing the O&P amount
+- "**Total Bid**" row showing the total bid amount
+The trade rows MUST sum to the Subtotal row. Subtotal + O&P MUST equal Total Bid. Do not omit the O&P line — the customer needs to see the math.
 
 ## Inclusions
 Bulleted list of what IS in the bid. Derive from the line items.
