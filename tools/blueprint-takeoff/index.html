@@ -74,6 +74,21 @@
     .pricing-row input:focus{outline:none;border-color:var(--sg-blue)}
     .pricing-row .punit{font-size:11px;color:var(--text-muted);text-align:left}
 
+    .project-strip{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sg-surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
+    .project-strip .ps-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700}
+    .project-strip input{flex:1;background:transparent;border:none;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;padding:4px 6px;border-radius:4px}
+    .project-strip input:hover{background:rgba(255,255,255,.04)}
+    .project-strip input:focus{outline:none;background:rgba(59,130,246,.08);box-shadow:inset 0 -2px 0 var(--sg-blue)}
+    .project-strip .ps-source{font-size:11px;color:var(--text-muted);font-family:'Menlo',monospace;white-space:nowrap}
+
+    .estimate-meta{font-size:12px;color:var(--text-muted);margin-left:auto;align-self:center;font-style:italic}
+
+    .add-line-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+    .add-line-grid .full{grid-column:1/-1}
+    .add-line-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600}
+    .add-line-grid input,.add-line-grid select{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;padding:8px 10px;font-size:13px;font-family:inherit}
+    .add-line-grid input:focus,.add-line-grid select:focus{outline:none;border-color:var(--sg-blue)}
+
     .projects-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;max-height:60vh;overflow-y:auto}
     .projects-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--sg-darker);border:1px dashed var(--border);border-radius:8px}
     .project-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
@@ -357,6 +372,13 @@
       </div>
     </section>
 
+    <!-- Project name strip — appears once a PDF is loaded -->
+    <section class="project-strip" id="projectStrip" hidden>
+      <span class="ps-label">Project name</span>
+      <input type="text" id="projectNameInput" placeholder="Untitled project" autocomplete="off">
+      <span class="ps-source" id="psSource"></span>
+    </section>
+
     <!-- STEP 2 -->
     <section class="step" id="step2" hidden>
       <h2><span class="num">2</span> Sheet Index</h2>
@@ -435,11 +457,15 @@
       <div class="estimate-table-wrap" id="estTableWrap" hidden>
         <table class="estimate-table">
           <thead>
-            <tr><th>Item</th><th>Qty / Order</th><th>Unit $ (mat / lab)</th><th class="num">Material</th><th class="num">Labor</th><th class="num">Total</th></tr>
+            <tr><th>Item</th><th>Qty / Order</th><th class="num">Hours</th><th>Unit $ (mat / lab)</th><th class="num">Material</th><th class="num">Labor</th><th class="num">Cost</th></tr>
           </thead>
           <tbody id="estTableBody"></tbody>
           <tfoot id="estTableFoot"></tfoot>
         </table>
+      </div>
+      <div class="row-actions" style="margin-top:10px" id="addLineRow" hidden>
+        <button class="btn" id="btnAddLine" type="button">+ Add line item</button>
+        <span class="estimate-meta" id="estimateMeta"></span>
       </div>
       <div class="estimate-notes" id="estNotes"></div>
       <div class="row-actions" style="margin-top:18px" id="estActions" hidden>
@@ -474,6 +500,73 @@
       </div>
     </section>
   </main>
+
+  <!-- Add Line Item modal -->
+  <div class="byok-modal" id="addLineModal" role="dialog" aria-modal="true" aria-labelledby="addLineTitle">
+    <div class="byok-card" style="max-width:560px">
+      <h3 id="addLineTitle">Add line item</h3>
+      <div class="byok-sub">For anything the AI didn't extract — paint, demo, fixtures, plumbing, custom work.</div>
+      <div class="add-line-grid">
+        <label>Trade
+          <select id="alTrade">
+            <option value="countertops">Countertops</option>
+            <option value="cabinets">Cabinets</option>
+            <option value="flooring">Flooring</option>
+            <option value="tile">Tile</option>
+            <option value="paint">Paint</option>
+            <option value="demo">Demo</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="framing">Framing</option>
+            <option value="drywall">Drywall</option>
+            <option value="finish_carpentry">Finish carpentry</option>
+            <option value="fixtures">Fixtures &amp; hardware</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label>Self-perform / sub
+          <select id="alSelf">
+            <option value="self">Self-perform</option>
+            <option value="sub" selected>Sub</option>
+            <option value="material">Material pass-through</option>
+          </select>
+        </label>
+        <label class="full">Description
+          <input type="text" id="alDesc" placeholder="e.g. Interior paint — 2 coats Sherwin-Williams ProClassic">
+        </label>
+        <label>Code (optional)
+          <input type="text" id="alCode" placeholder="P-1">
+        </label>
+        <label>Qty
+          <input type="number" step="0.1" min="0" id="alQty" value="1">
+        </label>
+        <label>Unit
+          <select id="alUnit">
+            <option value="sf">sf</option>
+            <option value="lf">lf</option>
+            <option value="each">each</option>
+            <option value="lump">lump</option>
+            <option value="hr">hr</option>
+            <option value="day">day</option>
+          </select>
+        </label>
+        <label>Material $/u
+          <input type="number" step="0.01" min="0" id="alMat" value="0">
+        </label>
+        <label>Labor $/u
+          <input type="number" step="0.01" min="0" id="alLab" value="0">
+        </label>
+        <label>Hours (optional)
+          <input type="number" step="0.1" min="0" id="alHours" placeholder="auto from labor $">
+        </label>
+      </div>
+      <div class="byok-actions">
+        <div style="flex:1"></div>
+        <button class="btn" id="btnAlCancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="btnAlSave" type="button">Add line</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Projects modal -->
   <div class="byok-modal" id="projectsModal" role="dialog" aria-modal="true" aria-labelledby="projectsTitle">
@@ -894,6 +987,7 @@
 
     if (sheets.length) {
       $('step2').hidden = false;
+      showProjectStrip();
       renderSummary();
       renderSheetList();
       updateExtractButton();
@@ -1014,6 +1108,88 @@
   });
 
   refreshProjectsStatus();
+
+  // ---- Project name strip (rename inline, autosave) ----
+  function showProjectStrip() {
+    const all = getProjects();
+    const cur = currentProjectId ? all[currentProjectId] : null;
+    const fallback = (window.__lastSourceLabel || '').replace(/\.pdf$/i, '') || 'Untitled project';
+    $('projectNameInput').value = (cur?.name) || fallback;
+    $('psSource').textContent = window.__lastSourceLabel ? `source: ${window.__lastSourceLabel}` : '';
+    $('projectStrip').hidden = false;
+  }
+  $('projectNameInput').addEventListener('blur', () => {
+    const name = $('projectNameInput').value.trim() || 'Untitled project';
+    autoSave(name);
+  });
+  $('projectNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('projectNameInput').blur(); }
+  });
+
+  // ---- Add line item ----
+  function openAddLineModal() {
+    // Reset form
+    $('alTrade').value = 'paint';
+    $('alSelf').value = 'sub';
+    $('alDesc').value = '';
+    $('alCode').value = '';
+    $('alQty').value = '1';
+    $('alUnit').value = 'sf';
+    $('alMat').value = '0';
+    $('alLab').value = '0';
+    $('alHours').value = '';
+    $('addLineModal').classList.add('open');
+    setTimeout(() => $('alDesc').focus(), 50);
+  }
+  function closeAddLineModal() { $('addLineModal').classList.remove('open'); }
+
+  $('btnAddLine').addEventListener('click', openAddLineModal);
+  $('btnAlCancel').addEventListener('click', closeAddLineModal);
+  $('addLineModal').addEventListener('click', e => { if (e.target === $('addLineModal')) closeAddLineModal(); });
+  $('btnAlSave').addEventListener('click', () => {
+    if (!window.__lastEstimate) return;
+    const trade = $('alTrade').value;
+    const selfPerform = $('alSelf').value;
+    const desc = $('alDesc').value.trim() || trade.replace(/_/g,' ');
+    const code = $('alCode').value.trim() || null;
+    const qty = parseFloat($('alQty').value) || 0;
+    const unit = $('alUnit').value;
+    const matU = parseFloat($('alMat').value) || 0;
+    const labU = parseFloat($('alLab').value) || 0;
+    const hoursIn = $('alHours').value.trim();
+    const matCost = Math.round(qty * matU);
+    const labCost = Math.round(qty * labU);
+    const hours = hoursIn !== '' ? parseFloat(hoursIn) : Math.round((labCost / 65) * 10) / 10;
+
+    const newLine = {
+      category: trade,
+      trade,
+      description: desc,
+      code,
+      qty: Math.round(qty * 10) / 10,
+      unit,
+      material_unit: matU,
+      labor_unit: labU,
+      material_cost: matCost,
+      labor_cost: labCost,
+      total: matCost + labCost,
+      hours: Number.isFinite(hours) ? hours : 0,
+      rate_key: null,
+      source: 'manual entry',
+      self_perform: selfPerform,
+      ordering: null,
+    };
+
+    // Insert before the GC overhead line so it gets included in the GC calc.
+    const gcIdx = window.__lastEstimate.line_items.findIndex(li => li.category === 'general_conditions');
+    if (gcIdx >= 0) window.__lastEstimate.line_items.splice(gcIdx, 0, newLine);
+    else            window.__lastEstimate.line_items.push(newLine);
+
+    recalcEstimateTotals(window.__lastEstimate);
+    renderEstimate(window.__lastEstimate);
+    autoSave();
+    closeAddLineModal();
+  });
 
   // ---- Drag/drop wiring ----
   ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => {
@@ -1189,6 +1365,7 @@
     $('parseProgress').hidden = true;
     $('howStrip').hidden = true;
     $('step2').hidden = false;
+    showProjectStrip();
     $('step2').scrollIntoView({ behavior:'smooth', block:'start' });
     $('hPages').textContent = sheets.length;
 
@@ -1665,8 +1842,9 @@
       </div>
     `).join('');
 
-    // Line-item table with ordering info + self-perform badges + inline editable rates
+    // Line-item table with ordering info + self-perform badges + inline editable rates + hours
     $('estTableWrap').hidden = items.length === 0;
+    $('addLineRow').hidden = items.length === 0;
     $('estTableBody').innerHTML = items.map((li, i) => {
       const meta = [li.code, li.source].filter(Boolean).join(' · ');
       const sp = li.self_perform || 'sub';
@@ -1679,9 +1857,9 @@
         if (ord.raw_sf && ord.waste_pct != null) parts.push(`${ord.raw_sf.toLocaleString()}sf raw + ${ord.waste_pct}% waste`);
         if (parts.length) orderHtml = `<span class="order-info">${parts.join(' · ')}</span>`;
       }
-      // GC overhead line is computed downstream — don't expose as editable.
       const isGc = li.category === 'general_conditions';
       const editable = isGc ? '' : 'contenteditable="true" spellcheck="false"';
+      const hours = li.hours != null ? li.hours.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
       return `
       <tr data-i="${i}">
         <td class="desc">
@@ -1694,6 +1872,7 @@
           ${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}
           ${orderHtml}
         </td>
+        <td class="num" style="font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-secondary)">${hours}${li.hours ? ' hr' : ''}</td>
         <td class="num" style="font-size:11px;color:var(--text-muted)">
           <span class="editable-cell" data-fld="material_unit" ${editable} title="Click to edit material unit price">${(li.material_unit||0).toFixed(2)}</span>
           <span> / </span>
@@ -1704,6 +1883,11 @@
         <td class="num"><strong>${fmt(li.total)}</strong></td>
       </tr>`;
     }).join('');
+
+    // Estimate-meta line: total hours + crew rate
+    const totalHrs = (est.total_hours || items.reduce((s,li) => s + (li.hours||0), 0)).toLocaleString(undefined,{maximumFractionDigits:1});
+    const cr = est.crew_rate || 65;
+    $('estimateMeta').textContent = `${totalHrs} field hours total · derived at $${cr}/hr crew rate`;
 
     // Wire inline-edit listeners
     $('estTableBody').querySelectorAll('.editable-cell[contenteditable]').forEach(cell => {
@@ -1720,9 +1904,9 @@
       });
     });
     $('estTableFoot').innerHTML = `
-      <tr><td colspan="3">Subtotal (cost)</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
-      <tr><td colspan="5">Overhead &amp; profit (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
-      <tr class="grand"><td colspan="5">Total bid</td><td class="num">${fmt(est.total)}</td></tr>
+      <tr><td colspan="4">Subtotal (cost)</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
+      <tr><td colspan="6">Overhead &amp; profit (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
+      <tr class="grand"><td colspan="6">Total bid</td><td class="num">${fmt(est.total)}</td></tr>
     `;
     $('estActions').hidden = items.length === 0;
 
@@ -2023,6 +2207,7 @@
     $('step5').hidden = true;
     $('proposalDoc').hidden = true;
     $('howStrip').hidden = false;
+    $('projectStrip').hidden = true;
     $('parseError').hidden = true;
     $('parseProgress').hidden = true;
     $('hPages').textContent = '—';

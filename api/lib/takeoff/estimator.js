@@ -60,6 +60,36 @@ const USABLE_SF_PER_SLAB = 38;
 // off the product line in V2.
 const TILE_SF_PER_CARTON = 12;
 
+// Crew hourly rate used to derive hours from labor $ when no explicit
+// hours/unit is set. $65/hr is a reasonable Phoenix mid-market crew rate;
+// override with options.crewRate.
+const DEFAULT_CREW_RATE = 65;
+
+// Hours per unit by rate key — gives the user a real schedule signal,
+// not just dollar amounts. These are mid-range install-time benchmarks.
+// `null` = derive from labor_cost / crewRate at runtime.
+const HOURS_PER_UNIT = {
+  quartz_countertop:    0.50, // template + fab + install per sf
+  granite_countertop:   0.55,
+  marble_countertop:    0.60,
+  quartzite_countertop: 0.65,
+  stone_countertop:     0.55,
+  edge_eased:           0.12,
+  edge_bullnose:        0.20,
+  tile_floor:           0.45,
+  tile_wall:            0.55,
+  tile_lg_format:       0.50,
+  porcelain_slab:       0.80,
+  flooring_lvp:         0.15,
+  flooring_hardwood:    0.40,
+  flooring_engineered:  0.30,
+  flooring_carpet:      0.10,
+  flooring_polished_concrete: 0.25,
+  cabinet_stock_install:        2.50, // per LF
+  cabinet_semi_custom_install:  3.50,
+  cabinet_custom_install:       5.00,
+};
+
 // Phoenix-area mid-range rates, $ per unit installed unless flagged otherwise.
 // Material rate = product cost; labor rate = fab + install combined.
 const INDUSTRY_RATES = {
@@ -137,9 +167,13 @@ function pickMaterial(materials, predicate) {
   return materials.find(m => m && predicate(m));
 }
 
-function lineItem({ category, trade, description, code, qty, unit, matRate, labRate, source, selfPerform, ordering, extra }) {
+function lineItem({ category, trade, description, code, qty, unit, matRate, labRate, source, selfPerform, ordering, rateKey, crewRate, extra }) {
   const matCost = Math.round(qty * matRate);
   const labCost = Math.round(qty * labRate);
+  // Hours: prefer explicit hours/unit benchmark, else derive from labor $ ÷ crew rate.
+  const hpu = HOURS_PER_UNIT[rateKey];
+  const cr = Number.isFinite(crewRate) && crewRate > 0 ? crewRate : DEFAULT_CREW_RATE;
+  const hours = Number.isFinite(hpu) ? Math.round(qty * hpu * 10) / 10 : Math.round((labCost / cr) * 10) / 10;
   return {
     category,
     trade: trade || category,
@@ -152,9 +186,11 @@ function lineItem({ category, trade, description, code, qty, unit, matRate, labR
     material_cost: matCost,
     labor_cost: labCost,
     total: matCost + labCost,
+    hours,
+    rate_key: rateKey || null,
     source,
-    self_perform: selfPerform || 'sub', // self | sub | material — for GC margin model
-    ordering: ordering || null, // { slabs: 22 } or { cartons: 18 } — purchasing units
+    self_perform: selfPerform || 'sub',
+    ordering: ordering || null,
     ...(extra || {}),
   };
 }
@@ -179,6 +215,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   // category. Lets a user save their actual SG pricing once and have every
   // future estimate use those numbers instead of the Phoenix industry avg.
   const userRates = (options.userRates && typeof options.userRates === 'object') ? options.userRates : {};
+  const crewRate = Number.isFinite(options.crewRate) && options.crewRate > 0 ? options.crewRate : DEFAULT_CREW_RATE;
   const ratesFor = key => {
     const base = INDUSTRY_RATES[key] || {};
     const ovr = userRates[key] || {};
@@ -230,6 +267,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       labRate: rates.labor,
       source,
       selfPerform: 'self',
+      rateKey, crewRate,
       ordering: {
         slabs: slabsToOrder,
         usable_sf_per_slab: usableSfPerSlab,
@@ -261,6 +299,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       labRate: rates.labor,
       source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'self',
+      rateKey: 'edge_eased', crewRate,
     }));
   }
 
@@ -283,6 +322,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       labRate: rates.labor,
       source: rates._override ? 'My Pricing' : 'industry avg (install only)',
       selfPerform: 'sub',
+      rateKey, crewRate,
       extra: { cabinet_count: cabCount },
     }));
     notes.push('Cabinet material cost is NOT included — assumes GC or owner supplies cabinets. Add a cabinet supply line manually if SG is providing.');
@@ -307,6 +347,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       labRate: rates.labor,
       source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'sub',
+      rateKey: refined, crewRate,
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
     }));
   }
@@ -331,6 +372,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       labRate: rates.labor,
       source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'sub',
+      rateKey: refined, crewRate,
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
     }));
   }
@@ -354,6 +396,8 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       material_cost: 0,
       labor_cost: gc,
       total: gc,
+      hours: 0, // GC overhead is a fee, not field hours
+      rate_key: null,
       source: `GC overhead — ${Math.round(gcOverheadPct*100)}% of trade subtotal`,
       self_perform: 'self',
       ordering: null,
@@ -386,6 +430,8 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     .filter(m => m && m.code && !usedCodes.has(m.code))
     .map(m => ({ code: m.code, category: m.category, spec: m.spec }));
 
+  const totalHours = lineItems.reduce((s, li) => s + (li.hours || 0), 0);
+
   return {
     line_items: lineItems,
     trade_rollup: tradeRollup,
@@ -396,6 +442,8 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       subtotal,
       gc_overhead_pct: gcOverheadPct,
     },
+    total_hours: Math.round(totalHours * 10) / 10,
+    crew_rate: crewRate,
     total,
     margin_range: {
       low: Math.round(total * 0.85),
