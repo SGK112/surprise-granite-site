@@ -143,6 +143,36 @@
     .materials-table .row-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
     .materials-table .row-del:hover{color:var(--sg-red);background:rgba(239,68,68,.08)}
 
+    .estimate-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;padding:14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
+    .estimate-controls label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600}
+    .estimate-controls select,.estimate-controls input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;padding:8px 10px;font-size:13px}
+    .estimate-controls select:focus,.estimate-controls input:focus{outline:none;border-color:var(--sg-blue)}
+    .estimate-controls input[type=number]{width:70px}
+
+    .estimate-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+    .est-stat{padding:14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
+    .est-stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px;font-weight:600}
+    .est-stat .val{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff}
+    .est-stat.total{background:linear-gradient(135deg,rgba(59,130,246,.15) 0%,rgba(59,130,246,.05) 100%);border-color:rgba(59,130,246,.4)}
+    .est-stat.total .val{color:var(--sg-blue);font-size:26px}
+    .est-stat .sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+    .estimate-table-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
+    .estimate-table{width:100%;border-collapse:collapse;font-size:13px}
+    .estimate-table th{background:var(--sg-darker);padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border)}
+    .estimate-table th.num,.estimate-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .estimate-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    .estimate-table tr:last-child td{border-bottom:none}
+    .estimate-table .desc{color:#fff}
+    .estimate-table .desc-meta{display:block;font-size:11px;color:var(--text-muted);margin-top:2px}
+    .estimate-table tfoot td{padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600;background:rgba(0,0,0,.2)}
+    .estimate-table tfoot tr.grand td{font-size:15px;color:var(--sg-blue);background:rgba(59,130,246,.1)}
+
+    .estimate-notes{font-size:12px;color:var(--text-secondary);background:var(--sg-darker);border:1px solid var(--border);border-left:3px solid var(--sg-blue);border-radius:6px;padding:12px 16px;line-height:1.6}
+    .estimate-notes ul{list-style:none;padding:0;margin:6px 0 0}
+    .estimate-notes li{padding:3px 0}
+    .estimate-notes li::before{content:"·";margin-right:6px;color:var(--sg-blue)}
+
     .per-page-results{margin-top:20px}
     .per-page-results details{background:var(--sg-darker);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
     .per-page-results summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -266,9 +296,47 @@
 
       <div class="per-page-results" id="perPageResults"></div>
       <div class="row-actions" style="margin-top:18px">
-        <button class="btn" id="btnNewPdf">Start over with a new PDF</button>
+        <button class="btn btn-primary" id="btnGenerateEstimate">Generate estimate →</button>
+        <button class="btn" id="btnNewPdf">Start over</button>
         <button class="btn btn-ghost" id="btnExportJson">Export JSON</button>
       </div>
+    </section>
+
+    <!-- STEP 4 — Estimate -->
+    <section class="step" id="step4" hidden>
+      <h2><span class="num">4</span> Estimate</h2>
+      <div class="hint" id="step4hint">Industry-average pricing (Phoenix mid-range). Edit any number above and re-generate to refine. Catalog matching against SG stock comes next.</div>
+      <div id="estError" class="error-box" hidden></div>
+      <div class="estimate-controls">
+        <label>Project type
+          <select id="estProjectType">
+            <option value="commercial">Commercial — generic</option>
+            <option value="commercial-restaurant">Commercial — restaurant / café</option>
+            <option value="commercial-retail">Commercial — retail</option>
+            <option value="commercial-office">Commercial — office</option>
+            <option value="residential-kitchen">Residential — kitchen</option>
+            <option value="residential-bath">Residential — bath</option>
+          </select>
+        </label>
+        <label>Margin
+          <input type="number" id="estMargin" min="0" max="100" step="1" value="30"> <span>%</span>
+        </label>
+        <label>Waste
+          <input type="number" id="estWaste" min="0" max="50" step="1" value="10"> <span>%</span>
+        </label>
+        <button class="btn btn-primary" id="btnRecalc">Recalculate</button>
+      </div>
+      <div class="estimate-summary" id="estSummary" hidden></div>
+      <div class="estimate-table-wrap" id="estTableWrap" hidden>
+        <table class="estimate-table">
+          <thead>
+            <tr><th>Item</th><th>Qty</th><th>Unit $ (mat / lab)</th><th class="num">Material</th><th class="num">Labor</th><th class="num">Total</th></tr>
+          </thead>
+          <tbody id="estTableBody"></tbody>
+          <tfoot id="estTableFoot"></tfoot>
+        </table>
+      </div>
+      <div class="estimate-notes" id="estNotes"></div>
     </section>
   </main>
 
@@ -771,33 +839,77 @@
     }
 
     // ---- Aggregation strategy ----
-    // 1. SCHEDULE pages are authoritative when present (sum line items across schedules)
-    // 2. Fall back to PLAN pages only:
-    //      - sqft fields → MAX (multiple plans of same space; biggest reading wins)
-    //      - count/lf fields → SUM (different rooms per plan, no overlap)
-    // 3. ELEVATION / SECTION / DETAIL / RCP are IGNORED in totals (they double-count
-    //    fixtures already shown in plan/schedule)
-    // 4. If no plan or schedule contributed, fall back to whatever we got with a warning.
+    // The same finish/cabinet schedule frequently appears on multiple sheets
+    // as a cross-reference — naive SUM counts the same data N times. So:
+    //   1. SCHEDULE pages: cluster contributions whose values are within 10%
+    //      of each other (those are duplicate readings of the same line); sum
+    //      ONE representative per cluster across distinct lines.
+    //   2. PLAN pages (fallback when no schedules):
+    //        - sqft → MAX (overlays of the same space)
+    //        - count/lf → dedupedSum (separate rooms, but watch for overlay bleed)
+    //   3. ELEVATION / SECTION / DETAIL / RCP — ignored entirely.
     const sum = arr => arr.reduce((s,c) => s + c.value, 0);
     const max = arr => arr.reduce((m,c) => Math.max(m, c.value), 0);
+
+    function dedupedSum(items, tolerance = 0.10) {
+      if (items.length <= 1) return sum(items);
+      const sorted = [...items].sort((a,b) => a.value - b.value);
+      const groups = [[sorted[0]]];
+      for (let i = 1; i < sorted.length; i++) {
+        const cur = sorted[i];
+        const ref = groups[groups.length - 1][0].value;
+        if (Math.abs(cur.value - ref) / Math.max(cur.value, ref, 1) <= tolerance) {
+          groups[groups.length - 1].push(cur);
+        } else {
+          groups.push([cur]);
+        }
+      }
+      // Each cluster = one underlying line item; take its representative value.
+      // Use the median within the cluster to defang outlier reads.
+      return groups.reduce((s, g) => {
+        const mid = g[Math.floor(g.length / 2)].value;
+        return s + mid;
+      }, 0);
+    }
 
     function aggregate(key) {
       const all = contribs[key];
       if (!all.length) return { value: 0, sources: [], strategy: 'none' };
       const isSqft = /sqft$/.test(key);
       const sched = all.filter(c => c.sheet.type === 'SCHEDULE');
-      if (sched.length) return { value: sum(sched), sources: sched, strategy: 'schedule sum' };
+      if (sched.length) {
+        const value = dedupedSum(sched);
+        const clusterCount = countClusters(sched);
+        return {
+          value,
+          sources: sched,
+          strategy: clusterCount < sched.length
+            ? `schedule sum (deduped ${sched.length}→${clusterCount} lines)`
+            : 'schedule sum',
+        };
+      }
       const plan = all.filter(c => c.sheet.type === 'PLAN');
       if (plan.length) {
         return isSqft
           ? { value: max(plan), sources: plan, strategy: 'plan max (deduped overlays)' }
-          : { value: sum(plan), sources: plan, strategy: 'plan sum' };
+          : { value: dedupedSum(plan), sources: plan, strategy: 'plan deduped sum' };
       }
       return {
-        value: isSqft ? max(all) : sum(all),
+        value: isSqft ? max(all) : dedupedSum(all),
         sources: all,
         strategy: 'fallback — no plan/schedule pages contributed',
       };
+    }
+
+    function countClusters(items, tolerance = 0.10) {
+      if (items.length <= 1) return items.length;
+      const sorted = [...items].sort((a,b) => a.value - b.value);
+      let n = 1;
+      for (let i = 1; i < sorted.length; i++) {
+        const ref = sorted[i-1].value;
+        if (Math.abs(sorted[i].value - ref) / Math.max(sorted[i].value, ref, 1) > tolerance) n++;
+      }
+      return n;
     }
 
     const cards = [
@@ -848,11 +960,106 @@
     }).join('');
   }
 
+  // ---- Estimate generation ----
+  $('btnGenerateEstimate').addEventListener('click', generateEstimate);
+  $('btnRecalc').addEventListener('click', generateEstimate);
+
+  async function generateEstimate() {
+    const totals = window.__lastTotals || {};
+    const takeoff = {
+      countertop_sqft: (totals.countertop_sqft || {}).value || 0,
+      countertop_lf:   (totals.countertop_lf   || {}).value || 0,
+      cabinet_count:   (totals.cabinet_count   || {}).value || 0,
+      cabinet_lf:      (totals.cabinet_lf      || {}).value || 0,
+      flooring_sqft:   (totals.flooring_sqft   || {}).value || 0,
+      tile_sqft:       (totals.tile_sqft       || {}).value || 0,
+    };
+    const materials = (window.__lastMaterials || []).map(m => ({
+      code: m.code, category: m.category, spec: m.spec,
+    }));
+    const projectType = $('estProjectType').value;
+    const margin = (parseFloat($('estMargin').value) || 30) / 100;
+    const waste  = (parseFloat($('estWaste').value)  || 10) / 100;
+
+    $('step4').hidden = false;
+    $('estError').hidden = true;
+    $('estSummary').hidden = true;
+    $('estTableWrap').hidden = true;
+    $('estNotes').textContent = 'Generating…';
+    $('step4').scrollIntoView({ behavior:'smooth', block:'start' });
+
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ takeoff, materials, projectType, options: { margin, waste } }),
+      });
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
+      const est = await resp.json();
+      if (est.error) throw new Error(est.error);
+      window.__lastEstimate = est;
+      renderEstimate(est);
+    } catch (err) {
+      console.error('Estimate error:', err);
+      $('estError').textContent = 'Could not generate estimate: ' + err.message;
+      $('estError').hidden = false;
+      $('estNotes').textContent = '';
+    }
+  }
+
+  function renderEstimate(est) {
+    const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+    const items = est.line_items || [];
+
+    // Summary cards
+    $('estSummary').hidden = false;
+    $('estSummary').innerHTML = `
+      <div class="est-stat"><div class="lbl">Material</div><div class="val">${fmt(est.subtotals?.material)}</div></div>
+      <div class="est-stat"><div class="lbl">Labor</div><div class="val">${fmt(est.subtotals?.labor)}</div></div>
+      <div class="est-stat"><div class="lbl">Margin (${Math.round((est.margin_factor||0)*100)}%)</div><div class="val">${fmt(est.subtotals?.overhead)}</div></div>
+      <div class="est-stat total"><div class="lbl">Total</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
+    `;
+
+    // Line-item table
+    $('estTableWrap').hidden = items.length === 0;
+    $('estTableBody').innerHTML = items.map(li => `
+      <tr>
+        <td class="desc">
+          ${escapeHtml(li.description || li.category)}
+          <span class="desc-meta">${escapeHtml((li.code ? `${li.code} · ` : '') + (li.source || ''))}${li.cabinet_count ? ` · ${li.cabinet_count} cabinets` : ''}</span>
+        </td>
+        <td class="num">${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}</td>
+        <td class="num" style="font-size:11px;color:var(--text-muted)">${fmt(li.material_unit)} / ${fmt(li.labor_unit)}</td>
+        <td class="num">${fmt(li.material_cost)}</td>
+        <td class="num">${fmt(li.labor_cost)}</td>
+        <td class="num"><strong>${fmt(li.total)}</strong></td>
+      </tr>
+    `).join('');
+    $('estTableFoot').innerHTML = `
+      <tr><td colspan="3">Subtotal</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
+      <tr><td colspan="5">Overhead &amp; margin (${Math.round((est.margin_factor||0)*100)}%)</td><td class="num">${fmt(est.subtotals?.overhead)}</td></tr>
+      <tr class="grand"><td colspan="5">Total</td><td class="num">${fmt(est.total)}</td></tr>
+    `;
+
+    // Notes + unbilled materials
+    const noteParts = [];
+    if (est.notes && est.notes.length) {
+      noteParts.push('<strong>Assumptions:</strong><ul>' + est.notes.map(n => `<li>${escapeHtml(n)}</li>`).join('') + '</ul>');
+    }
+    if (est.unbilled_materials && est.unbilled_materials.length) {
+      noteParts.push('<strong>Material codes referenced but not priced</strong> (add manually if needed):<ul>' +
+        est.unbilled_materials.map(u => `<li><code>${escapeHtml(u.code)}</code> · ${escapeHtml(u.category||'')} · ${escapeHtml(u.spec||'(no spec)')}</li>`).join('') + '</ul>');
+    }
+    if (est.rate_source) noteParts.push(`<em>${escapeHtml(est.rate_source)}</em>`);
+    $('estNotes').innerHTML = noteParts.join('');
+  }
+
   $('btnNewPdf').addEventListener('click', () => {
     pdfDoc = null; sheets = [];
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
+    $('step4').hidden = true;
     $('howStrip').hidden = false;
     $('parseError').hidden = true;
     $('parseProgress').hidden = true;

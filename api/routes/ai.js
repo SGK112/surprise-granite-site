@@ -8,6 +8,7 @@ const router = express.Router();
 const logger = require('../utils/logger');
 const { handleApiError } = require('../utils/security');
 const { aiRateLimiter } = require('../middleware/rateLimiter');
+const { buildEstimate } = require('../lib/takeoff/estimator');
 
 /**
  * Validate image data URL format for OpenAI Vision API.
@@ -360,6 +361,32 @@ router.post('/blueprint', async (req, res) => {
   } catch (error) {
     logger.error('Blueprint analysis error:', error);
     return handleApiError(res, error, 'Blueprint analysis');
+  }
+});
+
+/**
+ * Blueprint takeoff → estimate.
+ * Accepts aggregated takeoff totals + extracted material specs, returns a
+ * structured priced estimate (line items, subtotals, margin range, notes).
+ * V1 uses industry-average rates only — no catalog matching yet. See
+ * api/lib/takeoff/estimator.js for the rate table.
+ */
+router.post('/blueprint/estimate', async (req, res) => {
+  try {
+    const { takeoff, materials, projectType, options } = req.body || {};
+    if (!takeoff || typeof takeoff !== 'object') {
+      return res.status(400).json({ error: 'takeoff object is required' });
+    }
+    const estimate = buildEstimate({
+      takeoff,
+      materials: Array.isArray(materials) ? materials : [],
+      projectType: projectType || 'commercial',
+      options: options || {},
+    });
+    res.json(estimate);
+  } catch (err) {
+    logger.error('Blueprint estimate error:', err);
+    return handleApiError(res, err, 'Blueprint estimate');
   }
 });
 
