@@ -97,6 +97,15 @@
     .csv-result.ok{color:#4ade80}
     .csv-result.err{color:#fca5a5}
 
+    .resume-banner{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(59,130,246,.08) 0%,rgba(59,130,246,.04) 100%);border:1px solid rgba(59,130,246,.3);border-radius:10px;margin-bottom:14px}
+    .resume-banner .rb-icon{font-size:24px}
+    .resume-banner .rb-body{flex:1;min-width:0}
+    .resume-banner .rb-title{font-size:14px;color:var(--text-primary)}
+    .resume-banner .rb-title strong{color:var(--sg-blue)}
+    .resume-banner .rb-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+    .resume-banner .rb-actions{display:flex;gap:8px;flex-wrap:wrap}
+    @media (max-width:600px){.resume-banner{flex-wrap:wrap}.resume-banner .rb-actions{width:100%;justify-content:flex-end}}
+
     .project-strip{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--sg-surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
     .project-strip .ps-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700}
     .project-strip input{flex:1;background:transparent;border:none;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;padding:4px 6px;border-radius:4px}
@@ -391,6 +400,19 @@
   </section>
 
   <main>
+    <!-- Resume banner — appears on return visits when there's recent work -->
+    <section class="resume-banner" id="resumeBanner" hidden>
+      <div class="rb-icon">📂</div>
+      <div class="rb-body">
+        <div class="rb-title">Resume <strong id="rbName"></strong></div>
+        <div class="rb-meta" id="rbMeta"></div>
+      </div>
+      <div class="rb-actions">
+        <button class="btn btn-primary" id="btnResumeLast" type="button">Resume →</button>
+        <button class="btn btn-ghost" id="btnDismissResume" type="button">Start fresh</button>
+      </div>
+    </section>
+
     <!-- STEP 1 -->
     <section class="step" id="step1">
       <h2><span class="num">1</span> Plans</h2>
@@ -1394,6 +1416,48 @@ flooring_lvp,5,3"></textarea>
   });
 
   refreshProjectsStatus();
+
+  // ---- Resume banner — surface most-recent project on page load ----
+  // PDFs aren't saved to localStorage (too big), but every other piece of
+  // state is. So coming back to the tool after navigating away or closing
+  // the tab → one click resumes you exactly where you left off.
+  function maybeShowResumeBanner() {
+    const all = getProjects();
+    const arr = Object.values(all);
+    if (!arr.length) return;
+    const latest = arr.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0))[0];
+    // Only auto-offer if edited within last 14 days — older work, user
+    // probably doesn't want pushed in their face.
+    const ageMs = Date.now() - (latest.updatedAt || 0);
+    if (ageMs > 14 * 24 * 3600 * 1000) return;
+    // And only if the project actually has data worth resuming
+    const stages = latest.stages || {};
+    if (!stages.extracted && !stages.estimated && !stages.proposed) return;
+
+    const fmtAge = ms => {
+      if (ms < 60_000) return 'just now';
+      if (ms < 3600_000) return Math.floor(ms / 60_000) + ' min ago';
+      if (ms < 86400_000) return Math.floor(ms / 3600_000) + ' hr ago';
+      return Math.floor(ms / 86400_000) + ' day' + (Math.floor(ms / 86400_000) > 1 ? 's' : '') + ' ago';
+    };
+    const stageLabels = [];
+    if (stages.proposed)  stageLabels.push('proposal drafted');
+    else if (stages.estimated) stageLabels.push('estimate ready');
+    else if (stages.extracted) stageLabels.push('takeoff extracted');
+    const bid = latest.lastEstimate?.total ? '$' + latest.lastEstimate.total.toLocaleString() : '';
+
+    $('rbName').textContent = latest.name || 'last project';
+    $('rbMeta').textContent = `${latest.sheets?.length || 0} sheets · ${stageLabels.join(' · ')}${bid ? ' · ' + bid : ''} · ${fmtAge(ageMs)}`;
+    $('resumeBanner').hidden = false;
+    $('btnResumeLast').onclick = () => {
+      $('resumeBanner').hidden = true;
+      loadProject(latest.id);
+    };
+    $('btnDismissResume').onclick = () => {
+      $('resumeBanner').hidden = true;
+    };
+  }
+  maybeShowResumeBanner();
 
   // ---- Vendor catalogs (parsed from price-sheet PDFs) ----
   // localStorage shape: { [catalogId]: { id, vendor, category, products: [...], createdAt, enabled } }
