@@ -1180,13 +1180,19 @@ router.get('/blueprint/catalogs', authenticateJWT, async (req, res) => {
   try {
     const client = getUserClient(req.accessToken);
     if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    // Pull catalogs the user can read per RLS — own + any shared via org
+    // membership. Include org_id + user_id so the frontend can label rows
+    // as "personal", "shared by you", or "shared by teammate".
     const { data, error } = await client
       .from('vendor_catalogs')
-      .select('id, vendor, category, products, enabled, source_filename, created_at, updated_at')
+      .select('id, user_id, org_id, vendor, category, products, enabled, source_filename, created_at, updated_at')
       .order('updated_at', { ascending: false })
-      .limit(200);
+      .limit(500);
     if (error) throw error;
-    res.json({ catalogs: data || [] });
+    // Tag each row with is_owner so the frontend doesn't need to re-derive.
+    const me = req.user.id;
+    const tagged = (data || []).map(c => ({ ...c, is_owner: c.user_id === me }));
+    res.json({ catalogs: tagged });
   } catch (err) {
     logger.error('List vendor catalogs error:', err);
     return handleApiError(res, err, 'List catalogs');
@@ -1197,7 +1203,7 @@ router.post('/blueprint/catalogs', authenticateJWT, express.json({ limit: '6mb' 
   try {
     const client = getUserClient(req.accessToken);
     if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
-    const { id, vendor, category, products, enabled, source_filename } = req.body || {};
+    const { id, vendor, category, products, enabled, source_filename, org_id } = req.body || {};
     if (!Array.isArray(products)) {
       return res.status(400).json({ error: 'products array required' });
     }
@@ -1208,15 +1214,16 @@ router.post('/blueprint/catalogs', authenticateJWT, express.json({ limit: '6mb' 
       products,
       enabled: enabled !== false,
       source_filename: source_filename || null,
+      org_id: org_id || null, // null = personal; UUID = shared with that org
     };
     if (id) row.id = id;
     const { data, error } = await client
       .from('vendor_catalogs')
       .upsert(row, { onConflict: 'id' })
-      .select('id, vendor, category, products, enabled, source_filename, created_at, updated_at')
+      .select('id, user_id, org_id, vendor, category, products, enabled, source_filename, created_at, updated_at')
       .single();
     if (error) throw error;
-    res.json(data);
+    res.json({ ...data, is_owner: true });
   } catch (err) {
     logger.error('Save vendor catalog error:', err);
     return handleApiError(res, err, 'Save catalog');
@@ -1225,7 +1232,8 @@ router.post('/blueprint/catalogs', authenticateJWT, express.json({ limit: '6mb' 
 
 router.patch('/blueprint/catalogs/:id', authenticateJWT, express.json({ limit: '1mb' }), async (req, res) => {
   // Lightweight update — used for the on/off toggle without re-sending the
-  // whole products array. Accept any of {vendor, category, enabled}.
+  // whole products array. Also handles the share-with-team toggle (org_id).
+  // Accept any of {vendor, category, enabled, org_id}. org_id=null unshares.
   try {
     const client = getUserClient(req.accessToken);
     if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
@@ -1233,15 +1241,19 @@ router.patch('/blueprint/catalogs/:id', authenticateJWT, express.json({ limit: '
     if (typeof req.body?.enabled === 'boolean') patch.enabled = req.body.enabled;
     if (typeof req.body?.vendor === 'string')   patch.vendor = req.body.vendor;
     if (typeof req.body?.category === 'string') patch.category = req.body.category;
+    // org_id: explicit null means "unshare to personal"; UUID means "share with this org"
+    if ('org_id' in (req.body || {})) {
+      patch.org_id = req.body.org_id || null;
+    }
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'No fields to update' });
     const { data, error } = await client
       .from('vendor_catalogs')
       .update(patch)
       .eq('id', req.params.id)
-      .select('id, vendor, category, enabled, updated_at')
+      .select('id, user_id, org_id, vendor, category, enabled, updated_at')
       .single();
     if (error) throw error;
-    res.json(data);
+    res.json({ ...data, is_owner: data.user_id === req.user.id });
   } catch (err) {
     logger.error('Patch vendor catalog error:', err);
     return handleApiError(res, err, 'Patch catalog');
@@ -1261,6 +1273,156 @@ router.delete('/blueprint/catalogs/:id', authenticateJWT, async (req, res) => {
   } catch (err) {
     logger.error('Delete vendor catalog error:', err);
     return handleApiError(res, err, 'Delete catalog');
+  }
+});
+
+/**
+ * Orgs / teams — for sharing vendor catalogs across multiple users on a
+ * contractor's team. RLS handles the access enforcement (orgs_members
+ * table determines who sees what); these endpoints just forward the
+ * caller's JWT so policies apply naturally.
+ *
+ * Member-by-email add uses the service-role client because user lookup
+ * by email requires admin access (not in standard RLS read scope).
+ */
+router.get('/blueprint/orgs', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    // Two queries merged: orgs the user owns + orgs they're a member of.
+    // RLS on `orgs` already restricts to these — single SELECT * is enough.
+    const { data, error } = await client
+      .from('orgs')
+      .select('id, name, owner_user_id, created_at, updated_at')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    const me = req.user.id;
+    res.json({ orgs: (data || []).map(o => ({ ...o, is_owner: o.owner_user_id === me })) });
+  } catch (err) {
+    logger.error('List orgs error:', err);
+    return handleApiError(res, err, 'List orgs');
+  }
+});
+
+router.post('/blueprint/orgs', authenticateJWT, express.json({ limit: '4kb' }), async (req, res) => {
+  // Create a new org. Caller becomes owner + first member automatically.
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const name = String(req.body?.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const { data: org, error: orgErr } = await client
+      .from('orgs')
+      .insert({ name, owner_user_id: req.user.id })
+      .select('id, name, owner_user_id, created_at, updated_at')
+      .single();
+    if (orgErr) throw orgErr;
+    // Add the owner as a member row too — keeps queries simple ("am I a
+    // member of this org?" doesn't need to special-case ownership).
+    const { error: memErr } = await client
+      .from('org_members')
+      .insert({ org_id: org.id, user_id: req.user.id, role: 'owner', invited_by: req.user.id });
+    if (memErr && !/duplicate/i.test(memErr.message)) {
+      logger.warn('Owner self-membership insert failed (non-fatal):', memErr.message);
+    }
+    res.json({ ...org, is_owner: true });
+  } catch (err) {
+    logger.error('Create org error:', err);
+    return handleApiError(res, err, 'Create org');
+  }
+});
+
+router.get('/blueprint/orgs/:id/members', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    // Need to join to auth.users for the email — that requires service role
+    // (RLS doesn't expose auth.users to authenticated). Fetch member rows
+    // first via the user client (RLS enforces visibility), then enrich
+    // with emails via service role.
+    const { data: members, error } = await client
+      .from('org_members')
+      .select('org_id, user_id, role, invited_by, created_at')
+      .eq('org_id', req.params.id);
+    if (error) throw error;
+    const svc = getServiceClient();
+    let emailById = {};
+    if (svc && members?.length) {
+      const ids = members.map(m => m.user_id);
+      // sg_users has email; auth.users is the auth source but mirrored.
+      const { data: profiles } = await svc
+        .from('sg_users')
+        .select('id, email')
+        .in('id', ids);
+      emailById = Object.fromEntries((profiles || []).map(p => [p.id, p.email]));
+    }
+    res.json({
+      members: (members || []).map(m => ({
+        ...m,
+        email: emailById[m.user_id] || null,
+        is_me: m.user_id === req.user.id,
+      })),
+    });
+  } catch (err) {
+    logger.error('List org members error:', err);
+    return handleApiError(res, err, 'List members');
+  }
+});
+
+router.post('/blueprint/orgs/:id/members', authenticateJWT, express.json({ limit: '4kb' }), async (req, res) => {
+  // Add a member by email. Caller must be the org owner (RLS enforces this
+  // on the insert). Service role looks up the email → user_id mapping.
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const role  = req.body?.role === 'admin' ? 'admin' : 'member';
+    if (!email || !/.+@.+\..+/.test(email)) return res.status(400).json({ error: 'valid email required' });
+    const svc = getServiceClient();
+    if (!svc) return res.status(503).json({ error: 'Server not configured for member lookups' });
+    // Resolve email → user_id from sg_users (mirror of auth.users)
+    const { data: target, error: lookupErr } = await svc
+      .from('sg_users')
+      .select('id, email')
+      .ilike('email', email)
+      .maybeSingle();
+    if (lookupErr) throw lookupErr;
+    if (!target) {
+      return res.status(404).json({ error: `No user with email ${email} — they need to sign up first.` });
+    }
+    // Insert via the user client so the RLS owner-check applies
+    const { data, error } = await client
+      .from('org_members')
+      .insert({ org_id: req.params.id, user_id: target.id, role, invited_by: req.user.id })
+      .select('org_id, user_id, role, created_at')
+      .single();
+    if (error) {
+      if (/duplicate/i.test(error.message)) {
+        return res.status(409).json({ error: `${email} is already on this team.` });
+      }
+      throw error;
+    }
+    res.json({ ...data, email: target.email });
+  } catch (err) {
+    logger.error('Add org member error:', err);
+    return handleApiError(res, err, 'Add member');
+  }
+});
+
+router.delete('/blueprint/orgs/:id/members/:userId', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { error } = await client
+      .from('org_members')
+      .delete()
+      .eq('org_id', req.params.id)
+      .eq('user_id', req.params.userId);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('Remove org member error:', err);
+    return handleApiError(res, err, 'Remove member');
   }
 });
 

@@ -842,7 +842,10 @@
         </div>
       </div>
 
-      <h4 style="font-size:13px;margin:24px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Saved catalogs</h4>
+      <h4 style="font-size:13px;margin:24px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Team</h4>
+      <div id="teamSection" hidden></div>
+
+      <h4 style="font-size:13px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Saved catalogs</h4>
       <div class="projects-list" id="catalogList"></div>
 
       <div class="byok-actions">
@@ -1348,11 +1351,12 @@ flooring_lvp,5,3"></textarea>
       const { data: { session } } = await sbClient.auth.getSession();
       sbSession = session || null;
       if (sbSession) {
-        // Run both pulls in parallel — they're independent and the user may
-        // have rebuilt their catalogs on another device since last visit.
+        // Independent pulls run in parallel — catalog data and team-membership
+        // info don't depend on each other and may both be out of date.
         await Promise.all([
           fetchCloudProjects(),
-          (typeof fetchCloudCatalogs === 'function' ? fetchCloudCatalogs() : Promise.resolve())
+          (typeof fetchCloudCatalogs === 'function' ? fetchCloudCatalogs() : Promise.resolve()),
+          (typeof fetchMyOrgs === 'function' ? fetchMyOrgs() : Promise.resolve()),
         ]);
       }
       refreshCloudStatus();
@@ -1900,6 +1904,11 @@ flooring_lvp,5,3"></textarea>
           source_filename: c.source_filename || null,
           createdAt: c.created_at ? new Date(c.created_at).getTime() : Date.now(),
           updated_at: c.updated_at,
+          // Team-share metadata — frontend uses these to show ownership badges
+          // and decide whether to expose the share / delete controls.
+          org_id: c.org_id || null,
+          user_id: c.user_id || null,
+          is_owner: c.is_owner !== false,
           _synced: true,
         };
       }
@@ -1908,6 +1917,82 @@ flooring_lvp,5,3"></textarea>
     } catch (err) {
       console.warn('Cloud catalogs fetch error (offline ok):', err.message);
     }
+  }
+
+  // ---- Orgs / teams (for sharing catalogs) ----
+  // Cached in window so the catalogs modal can render quickly without a
+  // round-trip on every open. Refreshed on init + after team-mutating actions.
+  window.__myOrgs = [];
+
+  async function fetchMyOrgs() {
+    if (!isSignedIn || !isSignedIn()) return;
+    try {
+      const res = await fetch(API_BASE + '/api/ai/blueprint/orgs', { headers: authHeaders() });
+      if (!res.ok) {
+        if (res.status === 404 || res.status === 503) return;
+        console.warn('Orgs fetch failed:', res.status);
+        return;
+      }
+      const { orgs } = await res.json();
+      window.__myOrgs = Array.isArray(orgs) ? orgs : [];
+    } catch (err) {
+      console.warn('Orgs fetch error:', err.message);
+    }
+  }
+
+  async function createOrg(name) {
+    if (!isSignedIn || !isSignedIn()) return null;
+    try {
+      const res = await fetch(API_BASE + '/api/ai/blueprint/orgs', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error(`Create org failed: ${res.status}`);
+      const org = await res.json();
+      window.__myOrgs = [...(window.__myOrgs || []), org];
+      return org;
+    } catch (err) {
+      console.warn('Create org error:', err.message);
+      return null;
+    }
+  }
+
+  async function fetchOrgMembers(orgId) {
+    if (!isSignedIn || !isSignedIn()) return [];
+    try {
+      const res = await fetch(API_BASE + '/api/ai/blueprint/orgs/' + encodeURIComponent(orgId) + '/members', {
+        headers: authHeaders(),
+      });
+      if (!res.ok) return [];
+      const { members } = await res.json();
+      return Array.isArray(members) ? members : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  async function addOrgMember(orgId, email) {
+    const res = await fetch(API_BASE + '/api/ai/blueprint/orgs/' + encodeURIComponent(orgId) + '/members', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ email }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `Add member failed: ${res.status}`);
+    return body;
+  }
+
+  async function removeOrgMember(orgId, userId) {
+    const res = await fetch(API_BASE + '/api/ai/blueprint/orgs/' + encodeURIComponent(orgId) + '/members/' + encodeURIComponent(userId), {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Remove member failed: ${res.status}`);
+    }
+    return true;
   }
 
   // Push a single catalog to the cloud. Returns the saved row (with cloud
@@ -1925,6 +2010,9 @@ flooring_lvp,5,3"></textarea>
         products: catalog.products,
         enabled: catalog.enabled !== false,
         source_filename: catalog.source_filename || null,
+        // org_id only sent when the user explicitly chose to share with a team.
+        // null = personal catalog (default).
+        org_id: catalog.org_id || null,
       };
       const res = await fetch(API_BASE + '/api/ai/blueprint/catalogs', {
         method: 'POST',
@@ -2151,24 +2239,51 @@ flooring_lvp,5,3"></textarea>
     const list = $('catalogList');
     const all = getCatalogs();
     const arr = Object.values(all).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    // Render the team management section above the catalog list — even when
+    // there are no catalogs yet, the user can set up their team here.
+    renderTeamSection();
     if (!arr.length) {
       list.innerHTML = '<div class="projects-empty">No catalogs yet. Drop a vendor PDF above to add one.</div>';
       return;
     }
-    list.innerHTML = arr.map(c => `
-      <div class="project-row">
-        <div>
-          <span class="pr-name">${escapeHtml(c.vendor)}</span>
-          <span class="pr-meta">${escapeHtml(c.category)} · ${c.products.length} product${c.products.length>1?'s':''}</span>
+    const orgs = window.__myOrgs || [];
+    const orgNameById = Object.fromEntries(orgs.map(o => [o.id, o.name]));
+    list.innerHTML = arr.map(c => {
+      const isShared = !!c.org_id;
+      const isOwner = c.is_owner !== false;
+      const orgName = c.org_id ? (orgNameById[c.org_id] || 'team') : '';
+      // Badge: personal / shared by you / shared by teammate
+      let badge = '';
+      if (isShared && isOwner) {
+        badge = `<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;background:rgba(34,197,94,.15);color:#22c55e;margin-left:6px" title="Shared with ${escapeHtml(orgName)}">team</span>`;
+      } else if (isShared && !isOwner) {
+        badge = `<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;background:rgba(59,130,246,.15);color:#3b82f6;margin-left:6px" title="Shared by a teammate in ${escapeHtml(orgName)}">via team</span>`;
+      }
+      // Share button only on catalogs the user owns
+      const shareBtn = isOwner && orgs.length
+        ? `<button class="cat-share-btn" data-id="${c.id}" type="button" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:${isShared?'#22c55e':'var(--text-muted)'};cursor:pointer;margin-right:6px" title="${isShared?'Stop sharing — back to personal':'Share with your team'}">${isShared ? '✓ shared' : '+ share'}</button>`
+        : '';
+      // Delete only on owned catalogs (otherwise hide — shared-by-teammate
+      // catalogs can't be deleted by recipients)
+      const delBtn = isOwner
+        ? `<button class="pr-del" type="button" data-del="${c.id}" aria-label="Delete catalog">×</button>`
+        : '<span style="width:24px;display:inline-block"></span>';
+      return `
+        <div class="project-row">
+          <div>
+            <span class="pr-name">${escapeHtml(c.vendor)}${badge}</span>
+            <span class="pr-meta">${escapeHtml(c.category)} · ${c.products.length} product${c.products.length>1?'s':''}${!isOwner ? ' · read-only' : ''}</span>
+          </div>
+          <div style="text-align:right;display:flex;align-items:center;gap:6px">
+            ${shareBtn}
+            <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
+              <input type="checkbox" data-toggle="${c.id}" ${c.enabled !== false ? 'checked' : ''}> on
+            </label>
+          </div>
+          ${delBtn}
         </div>
-        <div style="text-align:right">
-          <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
-            <input type="checkbox" data-toggle="${c.id}" ${c.enabled !== false ? 'checked' : ''}> on
-          </label>
-        </div>
-        <button class="pr-del" type="button" data-del="${c.id}" aria-label="Delete catalog">×</button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     list.querySelectorAll('input[data-toggle]').forEach(cb => {
       cb.addEventListener('change', e => {
         const id = e.target.dataset.toggle;
@@ -2176,7 +2291,11 @@ flooring_lvp,5,3"></textarea>
         if (all[id]) {
           all[id].enabled = e.target.checked;
           setCatalogs(all);
-          patchCloudCatalog(id, { enabled: e.target.checked });
+          // Only patch the cloud row if the user owns it — toggling a teammate's
+          // catalog would be rejected by RLS anyway, but skip the failed call.
+          if (all[id].is_owner !== false) {
+            patchCloudCatalog(id, { enabled: e.target.checked });
+          }
         }
       });
     });
@@ -2189,6 +2308,114 @@ flooring_lvp,5,3"></textarea>
           setCatalogs(all);
           renderCatalogList();
           deleteCloudCatalog(id);
+        }
+      });
+    });
+    list.querySelectorAll('.cat-share-btn').forEach(btn => {
+      btn.addEventListener('click', () => onShareCatalogClick(btn.dataset.id));
+    });
+  }
+
+  // Toggle share-with-team on a catalog. If the user has no team yet, prompt
+  // them to create one. If they have multiple, ask which team. If they're
+  // already sharing, clicking unshares (back to personal).
+  async function onShareCatalogClick(catalogId) {
+    const all = getCatalogs();
+    const cat = all[catalogId];
+    if (!cat) return;
+    if (cat.org_id) {
+      // Currently shared — confirm unshare
+      if (!confirm('Stop sharing this catalog? It becomes personal again — teammates will lose access.')) return;
+      cat.org_id = null;
+      setCatalogs(all);
+      renderCatalogList();
+      await patchCloudCatalog(catalogId, { org_id: null });
+      return;
+    }
+    // Not shared — find a team to share with
+    let orgs = window.__myOrgs || [];
+    if (!orgs.length) {
+      const name = prompt('You don\'t have a team yet. Name your team / company (e.g. "Surprise Granite") to create one — you\'ll be able to invite teammates after.');
+      if (!name?.trim()) return;
+      const created = await createOrg(name.trim());
+      if (!created) {
+        alert('Could not create team — check your connection and try again.');
+        return;
+      }
+      orgs = window.__myOrgs;
+    }
+    // For now, always share with the first/only org. Multi-org users can
+    // graduate to a picker later.
+    const target = orgs[0];
+    cat.org_id = target.id;
+    setCatalogs(all);
+    renderCatalogList();
+    await patchCloudCatalog(catalogId, { org_id: target.id });
+  }
+
+  // "My team" management section inside the catalogs modal. Shows the user's
+  // org (if any), member list, and a form to add by email. Owner-only writes.
+  async function renderTeamSection() {
+    const container = document.getElementById('teamSection');
+    if (!container) return;
+    if (!isSignedIn || !isSignedIn()) {
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+    const orgs = window.__myOrgs || [];
+    if (!orgs.length) {
+      container.innerHTML = `
+        <div style="padding:12px 14px;background:rgba(0,0,0,.15);border-radius:6px;font-size:12px;color:var(--text-muted)">
+          <strong style="color:var(--text-primary)">No team yet.</strong>
+          When you share a catalog, you'll be prompted to name your team. After that, invite teammates by email and your shared catalogs become available to everyone.
+        </div>
+      `;
+      return;
+    }
+    // Render the first org (most users have one). Multi-org graduation later.
+    const org = orgs[0];
+    const members = await fetchOrgMembers(org.id);
+    const isOwner = org.is_owner !== false;
+    container.innerHTML = `
+      <div style="padding:12px 14px;background:rgba(0,0,0,.15);border-radius:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <strong style="color:var(--text-primary)">Team:</strong>
+            <span style="color:var(--text-secondary)">${escapeHtml(org.name)}</span>
+            <span style="font-size:10px;color:var(--text-muted);margin-left:6px">${members.length} member${members.length===1?'':'s'}</span>
+          </div>
+          ${isOwner ? `<button id="btnAddMember" type="button" class="btn btn-tiny">+ Invite by email</button>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">
+          ${members.map(m => `
+            <span style="display:inline-block;padding:2px 8px;background:rgba(255,255,255,.05);border-radius:10px;margin:2px 4px 2px 0">
+              ${escapeHtml(m.email || '(no email)')}${m.role === 'owner' ? ' <span style="color:#f59e0b">★</span>' : ''}
+              ${(isOwner && !m.is_me && m.role !== 'owner') ? `<a href="#" data-rm="${m.user_id}" style="color:var(--text-muted);margin-left:6px;text-decoration:none" title="Remove from team">×</a>` : ''}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.getElementById('btnAddMember')?.addEventListener('click', async () => {
+      const email = prompt('Email of the teammate to invite. They need an SG account already — sign-up flow is on /login/.');
+      if (!email?.trim()) return;
+      try {
+        await addOrgMember(org.id, email.trim());
+        await renderTeamSection();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    container.querySelectorAll('a[data-rm]').forEach(a => {
+      a.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!confirm('Remove this teammate? They\'ll lose access to shared catalogs.')) return;
+        try {
+          await removeOrgMember(org.id, a.dataset.rm);
+          await renderTeamSection();
+        } catch (err) {
+          alert(err.message);
         }
       });
     });
