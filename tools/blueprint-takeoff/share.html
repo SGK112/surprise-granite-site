@@ -38,6 +38,31 @@
     .err{max-width:600px;margin:80px auto;padding:32px;background:#fff;border-radius:8px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)}
     .err h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin-bottom:8px;color:#1a1a2e}
     .err p{color:#666;font-size:13px}
+
+    .accept-bar{max-width:880px;margin:18px auto 0;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:24px 32px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+    .accept-bar .ab-text strong{font-family:'Space Grotesk',sans-serif;font-size:17px;color:#0f0f1a;display:block}
+    .accept-bar .ab-text span{color:#666;font-size:12px}
+    .accept-bar .btn-accept{background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+    .accept-bar .btn-accept:hover{filter:brightness(1.05)}
+
+    .accept-modal{position:fixed;inset:0;background:rgba(15,15,26,.7);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter:blur(3px)}
+    .accept-modal.open{display:flex}
+    .accept-card{background:#fff;border-radius:10px;padding:24px;max-width:520px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+    .accept-card h3{font-family:'Space Grotesk',sans-serif;font-size:18px;margin-bottom:6px;color:#0f0f1a}
+    .accept-card .ac-sub{color:#666;font-size:13px;margin-bottom:16px;line-height:1.5}
+    .accept-card label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#666;font-weight:700;margin-bottom:4px;margin-top:12px}
+    .accept-card input[type=text],.accept-card input[type=email]{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit}
+    .accept-card input:focus{outline:none;border-color:#22c55e}
+    .sig-wrap{border:2px dashed #ddd;border-radius:6px;background:#fafafa;margin-top:6px;position:relative}
+    .sig-wrap canvas{display:block;width:100%;height:120px;cursor:crosshair;touch-action:none}
+    .sig-wrap .sig-clear{position:absolute;top:6px;right:6px;background:none;border:none;color:#666;cursor:pointer;font-size:11px;text-decoration:underline}
+    .sig-hint{font-size:11px;color:#999;margin-top:4px}
+    .ac-actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+    .ac-actions button{padding:9px 16px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#1a1a2e;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+    .ac-actions .pay-btn{background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:#fff;border-color:#16a34a}
+    .ac-actions .pay-btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.4)}
+    .ac-status{margin-top:10px;font-size:12px;color:#dc2626}
+    .ac-status.ok{color:#16a34a}
     @media print{
       body{background:#fff;padding:0}
       .doc{box-shadow:none;border-radius:0;max-width:none}
@@ -50,6 +75,43 @@
     <button class="btn primary" onclick="window.print()">🖨 Print / Save PDF</button>
   </div>
   <div id="root"></div>
+
+  <!-- Accept & Pay Deposit bar — appears at the bottom when a total is in the proposal -->
+  <div class="accept-bar" id="acceptBar" style="display:none">
+    <div class="ab-text">
+      <strong>Ready to move forward?</strong>
+      <span>Sign electronically and pay your <span id="depositAmount">deposit</span> to lock in the schedule.</span>
+    </div>
+    <button class="btn-accept" id="btnOpenAccept" type="button">Accept &amp; Pay Deposit →</button>
+  </div>
+
+  <!-- Accept modal -->
+  <div class="accept-modal" id="acceptModal" role="dialog" aria-modal="true">
+    <div class="accept-card">
+      <h3>Accept proposal &amp; pay deposit</h3>
+      <p class="ac-sub">By signing below you accept the scope and pricing in this proposal. The 50% deposit secures your project on the schedule; the balance is due on substantial completion.</p>
+
+      <label>Your name (full legal name)</label>
+      <input type="text" id="acName" placeholder="John Smith" autocomplete="name">
+
+      <label>Email (for receipt)</label>
+      <input type="email" id="acEmail" placeholder="you@example.com" autocomplete="email">
+
+      <label>Signature</label>
+      <div class="sig-wrap">
+        <canvas id="sigCanvas" width="600" height="120"></canvas>
+        <button class="sig-clear" type="button" id="sigClear">Clear</button>
+      </div>
+      <div class="sig-hint">Click and drag to sign. Touch supported on mobile.</div>
+
+      <div class="ac-status" id="acStatus"></div>
+
+      <div class="ac-actions">
+        <button id="btnAcceptCancel" type="button">Cancel</button>
+        <button class="pay-btn" id="btnAcceptPay" type="button">Pay <span id="payAmountLabel">deposit</span> &amp; accept →</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 (() => {
@@ -139,6 +201,138 @@
   const websiteUrl = pb.website ? (/^https?:\/\//.test(pb.website) ? pb.website : 'https://' + pb.website) : '';
 
   document.title = `Proposal — ${data.project || 'project'}${data.customer ? ' for ' + data.customer : ''}`;
+
+  // Show the accept-and-pay bar if we have a real total
+  if (data.total && Number(data.total) > 0) {
+    const deposit = Math.round(Number(data.total) * 0.5);
+    document.getElementById('depositAmount').textContent = `${fmt(deposit)} deposit (50%)`;
+    document.getElementById('payAmountLabel').textContent = fmt(deposit);
+    document.getElementById('acceptBar').style.display = 'flex';
+    wireAcceptModal(data, deposit);
+  }
+
+  function wireAcceptModal(data, depositCents) {
+    const btn       = document.getElementById('btnOpenAccept');
+    const modal     = document.getElementById('acceptModal');
+    const cancel    = document.getElementById('btnAcceptCancel');
+    const pay       = document.getElementById('btnAcceptPay');
+    const status    = document.getElementById('acStatus');
+    const canvas    = document.getElementById('sigCanvas');
+    const sigClear  = document.getElementById('sigClear');
+    const ctx       = canvas.getContext('2d');
+
+    function setStatus(msg, ok) {
+      status.textContent = msg || '';
+      status.className = 'ac-status' + (ok ? ' ok' : '');
+    }
+
+    // Match canvas internal resolution to its display size for sharp lines on retina
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = w * ratio;
+      canvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#1a1a2e';
+    }
+
+    let drawing = false, hasInk = false;
+    function pointerPos(e) {
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX ?? e.touches?.[0]?.clientX ?? 0) - r.left;
+      const y = (e.clientY ?? e.touches?.[0]?.clientY ?? 0) - r.top;
+      return { x, y };
+    }
+    function start(e) { e.preventDefault(); drawing = true; hasInk = true; const p = pointerPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function move(e)  { if (!drawing) return; e.preventDefault(); const p = pointerPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function end(e)   { drawing = false; }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+
+    sigClear.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasInk = false;
+    });
+
+    btn.addEventListener('click', () => {
+      modal.classList.add('open');
+      resizeCanvas();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasInk = false;
+      setStatus('');
+      document.getElementById('acName').focus();
+    });
+    cancel.addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    pay.addEventListener('click', async () => {
+      const name = document.getElementById('acName').value.trim();
+      const email = document.getElementById('acEmail').value.trim();
+      if (!name) { setStatus('Please enter your name.'); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setStatus('Please enter a valid email.'); return; }
+      if (!hasInk)  { setStatus('Please sign in the box.'); return; }
+
+      pay.disabled = true; pay.textContent = 'Connecting to Stripe…';
+      setStatus('');
+
+      try {
+        const sigDataUrl = canvas.toDataURL('image/png');
+        const projectName = data.project || 'Project';
+        const memo = `${projectName} — 50% deposit · accepted by ${name}`;
+        // Best-effort: log the acceptance (signature, name, email, time) for our records.
+        // The fire-and-forget call doesn't block the Stripe redirect.
+        try {
+          fetch('https://surprise-granite-email-api.onrender.com/api/ai/blueprint/proposal/acceptance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              acceptedBy: { name, email },
+              signaturePng: sigDataUrl,
+              project: projectName,
+              customer: data.customer || '',
+              total: Number(data.total) || 0,
+              deposit: depositCents,
+              preparedBy: data.preparedBy || {},
+              acceptedAt: new Date().toISOString(),
+            }),
+          }).catch(()=>{}); // non-blocking
+        } catch (_) { /* keep going to Stripe regardless */ }
+
+        // Create Stripe checkout session — amount in cents
+        const stripeResp = await fetch('https://surprise-granite-email-api.onrender.com/api/stripe/quick-pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: depositCents * 100, // dollars → cents
+            email,
+            invoice_ref: `proposal-${Date.now()}`,
+            memo,
+          }),
+        });
+        if (!stripeResp.ok) {
+          const t = await stripeResp.text();
+          throw new Error(`Stripe ${stripeResp.status}: ${t.slice(0,200)}`);
+        }
+        const stripe = await stripeResp.json();
+        if (!stripe.url) throw new Error('Stripe did not return a checkout URL.');
+        setStatus('Redirecting to secure payment…', true);
+        window.location.href = stripe.url;
+      } catch (err) {
+        console.error('Accept/pay error:', err);
+        setStatus('Couldn\'t open payment: ' + err.message);
+        pay.disabled = false; pay.textContent = 'Pay deposit & accept →';
+      }
+    });
+  }
 
   root.innerHTML = `
     <div class="doc">

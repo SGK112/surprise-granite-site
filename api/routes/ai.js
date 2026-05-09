@@ -766,6 +766,79 @@ ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
 });
 
 /**
+ * Record a proposal acceptance — signature + acceptor info + bid context.
+ * Called by share.html after the customer signs and before redirecting to
+ * Stripe. Best-effort; we log to file and email a notification to the
+ * contractor so they have a paper trail even if downstream storage is offline.
+ * V2 will write to a Supabase `proposal_acceptances` table.
+ */
+router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), async (req, res) => {
+  try {
+    const { acceptedBy = {}, signaturePng = '', project = '', customer = '', total = 0, deposit = 0, preparedBy = {}, acceptedAt = '' } = req.body || {};
+    if (!acceptedBy.name || !acceptedBy.email) {
+      return res.status(400).json({ error: 'acceptedBy.name + acceptedBy.email required' });
+    }
+
+    const record = {
+      acceptedAt: acceptedAt || new Date().toISOString(),
+      acceptedBy,
+      project, customer, total, deposit,
+      preparedBy: { name: preparedBy.name, email: preparedBy.email, license: preparedBy.license },
+      ip: req.ip || req.headers['x-forwarded-for'] || '',
+      userAgent: req.get('user-agent') || '',
+      signatureLen: signaturePng.length,
+    };
+    logger.info('Proposal accepted:', record);
+
+    // Best-effort: email the contractor so they know a customer signed.
+    if (preparedBy.email && process.env.SMTP_PASS) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '465', 10),
+          secure: (process.env.SMTP_SECURE !== 'false'),
+          auth: {
+            user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
+            pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
+          },
+        });
+        const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+        const fmt = n => '$' + (Math.round(n)||0).toLocaleString();
+        await transporter.sendMail({
+          from: `"${preparedBy.name || 'Surprise Granite'}" <${fromEmail}>`,
+          to: preparedBy.email,
+          replyTo: acceptedBy.email,
+          subject: `✓ ACCEPTED: ${project || 'proposal'} — ${acceptedBy.name}`,
+          html: `
+            <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a2e">
+              <h2 style="color:#16a34a;font-family:'Space Grotesk',sans-serif">Proposal accepted</h2>
+              <p><strong>${escapeHtmlServer(project)}</strong>${customer ? ' for ' + escapeHtmlServer(customer) : ''}</p>
+              <table style="border-collapse:collapse;margin:16px 0">
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Accepted by:</td><td><strong>${escapeHtmlServer(acceptedBy.name)}</strong></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Email:</td><td><a href="mailto:${escapeHtmlServer(acceptedBy.email)}">${escapeHtmlServer(acceptedBy.email)}</a></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Total bid:</td><td><strong>${fmt(total)}</strong></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Deposit (50%):</td><td><strong>${fmt(deposit)}</strong> — Stripe payment in progress</td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Time:</td><td>${escapeHtmlServer(record.acceptedAt)}</td></tr>
+              </table>
+              <p style="color:#666;font-size:13px">Signature is on file. You'll get a separate Stripe receipt when the deposit clears.</p>
+              ${signaturePng && signaturePng.startsWith('data:image/png;base64,') ? `<p style="margin-top:16px"><strong>Signature:</strong></p><img src="${signaturePng}" alt="signature" style="border:1px solid #ddd;background:#fafafa;max-width:400px;padding:8px"/>` : ''}
+            </div>
+          `,
+        });
+      } catch (mailErr) {
+        logger.warn('Acceptance notification email failed (non-fatal):', mailErr.message);
+      }
+    }
+
+    res.json({ ok: true, recordedAt: record.acceptedAt });
+  } catch (err) {
+    logger.error('Acceptance record error:', err);
+    return handleApiError(res, err, 'Acceptance record');
+  }
+});
+
+/**
  * Email a generated proposal to the customer.
  * Frontend supplies the rendered HTML body (it already has the md→html
  * converter for the on-screen view) plus the customer / project context.
