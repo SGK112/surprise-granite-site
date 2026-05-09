@@ -566,7 +566,8 @@
       <div class="totals-grid" id="totalsGrid"></div>
       <div class="row-actions" style="margin-top:6px;margin-bottom:14px" id="measureRow" hidden>
         <button class="btn" id="btnOpenMeasure" type="button">📏 Measure on drawing</button>
-        <span class="estimate-meta">Click on the actual drawing to override AI counts (LF / SF). Calibrate scale once per sheet, then click your way through.</span>
+        <button class="btn" id="btnOpenInRoomDesigner" type="button">🎨 Open in Room Designer (3D)</button>
+        <span class="estimate-meta">Measure overrides AI counts. Room Designer renders the cabinets in 3D for visualization.</span>
       </div>
 
       <div id="materialsBlock" hidden>
@@ -3567,6 +3568,60 @@ flooring_lvp,5,3"></textarea>
   };
 
   $('btnOpenMeasure')?.addEventListener('click', openMeasureModal);
+
+  // ---- Hand-off to Room Designer for 3D visualization ----
+  // Combines all per-page extraction results into a single AI-blueprint
+  // payload (matches the Room Designer's processAIBlueprintResult shape),
+  // stages in localStorage, opens the Room Designer in a new tab.
+  $('btnOpenInRoomDesigner')?.addEventListener('click', () => {
+    const perPage = window.__lastPerPage || [];
+    const okPages = perPage.filter(p => p.ok && p.result);
+    if (!okPages.length) {
+      alert('No extraction data to send. Run the takeoff first.');
+      return;
+    }
+
+    // Collect rooms across all pages — Room Designer takes the first room,
+    // so we merge all cabinets/appliances/countertops into one synthetic
+    // room with summed dimensions.
+    const allCabinets = [];
+    const allAppliances = [];
+    let widthFt = 0, depthFt = 0;
+    for (const p of okPages) {
+      const rooms = Array.isArray(p.result.rooms) ? p.result.rooms : [];
+      for (const r of rooms) {
+        if (Array.isArray(r.cabinets)) allCabinets.push(...r.cabinets);
+        if (Array.isArray(r.appliances)) allAppliances.push(...r.appliances);
+        if (r.widthFt > widthFt) widthFt = r.widthFt;
+        if (r.depthFt > depthFt) depthFt = r.depthFt;
+      }
+    }
+    if (!allCabinets.length) {
+      alert('No cabinets were extracted from these drawings. The Room Designer needs cabinet data to render. Try a different sheet selection that includes cabinet schedules or millwork plans.');
+      return;
+    }
+
+    const handoff = {
+      source: 'blueprint-takeoff',
+      projectName: ($('projectNameInput')?.value || $('propProject')?.value || 'Blueprint Import').trim(),
+      rooms: [{
+        widthFt: widthFt || 14,
+        depthFt: depthFt || 12,
+        cabinets: allCabinets,
+        appliances: allAppliances,
+      }],
+      confidence: 'medium',
+      timestamp: Date.now(),
+    };
+
+    try {
+      localStorage.setItem('sg_designer_handoff', JSON.stringify(handoff));
+    } catch (e) {
+      alert('Could not stage handoff data — localStorage may be full.');
+      return;
+    }
+    window.open('/tools/room-designer/?import=blueprint', '_blank');
+  });
   $('btnMeasureClose')?.addEventListener('click', () => $('measureModal').classList.remove('open'));
   $('measureModal')?.addEventListener('click', e => {
     if (e.target === $('measureModal')) $('measureModal').classList.remove('open');

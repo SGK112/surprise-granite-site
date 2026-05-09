@@ -18421,6 +18421,40 @@
       };
     };
 
+    // ---- Hand-off from Bidding Tool ----
+    // If URL has ?import=blueprint and localStorage has sg_designer_handoff,
+    // feed the staged AI-blueprint payload into processAIBlueprintResult so
+    // the cabinets render in 3D right away. One-shot — clears the staging
+    // key so a refresh doesn't re-import.
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const params = new URLSearchParams(location.search);
+        if (params.get('import') !== 'blueprint') return;
+        const raw = localStorage.getItem('sg_designer_handoff');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.rooms) || !data.rooms[0]?.cabinets?.length) return;
+        // Wait a beat for the rest of init to wire up (rooms, canvas, render loop)
+        setTimeout(async () => {
+          try {
+            const result = await processAIBlueprintResult(data, {
+              clearExisting: false,
+              updateRoomSize: true,
+              autoCountertop: true,
+            });
+            localStorage.removeItem('sg_designer_handoff');
+            const msg = `Imported from Bidding Tool: ${result.cabinetsAdded || 0} cabinets, ${result.appliancesAdded || 0} appliances, ${result.countertopsAdded || 0} countertops${result.roomUpdated ? ' · room dims set' : ''}.`;
+            if (typeof showToast === 'function') showToast(msg, 'success', 6000);
+            else console.log('[handoff]', msg);
+          } catch (innerErr) {
+            console.warn('Blueprint handoff render failed:', innerErr);
+          }
+        }, 1200);
+      } catch (e) {
+        console.warn('Blueprint import check failed:', e);
+      }
+    });
+
     // Process AI blueprint analysis result and create elements
     async function processAIBlueprintResult(data, options = {}) {
       const { clearExisting = false, updateRoomSize = true, autoCountertop = true } = options;
