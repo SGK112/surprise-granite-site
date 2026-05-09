@@ -521,7 +521,40 @@ router.post('/blueprint/cover', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'You read the cover/title sheet of an architectural drawing set and extract project metadata. Return ONLY a JSON object with these fields (use empty string when not visible — never invent): {"project_name":"","customer":"","project_address":"","gc":"","architect":"","date":""}. project_name is the building or project title. customer is the owner / client / tenant. project_address is the street address of the work site. gc is the general contractor name (if listed). architect is the design firm. date is the issue date. Use exact text from the drawing.',
+            content: [
+              'You extract project metadata from the cover/title sheet of an architectural drawing set.',
+              '',
+              '══════════════════════════════════════════════════════════════',
+              'ACCURACY OVER COMPLETENESS. The user would rather see "" empty',
+              'than a plausible guess. Do NOT invent. Do NOT fill in city/state',
+              'from a partial address. Do NOT guess project type from the look',
+              'of the building. Do NOT name a generic GC ("ABC Construction")',
+              'when none is listed. Empty fields are acceptable; fake data is not.',
+              '══════════════════════════════════════════════════════════════',
+              '',
+              'Return ONLY a JSON object with this exact shape:',
+              '{',
+              '  "project_name": "exact text from the title block (e.g. \\"Better Buzz Coffee — Val Vista\\")",',
+              '  "customer": "owner/client/tenant name as printed (e.g. \\"Better Buzz Coffee Roasters\\")",',
+              '  "project_address": "full street address as printed, including city + state + zip if visible",',
+              '  "gc": "general contractor company name, or empty string if not listed",',
+              '  "architect": "design firm name as printed",',
+              '  "date": "issue/permit date as printed (any format)",',
+              '  "verbatim_sources": {',
+              '    "project_name": "the literal page text you read this from",',
+              '    "customer": "the literal page text you read this from",',
+              '    "project_address": "the literal page text you read this from",',
+              '    "gc": "the literal page text you read this from",',
+              '    "architect": "the literal page text you read this from",',
+              '    "date": "the literal page text you read this from"',
+              '  }',
+              '}',
+              '',
+              'For any field where you cannot point to specific page text, return',
+              'an empty string. Never combine partial reads ("123 Main St" + your',
+              'guess of city = fabrication). Verbatim_sources is required for any',
+              'field you populate; if you cannot quote the source, leave the field empty.'
+            ].join('\n'),
           },
           {
             role: 'user',
@@ -549,6 +582,12 @@ router.post('/blueprint/cover', async (req, res) => {
       gc: parsed.gc || '',
       architect: parsed.architect || '',
       date: parsed.date || '',
+      // Pass through the per-field verbatim source map so the frontend can
+      // surface "this came from X on the page" tooltips, mirroring how
+      // materials_called_out preserves verbatim_source per entry.
+      verbatim_sources: (parsed.verbatim_sources && typeof parsed.verbatim_sources === 'object')
+        ? parsed.verbatim_sources
+        : {},
       key_source: headerKey || req.body.userKey ? 'user (BYOK)' : 'server',
     });
   } catch (err) {
@@ -2314,8 +2353,8 @@ function convertAIResultToLegacy(aiResult, projectType) {
     ? takeoff.materials_called_out
     : [];
   // missing_or_unreadable enumerates schedule rows GPT could see but couldn't
-  // confidently read. Frontend surfaces these so the user knows what didn't
-  // make it into the bid (instead of silently dropping rows).
+  // confidently read. The frontend surfaces these so the user knows what
+  // didn't make it into the bid (rather than silently dropping rows).
   const missingOrUnreadable = Array.isArray(takeoff.missing_or_unreadable)
     ? takeoff.missing_or_unreadable
     : [];
