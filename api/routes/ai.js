@@ -610,16 +610,23 @@ Return the proposal in this structure (use the docTitle and recipientLabel below
 
 # ${docTitle} — {Project Name}
 
-**Prepared by:** {Company name from preparedBy.name}
-{Contact name (Title)} · {Email} · {Phone}
-{License} · {Website}
-{Tagline if any, in italics}
+**Prepared by**
+{Company name from preparedBy.name}
+{Contact name}, {Title}
+{Email}  ·  {Phone}
+{License}
+{Website — bare URL only, NO markdown link syntax, NEVER write [text](url)}
+*{Tagline if any, italicized}*
 
 **${recipientLabel}:** {Customer}
 **Date:** {Today}
 **Project address:** {address or "TBD"}
 
-(If no preparedBy info was provided, omit the "Prepared by" block entirely — don't invent placeholders.)
+CRITICAL formatting rules for the Prepared by block:
+- Each item on its OWN line (the lines above are literal — do not collapse them).
+- Do NOT use [text](url) markdown link syntax for the website. Write the URL bare (e.g. \`www.example.com\`) — the renderer auto-links bare URLs.
+- Skip any field that's empty in the source data. Don't write "Email: (none)" or similar — just omit that line.
+- If preparedBy has no name at all, omit the entire Prepared by block (don't invent placeholders).
 
 ## Scope of Work
 2-4 sentence overview of what the contractor is doing, derived from the trades present in the estimate.

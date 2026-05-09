@@ -69,10 +69,18 @@
     const lines = md.split('\n');
     const out = []; let i = 0;
     function inline(s) {
-      return escapeHtml(s)
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      let out = escapeHtml(s);
+      out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|www\.[^\s)]+|mailto:[^\s)]+|tel:[^\s)]+)\)/g, (_, text, url) => {
+        const href = /^(www\.|[a-z0-9.-]+\.[a-z]{2,})$/i.test(url) ? 'https://' + url : url;
+        return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+      });
+      out = out.replace(/\b(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      out = out.replace(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g, '<a href="mailto:$1">$1</a>');
+      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+               .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+               .replace(/`([^`]+)`/g, '<code>$1</code>');
+      out = out.replace(/(\\\\|  )$/g, '<br>');
+      return out;
     }
     while (i < lines.length) {
       const ln = lines[i];

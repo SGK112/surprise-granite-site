@@ -3147,10 +3147,24 @@ flooring_lvp,5,3"></textarea>
     return out.join('\n');
 
     function inline(s) {
-      return escape(s)
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      let out = escape(s);
+      // Markdown links [text](url) — must run before URL auto-linker so we
+      // don't double-link the URL inside the parens
+      out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|www\.[^\s)]+|mailto:[^\s)]+|tel:[^\s)]+)\)/g, (_, text, url) => {
+        const href = /^(www\.|[a-z0-9.-]+\.[a-z]{2,})$/i.test(url) ? 'https://' + url : url;
+        return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+      });
+      // Bare URLs not already inside an <a>
+      out = out.replace(/\b(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      // Bare email + phone
+      out = out.replace(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g, '<a href="mailto:$1">$1</a>');
+      // Bold / italic / code
+      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+               .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+               .replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Markdown hard break: "\\\\" at end of line, OR two trailing spaces
+      out = out.replace(/(\\\\|  )$/g, '<br>');
+      return out;
     }
   }
 
