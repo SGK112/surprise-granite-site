@@ -2995,6 +2995,62 @@ flooring_lvp,5,3"></textarea>
     return out;
   }
 
+  // Promote an AI-flagged "couldn't read this" entry into an editable material
+  // row. Pre-fills code (best-effort parsed from the `what` field) + category
+  // (best-effort guessed from keywords); user types the spec in the table.
+  // Estimator picks it up on the next recalc.
+  function addMissingAsMaterial(missing) {
+    if (!missing) return;
+    const what = (missing.what || '').trim();
+    // Try to extract a code from "T-3 row" / "FLR-2:" / "code CT-5" patterns
+    const codeMatch = what.match(/\b([A-Z]{1,4}[-]?\d{1,3})\b/);
+    const code = codeMatch ? codeMatch[1] : '—';
+    // Best-effort category guess from keywords in the description
+    const lower = what.toLowerCase();
+    let category = 'other';
+    if (/tile|porcelain|ceramic|mosaic|hex/.test(lower)) category = 'tile';
+    else if (/floor|vinyl|lvp|carpet|hardwood/.test(lower)) category = 'flooring';
+    else if (/quartz|caesarstone|silestone|cambria/.test(lower)) category = 'quartz';
+    else if (/granite/.test(lower)) category = 'granite';
+    else if (/quartzite|marble/.test(lower)) category = 'stone';
+    else if (/cabinet|millwork|laminate|wood|oak/.test(lower)) category = 'cabinet';
+    else if (/paint|sherwin|dunn|benjamin/.test(lower)) category = 'paint';
+    else if (/wallpaper|wallcovering|wolf gordon|maharam/.test(lower)) category = 'wallcovering';
+    else if (/light|fixture|pendant|sconce/.test(lower)) category = 'lighting';
+
+    const mats = window.__lastMaterials || (window.__lastMaterials = []);
+    // Don't duplicate if user already added the same code+category
+    const key = `${category}|${code.toLowerCase()}`;
+    const existing = mats.find(m => `${m.category}|${(m.code||'').toLowerCase()}` === key);
+    if (existing) {
+      // Just scroll to it instead
+      renderMaterials();
+      setTimeout(() => {
+        const idx = mats.indexOf(existing);
+        const row = document.querySelector(`#materialsTable tbody tr[data-i="${idx}"] .spec`);
+        row?.scrollIntoView({ behavior:'smooth', block:'center' });
+        row?.focus();
+      }, 100);
+      return;
+    }
+    mats.push({
+      code,
+      category,
+      spec: '', // empty so it shows as missing-spec — user types in
+      sources: missing.sheet ? [missing.sheet] : [],
+      _addedFromMissing: true,
+      _missingContext: { what: missing.what, where: missing.where },
+    });
+    renderMaterials();
+    // Focus the new row's spec cell
+    setTimeout(() => {
+      const idx = mats.length - 1;
+      const cell = document.querySelector(`#materialsTable tbody tr[data-i="${idx}"] .spec`);
+      cell?.scrollIntoView({ behavior:'smooth', block:'center' });
+      cell?.focus();
+    }, 100);
+  }
+
   function renderMaterials(perPage) {
     // First render from the per-page extraction; then redraws use the cached
     // (and possibly user-edited) list so deletes/edits stick.
@@ -3037,19 +3093,25 @@ flooring_lvp,5,3"></textarea>
         aiPanel.hidden = false;
         aiPanel.innerHTML = `
           <div style="font-weight:700;margin-bottom:6px;color:#f59e0b">⚠ AI flagged ${missingFromAI.length} item${missingFromAI.length>1?'s':''} it couldn't read clearly</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">These rows exist on the drawings but the AI didn't extract them — review the source sheets and add manually if they're in scope.</div>
-          <ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.6">
-            ${missingFromAI.slice(0, 12).map(m => `
-              <li>
-                <strong>${escapeHtml(m.what)}</strong>
-                ${m.where ? ` <span style="color:var(--text-muted)">— ${escapeHtml(m.where)}</span>` : ''}
-                ${m.sheet ? ` <span style="color:var(--text-muted)">(sheet ${escapeHtml(m.sheet.sheetNum || '?')}, p${m.sheet.pageNum})</span>` : ''}
-                ${m.reason ? `<br><span style="color:var(--text-muted);font-style:italic">${escapeHtml(m.reason)}</span>` : ''}
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">These rows exist on the drawings but the AI didn't extract them — review the source sheets, then click "+ add as material" to enter the spec yourself.</div>
+          <ul style="margin:0;padding:0;font-size:12px;line-height:1.6;list-style:none;display:grid;gap:6px">
+            ${missingFromAI.slice(0, 12).map((m, i) => `
+              <li style="display:flex;gap:8px;align-items:flex-start;padding:6px 8px;background:rgba(0,0,0,.15);border-radius:4px">
+                <div style="flex:1">
+                  <strong>${escapeHtml(m.what)}</strong>
+                  ${m.where ? ` <span style="color:var(--text-muted)">— ${escapeHtml(m.where)}</span>` : ''}
+                  ${m.sheet ? ` <span style="color:var(--text-muted)">(sheet ${escapeHtml(m.sheet.sheetNum || '?')}, p${m.sheet.pageNum})</span>` : ''}
+                  ${m.reason ? `<br><span style="color:var(--text-muted);font-style:italic">${escapeHtml(m.reason)}</span>` : ''}
+                </div>
+                <button class="add-missing-as-mat" data-i="${i}" type="button" style="background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap" title="Add a placeholder material entry — you fill in the spec">+ add as material</button>
               </li>
             `).join('')}
-            ${missingFromAI.length > 12 ? `<li style="color:var(--text-muted)">+${missingFromAI.length - 12} more — open the source sheet to review</li>` : ''}
+            ${missingFromAI.length > 12 ? `<li style="color:var(--text-muted);padding:4px 8px">+${missingFromAI.length - 12} more — open the source sheet to review</li>` : ''}
           </ul>
         `;
+        aiPanel.querySelectorAll('.add-missing-as-mat').forEach(btn => {
+          btn.addEventListener('click', () => addMissingAsMaterial(missingFromAI[+btn.dataset.i]));
+        });
       } else {
         aiPanel.hidden = true;
       }
@@ -3505,10 +3567,10 @@ flooring_lvp,5,3"></textarea>
         <div style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#f59e0b;margin-bottom:10px">⚠ ${issues.length} thing${issues.length>1?'s':''} to review before sending this bid</div>
         <ul style="margin:0;padding:0;list-style:none;display:grid;gap:8px">
           ${issues.map(it => `
-            <li style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:rgba(0,0,0,.15);border-radius:6px">
+            <li class="review-issue" data-kind="${it.kind}" style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:rgba(0,0,0,.15);border-radius:6px;cursor:pointer;transition:background .15s" title="Click to jump to the relevant section">
               <div style="font-size:14px;line-height:1.4">${it.icon}</div>
               <div style="flex:1;font-size:12px;line-height:1.5">
-                <div style="color:var(--text-primary);font-weight:600">${escapeHtml(it.title)}</div>
+                <div style="color:var(--text-primary);font-weight:600">${escapeHtml(it.title)} <span style="color:var(--text-muted);font-weight:400;font-size:11px">→ click to jump</span></div>
                 ${it.detail ? `<div style="color:var(--text-muted);margin-top:2px">${escapeHtml(it.detail)}</div>` : ''}
                 <div style="color:var(--text-muted);margin-top:4px;font-style:italic">${escapeHtml(it.action)}</div>
               </div>
@@ -3517,6 +3579,47 @@ flooring_lvp,5,3"></textarea>
         </ul>
       </div>
     `;
+    panel.querySelectorAll('.review-issue').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'rgba(245,158,11,.15)');
+      el.addEventListener('mouseleave', () => el.style.background = 'rgba(0,0,0,.15)');
+      el.addEventListener('click', () => jumpToReviewTarget(el.dataset.kind));
+    });
+  }
+
+  // Jump to the section that resolves a given review-panel issue. Scrolls
+  // smooth + adds a transient highlight so the user can see what to fix.
+  function jumpToReviewTarget(kind) {
+    let target = null;
+    if (kind === 'spec_missing') {
+      target = document.getElementById('materialsBlock');
+      // Also scroll the first missing-spec row into view inside the table
+      setTimeout(() => {
+        const tbody = document.querySelector('#materialsTable tbody');
+        const firstMissing = tbody?.querySelector('tr.missing-spec .spec');
+        if (firstMissing) {
+          firstMissing.scrollIntoView({ behavior:'smooth', block:'center' });
+          firstMissing.focus();
+          // Place cursor at end so user can type immediately
+          const r = document.createRange(); r.selectNodeContents(firstMissing); r.collapse(false);
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        }
+      }, 350);
+    } else if (kind === 'ai_unreadable') {
+      target = document.getElementById('aiMissingPanel');
+    } else if (kind === 'extraction_failed') {
+      target = document.getElementById('parseProgress') || document.getElementById('step2');
+    } else if (kind === 'avg_fallback') {
+      // Open the vendor catalogs modal — fastest path to fix industry-avg
+      // pricing is uploading a real vendor price sheet.
+      target = document.getElementById('estTableWrap');
+      setTimeout(() => openCatalogsModal?.(), 600);
+    }
+    if (target) {
+      target.scrollIntoView({ behavior:'smooth', block:'start' });
+      target.style.transition = 'box-shadow .4s ease-out';
+      target.style.boxShadow = '0 0 0 3px rgba(245,158,11,.5)';
+      setTimeout(() => { target.style.boxShadow = ''; }, 1800);
+    }
   }
 
   function renderEstimate(est) {
