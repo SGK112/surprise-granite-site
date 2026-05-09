@@ -2129,35 +2129,62 @@ flooring_lvp,5,3"></textarea>
     setExtractProgress(0, `Extracting page 1 of ${selected.length}…`);
     $('step3').scrollIntoView({ behavior:'smooth', block:'start' });
 
+    // Resume support: if we already have per-page results for some of the
+    // currently-selected sheets (from a previous interrupted run on this
+    // project), keep them and only extract the missing ones. The page-hash
+    // cache also catches re-runs, but per-page saves below mean even an
+    // unrecoverable tab close leaves no work lost.
+    const priorPerPage = Array.isArray(window.__lastPerPage) ? window.__lastPerPage : [];
+    const priorByPage = new Map(priorPerPage.filter(p => p.ok && p.sheet).map(p => [p.sheet.pageNum, p]));
+
     const perPage = [];
     let done = 0;
     let cacheHits = 0;
+    let resumed = 0;
     const RASTER_SCALE = 1.6;
     const pdfHash = window.__currentPdfHash || 'no-pdf-hash';
+
+    // Warn the user if they try to navigate away mid-extraction
+    extractionInProgress = true;
+
     for (const s of selected) {
       try {
-        // Cache key: PDF bytes hash + page number + raster scale. Stable
-        // across rasterize runs regardless of canvas sub-pixel variance.
-        const cacheKey = `${pdfHash}:${s.pageNum}:${RASTER_SCALE}`;
-        let result = getPageCache(cacheKey);
-        if (result) {
-          cacheHits++;
+        // Already done in a previous run? Reuse it.
+        const prior = priorByPage.get(s.pageNum);
+        if (prior && prior.result) {
+          perPage.push(prior);
+          resumed++;
         } else {
-          // Cache miss — rasterize and call AI
-          const jpegDataUrl = await rasterizePage(s.pageNum, RASTER_SCALE);
-          result = await callBlueprintApi(jpegDataUrl, s);
-          setPageCache(cacheKey, result);
+          // Cache key: PDF bytes hash + page number + raster scale. Stable
+          // across rasterize runs regardless of canvas sub-pixel variance.
+          const cacheKey = `${pdfHash}:${s.pageNum}:${RASTER_SCALE}`;
+          let result = getPageCache(cacheKey);
+          if (result) {
+            cacheHits++;
+          } else {
+            const jpegDataUrl = await rasterizePage(s.pageNum, RASTER_SCALE);
+            result = await callBlueprintApi(jpegDataUrl, s);
+            setPageCache(cacheKey, result);
+          }
+          perPage.push({ sheet: s, result, ok: true });
         }
-        perPage.push({ sheet: s, result, ok: true });
       } catch (err) {
         console.error('Page', s.pageNum, 'failed:', err);
         perPage.push({ sheet: s, error: err.message || String(err), ok: false });
       }
       done++;
-      const cacheNote = cacheHits ? ` · ${cacheHits} from cache` : '';
+      // Checkpoint after every page so an interrupted run doesn't lose work
+      window.__lastPerPage = perPage;
+      autoSave();
+
+      const noteParts = [];
+      if (resumed)    noteParts.push(`${resumed} resumed`);
+      if (cacheHits)  noteParts.push(`${cacheHits} from cache`);
+      const cacheNote = noteParts.length ? ` · ${noteParts.join(' · ')}` : '';
       setExtractProgress(done / selected.length, `Extracted ${done} of ${selected.length} pages${cacheNote}`);
     }
 
+    extractionInProgress = false;
     $('extractProgress').hidden = true;
     window.__lastPerPage = perPage;
     renderTotals(perPage);
@@ -2166,9 +2193,18 @@ flooring_lvp,5,3"></textarea>
     renderPerPage(perPage);
     const okCount = perPage.filter(p => p.ok).length;
     $('hExtracted').textContent = okCount;
-    if (cacheHits) console.log(`Page cache: ${cacheHits}/${selected.length} pages restored from cache (deterministic)`);
+    if (cacheHits || resumed) console.log(`Page cache: ${cacheHits} from cache · ${resumed} resumed from prior run`);
     autoSave();
   }
+
+  // Tab-close / navigate-away guard during long extractions
+  let extractionInProgress = false;
+  window.addEventListener('beforeunload', e => {
+    if (!extractionInProgress) return;
+    e.preventDefault();
+    e.returnValue = 'Extraction is still running. Pages already done are saved — but if you leave now, the remaining pages will need to be re-run when you come back. (They\'ll be free thanks to the cache, just slower.)';
+    return e.returnValue;
+  });
 
   // ---- Page-content cache (deterministic re-runs) ----
   // Same rasterized JPEG bytes → SHA-256 → same cached extraction. Survives
