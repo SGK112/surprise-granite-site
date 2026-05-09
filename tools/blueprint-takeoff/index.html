@@ -121,9 +121,10 @@
     .resume-banner{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(59,130,246,.08) 0%,rgba(59,130,246,.04) 100%);border:1px solid rgba(59,130,246,.3);border-radius:10px;margin-bottom:14px}
     .resume-banner .rb-icon{font-size:24px}
     .resume-banner .rb-body{flex:1;min-width:0}
-    .resume-banner .rb-title{font-size:14px;color:var(--text-primary)}
-    .resume-banner .rb-title strong{color:var(--sg-blue)}
-    .resume-banner .rb-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+    .resume-banner .rb-title{font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .resume-banner .rb-title strong{color:var(--sg-blue);overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%;vertical-align:bottom}
+    .resume-banner .rb-meta{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .resume-banner .rb-actions{flex-shrink:0}
     .resume-banner .rb-actions{display:flex;gap:8px;flex-wrap:wrap}
     @media (max-width:600px){.resume-banner{flex-wrap:wrap}.resume-banner .rb-actions{width:100%;justify-content:flex-end}}
 
@@ -1787,15 +1788,30 @@ flooring_lvp,5,3"></textarea>
     else if (stages.extracted) stageLabels.push('takeoff extracted');
     const bid = latest.lastEstimate?.total ? '$' + latest.lastEstimate.total.toLocaleString() : '';
 
-    $('rbName').textContent = latest.name || 'last project';
+    // Always sanitize the display name — old projects may have been saved
+    // with raw URL/filename garbage before prettifyProjectName existed.
+    const displayName = prettifyProjectName(latest.name || 'last project');
+    $('rbName').textContent = displayName;
+    $('rbName').title = latest.name || ''; // full name on hover
     $('rbMeta').textContent = `${latest.sheets?.length || 0} sheets · ${stageLabels.join(' · ')}${bid ? ' · ' + bid : ''} · ${fmtAge(ageMs)}`;
     $('resumeBanner').hidden = false;
     $('btnResumeLast').onclick = () => {
       $('resumeBanner').hidden = true;
       loadProject(latest.id);
     };
+    // Start fresh = hide the banner AND reset state to the empty Step 1.
+    // Was just hiding the banner, which felt like a no-op since no other
+    // visible state changed.
     $('btnDismissResume').onclick = () => {
       $('resumeBanner').hidden = true;
+      // Reuse the existing Start over reset path
+      const startOverBtn = $('btnNewPdf');
+      if (startOverBtn) startOverBtn.click();
+      else {
+        // Fallback if the start-over wiring isn't loaded yet
+        currentProjectId = null;
+        location.replace(location.pathname); // hard reset
+      }
     };
   }
   maybeShowResumeBanner();
@@ -2345,9 +2361,8 @@ flooring_lvp,5,3"></textarea>
         setParseProgress(i / pdfDoc.numPages, `Indexed ${i} of ${pdfDoc.numPages} pages`);
       }
       showSheetIndex();
-      // Auto-save: project name = filename (no extension)
-      const niceName = (window.__lastSourceLabel || 'Untitled').replace(/\.pdf$/i, '');
-      autoSave(niceName);
+      // Auto-save: project name = sanitized filename
+      autoSave(prettifyProjectName(window.__lastSourceLabel || 'Untitled'));
     } catch (err) {
       console.error('PDF parse error:', err);
       showParseError('Could not parse PDF: ' + (err.message || err));
@@ -2413,6 +2428,35 @@ flooring_lvp,5,3"></textarea>
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Turn a raw filename or URL pathname into something a human wants to see
+  // as a project name. Strips Dropbox/Drive auth-token prefixes (long base64
+  // blobs followed by '@'), URL-encoded plus signs, file extensions, and
+  // caps length so a giant string doesn't break layouts.
+  function prettifyProjectName(raw) {
+    if (!raw) return 'Untitled project';
+    let s = String(raw).trim();
+    // Drop everything before the LAST '@' if the prefix is mostly auth-blob
+    // shaped (long, mixed case, contains $ or token chars)
+    const atIdx = s.lastIndexOf('@');
+    if (atIdx > 0 && atIdx < s.length - 4) {
+      const prefix = s.slice(0, atIdx);
+      if (prefix.length > 16 && /[A-Z]/.test(prefix) && /[a-z]/.test(prefix) && /[0-9]/.test(prefix)) {
+        s = s.slice(atIdx + 1);
+      }
+    }
+    // URL-decode (Dropbox/GDrive use + for spaces, %20 etc.)
+    try { s = decodeURIComponent(s.replace(/\+/g, ' ')); } catch (_) { s = s.replace(/\+/g, ' '); }
+    // Strip extension
+    s = s.replace(/\.(pdf|png|jpe?g|webp|heic)$/i, '');
+    // Strip trailing " (1)" / " (2)" duplicates a download manager adds
+    s = s.replace(/\s*\(\d+\)\s*$/, '');
+    // Collapse whitespace + hyphens-as-spaces
+    s = s.replace(/[_\s-]+/g, ' ').trim();
+    // Cap at 70 chars with ellipsis
+    if (s.length > 70) s = s.slice(0, 67).trim() + '…';
+    return s || 'Untitled project';
   }
 
   $('btnSelectAll').addEventListener('click', () => { sheets.forEach(s => s.selected = true); renderSheetList(); updateExtractButton(); });
