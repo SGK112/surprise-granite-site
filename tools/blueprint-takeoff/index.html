@@ -3928,11 +3928,48 @@ flooring_lvp,5,3"></textarea>
     setSource('propAddress',  'project_address', 'Project address');
   }
 
+  // Pre-proposal review-items confirm. Returns true to proceed, false to
+  // bail back so the user can address them. Mirrors the issues the review
+  // panel surfaces — same data, same wording, just summarized for an
+  // intentional last-chance gate before the AI burns tokens drafting prose.
+  function confirmReviewItemsBeforeProposal() {
+    const est = window.__lastEstimate;
+    if (!est) return true;
+    const items = est.line_items || [];
+    const tbdSpec = m => {
+      const s = (m.spec || '').toLowerCase().trim();
+      return !s || s === '(no spec)' || /\b(tbd|nic|by\s*owner|by\s*others|to\s*be\s*selected|n\/a)\b/.test(s);
+    };
+    const missingSpecs = (window.__lastMaterials || []).filter(tbdSpec);
+    const aiMissing = window.__lastMissingFromAI || [];
+    const failedPages = (window.__lastPerPage || []).filter(p => p?.result?.aiError);
+    const fallbackLines = items.filter(li =>
+      li.source && /industry avg/i.test(li.source) && li.bid_split !== 'labor' && li.category !== 'general_conditions'
+    );
+    const openQs = (window.__lastQuestions || []).filter(q => q.status === 'open');
+
+    const blockers = [];
+    if (missingSpecs.length) blockers.push(`• ${missingSpecs.length} material spec${missingSpecs.length>1?'s':''} blank or TBD (${missingSpecs.slice(0,3).map(m=>m.code).join(', ')})`);
+    if (openQs.length)       blockers.push(`• ${openQs.length} AI question${openQs.length>1?'s':''} unanswered`);
+    if (fallbackLines.length) blockers.push(`• ${fallbackLines.length} line${fallbackLines.length>1?'s':''} priced at industry avg (no vendor catalog match)`);
+    if (aiMissing.length)    blockers.push(`• ${aiMissing.length} schedule row${aiMissing.length>1?'s':''} the AI couldn't read`);
+    if (failedPages.length)  blockers.push(`• ${failedPages.length} page${failedPages.length>1?'s':''} failed extraction entirely`);
+
+    if (!blockers.length) return true;
+    const msg = `Heads up — this bid still has unresolved review items:\n\n${blockers.join('\n')}\n\nDraft the proposal anyway? (You can also click any item in the "Things to review" panel to jump to it and fix it first.)`;
+    return confirm(msg);
+  }
+
   $('btnDraftProposal').addEventListener('click', draftProposal);
 
   async function draftProposal() {
     const est = window.__lastEstimate;
     if (!est) { showPropError('Generate the estimate first.'); return; }
+    // Pre-flight: if there are unresolved review items, surface them in a
+    // single confirm dialog so the user can't accidentally send a bid with
+    // industry-avg fallback pricing or unanswered AI questions. Skip-able
+    // in case the user is intentionally drafting a rough cut.
+    if (!confirmReviewItemsBeforeProposal()) return;
     const customer = $('propCustomer').value.trim();
     const project  = $('propProject').value.trim();
     const address  = $('propAddress').value.trim();
