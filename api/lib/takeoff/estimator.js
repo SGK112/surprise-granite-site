@@ -90,6 +90,104 @@ const HOURS_PER_UNIT = {
   cabinet_custom_install:       5.00,
 };
 
+// Labor modifiers — multiply the base labor rate (and hours) when the AI-
+// extracted spec mentions a feature that meaningfully changes install time.
+// Multiple matches compound (1.30 × 1.15 = 1.495×). Captured reasons surface
+// in the line item's `labor_modifier_reasons` so the GC sees WHY the labor
+// went up, not just a mystery number.
+//
+// Each entry: { match: RegExp, factor: number, reason: string, group?: string }.
+// `group` lets us cap stacking: only one modifier per group applies (e.g.
+// only one slab-format modifier even if both jumbo+book-match keywords hit).
+const LABOR_MODIFIERS = {
+  // Stone fabrication — applied to quartz/granite/marble/quartzite/stone counters.
+  stone: [
+    { match: /quartzite/i,                         factor: 1.30, reason: 'quartzite hardness — slower fab + blade wear', group: 'material' },
+    { match: /\b(2cm)\b/i,                         factor: 0.95, reason: '2cm slab — easier handling', group: 'thickness' },
+    { match: /\b(3cm)\b/i,                         factor: 1.00, reason: '3cm slab — standard', group: 'thickness' },
+    { match: /book[\s-]?match|veined|veining/i,    factor: 1.15, reason: 'vein matching adds layout time' },
+    { match: /honed|leathered|brushed/i,           factor: 1.10, reason: 'specialty finish — extra surface work' },
+    { match: /mitered|waterfall/i,                 factor: 1.40, reason: 'mitered waterfall edge — high precision' },
+    { match: /apron|farmhouse/i,                   factor: 1.20, reason: 'apron-front cutout + reinforcement' },
+    { match: /jumbo|extra[\s-]?large slab/i,       factor: 0.90, reason: 'jumbo slabs reduce seam count' },
+  ],
+  // Tile setting time varies enormously by format and substrate.
+  tile: [
+    { match: /mosaic|penny[\s-]?round/i,           factor: 1.50, reason: 'mosaic — high piece count' },
+    { match: /\b1\.?5"?\s*hex|hexagon\b/i,         factor: 1.45, reason: 'hex pattern — angle cuts' },
+    { match: /\b1\s*[x×]\s*1\b/i,                  factor: 1.40, reason: '1x1 mosaic — slowest set', group: 'format' },
+    { match: /\b2\s*[x×]\s*2\b/i,                  factor: 1.30, reason: '2x2 mosaic', group: 'format' },
+    { match: /\b3\s*[x×]\s*[36]\b/i,               factor: 1.10, reason: '3x6 subway — lots of grout joints', group: 'format' },
+    { match: /\b4\s*[x×]\s*[48]\b/i,               factor: 0.95, reason: '4x4 / 4x8 standard format', group: 'format' },
+    { match: /\b6\s*[x×]\s*6\b/i,                  factor: 0.95, reason: '6x6 standard format', group: 'format' },
+    { match: /\b12\s*[x×]\s*(24|36)|\b24\s*[x×]\s*(24|36|48)/i, factor: 1.15, reason: 'large-format — leveling system needed', group: 'format' },
+    { match: /natural stone|travertine|slate|limestone|marble tile/i, factor: 1.20, reason: 'natural stone — sealing + grinding' },
+    { match: /epoxy grout/i,                       factor: 1.25, reason: 'epoxy grout — short pot life, slower work' },
+    { match: /herringbone|chevron|basket[\s-]?weave/i, factor: 1.35, reason: 'pattern layout — slow + skilled' },
+    { match: /quarry tile/i,                       factor: 0.95, reason: 'quarry tile — straightforward setting' },
+  ],
+  // Flooring install pattern + adhesive method.
+  flooring: [
+    { match: /diagonal/i,                          factor: 1.20, reason: 'diagonal layout — more cuts' },
+    { match: /herringbone|chevron/i,               factor: 1.40, reason: 'pattern install — slow + skilled' },
+    { match: /click[\s-]?lock|floating/i,          factor: 0.90, reason: 'click-lock floating — fast install', group: 'method' },
+    { match: /glue[\s-]?down/i,                    factor: 1.15, reason: 'glue-down adds time + cleanup', group: 'method' },
+    { match: /sheet vinyl|altro|reliance/i,        factor: 1.10, reason: 'sheet goods — heat-welded seams' },
+    { match: /integral.*base|cove.*base/i,         factor: 1.15, reason: 'integral cove base adds detail labor' },
+  ],
+  // Cabinet install adders for hardware + height + style.
+  cabinet: [
+    { match: /soft[\s-]?close|under[\s-]?mount/i,  factor: 1.10, reason: 'soft-close hardware adjustment' },
+    { match: /frameless/i,                         factor: 1.05, reason: 'frameless — precise reveal needed' },
+    { match: /full[\s-]?height|to[\s-]?ceiling/i,  factor: 1.15, reason: 'tall cabinets — lift + scribe to ceiling' },
+    { match: /inset/i,                             factor: 1.20, reason: 'inset doors — fitting tolerances' },
+  ],
+};
+
+// Map a refined rate key to its modifier group ('stone', 'tile', etc).
+const RATE_KEY_GROUP = {
+  quartz_countertop: 'stone',
+  granite_countertop: 'stone',
+  marble_countertop: 'stone',
+  quartzite_countertop: 'stone',
+  stone_countertop: 'stone',
+  porcelain_slab: 'stone',
+  tile: 'tile', // generic fallback when no specific format detected
+  tile_floor: 'tile',
+  tile_wall: 'tile',
+  tile_lg_format: 'tile',
+  flooring_lvp: 'flooring',
+  flooring_hardwood: 'flooring',
+  flooring_engineered: 'flooring',
+  flooring_carpet: 'flooring',
+  flooring_polished_concrete: 'flooring',
+  cabinet_stock_install: 'cabinet',
+  cabinet_semi_custom_install: 'cabinet',
+  cabinet_custom_install: 'cabinet',
+};
+
+// Compute compounded labor modifier for a given spec text + rate key.
+// Within a `group`, only the first match (best match) applies — prevents
+// double-counting (e.g. matching both "1x1" and "2x2" because regex hit both).
+function computeLaborMods(spec, rateKey) {
+  const trade = RATE_KEY_GROUP[rateKey];
+  if (!trade || !spec) return { factor: 1, reasons: [] };
+  const mods = LABOR_MODIFIERS[trade] || [];
+  const usedGroups = new Set();
+  const matches = [];
+  for (const m of mods) {
+    if (!m.match.test(spec)) continue;
+    if (m.group) {
+      if (usedGroups.has(m.group)) continue;
+      usedGroups.add(m.group);
+    }
+    matches.push(m);
+  }
+  const factor = matches.reduce((acc, m) => acc * m.factor, 1);
+  const reasons = matches.map(m => m.reason);
+  return { factor: Math.round(factor * 100) / 100, reasons };
+}
+
 // Phoenix-area mid-range rates, $ per unit installed unless flagged otherwise.
 // Material rate = product cost; labor rate = fab + install combined.
 const INDUSTRY_RATES = {
@@ -206,13 +304,24 @@ function buildSplit(opts, { splitMatLab = true } = {}) {
   return [matLine, labLine];
 }
 
-function lineItem({ category, trade, description, code, qty, unit, matRate, labRate, source, selfPerform, ordering, rateKey, crewRate, extra }) {
+function lineItem({ category, trade, description, code, qty, unit, matRate, labRate, source, selfPerform, ordering, rateKey, crewRate, extra, matchedSpec }) {
+  // Material-driven labor modifier: scan the matched spec for keywords that
+  // change install time (quartzite hardness, mosaic format, herringbone
+  // pattern, etc.) and multiply the base labor rate accordingly. No matched
+  // spec → factor 1.0 → behaves exactly like the old flat-rate model.
+  const mods = computeLaborMods(matchedSpec || '', rateKey);
+  const adjLabRate = labRate * mods.factor;
   const matCost = Math.round(qty * matRate);
-  const labCost = Math.round(qty * labRate);
+  const labCost = Math.round(qty * adjLabRate);
   // Hours: prefer explicit hours/unit benchmark, else derive from labor $ ÷ crew rate.
+  // Hours scale with the same modifier — quartzite takes longer to fab AND
+  // longer to install than quartz, so both labor $ and hours move together.
+  // Path A applies factor explicitly; Path B inherits it via labCost (already
+  // multiplied by factor), so dividing labCost by crew rate gives factored hours.
   const hpu = HOURS_PER_UNIT[rateKey];
   const cr = Number.isFinite(crewRate) && crewRate > 0 ? crewRate : DEFAULT_CREW_RATE;
-  const hours = Number.isFinite(hpu) ? Math.round(qty * hpu * 10) / 10 : Math.round((labCost / cr) * 10) / 10;
+  const baseHours = Number.isFinite(hpu) ? (qty * hpu * mods.factor) : (labCost / cr);
+  const hours = Math.round(baseHours * 10) / 10;
   return {
     category,
     trade: trade || category,
@@ -221,7 +330,7 @@ function lineItem({ category, trade, description, code, qty, unit, matRate, labR
     qty: Math.round(qty * 10) / 10,
     unit,
     material_unit: matRate,
-    labor_unit: labRate,
+    labor_unit: Math.round(adjLabRate * 100) / 100,
     material_cost: matCost,
     labor_cost: labCost,
     total: matCost + labCost,
@@ -230,6 +339,10 @@ function lineItem({ category, trade, description, code, qty, unit, matRate, labR
     source,
     self_perform: selfPerform || 'sub',
     ordering: ordering || null,
+    // Surface modifier so the GC sees WHY labor went up. Empty reasons array
+    // when factor === 1.0 — UI can hide the badge when there's nothing to show.
+    labor_modifier_factor: mods.factor,
+    labor_modifier_reasons: mods.reasons,
     ...(extra || {}),
   };
 }
@@ -329,6 +442,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       source,
       selfPerform: 'self',
       rateKey, crewRate,
+      matchedSpec: ctMat?.spec || hit?.item?.name || '',
       ordering: {
         slabs: slabsToOrder,
         usable_sf_per_slab: usableSfPerSlab,
@@ -384,6 +498,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       source: rates._override ? 'My Pricing' : 'industry avg (supply + install)',
       selfPerform: 'self',
       rateKey, crewRate,
+      matchedSpec: cabMat?.spec || '',
       extra: { cabinet_count: cabCount, owner_supplies_toggle: true },
     });
     if (!cabMat) {
@@ -413,6 +528,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       source: codeOverride ? `Vendor catalog match (${codeOverride.source})` : (rates._override ? 'My Pricing' : 'industry avg'),
       selfPerform: 'sub',
       rateKey: refined, crewRate,
+      matchedSpec: flMat?.spec || '',
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
     });
   }
@@ -440,6 +556,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       source: codeOverride ? `Vendor catalog match (${codeOverride.source})` : (rates._override ? 'My Pricing' : 'industry avg'),
       selfPerform: 'sub',
       rateKey: refined, crewRate,
+      matchedSpec: tileMat?.spec || '',
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
     });
   }

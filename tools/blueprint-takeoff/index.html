@@ -353,6 +353,11 @@
     .estimate-table tr.owner-supplied td{color:var(--text-muted);text-decoration:line-through}
     .estimate-table tr.owner-supplied .owner-toggle{text-decoration:none}
     .estimate-table tr.owner-supplied .self-perform{text-decoration:none}
+    /* Labor modifier badge — surfaces WHY labor went up vs the flat-rate
+       industry-avg baseline (e.g. quartzite hardness, mosaic format,
+       herringbone pattern). Hover shows the full reason list. */
+    .estimate-table .labor-mod{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;background:rgba(245,158,11,.15);color:#f59e0b;cursor:help;text-decoration:none}
+    .estimate-table .labor-mod.discount{background:rgba(34,197,94,.15);color:#22c55e}
     .self-perform.self{background:rgba(34,197,94,.18);color:#4ade80}
     .self-perform.sub{background:rgba(156,163,175,.18);color:#9ca3af}
     .self-perform.material{background:rgba(251,191,36,.18);color:#fbbf24}
@@ -3397,6 +3402,14 @@ flooring_lvp,5,3"></textarea>
       const ownerToggle = isMaterialSplit
         ? `<button class="owner-toggle ${li.owner_supplied ? 'on' : ''}" data-i="${i}" type="button" title="Mark this material as owner-supplied (zeros the cost, keeps the labor)">${li.owner_supplied ? '✓ owner supplies' : 'by owner?'}</button>`
         : '';
+      // Labor modifier badge — only show on labor-split or combined lines
+      // (material lines have labor_cost=0 so the modifier doesn't impact $).
+      const isLabor = li.bid_split === 'labor' || !li.bid_split;
+      const labMod = li.labor_modifier_factor || 1;
+      const labReasons = li.labor_modifier_reasons || [];
+      const labModHtml = (isLabor && labMod !== 1 && labReasons.length)
+        ? `<span class="labor-mod ${labMod < 1 ? 'discount' : ''}" title="${escapeHtml(labReasons.join(' · '))}">labor ${labMod}×</span>`
+        : '';
       const rowClass = li.owner_supplied ? ' class="owner-supplied"' : '';
       return `
       <tr data-i="${i}"${rowClass}>
@@ -3404,6 +3417,7 @@ flooring_lvp,5,3"></textarea>
           ${escapeHtml(li.description || li.category)}
           <span class="self-perform ${sp}">${sp}</span>
           ${ownerToggle}
+          ${labModHtml}
           ${meta ? `<span class="desc-meta">${escapeHtml(meta)}</span>` : ''}
           ${li.cabinet_count ? `<span class="desc-meta">${li.cabinet_count} cabinets</span>` : ''}
         </td>
