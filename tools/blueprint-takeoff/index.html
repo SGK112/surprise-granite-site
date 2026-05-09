@@ -3934,9 +3934,26 @@ flooring_lvp,5,3"></textarea>
     const items = est.line_items || [];
 
     $('estSummary').hidden = false;
+    // Catalog coverage: how much of the material spend is backed by a real
+    // vendor catalog match vs industry-avg fallback. Helps the user see at
+    // a glance how confident the bid is. Excludes labor + GC (no material).
+    const matLines = items.filter(li => li.material_cost > 0 && li.category !== 'general_conditions');
+    const totalMat = matLines.reduce((s, li) => s + li.material_cost, 0);
+    const matchedMat = matLines
+      .filter(li => /vendor catalog match|my pricing/i.test(li.source || ''))
+      .reduce((s, li) => s + li.material_cost, 0);
+    const coveragePct = totalMat > 0 ? Math.round((matchedMat / totalMat) * 100) : 0;
+    const coverageColor = coveragePct >= 80 ? '#22c55e' : coveragePct >= 40 ? '#f59e0b' : '#ef4444';
+    const coverageLbl = coveragePct >= 80 ? 'high' : coveragePct >= 40 ? 'partial' : 'low';
+
     $('estSummary').innerHTML = `
       <div class="est-stat"><div class="lbl">Material</div><div class="val">${fmt(est.subtotals?.material)}</div></div>
       <div class="est-stat"><div class="lbl">Labor</div><div class="val">${fmt(est.subtotals?.labor)}</div></div>
+      <div class="est-stat" title="Share of material $ priced from your saved vendor catalogs (vs industry-avg fallback). Upload more vendor price sheets to raise this.">
+        <div class="lbl">Catalog coverage</div>
+        <div class="val" style="color:${coverageColor}">${coveragePct}%</div>
+        <div class="sub" style="color:${coverageColor}">${coverageLbl}</div>
+      </div>
       <div class="est-stat"><div class="lbl">O&amp;P (${Math.round((est.margin_factor||0)*100)}%)</div><div class="val">${fmt(est.subtotals?.overhead)}</div></div>
       <div class="est-stat total"><div class="lbl">Total Bid</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
     `;
