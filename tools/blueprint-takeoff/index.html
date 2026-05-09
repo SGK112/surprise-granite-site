@@ -338,10 +338,31 @@
     .proposal-body .num,.proposal-body td.num{text-align:right;font-variant-numeric:tabular-nums}
     .proposal-body strong{color:#0f0f1a}
     @media print {
-      body > *:not(.proposal-doc){display:none !important}
-      .proposal-toolbar{display:none !important}
-      .proposal-doc{margin:0;padding:0}
-      .proposal-body{box-shadow:none;padding:0;min-height:auto}
+      /* Hide everything by default (visibility, not display, so layout is preserved) */
+      body * { visibility: hidden !important; }
+      /* Then make the proposal doc and everything inside it visible */
+      .proposal-doc, .proposal-doc * { visibility: visible !important; }
+      /* Yank the proposal doc out of the page flow so it prints on a clean page */
+      .proposal-doc {
+        position: absolute !important;
+        left: 0; top: 0; right: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      .proposal-body {
+        box-shadow: none !important;
+        padding: 24px !important;
+        min-height: auto !important;
+      }
+      /* Hide the toolbars / send row / share row / status — only the doc body should print */
+      .proposal-toolbar,
+      .proposal-actions,
+      .proposal-send-row,
+      .proposal-share-row,
+      .prop-send-status { display: none !important; }
+      /* Tame any backgrounds that bleed onto print */
+      body, html { background: #fff !important; }
     }
 
     .estimate-notes{font-size:12px;color:var(--text-secondary);background:var(--sg-darker);border:1px solid var(--border);border-left:3px solid var(--sg-blue);border-radius:6px;padding:12px 16px;line-height:1.6}
