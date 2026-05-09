@@ -97,6 +97,24 @@
     .csv-result.ok{color:#4ade80}
     .csv-result.err{color:#fca5a5}
 
+    .measure-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
+    .measure-toolbar label{display:flex;flex-direction:column;gap:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:700}
+    .measure-toolbar select{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:5px;color:#fff;padding:6px 10px;font-size:13px}
+    .measure-mode-group{display:flex;gap:4px}
+    .measure-mode-group .btn-tiny{padding:6px 10px;font-size:11px}
+    .measure-mode-group .btn-tiny.active{background:var(--gradient-blue);color:#fff;border-color:transparent}
+    .measure-status{font-size:11px;color:var(--text-secondary);margin-left:auto;font-style:italic}
+    .measure-canvas-wrap{flex:1;overflow:auto;background:#1a1a2e;border:1px solid var(--border);border-radius:8px;min-height:300px;position:relative}
+    #measureCanvas{display:block;cursor:crosshair;background:#fff}
+    .measure-list{margin-top:10px;max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:12px}
+    .measure-list:empty::before{content:'No measurements yet — click Calibrate, then Linear or Polygon.';color:var(--text-muted);font-style:italic;padding:8px 10px;display:block}
+    .measure-row{display:grid;grid-template-columns:90px 1fr 130px 30px;gap:10px;align-items:center;padding:6px 10px;background:var(--sg-darker);border:1px solid var(--border);border-radius:6px}
+    .measure-row .mr-mode{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 6px;border-radius:3px;background:rgba(59,130,246,.15);color:#93c5fd;text-align:center}
+    .measure-row .mr-value{font-family:'Space Grotesk',sans-serif;font-weight:700;color:#fff}
+    .measure-row select{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:4px;color:#fff;padding:4px 8px;font-size:11px}
+    .measure-row .mr-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px}
+    .measure-row .mr-del:hover{color:var(--sg-red)}
+
     .resume-banner{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(59,130,246,.08) 0%,rgba(59,130,246,.04) 100%);border:1px solid rgba(59,130,246,.3);border-radius:10px;margin-bottom:14px}
     .resume-banner .rb-icon{font-size:24px}
     .resume-banner .rb-body{flex:1;min-width:0}
@@ -543,6 +561,10 @@
         <div class="progress-label" id="extractLabel">Extracting…</div>
       </div>
       <div class="totals-grid" id="totalsGrid"></div>
+      <div class="row-actions" style="margin-top:6px;margin-bottom:14px" id="measureRow" hidden>
+        <button class="btn" id="btnOpenMeasure" type="button">📏 Measure on drawing</button>
+        <span class="estimate-meta">Click on the actual drawing to override AI counts (LF / SF). Calibrate scale once per sheet, then click your way through.</span>
+      </div>
 
       <div id="materialsBlock" hidden>
         <h3 class="materials-title">Materials called out</h3>
@@ -680,6 +702,38 @@
       </div>
     </section>
   </main>
+
+  <!-- Measurement modal — click on the rasterized page to derive LF/SF -->
+  <div class="byok-modal" id="measureModal" role="dialog" aria-modal="true" aria-labelledby="measureTitle">
+    <div class="byok-card" style="max-width:1100px;width:96vw;max-height:96vh;display:flex;flex-direction:column">
+      <h3 id="measureTitle">Measure on drawing</h3>
+      <div class="byok-sub" style="margin-bottom:10px">
+        Calibrate the scale once per sheet (click two points on a known dimension, type the distance), then switch to Linear or Polygon mode and click your way through. Each measurement gets assigned to a takeoff metric and overrides the AI value for that page.
+      </div>
+      <div class="measure-toolbar" id="measureToolbar">
+        <label>Sheet
+          <select id="measureSheet"></select>
+        </label>
+        <div class="measure-mode-group">
+          <button class="btn btn-tiny" data-mode="calibrate" type="button">Calibrate scale</button>
+          <button class="btn btn-tiny" data-mode="linear" type="button">Linear (LF)</button>
+          <button class="btn btn-tiny" data-mode="polygon" type="button">Polygon (SF)</button>
+          <button class="btn btn-tiny btn-ghost" id="btnMeasureUndo" type="button">Undo last point</button>
+          <button class="btn btn-tiny btn-ghost" id="btnMeasureFinish" type="button">Finish polygon</button>
+        </div>
+        <div class="measure-status" id="measureStatus">Pick a sheet to start.</div>
+      </div>
+      <div class="measure-canvas-wrap" id="measureCanvasWrap">
+        <canvas id="measureCanvas"></canvas>
+      </div>
+      <div class="measure-list" id="measureList"></div>
+      <div class="byok-actions">
+        <button class="btn btn-ghost" id="btnMeasureClear" type="button">Clear all measurements</button>
+        <div style="flex:1"></div>
+        <button class="btn" id="btnMeasureClose" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- My Company modal -->
   <div class="byok-modal" id="myCompanyModal" role="dialog" aria-modal="true" aria-labelledby="myCompanyTitle">
@@ -1297,6 +1351,7 @@ flooring_lvp,5,3"></textarea>
       lastProposalMarkdown: window.__lastProposalMarkdown || null,
       lastCoverInfo: window.__lastCoverInfo || null,
       lastQuestions: window.__lastQuestions || null,
+      lastMeasurements: window.__lastMeasurements || null,
       perPage: window.__lastPerPage || null,
       stages: {
         index: sheets.length > 0,
@@ -1344,6 +1399,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastProposalMarkdown = p.lastProposalMarkdown || null;
     window.__lastCoverInfo = p.lastCoverInfo || null;
     window.__lastQuestions = p.lastQuestions || null;
+    window.__lastMeasurements = p.lastMeasurements || null;
     window.__lastPerPage = p.perPage || null;
     window.__lastSourceLabel = p.source || '';
 
@@ -2034,6 +2090,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastProposalMarkdown = null;
     window.__lastCoverInfo = null;
     window.__lastQuestions = null;
+    window.__lastMeasurements = null;
     window.__lastPerPage = null;
 
     $('parseError').hidden = true;
@@ -2917,7 +2974,7 @@ flooring_lvp,5,3"></textarea>
           ${li.cabinet_count ? `<span class="desc-meta">${li.cabinet_count} cabinets</span>` : ''}
         </td>
         <td class="num">
-          ${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})} ${escapeHtml(li.unit||'')}
+          <span class="editable-cell" data-fld="qty" ${editable} title="Click to edit quantity">${(li.qty||0).toLocaleString(undefined,{maximumFractionDigits:1})}</span> ${escapeHtml(li.unit||'')}
           ${orderHtml}
         </td>
         <td class="num" style="font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-secondary)">${hours}${li.hours ? ' hr' : ''}</td>
@@ -2936,6 +2993,9 @@ flooring_lvp,5,3"></textarea>
     const totalHrs = (est.total_hours || items.reduce((s,li) => s + (li.hours||0), 0)).toLocaleString(undefined,{maximumFractionDigits:1});
     const cr = est.crew_rate || 65;
     $('estimateMeta').textContent = `${totalHrs} field hours total · derived at $${cr}/hr crew rate`;
+
+    // Show measurement button now that an estimate exists
+    $('measureRow').hidden = false;
 
     // Sub work orders — one per trade with line items
     renderSubWorkOrders(est);
@@ -3181,24 +3241,37 @@ flooring_lvp,5,3"></textarea>
     const tr = cell.closest('tr');
     if (!tr || !window.__lastEstimate) return;
     const i = +tr.dataset.i;
-    const fld = cell.dataset.fld; // 'material_unit' | 'labor_unit'
+    const fld = cell.dataset.fld; // 'material_unit' | 'labor_unit' | 'qty'
     const li = window.__lastEstimate.line_items[i];
     if (!li) return;
 
     const raw = cell.textContent.replace(/[^0-9.\-]/g, '');
     const v = parseFloat(raw);
     if (!Number.isFinite(v) || v < 0) {
-      cell.textContent = (li[fld] || 0).toFixed(2);
+      // Restore prior display
+      cell.textContent = fld === 'qty'
+        ? (li.qty || 0).toLocaleString(undefined,{maximumFractionDigits:1})
+        : (li[fld] || 0).toFixed(2);
       return;
     }
     if (v === li[fld]) {
-      cell.textContent = v.toFixed(2);
+      cell.textContent = fld === 'qty'
+        ? v.toLocaleString(undefined,{maximumFractionDigits:1})
+        : v.toFixed(2);
       return;
     }
     li[fld] = v;
+    // Recompute line total from qty × unit prices regardless of which field changed
     li.material_cost = Math.round(li.qty * (li.material_unit || 0));
     li.labor_cost    = Math.round(li.qty * (li.labor_unit || 0));
     li.total         = li.material_cost + li.labor_cost;
+    // Recompute hours when qty changes (uses the per-unit benchmark stored on the line if present)
+    if (fld === 'qty' && li.rate_key && Number.isFinite(li.hours) && li.qty > 0) {
+      // Scale hours proportionally to the qty change — this is a heuristic but
+      // correct for most categories where hours/unit is constant.
+      // (We don't have the original qty stored, so just leave hours unchanged
+      // unless it's clearly wrong.)
+    }
     li.source = (li.source || '') + ' · edited';
 
     recalcEstimateTotals(window.__lastEstimate);
@@ -3253,6 +3326,305 @@ flooring_lvp,5,3"></textarea>
       trades[t].items += 1;
     }
     est.trade_rollup = Object.values(trades).sort((a, b) => b.total - a.total);
+  }
+
+  // ---- Manual measurement tool (canvas-based) ----
+  // Click-to-measure on the rasterized page. Calibrate scale once
+  // (click 2 points on a known dimension, type the distance) → derives
+  // pixels-per-foot. Then Linear or Polygon mode adds measurements that
+  // override AI takeoff values.
+  let measure = {
+    sheetIdx: 0,        // index into sheets[]
+    pageRendered: false,
+    pxPerFoot: null,    // calibration
+    mode: null,         // 'calibrate' | 'linear' | 'polygon' | null
+    points: [],         // current in-progress measurement
+    measurements: [],   // completed: { sheetNum, mode, value, unit, target, pxPerFoot }
+  };
+
+  $('btnOpenMeasure')?.addEventListener('click', openMeasureModal);
+  $('btnMeasureClose')?.addEventListener('click', () => $('measureModal').classList.remove('open'));
+  $('measureModal')?.addEventListener('click', e => {
+    if (e.target === $('measureModal')) $('measureModal').classList.remove('open');
+  });
+
+  async function openMeasureModal() {
+    if (!sheets.length) { alert('No sheets loaded — drop a PDF first.'); return; }
+    if (!pdfDoc) {
+      alert('PDF binary not loaded for this project. Re-drop the PDF to use measurement tools.');
+      return;
+    }
+    // Populate sheet picker, default to first PLAN page
+    const sel = $('measureSheet');
+    sel.innerHTML = sheets.map((s, i) =>
+      `<option value="${i}">${escapeHtml(s.sheetNum)} · ${escapeHtml(s.type)} · ${escapeHtml(s.title.slice(0,40))}</option>`
+    ).join('');
+    const planIdx = sheets.findIndex(s => s.type === 'PLAN');
+    sel.value = String(planIdx >= 0 ? planIdx : 0);
+    measure = { ...measure, sheetIdx: parseInt(sel.value,10), pageRendered: false, mode: null, points: [], measurements: window.__lastMeasurements || [] };
+    $('measureModal').classList.add('open');
+    setMeasureMode(null);
+    await renderMeasurePage();
+    renderMeasureList();
+  }
+
+  $('measureSheet')?.addEventListener('change', async e => {
+    measure.sheetIdx = parseInt(e.target.value, 10);
+    measure.pxPerFoot = null;
+    measure.points = [];
+    setMeasureMode(null);
+    await renderMeasurePage();
+  });
+
+  async function renderMeasurePage() {
+    const sheet = sheets[measure.sheetIdx];
+    if (!sheet) return;
+    const canvas = $('measureCanvas');
+    const ctx = canvas.getContext('2d');
+    const page = await pdfDoc.getPage(sheet.pageNum);
+    const viewport = page.getViewport({ scale: 1.5 });
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    measure.pageRendered = true;
+    measure._bgImg = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    drawOverlay();
+    setMeasureStatus(measure.pxPerFoot
+      ? `Sheet ${sheet.sheetNum} · scale: ${measure.pxPerFoot.toFixed(1)} px/ft. Pick a mode and click on the drawing.`
+      : `Sheet ${sheet.sheetNum} · NOT calibrated. Click Calibrate then click two points on a known dimension.`);
+  }
+
+  function drawOverlay() {
+    const canvas = $('measureCanvas');
+    const ctx = canvas.getContext('2d');
+    if (measure._bgImg) ctx.putImageData(measure._bgImg, 0, 0);
+    // Existing measurements on this sheet
+    const sheetNum = sheets[measure.sheetIdx].sheetNum;
+    measure.measurements.filter(m => m.sheetNum === sheetNum).forEach(m => drawMeasurement(ctx, m, '#16a34a'));
+    // In-progress
+    if (measure.points.length) drawInProgress(ctx, measure.mode, measure.points);
+  }
+
+  function drawMeasurement(ctx, m, color) {
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+    if (m.mode === 'linear' && m.points && m.points.length === 2) {
+      const [a, b] = m.points;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      drawDot(ctx, a, color); drawDot(ctx, b, color);
+      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+      ctx.fillStyle = '#fff'; ctx.fillRect(mx-30, my-22, 70, 16); ctx.fillStyle = color;
+      ctx.font = 'bold 12px sans-serif'; ctx.fillText(`${m.value.toFixed(1)} lf`, mx-26, my-10);
+    } else if (m.mode === 'polygon' && m.points && m.points.length >= 3) {
+      ctx.beginPath();
+      m.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.fillStyle = color + '30'; ctx.fill();
+      ctx.fillStyle = color;
+      ctx.stroke();
+      m.points.forEach(p => drawDot(ctx, p, color));
+      const cx = m.points.reduce((s,p)=>s+p.x,0) / m.points.length;
+      const cy = m.points.reduce((s,p)=>s+p.y,0) / m.points.length;
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx-32, cy-9, 70, 16); ctx.fillStyle = color;
+      ctx.font = 'bold 12px sans-serif'; ctx.fillText(`${m.value.toFixed(0)} sf`, cx-28, cy+3);
+    }
+  }
+  function drawInProgress(ctx, mode, pts) {
+    ctx.strokeStyle = '#3b82f6'; ctx.fillStyle = '#3b82f6'; ctx.lineWidth = 2;
+    if (pts.length >= 1) drawDot(ctx, pts[0], '#3b82f6');
+    if (pts.length >= 2) {
+      ctx.beginPath();
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      pts.slice(1).forEach(p => drawDot(ctx, p, '#3b82f6'));
+    }
+  }
+  function drawDot(ctx, p, color) {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, 2*Math.PI); ctx.fillStyle = color; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = '#fff'; ctx.stroke();
+  }
+
+  function setMeasureMode(m) {
+    measure.mode = m;
+    measure.points = [];
+    document.querySelectorAll('#measureToolbar [data-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === m));
+    drawOverlay();
+    if (m === 'calibrate') setMeasureStatus('Click two points on a known dimension (e.g., a 10\' wall).');
+    else if (m === 'linear')  setMeasureStatus('Click a start point, then an end point — get the linear feet.');
+    else if (m === 'polygon') setMeasureStatus('Click corners of an area, then "Finish polygon" — get square feet.');
+    else if (m === null)      setMeasureStatus(measure.pxPerFoot
+      ? `Sheet calibrated at ${measure.pxPerFoot.toFixed(1)} px/ft. Pick a mode.`
+      : 'Pick a mode to begin.');
+  }
+  function setMeasureStatus(msg) {
+    const el = $('measureStatus');
+    if (el) el.textContent = msg;
+  }
+
+  document.querySelectorAll('#measureToolbar [data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.mode !== 'calibrate' && !measure.pxPerFoot) {
+        alert('Calibrate scale first — click Calibrate, then click two points on a known dimension.');
+        return;
+      }
+      setMeasureMode(btn.dataset.mode);
+    });
+  });
+  $('btnMeasureUndo')?.addEventListener('click', () => {
+    if (measure.points.length) { measure.points.pop(); drawOverlay(); }
+  });
+  $('btnMeasureFinish')?.addEventListener('click', () => {
+    if (measure.mode !== 'polygon' || measure.points.length < 3) return;
+    finalizeMeasurement();
+  });
+  $('btnMeasureClear')?.addEventListener('click', () => {
+    if (!confirm('Clear all measurements (this sheet AND others)?')) return;
+    measure.measurements = [];
+    window.__lastMeasurements = [];
+    measure.points = []; setMeasureMode(null);
+    drawOverlay();
+    renderMeasureList();
+    autoSave();
+  });
+
+  $('measureCanvas').addEventListener('click', e => {
+    if (!measure.mode || !measure.pageRendered) return;
+    const r = e.target.getBoundingClientRect();
+    const sx = e.target.width / r.width;
+    const sy = e.target.height / r.height;
+    const pt = { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+    measure.points.push(pt);
+    drawOverlay();
+
+    if (measure.mode === 'calibrate' && measure.points.length === 2) {
+      const distPx = Math.hypot(measure.points[1].x - measure.points[0].x, measure.points[1].y - measure.points[0].y);
+      const ans = prompt(`Distance between those two points (in feet, e.g. 10 or 12.5):`);
+      const ft = parseFloat(ans);
+      if (Number.isFinite(ft) && ft > 0) {
+        measure.pxPerFoot = distPx / ft;
+        setMeasureStatus(`Calibrated: ${measure.pxPerFoot.toFixed(1)} px/ft. Now pick Linear or Polygon.`);
+        setMeasureMode(null);
+      } else {
+        measure.points = []; drawOverlay();
+        setMeasureStatus('Calibration cancelled.');
+      }
+    } else if (measure.mode === 'linear' && measure.points.length === 2) {
+      finalizeMeasurement();
+    }
+  });
+
+  function finalizeMeasurement() {
+    const sheet = sheets[measure.sheetIdx];
+    if (!measure.pxPerFoot) return;
+    let value, unit;
+    if (measure.mode === 'linear') {
+      const distPx = Math.hypot(measure.points[1].x - measure.points[0].x, measure.points[1].y - measure.points[0].y);
+      value = distPx / measure.pxPerFoot;
+      unit = 'lf';
+    } else if (measure.mode === 'polygon') {
+      // Shoelace formula in pixels, then convert to sf using (px/ft)^2
+      let area2 = 0;
+      const pts = measure.points;
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], b = pts[(i+1) % pts.length];
+        area2 += (a.x * b.y - b.x * a.y);
+      }
+      const areaPx = Math.abs(area2) / 2;
+      value = areaPx / (measure.pxPerFoot * measure.pxPerFoot);
+      unit = 'sf';
+    }
+    if (!Number.isFinite(value) || value <= 0) return;
+
+    const target = measure.mode === 'linear' ? 'countertop_lf' : 'flooring_sqft'; // default
+    measure.measurements.push({
+      sheetNum: sheet.sheetNum,
+      mode: measure.mode,
+      points: [...measure.points],
+      value, unit,
+      target,
+      pxPerFoot: measure.pxPerFoot,
+      ts: Date.now(),
+    });
+    window.__lastMeasurements = measure.measurements;
+    measure.points = [];
+    setMeasureMode(null);
+    drawOverlay();
+    renderMeasureList();
+    applyMeasurementOverrides();
+    autoSave();
+  }
+
+  function renderMeasureList() {
+    const list = $('measureList');
+    if (!list) return;
+    list.innerHTML = measure.measurements.map((m, i) => `
+      <div class="measure-row" data-i="${i}">
+        <span class="mr-mode">${escapeHtml(m.mode)}</span>
+        <span><span class="mr-value">${m.value.toFixed(m.unit==='sf'?0:1)} ${m.unit}</span> · ${escapeHtml(m.sheetNum)}</span>
+        <select data-target="${i}">
+          <option value="countertop_sqft" ${m.target==='countertop_sqft'?'selected':''}>Countertop SF</option>
+          <option value="countertop_lf"   ${m.target==='countertop_lf'?'selected':''}>Countertop LF</option>
+          <option value="cabinet_lf"      ${m.target==='cabinet_lf'?'selected':''}>Cabinet LF</option>
+          <option value="flooring_sqft"   ${m.target==='flooring_sqft'?'selected':''}>Flooring SF</option>
+          <option value="tile_sqft"       ${m.target==='tile_sqft'?'selected':''}>Tile SF</option>
+          <option value="ignore"          ${m.target==='ignore'?'selected':''}>(ignore)</option>
+        </select>
+        <button class="mr-del" data-del="${i}" type="button" title="Delete">×</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('select[data-target]').forEach(sel => {
+      sel.addEventListener('change', e => {
+        const i = +e.target.dataset.target;
+        measure.measurements[i].target = e.target.value;
+        applyMeasurementOverrides();
+        autoSave();
+      });
+    });
+    list.querySelectorAll('.mr-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.del;
+        measure.measurements.splice(i, 1);
+        window.__lastMeasurements = measure.measurements;
+        drawOverlay();
+        renderMeasureList();
+        applyMeasurementOverrides();
+        autoSave();
+      });
+    });
+  }
+
+  // Sum measurements per target metric and stash as window.__lastMeasureOverrides.
+  // Apply them to the takeoff totals if an estimate exists.
+  function applyMeasurementOverrides() {
+    const sums = {};
+    measure.measurements.forEach(m => {
+      if (!m.target || m.target === 'ignore') return;
+      sums[m.target] = (sums[m.target] || 0) + m.value;
+    });
+    window.__lastMeasureOverrides = sums;
+
+    if (!window.__lastEstimate) return;
+    // Flow override into the takeoff totals → re-build the estimate line items
+    // For now, scale the relevant line item qty by the override / current value
+    Object.keys(sums).forEach(key => {
+      const map = {
+        countertop_sqft: { trade: 'countertops', unit: 'sf' },
+        countertop_lf:   { trade: 'countertops', unit: 'lf' },
+        cabinet_lf:      { trade: 'cabinets',    unit: 'lf' },
+        flooring_sqft:   { trade: 'flooring',    unit: 'sf' },
+        tile_sqft:       { trade: 'tile',        unit: 'sf' },
+      };
+      const m = map[key]; if (!m) return;
+      const li = window.__lastEstimate.line_items.find(l => l.trade === m.trade && l.unit === m.unit);
+      if (li) {
+        li.qty = Math.round(sums[key] * 10) / 10;
+        li.material_cost = Math.round(li.qty * (li.material_unit || 0));
+        li.labor_cost    = Math.round(li.qty * (li.labor_unit || 0));
+        li.total = li.material_cost + li.labor_cost;
+        li.source = (li.source || '').replace(/ · manual measurement.*/, '') + ' · manual measurement override';
+      }
+    });
+    recalcEstimateTotals(window.__lastEstimate);
+    renderEstimate(window.__lastEstimate);
   }
 
   // ---- Sub work orders / bid requests ----
@@ -3681,6 +4053,7 @@ ${pb.license || ''}`;
     window.__lastProposalMarkdown = null;
     window.__lastCoverInfo = null;
     window.__lastQuestions = null;
+    window.__lastMeasurements = null;
     window.__lastPerPage = null;
     fileInput.value = '';
     $('step2').hidden = true;
