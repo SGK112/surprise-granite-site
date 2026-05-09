@@ -412,7 +412,8 @@ async function callGPT4Vision(apiKey, systemPrompt, userPrompt, imageBase64) {
         }
       ],
       max_tokens: CONFIG.openai.maxTokens,
-      temperature: 0.1  // Lower temperature for more consistent extraction
+      temperature: 0,  // 0 for max determinism (cache+seed handles the rest)
+      seed: 42         // GPT-4o respects seed best-effort; helps reproducibility
     })
   });
 
