@@ -2813,12 +2813,17 @@ flooring_lvp,5,3"></textarea>
     const materials = (window.__lastMaterials || []).map(m => ({
       code: m.code, category: m.category, spec: m.spec,
     }));
+    // Read controls — use Number.isFinite checks instead of `|| default` so
+    // that explicit 0 (e.g. sub-mode zeros GC overhead) doesn't get silently
+    // promoted back to the default value.
     const projectType = $('estProjectType').value;
-    const margin = (parseFloat($('estMargin').value) || 30) / 100;
-    const gcOverhead = (parseFloat($('estGcOverhead').value) || 8) / 100;
-    // Empty waste → use per-category defaults (server applies them).
+    const marginRaw = parseFloat($('estMargin').value);
+    const margin = (Number.isFinite(marginRaw) ? marginRaw : 30) / 100;
+    const gcRaw = parseFloat($('estGcOverhead').value);
+    const gcOverhead = (Number.isFinite(gcRaw) ? gcRaw : 8) / 100;
     const wasteRaw = $('estWaste').value;
-    const waste  = wasteRaw === '' ? null : (parseFloat(wasteRaw) || 0) / 100;
+    const wasteNum = parseFloat(wasteRaw);
+    const waste = wasteRaw === '' ? null : (Number.isFinite(wasteNum) ? wasteNum : 0) / 100;
 
     $('step4').hidden = false;
     $('estError').hidden = true;
@@ -3194,11 +3199,12 @@ flooring_lvp,5,3"></textarea>
   function recalcEstimateTotals(est) {
     if (!est || !est.line_items) return;
 
-    // Sync controls → estimate (so margin/GC slider changes apply on inline edit too)
-    const liveMargin   = (parseFloat($('estMargin').value) || 0) / 100;
-    const liveGcPct    = (parseFloat($('estGcOverhead').value) || 0) / 100;
-    if (Number.isFinite(liveMargin)) est.margin_factor = liveMargin;
-    if (Number.isFinite(liveGcPct))  est.gc_overhead_factor = liveGcPct;
+    // Sync controls → estimate (so margin/GC slider changes apply on inline edit too).
+    // Same isFinite-not-falsy pattern: explicit 0 must be respected.
+    const marginRaw = parseFloat($('estMargin').value);
+    const gcRaw     = parseFloat($('estGcOverhead').value);
+    if (Number.isFinite(marginRaw)) est.margin_factor      = marginRaw / 100;
+    if (Number.isFinite(gcRaw))     est.gc_overhead_factor = gcRaw / 100;
 
     // Recompute GC overhead — it's a percentage of trade subtotal, so when
     // any other line changes, GC must recompute too.
