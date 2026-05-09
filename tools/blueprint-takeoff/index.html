@@ -635,6 +635,10 @@
         <button class="btn btn-primary" id="btnRecalc">Recalculate</button>
       </div>
       <div class="estimate-summary" id="estSummary" hidden></div>
+      <!-- "Needs review" panel — consolidates the per-section warnings into
+           one scannable list so the user knows the bid isn't bid-ready until
+           these are addressed. Populated by populateReviewPanel(). -->
+      <div id="reviewPanel" hidden></div>
       <div id="similarProjects" hidden>
         <h3 class="trade-rollup-title">Similar past projects (your history)</h3>
         <div class="similar-grid" id="similarGrid"></div>
@@ -3417,6 +3421,104 @@ flooring_lvp,5,3"></textarea>
     }
   }
 
+  // Consolidated "needs review" panel. Aggregates every signal that the bid
+  // is not yet ready to send to a customer:
+  //   - Materials with no spec / TBD / by-owner placeholders
+  //   - AI-reported unreadable schedule rows (missing_or_unreadable)
+  //   - Pages where vision extraction failed entirely (aiError)
+  //   - Estimate lines still using industry-avg fallback (no matched material)
+  // One scannable list with counts + the first few examples per category.
+  function populateReviewPanel(est, items) {
+    const panel = $('reviewPanel');
+    if (!panel) return;
+    const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+    const issues = [];
+
+    // Missing/TBD specs in the materials table
+    const mats = window.__lastMaterials || [];
+    const tbdSpec = m => {
+      const s = (m.spec || '').toLowerCase().trim();
+      return !s || s === '(no spec)' || /\b(tbd|nic|by\s*owner|by\s*others|to\s*be\s*selected|n\/a)\b/.test(s);
+    };
+    const missingSpecs = mats.filter(tbdSpec);
+    if (missingSpecs.length) {
+      issues.push({
+        kind: 'spec_missing',
+        icon: '✏️',
+        count: missingSpecs.length,
+        title: `${missingSpecs.length} material spec${missingSpecs.length>1?'s':''} need attention`,
+        detail: missingSpecs.slice(0,4).map(m => m.code).join(', ') + (missingSpecs.length > 4 ? `, +${missingSpecs.length-4}` : ''),
+        action: 'Edit the Materials table — type in your actual spec.',
+      });
+    }
+
+    // AI-reported missing/unreadable rows
+    const aiMissing = window.__lastMissingFromAI || [];
+    if (aiMissing.length) {
+      issues.push({
+        kind: 'ai_unreadable',
+        icon: '👁',
+        count: aiMissing.length,
+        title: `AI couldn't read ${aiMissing.length} schedule row${aiMissing.length>1?'s':''}`,
+        detail: aiMissing.slice(0,3).map(m => m.what.slice(0,40)).join(' · '),
+        action: 'Open the source sheets and add manually if in scope.',
+      });
+    }
+
+    // Pages where vision extraction failed entirely
+    const failedPages = (window.__lastPerPage || []).filter(p => p?.result?.aiError);
+    if (failedPages.length) {
+      issues.push({
+        kind: 'extraction_failed',
+        icon: '⚠',
+        count: failedPages.length,
+        title: `${failedPages.length} page${failedPages.length>1?'s':''} couldn't be extracted`,
+        detail: failedPages.slice(0,4).map(p => `p${p.sheet?.pageNum} (${p.sheet?.sheetNum||'?'})`).join(', '),
+        action: 'Re-run extraction or skip those pages.',
+      });
+    }
+
+    // Lines still on industry-avg fallback (no material matched)
+    const fallbackLines = items.filter(li =>
+      li.source && /industry avg/i.test(li.source) && li.bid_split !== 'labor' && li.category !== 'general_conditions'
+    );
+    if (fallbackLines.length) {
+      const totalFallback = fallbackLines.reduce((s, li) => s + li.total, 0);
+      issues.push({
+        kind: 'avg_fallback',
+        icon: '💲',
+        count: fallbackLines.length,
+        title: `${fallbackLines.length} line${fallbackLines.length>1?'s':''} priced at industry avg (${fmt(totalFallback)})`,
+        detail: fallbackLines.slice(0,3).map(li => (li.description||li.category).slice(0,30)).join(' · '),
+        action: 'Add a vendor catalog or set My Pricing to use your real wholesale.',
+      });
+    }
+
+    if (!issues.length) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      return;
+    }
+    panel.hidden = false;
+    panel.innerHTML = `
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#f59e0b;margin-bottom:10px">⚠ ${issues.length} thing${issues.length>1?'s':''} to review before sending this bid</div>
+        <ul style="margin:0;padding:0;list-style:none;display:grid;gap:8px">
+          ${issues.map(it => `
+            <li style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;background:rgba(0,0,0,.15);border-radius:6px">
+              <div style="font-size:14px;line-height:1.4">${it.icon}</div>
+              <div style="flex:1;font-size:12px;line-height:1.5">
+                <div style="color:var(--text-primary);font-weight:600">${escapeHtml(it.title)}</div>
+                ${it.detail ? `<div style="color:var(--text-muted);margin-top:2px">${escapeHtml(it.detail)}</div>` : ''}
+                <div style="color:var(--text-muted);margin-top:4px;font-style:italic">${escapeHtml(it.action)}</div>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
   function renderEstimate(est) {
     const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
     const items = est.line_items || [];
@@ -3428,6 +3530,12 @@ flooring_lvp,5,3"></textarea>
       <div class="est-stat"><div class="lbl">O&amp;P (${Math.round((est.margin_factor||0)*100)}%)</div><div class="val">${fmt(est.subtotals?.overhead)}</div></div>
       <div class="est-stat total"><div class="lbl">Total Bid</div><div class="val">${fmt(est.total)}</div><div class="sub">range ${fmt(est.margin_range?.low)}–${fmt(est.margin_range?.high)}</div></div>
     `;
+
+    // Consolidated "needs review" panel — surfaces every signal that the bid
+    // isn't ready to send: missing/TBD specs, AI-flagged unreadable rows,
+    // failed extraction pages, and trades still pricing at industry-avg
+    // (no real material spec matched).
+    populateReviewPanel(est, items);
 
     // Similar past projects — pulled from saved-projects history. Filters
     // out the current project. Similarity = trade-mix overlap × inverse total
@@ -3607,6 +3715,34 @@ flooring_lvp,5,3"></textarea>
     if (info.customer && !$('propCustomer').value) $('propCustomer').value = info.customer;
     if (info.project_name && !$('propProject').value) $('propProject').value = info.project_name;
     if (info.project_address && !$('propAddress').value) $('propAddress').value = info.project_address;
+    // Surface verbatim_sources from the cover extractor as hover tooltips +
+    // a small 📄 icon so the user can verify the auto-fill against the actual
+    // page text. Mirrors the materials-table verbatim_source treatment.
+    const vs = (info.verbatim_sources && typeof info.verbatim_sources === 'object') ? info.verbatim_sources : {};
+    const setSource = (inputId, field, label) => {
+      const input = $(inputId);
+      if (!input) return;
+      const src = String(vs[field] || '').trim();
+      if (src) {
+        input.title = `${label} read from cover sheet:\n"${src}"`;
+        // Add a small "verified" marker next to the label if not already there
+        const lbl = input.closest('label');
+        if (lbl && !lbl.querySelector('.cover-verbatim')) {
+          const tag = document.createElement('span');
+          tag.className = 'cover-verbatim';
+          tag.textContent = ' 📄';
+          tag.style.cssText = 'font-size:11px;color:var(--text-muted);cursor:help';
+          tag.title = input.title;
+          lbl.firstChild?.appendChild?.(tag) || lbl.appendChild(tag);
+        }
+      } else if (input.value) {
+        // Field populated but no verbatim source — flag for review
+        input.title = `${label}: no verbatim source from the cover. Verify against the drawing.`;
+      }
+    };
+    setSource('propCustomer', 'customer', 'Customer');
+    setSource('propProject',  'project_name', 'Project name');
+    setSource('propAddress',  'project_address', 'Project address');
   }
 
   $('btnDraftProposal').addEventListener('click', draftProposal);
