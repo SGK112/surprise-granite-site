@@ -9,6 +9,32 @@ const logger = require('../utils/logger');
 const { handleApiError } = require('../utils/security');
 const { aiRateLimiter } = require('../middleware/rateLimiter');
 const { buildEstimate } = require('../lib/takeoff/estimator');
+const { authenticateJWT } = require('../lib/auth/middleware');
+const { createClient } = require('@supabase/supabase-js');
+
+// Service-role Supabase client for backend writes (bypasses RLS for admin
+// operations like recording an unauthenticated proposal acceptance).
+let __sgServiceClient = null;
+function getServiceClient() {
+  if (__sgServiceClient) return __sgServiceClient;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return null;
+  __sgServiceClient = createClient(url, key, { auth: { persistSession: false } });
+  return __sgServiceClient;
+}
+
+// User-context client (uses caller's JWT so RLS applies). Pass in the access
+// token from the Authorization header.
+function getUserClient(accessToken) {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey || !accessToken) return null;
+  return createClient(url, anonKey, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+}
 
 /**
  * Validate image data URL format for OpenAI Vision API.
@@ -790,6 +816,42 @@ router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), as
     };
     logger.info('Proposal accepted:', record);
 
+    // Persist to Supabase if available — service-role write since the share
+    // page is unauthenticated. user_id resolved by looking up the contractor
+    // in auth.users by email when possible.
+    try {
+      const svc = getServiceClient();
+      if (svc) {
+        let userId = null;
+        if (preparedBy.email) {
+          const { data: profile } = await svc
+            .from('sg_users')
+            .select('id')
+            .eq('email', preparedBy.email)
+            .maybeSingle();
+          userId = profile?.id || null;
+        }
+        const insertRow = {
+          user_id: userId,
+          prepared_by_email: preparedBy.email || null,
+          accepted_by_name: acceptedBy.name,
+          accepted_by_email: acceptedBy.email,
+          project: project || null,
+          customer: customer || null,
+          total_bid: Number.isFinite(+total) ? Math.round(+total) : null,
+          deposit: Number.isFinite(+deposit) ? Math.round(+deposit) : null,
+          signature_png: signaturePng || null,
+          ip_address: record.ip,
+          user_agent: record.userAgent,
+          accepted_at: record.acceptedAt,
+        };
+        const { error: insertErr } = await svc.from('proposal_acceptances').insert(insertRow);
+        if (insertErr) logger.warn('Acceptance Supabase insert failed (non-fatal):', insertErr.message);
+      }
+    } catch (dbErr) {
+      logger.warn('Acceptance DB write failed (non-fatal):', dbErr.message);
+    }
+
     // Best-effort: email the contractor so they know a customer signed.
     if (preparedBy.email && process.env.SMTP_PASS) {
       try {
@@ -935,6 +997,93 @@ router.post('/blueprint/proposal/send', async (req, res) => {
 function escapeHtmlServer(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+/**
+ * Blueprint takeoff project storage (cloud-primary, localStorage offline cache).
+ * All routes require Supabase JWT auth — caller's token is forwarded so RLS
+ * enforces per-user isolation.
+ */
+router.get('/blueprint/projects', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { data, error } = await client
+      .from('takeoff_projects')
+      .select('id, name, total_bid, source, stage, created_at, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    res.json({ projects: data || [] });
+  } catch (err) {
+    logger.error('List takeoff projects error:', err);
+    return handleApiError(res, err, 'List projects');
+  }
+});
+
+router.get('/blueprint/projects/:id', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { data, error } = await client
+      .from('takeoff_projects')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    logger.error('Get takeoff project error:', err);
+    return handleApiError(res, err, 'Get project');
+  }
+});
+
+// Upsert a project. Frontend sends { id?, name, payload, total_bid, source, stage }.
+// If id is set we update, else we insert. user_id comes from auth context.
+router.post('/blueprint/projects', authenticateJWT, express.json({ limit: '12mb' }), async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { id, name, payload, total_bid, source, stage } = req.body || {};
+    if (!payload || typeof payload !== 'object') {
+      return res.status(400).json({ error: 'payload object required' });
+    }
+    const row = {
+      user_id: req.user.id,
+      name: name || 'Untitled project',
+      payload,
+      total_bid: Number.isFinite(+total_bid) ? +total_bid : null,
+      source: source || null,
+      stage: stage || null,
+    };
+    if (id) row.id = id;
+    const { data, error } = await client
+      .from('takeoff_projects')
+      .upsert(row, { onConflict: 'id' })
+      .select('id, name, total_bid, source, stage, created_at, updated_at')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    logger.error('Save takeoff project error:', err);
+    return handleApiError(res, err, 'Save project');
+  }
+});
+
+router.delete('/blueprint/projects/:id', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { error } = await client
+      .from('takeoff_projects')
+      .delete()
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('Delete takeoff project error:', err);
+    return handleApiError(res, err, 'Delete project');
+  }
+});
 
 // ============ AI ROOM SCANNER ============
 

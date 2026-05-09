@@ -18,6 +18,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
+  <!-- Supabase client for cloud-sync project storage (uses SG account session) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root {
       --sg-gold:#f9cb00; --sg-gold-dark:#e5b800;
@@ -1296,6 +1299,136 @@ flooring_lvp,5,3"></textarea>
 
   refreshPricingStatus();
 
+  // ---- Cloud sync (SG Supabase account) ----
+  // Cloud is the primary store when the user is signed in to SG; localStorage
+  // becomes the offline cache mirror. When not signed in, localStorage is
+  // the only store and a banner prompts sign-in for cross-device sync.
+  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  let sbClient = null;
+  let sbSession = null;
+
+  async function initCloudSync() {
+    try {
+      if (!window.supabase) return; // CDN didn't load
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, storageKey: 'sg-auth-token' },
+      });
+      const { data: { session } } = await sbClient.auth.getSession();
+      sbSession = session || null;
+      if (sbSession) {
+        await fetchCloudProjects();
+      }
+      refreshCloudStatus();
+    } catch (err) {
+      console.warn('Cloud sync init failed (continuing offline):', err.message);
+    }
+  }
+
+  function isSignedIn() { return !!(sbSession && sbSession.access_token); }
+  function authHeaders() {
+    return isSignedIn()
+      ? { 'Content-Type': 'application/json', Authorization: `Bearer ${sbSession.access_token}` }
+      : { 'Content-Type': 'application/json' };
+  }
+
+  function refreshCloudStatus() {
+    // Update the Projects button + banner copy based on auth state
+    const btn = $('btnProjects');
+    if (isSignedIn()) {
+      btn.title = `Cloud-synced as ${sbSession.user.email || 'signed-in user'}`;
+    } else {
+      btn.title = 'Saved projects on this device — sign in to sync to the cloud';
+    }
+    // Show sign-in banner inside Projects modal (always available)
+    const list = $('projectsList');
+    if (list) {
+      const existing = document.getElementById('cloudSignInBanner');
+      if (existing) existing.remove();
+      if (!isSignedIn()) {
+        const banner = document.createElement('div');
+        banner.id = 'cloudSignInBanner';
+        banner.style.cssText = 'padding:12px 14px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;margin-bottom:10px;font-size:13px;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap';
+        banner.innerHTML = `
+          <div>
+            <strong>📡 Local-only mode.</strong> Sign in with your Surprise Granite account to sync projects across devices.
+          </div>
+          <a class="btn btn-primary" href="/account/?redirect=${encodeURIComponent(location.pathname)}" style="text-decoration:none;font-size:12px;padding:8px 14px">Sign in →</a>
+        `;
+        list.parentNode.insertBefore(banner, list);
+      }
+    }
+  }
+
+  async function fetchCloudProjects() {
+    if (!isSignedIn()) return;
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/projects', { headers: authHeaders() });
+      if (!resp.ok) return;
+      const { projects } = await resp.json();
+      // Mirror the cloud list into localStorage as offline cache.
+      // Cloud rows have full payload only when fetched individually; the
+      // list endpoint is metadata-only. So we only store metadata in the
+      // local index here; full payload loads on demand.
+      const all = getProjects();
+      for (const p of (projects || [])) {
+        const existing = all[p.id];
+        // Don't clobber a local-only newer payload; cloud wins on tie.
+        if (!existing || (p.updated_at && new Date(p.updated_at).getTime() >= (existing.updatedAt || 0))) {
+          all[p.id] = {
+            ...(existing || {}),
+            id: p.id,
+            name: p.name,
+            source: p.source,
+            updatedAt: p.updated_at ? new Date(p.updated_at).getTime() : (existing?.updatedAt || Date.now()),
+            createdAt: p.created_at ? new Date(p.created_at).getTime() : (existing?.createdAt || Date.now()),
+            stages: existing?.stages || (p.stage ? { [p.stage]: true } : {}),
+            lastEstimate: existing?.lastEstimate || (p.total_bid ? { total: p.total_bid } : null),
+            sheets: existing?.sheets || [],
+            cloudOnly: !existing, // marks rows that haven't been pulled in full yet
+          };
+        }
+      }
+      try { localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(all)); } catch (_) {}
+      refreshProjectsStatus();
+    } catch (err) {
+      console.warn('fetchCloudProjects failed:', err.message);
+    }
+  }
+
+  // Pull a single project's full payload from cloud on demand.
+  async function pullCloudProject(id) {
+    if (!isSignedIn()) return null;
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/projects/' + encodeURIComponent(id), { headers: authHeaders() });
+      if (!resp.ok) return null;
+      const row = await resp.json();
+      return row.payload || null;
+    } catch (_) { return null; }
+  }
+
+  // Push the current snapshot to cloud (debounced via the existing autoSave).
+  async function pushCloudProject(snap) {
+    if (!isSignedIn() || !snap) return;
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/projects', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          id: snap.id,
+          name: snap.name,
+          payload: snap,
+          total_bid: snap.lastEstimate?.total || null,
+          source: snap.source,
+          stage: snap.stages?.proposed ? 'proposed' : snap.stages?.estimated ? 'estimated' : snap.stages?.extracted ? 'extracted' : 'index',
+        }),
+      });
+      if (!resp.ok) console.warn('Cloud project save failed:', resp.status);
+    } catch (err) {
+      console.warn('pushCloudProject failed:', err.message);
+    }
+  }
+
   // ---- Project save / restore ----
   // Single localStorage key holds an index map: { [projectId]: snapshot }.
   // Snapshot omits the PDF binary (too big) and the per-page text layer
@@ -1373,6 +1506,9 @@ flooring_lvp,5,3"></textarea>
       all[snap.id] = snap;
       setProjects(all);
       currentProjectId = snap.id;
+      // Cloud mirror — fire-and-forget; localStorage write above is the
+      // fast path so the UI doesn't wait on the network.
+      pushCloudProject(snap);
     }, 400);
   }
 
@@ -1382,11 +1518,26 @@ flooring_lvp,5,3"></textarea>
     setProjects(all);
     if (currentProjectId === id) currentProjectId = null;
     renderProjectsList();
+    // Cloud delete — fire-and-forget
+    if (isSignedIn()) {
+      fetch(API_BASE + '/api/ai/blueprint/projects/' + encodeURIComponent(id), {
+        method: 'DELETE', headers: authHeaders(),
+      }).catch(()=>{});
+    }
   }
 
-  function loadProject(id) {
+  async function loadProject(id) {
     const all = getProjects();
-    const p = all[id];
+    let p = all[id];
+    // Cloud-only row that hasn't been pulled in full yet — fetch payload now
+    if (p && p.cloudOnly && isSignedIn()) {
+      const cloudPayload = await pullCloudProject(id);
+      if (cloudPayload) {
+        p = { ...cloudPayload, ...p, cloudOnly: false };
+        all[id] = p;
+        try { localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(all)); } catch (_) {}
+      }
+    }
     if (!p) return;
     currentProjectId = id;
 
@@ -1469,6 +1620,12 @@ flooring_lvp,5,3"></textarea>
 
   function renderProjectsList() {
     const list = $('projectsList');
+    // If signed in, kick off a cloud refresh in the background — the redraw
+    // when it finishes will pick up any newly-pulled rows.
+    if (typeof isSignedIn === 'function' && isSignedIn() && typeof fetchCloudProjects === 'function') {
+      fetchCloudProjects().then(() => { if ($('projectsModal').classList.contains('open')) renderProjectsList(); });
+    }
+    refreshCloudStatus();
     const all = getProjects();
     const arr = Object.values(all).sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
     if (!arr.length) {
@@ -1532,6 +1689,15 @@ flooring_lvp,5,3"></textarea>
   });
 
   refreshProjectsStatus();
+
+  // Kick off cloud sync after the project list helpers are wired up.
+  // Fires once on load — pulls the cloud project list and re-renders the
+  // status badge. Subsequent saves auto-push to cloud via autoSave.
+  initCloudSync().then(() => {
+    refreshProjectsStatus();
+    // Re-show the resume banner if cloud surfaced new candidates
+    if (typeof maybeShowResumeBanner === 'function') maybeShowResumeBanner();
+  });
 
   // ---- Resume banner — surface most-recent project on page load ----
   // PDFs aren't saved to localStorage (too big), but every other piece of
