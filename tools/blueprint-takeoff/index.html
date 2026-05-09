@@ -1012,15 +1012,26 @@ flooring_lvp,5,3"></textarea>
   // contain "schedule" callouts, but a schedule page reads "FINISH SCHEDULE"
   // far more dominantly than a floor plan does.
   const SHEET_PATTERNS = [
-    ['SCHEDULE',  /(finish|cabinet|millwork|casework|door|window|hardware|appliance|equipment|fixture)\s*(schedule|list)/i],
-    ['SCHEDULE',  /\b(FF&E|FFE)\s*(schedule|list|plan)?/i],
+    // SCHEDULE/LEGEND: any "X schedule" / "X list" / "X legend" where X names
+    // a takeoff-relevant trade. Many architects use LEGEND instead of
+    // SCHEDULE for the same content (FINISH LEGEND = finish schedule, MILLWORK
+    // LEGEND = millwork schedule). Missing "legend" caused real spec sheets
+    // to fall to OTHER and never reach vision — defaulting the estimate to
+    // generic industry-avg lines.
+    ['SCHEDULE',  /(finish|cabinet|millwork|casework|door|window|hardware|appliance|equipment|fixture|lighting)\s*(schedule|list|legend)/i],
+    ['SCHEDULE',  /\b(FF&E|FFE)\s*(schedule|list|legend|plan)?/i],
     ['RCP',       /reflected\s*ceiling|ceiling\s*plan|\bRCP\b/i],
-    ['PLAN',      /(floor\s*plan|key\s*plan|partition\s*plan|finish\s*plan|dimension\s*plan|architectural\s*plan)/i],
+    ['PLAN',      /(floor\s*plan|key\s*plan|partition\s*plan|finish\s*plan|dimension\s*plan|architectural\s*plan|equipment\s*plan|food\s*service\s*plan)/i],
     ['ELEVATION', /\b(elevation|elev\.|interior\s*elevation|exterior\s*elevation)\b/i],
     ['SECTION',   /\b(building\s*section|wall\s*section|section\s*[-A-Z\d])/i],
-    ['DETAIL',    /\b(detail|enlarged|mill\s*work\s*detail|cabinet\s*detail)\b/i],
+    // Millwork/cabinet details carry the actual cabinet specs and dimensions
+    // — they're takeoff-relevant, not just visual. Same for finish details.
+    ['SCHEDULE',  /\b(millwork|cabinet|casework|finish)\s*detail/i],
+    ['DETAIL',    /\b(detail|enlarged)\b/i],
     ['COVER',     /(cover\s*sheet|title\s*sheet|sheet\s*index|drawing\s*index|general\s*notes)/i],
   ];
+  // Pages we send to vision for quantity/material extraction. SCHEDULE picks
+  // up explicit spec/legend tables; PLAN picks up area/quantity takeoffs.
   const TAKEOFF_RELEVANT = new Set(['PLAN','SCHEDULE']);
 
   // Sheet number patterns: A1.0, A-1.0, FP-1, M2.0, ID-1, SP-101 etc.
@@ -1799,16 +1810,18 @@ flooring_lvp,5,3"></textarea>
       $('resumeBanner').hidden = true;
       loadProject(latest.id);
     };
-    // Start fresh = hide the banner AND reset state to the empty Step 1.
-    // Was just hiding the banner, which felt like a no-op since no other
-    // visible state changed.
+    // Start fresh = hide the banner AND fully wipe project state + page cache.
+    // The user clicked "fresh" instead of "resume" — that's an explicit reset
+    // intent, no need to re-prompt. Calls hardResetProject() directly to
+    // bypass the btnNewPdf confirm dialog.
     $('btnDismissResume').onclick = () => {
       $('resumeBanner').hidden = true;
-      // Reuse the existing Start over reset path
-      const startOverBtn = $('btnNewPdf');
-      if (startOverBtn) startOverBtn.click();
-      else {
-        // Fallback if the start-over wiring isn't loaded yet
+      if (typeof hardResetProject === 'function') {
+        hardResetProject();
+      } else {
+        // Fallback if the reset wiring isn't loaded yet (script ordering)
+        try { localStorage.removeItem('sg_takeoff_page_cache'); } catch (_) {}
+        try { localStorage.removeItem('sg_takeoff_handoff'); } catch (_) {}
         currentProjectId = null;
         location.replace(location.pathname); // hard reset
       }
@@ -4366,7 +4379,12 @@ ${pb.license || ''}`;
     URL.revokeObjectURL(a.href);
   });
 
-  $('btnNewPdf').addEventListener('click', () => {
+  // Hard reset: wipe all in-memory project state AND the localStorage caches
+  // that survive a page reload. Does NOT touch user-owned config (BYOK keys,
+  // My Pricing, My Company, vendor catalogs, saved projects list) — those are
+  // assets, not project state. Confirm because this is destructive.
+  function hardResetProject() {
+    // 1) In-memory state — every window.__last* the analyzer/estimator writes.
     pdfDoc = null; sheets = [];
     currentProjectId = null;
     window.__lastSourceLabel = '';
@@ -4378,6 +4396,14 @@ ${pb.license || ''}`;
     window.__lastQuestions = null;
     window.__lastMeasurements = null;
     window.__lastPerPage = null;
+    window.__lastResults = null;
+
+    // 2) localStorage project state — these are the leaks that made the
+    // previous "Start over" feel like a no-op.
+    try { localStorage.removeItem(PAGE_CACHE_KEY); } catch (_) {}
+    try { localStorage.removeItem('sg_takeoff_handoff'); } catch (_) {}
+
+    // 3) UI reset.
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
@@ -4392,6 +4418,15 @@ ${pb.license || ''}`;
     $('hSelected').textContent = '—';
     $('hExtracted').textContent = '—';
     $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  $('btnNewPdf').addEventListener('click', () => {
+    // Only confirm if there's actually work in progress to lose.
+    const hasWork = !!(pdfDoc || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown);
+    if (hasWork && !confirm('Start over and discard the current takeoff?\n\nThis wipes the page cache so the next upload re-runs vision from scratch. Your saved projects, BYOK keys, My Pricing, vendor catalogs, and My Company info are kept.')) {
+      return;
+    }
+    hardResetProject();
   });
 
   $('btnExportJson').addEventListener('click', () => {
