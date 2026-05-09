@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Project Proposal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;color:#1a1a2e;line-height:1.7;font-size:14px;padding:24px 16px}
+    .doc{max-width:880px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden}
+    .doc-header{background:#1a1a2e;padding:28px 36px;border-bottom:3px solid #f9cb00}
+    .doc-header .eyebrow{color:#f9cb00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+    .doc-header h1{color:#fff;font-size:22px;font-weight:700;margin-top:6px;font-family:'Space Grotesk',sans-serif}
+    .doc-meta{padding:20px 36px;background:#fafafa;border-bottom:1px solid #eee;font-size:13px}
+    .doc-meta strong{color:#0f0f1a}
+    .doc-meta .total{font-size:18px;color:#0f0f1a;font-weight:700;margin-top:8px;font-family:'Space Grotesk',sans-serif}
+    .doc-body{padding:32px 36px}
+    .doc-body h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin-bottom:6px;color:#0f0f1a}
+    .doc-body h2{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:24px 0 8px;color:#0f0f1a;border-bottom:2px solid #f9cb00;padding-bottom:4px}
+    .doc-body h3{font-size:14px;font-weight:700;margin:16px 0 6px;color:#0f0f1a}
+    .doc-body p{margin-bottom:10px}
+    .doc-body ul,.doc-body ol{margin:8px 0 12px 22px}
+    .doc-body li{margin-bottom:4px}
+    .doc-body table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+    .doc-body th,.doc-body td{border:1px solid #ddd;padding:8px 12px;text-align:left}
+    .doc-body th{background:#f5f5f5;font-weight:700}
+    .doc-body th.num,.doc-body td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .doc-body strong{color:#0f0f1a}
+    .doc-footer{padding:18px 36px;border-top:1px solid #eee;font-size:12px;color:#666;background:#fafafa;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .doc-toolbar{max-width:880px;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}
+    .btn{padding:8px 14px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#1a1a2e;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit}
+    .btn:hover{border-color:#999}
+    .btn.primary{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+    .err{max-width:600px;margin:80px auto;padding:32px;background:#fff;border-radius:8px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+    .err h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin-bottom:8px;color:#1a1a2e}
+    .err p{color:#666;font-size:13px}
+    @media print{
+      body{background:#fff;padding:0}
+      .doc{box-shadow:none;border-radius:0;max-width:none}
+      .doc-toolbar{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-toolbar">
+    <button class="btn primary" onclick="window.print()">🖨 Print / Save PDF</button>
+  </div>
+  <div id="root"></div>
+
+<script>
+(() => {
+  const root = document.getElementById('root');
+
+  function showError(msg) {
+    root.innerHTML = `<div class="err"><h2>Couldn't load proposal</h2><p>${msg}</p></div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Same minimal markdown→HTML converter as the main tool.
+  function mdToHtml(md) {
+    if (!md) return '';
+    const lines = md.split('\n');
+    const out = []; let i = 0;
+    function inline(s) {
+      return escapeHtml(s)
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+    while (i < lines.length) {
+      const ln = lines[i];
+      if (/^\s*\|.*\|\s*$/.test(ln) && i+1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i+1])) {
+        const headers = ln.split('|').slice(1,-1).map(c => c.trim());
+        i += 2; const rows = [];
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+          rows.push(lines[i].split('|').slice(1,-1).map(c => c.trim())); i++;
+        }
+        out.push('<table><thead><tr>' + headers.map((h,idx) => `<th${idx>0?' class="num"':''}>${inline(h)}</th>`).join('') + '</tr></thead><tbody>'
+          + rows.map(r => '<tr>' + r.map((c,idx) => `<td${idx>0?' class="num"':''}>${inline(c)}</td>`).join('') + '</tr>').join('')
+          + '</tbody></table>');
+        continue;
+      }
+      const h = ln.match(/^(#{1,3})\s+(.*)$/);
+      if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+      if (/^\s*[-*]\s+/.test(ln)) {
+        const items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*[-*]\s+/, '')); i++; }
+        out.push('<ul>' + items.map(it => `<li>${inline(it)}</li>`).join('') + '</ul>');
+        continue;
+      }
+      if (/^\s*\d+\.\s+/.test(ln)) {
+        const items = [];
+        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*\d+\.\s+/, '')); i++; }
+        out.push('<ol>' + items.map(it => `<li>${inline(it)}</li>`).join('') + '</ol>');
+        continue;
+      }
+      if (!ln.trim()) { i++; continue; }
+      const para = [ln]; i++;
+      while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|\s*[-*]\s|\s*\d+\.\s|\s*\|)/.test(lines[i])) { para.push(lines[i]); i++; }
+      out.push('<p>' + inline(para.join(' ')) + '</p>');
+    }
+    return out.join('\n');
+  }
+
+  // Read payload from URL fragment (no server roundtrip)
+  const hash = location.hash.replace(/^#/, '');
+  if (!hash) {
+    showError('No proposal data in the URL. Ask the sender to regenerate the share link.');
+    return;
+  }
+  let data;
+  try {
+    const b64 = hash.replace(/-/g,'+').replace(/_/g,'/');
+    const padded = b64 + '==='.slice((b64.length + 3) % 4);
+    const json = decodeURIComponent(escape(atob(padded)));
+    data = JSON.parse(json);
+  } catch (e) {
+    showError('The share link looks corrupted. Ask the sender to regenerate it.');
+    return;
+  }
+
+  const pb = data.preparedBy || {};
+  const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+  const websiteUrl = pb.website ? (/^https?:\/\//.test(pb.website) ? pb.website : 'https://' + pb.website) : '';
+
+  document.title = `Proposal — ${data.project || 'project'}${data.customer ? ' for ' + data.customer : ''}`;
+
+  root.innerHTML = `
+    <div class="doc">
+      <div class="doc-header">
+        <div class="eyebrow">${escapeHtml(pb.name || 'Project Proposal')}${pb.license ? ' · ' + escapeHtml(pb.license) : ''}</div>
+        <h1>Project Proposal</h1>
+      </div>
+      <div class="doc-meta">
+        ${data.customer ? `<div><strong>Prepared for:</strong> ${escapeHtml(data.customer)}</div>` : ''}
+        ${data.project  ? `<div><strong>Project:</strong> ${escapeHtml(data.project)}</div>` : ''}
+        ${data.address  ? `<div><strong>Address:</strong> ${escapeHtml(data.address)}</div>` : ''}
+        ${data.total    ? `<div class="total">Total bid: ${fmt(data.total)}</div>` : ''}
+      </div>
+      <div class="doc-body">
+        ${mdToHtml(data.markdown || '')}
+      </div>
+      <div class="doc-footer">
+        <div>
+          ${pb.name ? `<strong>${escapeHtml(pb.name)}</strong>` : ''}
+          ${pb.contact ? ' · ' + escapeHtml(pb.contact) : ''}${pb.title ? ', ' + escapeHtml(pb.title) : ''}
+        </div>
+        <div>
+          ${pb.phone ? escapeHtml(pb.phone) + ' · ' : ''}
+          ${pb.email ? `<a href="mailto:${escapeHtml(pb.email)}" style="color:#1a1a2e">${escapeHtml(pb.email)}</a> · ` : ''}
+          ${websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" style="color:#1a1a2e" target="_blank" rel="noopener">${escapeHtml(pb.website)}</a>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+})();
+</script>
+</body>
+</html>

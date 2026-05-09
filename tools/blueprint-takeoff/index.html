@@ -306,9 +306,12 @@
 
     .proposal-doc{margin-top:14px}
     .proposal-toolbar{display:flex;gap:8px;margin-bottom:10px;justify-content:flex-end;flex-wrap:wrap}
-    .proposal-send-row{display:flex;gap:8px;margin-bottom:12px;padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;align-items:center}
+    .proposal-actions{margin-top:18px;padding:16px;background:var(--sg-surface);border:1px solid var(--border);border-radius:10px}
+    .proposal-actions-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .proposal-send-row,.proposal-share-row{display:flex;gap:8px;margin-top:12px;padding:12px 14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;align-items:center}
     .proposal-send-row input{flex:1;min-width:180px;padding:9px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px}
-    .proposal-send-row input:focus{outline:none;border-color:var(--sg-blue)}
+    .proposal-share-row input{flex:1;min-width:280px;padding:9px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:12px;font-family:'Menlo',monospace}
+    .proposal-send-row input:focus,.proposal-share-row input:focus{outline:none;border-color:var(--sg-blue)}
     .prop-send-status{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:10px}
     .prop-send-status.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80}
     .prop-send-status.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
@@ -366,6 +369,10 @@
         <button class="hero-key-btn" id="btnProjects" type="button" title="Saved projects on this device">
           <span class="hero-key-icon">📁</span>
           <span id="projectsStatus">No saved projects</span>
+        </button>
+        <button class="hero-key-btn" id="btnMyCompany" type="button" title="Your company name, license, contact info — appears on every proposal">
+          <span class="hero-key-icon">🏢</span>
+          <span id="myCompanyStatus">Set company info</span>
         </button>
         <button class="hero-key-btn" id="btnCatalogs" type="button" title="Vendor price sheets — auto-match material specs to real SKUs">
           <span class="hero-key-icon">📚</span>
@@ -562,23 +569,80 @@
         <div class="progress-label">Drafting proposal…</div>
       </div>
       <div class="proposal-doc" id="proposalDoc" hidden>
-        <div class="proposal-toolbar">
-          <button class="btn btn-primary" id="btnSendProposal">Send to customer →</button>
-          <button class="btn" id="btnEditProposal">Edit</button>
-          <button class="btn" id="btnPrintProposal">Print / Save PDF</button>
-          <button class="btn btn-ghost" id="btnCopyProposal">Copy markdown</button>
+        <div class="proposal-toolbar proposal-toolbar-top">
+          <button class="btn btn-ghost" id="btnEditProposal">Edit</button>
         </div>
-        <div class="proposal-send-row" id="proposalSendRow" hidden>
-          <input type="email" id="propTo" placeholder="customer@example.com">
-          <input type="email" id="propCc" placeholder="cc (optional)">
-          <button class="btn btn-primary" id="btnDoSend">Send</button>
-          <button class="btn btn-ghost" id="btnCancelSend">Cancel</button>
-        </div>
-        <div id="propSendStatus" class="prop-send-status" hidden></div>
         <div class="proposal-body" id="proposalBody" contenteditable="false"></div>
+
+        <!-- Bottom action bar — completes the flow: save / send / share / print -->
+        <div class="proposal-actions">
+          <div class="proposal-actions-row">
+            <button class="btn btn-primary" id="btnSendProposal">📧 Send to customer</button>
+            <button class="btn btn-primary" id="btnShareProposal">🔗 Generate share link</button>
+            <button class="btn" id="btnPrintProposal">🖨 Print / Save PDF</button>
+            <button class="btn btn-ghost" id="btnCopyProposal">Copy markdown</button>
+          </div>
+          <div class="proposal-send-row" id="proposalSendRow" hidden>
+            <input type="email" id="propTo" placeholder="customer@example.com">
+            <input type="email" id="propCc" placeholder="cc (optional)">
+            <button class="btn btn-primary" id="btnDoSend">Send</button>
+            <button class="btn btn-ghost" id="btnCancelSend">Cancel</button>
+          </div>
+          <div class="proposal-share-row" id="proposalShareRow" hidden>
+            <input type="text" id="shareUrlOutput" readonly placeholder="Generating…">
+            <button class="btn btn-primary" id="btnCopyShare">Copy link</button>
+            <button class="btn btn-ghost" id="btnCloseShare">Close</button>
+          </div>
+          <div id="propSendStatus" class="prop-send-status" hidden></div>
+        </div>
       </div>
     </section>
   </main>
+
+  <!-- My Company modal -->
+  <div class="byok-modal" id="myCompanyModal" role="dialog" aria-modal="true" aria-labelledby="myCompanyTitle">
+    <div class="byok-card" style="max-width:560px">
+      <h3 id="myCompanyTitle">My Company Info</h3>
+      <div class="byok-sub">
+        Appears as "Prepared by" on every proposal you generate, and in the email footer when you send. Stored in <strong>your browser only</strong>.
+      </div>
+      <div class="add-line-grid">
+        <label class="full">Company name
+          <input type="text" id="mcName" placeholder="Acme Construction LLC">
+        </label>
+        <label>Contact name
+          <input type="text" id="mcContact" placeholder="Joshua Breese">
+        </label>
+        <label>Title
+          <input type="text" id="mcTitle" placeholder="Estimator / Owner">
+        </label>
+        <label>Email
+          <input type="email" id="mcEmail" placeholder="bids@acme.com">
+        </label>
+        <label>Phone
+          <input type="tel" id="mcPhone" placeholder="(602) 555-1234">
+        </label>
+        <label class="full">Address
+          <input type="text" id="mcAddress" placeholder="123 Main St, Surprise AZ 85379">
+        </label>
+        <label>License / ROC #
+          <input type="text" id="mcLicense" placeholder="AZ ROC #341113">
+        </label>
+        <label>Website
+          <input type="text" id="mcWebsite" placeholder="acme.com">
+        </label>
+        <label class="full">Tagline (optional)
+          <input type="text" id="mcTagline" placeholder="Bonded &amp; Insured · Family-Owned Since 2018">
+        </label>
+      </div>
+      <div class="byok-actions">
+        <button class="btn btn-ghost" id="btnMyCompanyClear" type="button">Clear</button>
+        <div style="flex:1"></div>
+        <button class="btn" id="btnMyCompanyCancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="btnMyCompanySave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Catalogs modal -->
   <div class="byok-modal" id="catalogsModal" role="dialog" aria-modal="true" aria-labelledby="catalogsTitle">
@@ -1546,6 +1610,49 @@ flooring_lvp,5,3"></textarea>
 
   refreshCatalogsStatus();
 
+  // ---- My Company info (Prepared by block on proposals) ----
+  const MY_COMPANY_KEY = 'sg_my_company';
+  const MC_FIELDS = ['name','contact','title','email','phone','address','license','website','tagline'];
+
+  function getMyCompany() {
+    try { return JSON.parse(localStorage.getItem(MY_COMPANY_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+  function setMyCompany(obj) {
+    try { localStorage.setItem(MY_COMPANY_KEY, JSON.stringify(obj || {})); }
+    catch (_) {}
+    refreshMyCompanyStatus();
+  }
+  function refreshMyCompanyStatus() {
+    const c = getMyCompany();
+    const has = !!(c.name && c.email);
+    const btn = $('btnMyCompany');
+    btn.classList.toggle('active', has);
+    $('myCompanyStatus').textContent = has ? c.name : 'Set company info';
+  }
+  function openMyCompanyModal() {
+    const c = getMyCompany();
+    MC_FIELDS.forEach(f => { $('mc' + f.charAt(0).toUpperCase() + f.slice(1)).value = c[f] || ''; });
+    $('myCompanyModal').classList.add('open');
+  }
+  function closeMyCompanyModal() { $('myCompanyModal').classList.remove('open'); }
+  $('btnMyCompany').addEventListener('click', openMyCompanyModal);
+  $('btnMyCompanyCancel').addEventListener('click', closeMyCompanyModal);
+  $('myCompanyModal').addEventListener('click', e => { if (e.target === $('myCompanyModal')) closeMyCompanyModal(); });
+  $('btnMyCompanyClear').addEventListener('click', () => {
+    if (confirm('Clear all company info?')) { setMyCompany({}); closeMyCompanyModal(); }
+  });
+  $('btnMyCompanySave').addEventListener('click', () => {
+    const obj = {};
+    MC_FIELDS.forEach(f => {
+      const v = $('mc' + f.charAt(0).toUpperCase() + f.slice(1)).value.trim();
+      if (v) obj[f] = v;
+    });
+    setMyCompany(obj);
+    closeMyCompanyModal();
+  });
+  refreshMyCompanyStatus();
+
   // Match material specs against enabled vendor catalogs.
   // Returns { [code]: { material: price, source: "Vendor SKU/Name" } }.
   // Strategy: any spec token-overlap with a product's vendor + name = candidate;
@@ -2461,6 +2568,18 @@ flooring_lvp,5,3"></textarea>
   $('btnGenerateEstimate').addEventListener('click', generateEstimate);
   $('btnRecalc').addEventListener('click', generateEstimate);
 
+  // Live controls: nudging margin / GC / waste recalcs deterministically
+  // without re-calling the backend. Project type + waste change shape, so
+  // those still need a full Recalculate (re-runs estimator from scratch).
+  ['estMargin','estGcOverhead'].forEach(id => {
+    $(id).addEventListener('input', () => {
+      if (!window.__lastEstimate) return;
+      recalcEstimateTotals(window.__lastEstimate);
+      renderEstimate(window.__lastEstimate);
+      autoSave();
+    });
+  });
+
   async function generateEstimate() {
     const totals = window.__lastTotals || {};
     const takeoff = {
@@ -2707,6 +2826,7 @@ flooring_lvp,5,3"></textarea>
           customer, project, address,
           materials: window.__lastMaterials || [],
           confirmedScope: answeredQs,
+          preparedBy: getMyCompany(),
         }),
       });
       $('propBar').style.width = '85%';
@@ -2844,8 +2964,16 @@ flooring_lvp,5,3"></textarea>
 
   // Recompute subtotals, GC overhead (re-derived from non-GC lines), trade
   // rollup, O&P, total bid, and margin range from the current line items.
+  // Pulls margin/GC/waste from the live controls so the user doesn't need
+  // to click Recalculate after every nudge — the totals are always current.
   function recalcEstimateTotals(est) {
     if (!est || !est.line_items) return;
+
+    // Sync controls → estimate (so margin/GC slider changes apply on inline edit too)
+    const liveMargin   = (parseFloat($('estMargin').value) || 0) / 100;
+    const liveGcPct    = (parseFloat($('estGcOverhead').value) || 0) / 100;
+    if (Number.isFinite(liveMargin)) est.margin_factor = liveMargin;
+    if (Number.isFinite(liveGcPct))  est.gc_overhead_factor = liveGcPct;
 
     // Recompute GC overhead — it's a percentage of trade subtotal, so when
     // any other line changes, GC must recompute too.
@@ -2982,7 +3110,7 @@ flooring_lvp,5,3"></textarea>
       const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, cc: cc || undefined, customer, project, html_body, total }),
+        body: JSON.stringify({ to, cc: cc || undefined, customer, project, html_body, total, preparedBy: getMyCompany() }),
       });
       if (!resp.ok) {
         const txt = await resp.text();
@@ -3004,6 +3132,46 @@ flooring_lvp,5,3"></textarea>
       btn.textContent = 'Send';
     }
   }
+
+  // ---- Share link ----
+  // Encodes the proposal payload into a URL fragment so the recipient can
+  // open a read-only view without needing accounts or backend storage.
+  // Self-contained, free, instant — but the URL is long. Backend short-link
+  // version can come later if needed.
+  $('btnShareProposal').addEventListener('click', () => {
+    if (!window.__lastProposalMarkdown) return;
+    const payload = {
+      v: 1,
+      customer: $('propCustomer').value.trim(),
+      project: $('propProject').value.trim(),
+      address: $('propAddress').value.trim(),
+      total: window.__lastEstimate?.total || 0,
+      markdown: window.__lastProposalMarkdown,
+      preparedBy: getMyCompany(),
+      ts: Date.now(),
+    };
+    // Compress to base64url for shorter URL. JSON → utf8 → btoa → URL-safe.
+    const json = JSON.stringify(payload);
+    const b64 = btoa(unescape(encodeURIComponent(json)))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const url = `${location.origin}/tools/blueprint-takeoff/share.html#${b64}`;
+    $('shareUrlOutput').value = url;
+    $('proposalShareRow').hidden = false;
+    $('proposalSendRow').hidden = true;
+    setTimeout(() => { $('shareUrlOutput').select(); }, 50);
+  });
+  $('btnCopyShare').addEventListener('click', async () => {
+    const url = $('shareUrlOutput').value;
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      $('btnCopyShare').textContent = 'Copied ✓';
+      setTimeout(() => { $('btnCopyShare').textContent = 'Copy link'; }, 1500);
+    } catch (_) {
+      $('shareUrlOutput').select(); document.execCommand('copy');
+    }
+  });
+  $('btnCloseShare').addEventListener('click', () => { $('proposalShareRow').hidden = true; });
 
   $('btnEditProposal').addEventListener('click', () => {
     const body = $('proposalBody');

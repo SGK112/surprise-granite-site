@@ -539,7 +539,7 @@ router.post('/blueprint/cover', async (req, res) => {
  */
 router.post('/blueprint/proposal', async (req, res) => {
   try {
-    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], userKey } = req.body || {};
+    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], preparedBy = {}, userKey } = req.body || {};
     if (!estimate || !estimate.line_items) {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
     }
@@ -576,6 +576,18 @@ router.post('/blueprint/proposal', async (req, res) => {
       ? confirmedScope.map(c => `- [${c.kind || '?'}] ${c.location ? c.location + ': ' : ''}${c.question} → ${c.answer}`).join('\n')
       : '(none — all scope was clear from the drawings)';
 
+    const pb = preparedBy && typeof preparedBy === 'object' ? preparedBy : {};
+    const preparedByLines = [
+      pb.name     && `Company: ${pb.name}`,
+      pb.contact  && `Contact: ${pb.contact}${pb.title ? ' (' + pb.title + ')' : ''}`,
+      pb.email    && `Email: ${pb.email}`,
+      pb.phone    && `Phone: ${pb.phone}`,
+      pb.address  && `Address: ${pb.address}`,
+      pb.license  && `License: ${pb.license}`,
+      pb.website  && `Website: ${pb.website}`,
+      pb.tagline  && `Tagline: ${pb.tagline}`,
+    ].filter(Boolean).join('\n') || '(no company info provided — proposal will use a generic header)';
+
     const systemPrompt = `You are an experienced construction estimator drafting a professional client-ready proposal for a general contractor. You write in clean, plain-English business prose — no marketing fluff, no exclamation marks.
 
 CRITICAL RULES:
@@ -588,9 +600,17 @@ CRITICAL RULES:
 Return the proposal in this structure:
 
 # Project Proposal — {Project Name}
+
+**Prepared by:** {Company name from preparedBy.name}
+{Contact name (Title)} · {Email} · {Phone}
+{License} · {Website}
+{Tagline if any, in italics}
+
 **Prepared for:** {Customer}
 **Date:** {Today}
 **Project address:** {address or "TBD"}
+
+(If no preparedBy info was provided, omit the "Prepared by" block entirely — don't invent placeholders.)
 
 ## Scope of Work
 2-4 sentence overview of what the contractor is doing, derived from the trades present in the estimate.
@@ -625,6 +645,9 @@ Any assumption notes from the estimate (waste %, GC overhead %, industry-avg vs 
 Standard signature/date block.`;
 
     const userPrompt = `Draft the proposal using these facts:
+
+PREPARED BY (the contractor — appears in header):
+${preparedByLines}
 
 CUSTOMER: ${customer || '(not provided)'}
 PROJECT: ${project || '(not provided)'}
@@ -734,7 +757,7 @@ ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
  */
 router.post('/blueprint/proposal/send', async (req, res) => {
   try {
-    const { to, cc, customer = '', project = '', html_body, total } = req.body || {};
+    const { to, cc, customer = '', project = '', html_body, total, preparedBy = {} } = req.body || {};
     if (!to || typeof to !== 'string') return res.status(400).json({ error: 'to (recipient email) is required' });
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.status(400).json({ error: 'recipient email looks invalid' });
     if (!html_body) return res.status(400).json({ error: 'html_body is required' });
@@ -766,12 +789,24 @@ router.post('/blueprint/proposal/send', async (req, res) => {
       ? `<p style="font-size:20px;font-weight:700;color:#0f0f1a;margin:0 0 16px">Total bid: $${(+total).toLocaleString()}</p>`
       : '';
 
+    // Use preparedBy for header + footer when provided; otherwise fall back to SG defaults.
+    const pbName    = (preparedBy.name    || 'Surprise Granite').toString();
+    const pbLicense = (preparedBy.license || 'AZ ROC #341113').toString();
+    const pbAddress = (preparedBy.address || '15464 W Aster Dr, Surprise AZ 85379').toString();
+    const pbPhone   = (preparedBy.phone   || '(602) 833-3189').toString();
+    const pbWebsite = (preparedBy.website || 'surprisegranite.com').toString();
+    const pbEmail   = (preparedBy.email   || '').toString();
+    const pbContact = (preparedBy.contact || '').toString();
+    const pbTitle   = (preparedBy.title   || '').toString();
+    const phoneTel  = pbPhone.replace(/[^0-9+]/g,'');
+    const websiteUrl = /^https?:\/\//.test(pbWebsite) ? pbWebsite : `https://${pbWebsite}`;
+
     const wrapped = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${escapeHtmlServer(subject)}</title></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
   <div style="max-width:780px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
     <div style="background:#1a1a2e;padding:24px 32px;border-bottom:3px solid #f9cb00">
-      <div style="color:#f9cb00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Surprise Granite · AZ ROC #341113</div>
+      <div style="color:#f9cb00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">${escapeHtmlServer(pbName)}${pbLicense ? ' · ' + escapeHtmlServer(pbLicense) : ''}</div>
       <div style="color:#fff;font-size:22px;font-weight:700;margin-top:4px;font-family:'Space Grotesk',sans-serif">Project Proposal</div>
     </div>
     <div style="padding:32px">
@@ -782,8 +817,9 @@ router.post('/blueprint/proposal/send', async (req, res) => {
       ${html_body}
       <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 16px">
       <p style="margin:0;color:#666;font-size:13px;line-height:1.6">
-        Questions? Reply to this email or call <a href="tel:+16028333189" style="color:#0f0f1a">(602) 833-3189</a>.<br>
-        <strong>Surprise Granite</strong> · 15464 W Aster Dr, Surprise AZ 85379 · <a href="https://www.surprisegranite.com" style="color:#0f0f1a">surprisegranite.com</a>
+        Questions? Reply to this email${pbPhone ? ` or call <a href="tel:${escapeHtmlServer(phoneTel)}" style="color:#0f0f1a">${escapeHtmlServer(pbPhone)}</a>` : ''}.<br>
+        <strong>${escapeHtmlServer(pbName)}</strong>${pbContact ? ' · ' + escapeHtmlServer(pbContact) + (pbTitle ? ', ' + escapeHtmlServer(pbTitle) : '') : ''}<br>
+        ${pbAddress ? escapeHtmlServer(pbAddress) + ' · ' : ''}<a href="${escapeHtmlServer(websiteUrl)}" style="color:#0f0f1a">${escapeHtmlServer(pbWebsite)}</a>
       </p>
     </div>
   </div>
