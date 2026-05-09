@@ -12966,6 +12966,14 @@
                 </svg>
                 <span>AI Scan</span>
               </button>
+              <button class="tool-btn" id="toolCleanupScene" onclick="cleanupImportedScene()" title="Clean up imported scene — re-flow AI-imported cabinets along their assigned walls, drop junk (fillers, end panels, scrap), surface unplaced items at top-left for manual placement" aria-label="Clean up imported scene">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                </svg>
+                <span>Clean Up</span>
+              </button>
             </div>
           </div>
         </div>
@@ -19047,6 +19055,138 @@
 
       return result;
     }
+
+    /**
+     * Clean up an AI-imported scene.
+     *
+     * After the AI scanner (or Bidding Tool handoff) drops cabinets in,
+     * the placement is wall-cursor-driven but two things tend to be off:
+     *   1. Cabinets that came back with no `wall` tag (or a guessed one)
+     *      pile up on "top".
+     *   2. Junk entries — fillers, end panels, very narrow scrap items
+     *      that aren't real boxes — clutter the scene.
+     *
+     * Cleanup walks every aiImported element, removes the junk, then re-flows
+     * each remaining cabinet against its assigned wall edge (snapped flush,
+     * no floating mid-room, no overlaps within a wall, ordered by aiOrderIndex
+     * when present).
+     */
+    function cleanupImportedScene() {
+      const aiElements = elements.filter(el => el.aiImported);
+      if (!aiElements.length) {
+        if (typeof showToast === 'function') showToast('No AI-imported elements to clean up.', 'info', 3000);
+        return;
+      }
+
+      // Junk filter — types that aren't real 3D objects, plus impossibly narrow widths
+      const JUNK_TYPES = /^(filler|end-panel|toe-kick|spacer|scribe|trim)/i;
+      const removed = [];
+      const keep = aiElements.filter(el => {
+        const tooNarrow = (el.aiWidthInches || el.width * 12) < 6;
+        const isJunk = JUNK_TYPES.test(el.type) || JUNK_TYPES.test(el.aiLabel || '');
+        if (tooNarrow || isJunk) { removed.push(el); return false; }
+        return true;
+      });
+      // Drop junk from the main elements array
+      removed.forEach(el => {
+        const idx = elements.indexOf(el);
+        if (idx >= 0) elements.splice(idx, 1);
+      });
+
+      // Group keepers by wall (defaulting missing walls to 'unplaced' so we
+      // surface them visibly instead of dumping on top)
+      const byWall = { top: [], bottom: [], left: [], right: [], island: [], unplaced: [] };
+      keep.forEach(el => {
+        const w = (el.aiWall || '').toLowerCase();
+        if (w && byWall[w]) byWall[w].push(el);
+        else byWall.unplaced.push(el);
+      });
+
+      // Sort each wall by aiOrderIndex, then by current x/y as fallback
+      Object.keys(byWall).forEach(w => {
+        byWall[w].sort((a, b) => {
+          const ai = a.aiOrderIndex ?? 999;
+          const bi = b.aiOrderIndex ?? 999;
+          if (ai !== bi) return ai - bi;
+          return (w === 'left' || w === 'right') ? (a.y - b.y) : (a.x - b.x);
+        });
+      });
+
+      // Re-flow each wall using a wall-cursor (mirrors the import-time logic)
+      const wallPad = 0.5;
+      const cursors = { top: wallPad, bottom: wallPad, left: wallPad, right: wallPad };
+
+      function reflow(wall, list) {
+        list.forEach(el => {
+          const widthFt = (el.aiWidthInches || el.width * 12) / 12;
+          const depthFt = (el.aiDepthInches || (el.height || 24) * 12) / 12;
+          if (wall === 'top') {
+            el.x = cursors.top;
+            el.y = 0;
+            el.width = widthFt;
+            el.height = depthFt;
+            cursors.top += widthFt;
+          } else if (wall === 'bottom') {
+            el.x = cursors.bottom;
+            el.y = roomDepth - depthFt;
+            el.width = widthFt;
+            el.height = depthFt;
+            cursors.bottom += widthFt;
+          } else if (wall === 'left') {
+            el.x = 0;
+            el.y = cursors.left;
+            el.width = depthFt;
+            el.height = widthFt;
+            cursors.left += widthFt;
+          } else if (wall === 'right') {
+            el.x = roomWidth - depthFt;
+            el.y = cursors.right;
+            el.width = depthFt;
+            el.height = widthFt;
+            cursors.right += widthFt;
+          }
+        });
+      }
+      reflow('top',    byWall.top);
+      reflow('bottom', byWall.bottom);
+      reflow('left',   byWall.left);
+      reflow('right',  byWall.right);
+
+      // Island: stack in the center, offset each below the previous
+      let islandY = roomDepth / 2 - 1.5;
+      byWall.island.forEach(el => {
+        const widthFt = (el.aiWidthInches || el.width * 12) / 12;
+        const depthFt = (el.aiDepthInches || (el.height || 24) * 12) / 12;
+        el.x = roomWidth / 2 - widthFt / 2;
+        el.y = islandY;
+        el.width = widthFt;
+        el.height = depthFt;
+        islandY += depthFt + 0.25;
+      });
+
+      // Unplaced (no wall tag): cluster at top-left in a column so they're
+      // visible and the user can drag them to the right wall manually.
+      let unplacedY = 0;
+      byWall.unplaced.forEach(el => {
+        el.x = 0;
+        el.y = unplacedY;
+        unplacedY += el.height + 0.1;
+        el.needsManualPlacement = true;
+      });
+
+      elementListDirty = true;
+      if (typeof update3DScene === 'function') update3DScene();
+      if (typeof requestRender === 'function') requestRender();
+      if (typeof renderCanvas === 'function') renderCanvas();
+
+      const summary = [
+        `${keep.length} re-placed`,
+        removed.length ? `${removed.length} junk removed` : null,
+        byWall.unplaced.length ? `${byWall.unplaced.length} unplaced (drag to assign wall)` : null,
+      ].filter(Boolean).join(' · ');
+      if (typeof showToast === 'function') showToast(`Scene cleaned: ${summary}`, 'success', 5000);
+    }
+    window.cleanupImportedScene = cleanupImportedScene;
 
     // Show import result modal
     function showImportResultModal(result) {

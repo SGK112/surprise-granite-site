@@ -519,14 +519,34 @@ For EACH CABINET, extract:
 - "height": Height in INCHES (e.g., 34.5 for base, 30 or 42 for wall, 84-96 for tall)
 - "wall": CRITICAL - Which wall: "top", "bottom", "left", "right", or "island"
 
-WALL POSITION IS CRITICAL FOR 3D LAYOUT:
-- Analyze the drawing to determine which wall each cabinet belongs to
-- If viewing an elevation, identify which wall it represents
-- If viewing a plan, position based on which edge cabinets are near
-- L-shaped layouts: Cabinets typically on "top" AND "left" OR "top" AND "right"
-- U-shaped layouts: Cabinets on "top", "left", AND "right"
-- Galley layouts: Cabinets on "top" AND "bottom" (parallel walls)
-- Peninsula: "top" wall cabinets with island extending into room
+WALL POSITION IS CRITICAL FOR 3D LAYOUT — be DELIBERATE, not lazy:
+- Analyze the drawing carefully to determine which wall each cabinet belongs to.
+- Cross-reference EVERY available signal: elevation reference markers ("/A2.1"),
+  grid lines, north arrow, room labels, window/door placement, sink/range
+  callouts, plumbing risers, electrical hookups.
+- If viewing an ELEVATION, identify which wall it represents from the title block
+  ("Wall 2 / North Elevation / Kitchen West Wall") — never guess.
+- If viewing a PLAN, position based on which edge of the room the cabinet sits
+  against. Use grid coordinates if shown.
+- If viewing a SCHEDULE only (no plan/elevation), use the cabinet's label/notes
+  ("KITCHEN WEST", "BAR ISLAND", "WALL 3") to infer wall.
+
+DO NOT default to "top" for ambiguous cabinets — that creates a pile-up on one
+wall in the 3D render. If you genuinely cannot tell which wall, OMIT the wall
+field entirely (just don't include "wall" in that cabinet object). Downstream
+code treats missing wall as "needs human placement" and stages it for manual
+review instead of silently dumping it on top.
+
+Common layouts (use as a sanity check, not a default):
+- L-shape: cabinets on TWO adjacent walls (top+left OR top+right OR bottom+left OR bottom+right)
+- U-shape: cabinets on THREE walls (top + both sides, or any 3-wall combo)
+- Galley: cabinets on TWO opposite walls (top+bottom OR left+right)
+- Single-wall: one wall only
+- Island: standalone — use "wall":"island"
+- Peninsula: cabinets on a wall + an island branch
+
+If a cabinet has a clear elevation reference but you can't map that elevation
+to a wall direction, OMIT wall — better to flag it than to guess wrong.
 
 RETURN THIS JSON:
 {
