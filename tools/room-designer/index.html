@@ -39729,7 +39729,21 @@
                        cat === 'fixtures' || cat === 'bathroom' ? 'fixtures' : 'other';
 
         if (categoryTotals[catKey]) {
-          categoryTotals[catKey].count++;
+          // Cabinets that exceed standard 36" width get broken into multiple
+          // physical boxes (calculateQuote stores this as el.boxCount). The
+          // summary used to count 1 per element regardless — fixed to use
+          // the real box count so a stretched 96" run shows as 3 cabinets,
+          // not 1.
+          let countDelta = 1;
+          if (catKey === 'cabinets') {
+            if (Number.isFinite(el.boxCount) && el.boxCount > 0) {
+              countDelta = el.boxCount;
+            } else if (el.width) {
+              const widthInches = el.width * 12;
+              if (widthInches > 36) countDelta = Math.ceil(widthInches / 36);
+            }
+          }
+          categoryTotals[catKey].count += countDelta;
           categoryTotals[catKey].total += price;
           if (catKey === 'countertops' || catKey === 'flooring') {
             categoryTotals[catKey].sqft += getElementSqft(el);
