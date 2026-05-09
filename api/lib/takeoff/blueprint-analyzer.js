@@ -153,7 +153,17 @@ If a cabinet says "Wall A" or "North", map it: Wall A/North = "top", Wall B/Sout
 ` : ''}
 `,
 
-  output_format: `Return ONLY valid JSON:
+  output_format: `══════════════════════════════════════════════════════════════
+ACCURACY OVER COMPLETENESS. The user would rather see "(unreadable)"
+than a plausible guess. Do NOT invent. Do NOT fill in from training data.
+Do NOT return template-perfect specs (e.g. "Caesarstone Frosty Carrina",
+"Sherwin Williams SW 7005", "Daltile Rittenhouse Square") unless those
+exact words are physically printed on THIS page. Filling in confident-
+sounding fabricated data is the worst possible outcome — worse than
+returning an empty array.
+══════════════════════════════════════════════════════════════
+
+Return ONLY valid JSON:
 {
   "rooms": [{
     "name": "Room name",
@@ -162,7 +172,7 @@ If a cabinet says "Wall A" or "North", map it: Wall A/North = "top", Wall B/Sout
     "layoutType": "L-shape|U-shape|galley|single-wall|island",
     "cabinets": [
       {
-        "label": "Cabinet code (B36, W3030, etc.)",
+        "label": "Cabinet code (B36, W3030, etc.) — MUST be visible on page",
         "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|corner-cabinet|island|drawer-base",
         "width": width in inches,
         "depth": depth in inches,
@@ -177,13 +187,21 @@ If a cabinet says "Wall A" or "North", map it: Wall A/North = "top", Wall B/Sout
   }],
   "materials_called_out": [
     {
-      "code": "tag exactly as written on the drawing (e.g. T1, AF1, P1, LAM1, WD1, F3, CT-1, FLR-2)",
+      "code": "tag exactly as printed (T1, AF1, P1, LAM1, WD1, F3, CT-1, FLR-2). If no code is visible, use \\"—\\".",
       "category": "quartz|granite|stone|tile|flooring|cabinet|millwork|paint|wallcovering|lighting|plumbing|hardware|other",
-      "spec": "FULL spec line VERBATIM — brand + series/color + size + finish + thickness + grout/adhesive (e.g. 'Daltile American Olean Crafter Sketch CF18 24x24, Mapei Charcoal #5047 grout 1/8\"')",
-      "location": "where on the page or which room it's spec'd for (optional but useful)"
+      "spec": "FULL spec line VERBATIM as printed on this page. If a row's brand or SKU is partially obscured, leave that part blank or write \\"(unreadable)\\" — DO NOT fill in what you think it might be.",
+      "location": "where on the page (e.g. 'finish schedule row 3', 'restroom elevation A4')",
+      "verbatim_source": "the exact 1-2 line excerpt of text you read from the page that this entry is based on. If you cannot point to specific text, do not include this material."
     }
   ],
-  "confidence": "high|medium|low"
+  "missing_or_unreadable": [
+    {
+      "what": "describe what you can see exists but cannot read clearly",
+      "where": "page region (e.g. 'finish schedule rows 4-7', 'right side of page')",
+      "reason": "why unreadable — too small, partially covered, low resolution, etc."
+    }
+  ],
+  "confidence": "high|medium|low — high only if you read every spec verbatim, low if you skipped/guessed"
 }`,
 
   rules: `
@@ -217,13 +235,33 @@ EXTRACTION RULES:
    - code: tag exactly as printed (T1, AF1, P1, LAM1, WD1, CT-1, F3). Use "—" if no code.
    - category: tile, flooring (sheet vinyl/LVP/wood), quartz, granite, stone (quartzite/marble),
      cabinet, millwork (trim/wood/laminate face), paint, wallcovering, lighting, plumbing, hardware, other.
-   - spec: FULL line VERBATIM — brand + series + color + size + finish + grout/base.
+   - spec: FULL line VERBATIM. Brand + series + color + size + finish + grout/base.
      Good: "Daltile American Olean Crafter Sketch CF18, 24x24, Mapei Charcoal #5047 grout 1/8\""
      Bad: "Tile" or "Quartz countertop" (missing SKU/brand).
-   - Never invent. If page has no schedule, return materials_called_out: [].
+   - verbatim_source: the exact text excerpt you read this entry from. If you
+     cannot quote the source text, omit the entry — do not include it.
    - If the page is a finish/material schedule with no cabinets, return rooms: []
      and put everything in materials_called_out. Do not hallucinate cabinets
      from finish-schedule rows.
+
+6. NEVER FABRICATE. The most common failure mode is filling in plausible
+   specs from training data when the actual text is hard to read. Forbidden:
+   - Returning the same spec for different codes (e.g. FLR-1, FLR-2, FLR-3
+     all mapped to identical text). Each code should reflect what's actually
+     printed for that row. If they truly are identical, that's fine — but
+     if you only saw one and copied to the others, that's fabrication.
+   - Returning "default" specs you remember from other architecture sets
+     (Caesarstone Frosty Carrina, Daltile Rittenhouse Square, SW 7005
+     Pure White) unless those exact words are visible on THIS page.
+   - Inventing a category to fit a guess. If you can see the code "CT-1"
+     but cannot read the spec, return code: "CT-1", category: "other",
+     spec: "(unreadable - manual review)".
+
+7. EXPLICITLY ENUMERATE GAPS. If you can see a schedule has 12 rows but
+   you can only confidently read 8, return the 8 you read AND add an entry
+   to missing_or_unreadable describing the rows you skipped. The user would
+   rather see "rows 9-12 unreadable" than 4 fake rows. Empty arrays are
+   acceptable; fake entries are not.
 `
 };
 
