@@ -1982,6 +1982,11 @@ flooring_lvp,5,3"></textarea>
 
     try {
       const arrayBuf = await file.arrayBuffer();
+      // Hash the PDF bytes ONCE on load. Cache key for each page extraction
+      // becomes `${pdfHash}:${pageNum}:${scale}` — stable across rasterize
+      // runs (canvas rendering has sub-pixel variance that defeats hashing
+      // the rendered JPEG).
+      window.__currentPdfHash = await sha256HexBytes(arrayBuf);
       pdfDoc = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
       sheets = [];
       for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -2106,21 +2111,23 @@ flooring_lvp,5,3"></textarea>
     const perPage = [];
     let done = 0;
     let cacheHits = 0;
+    const RASTER_SCALE = 1.6;
+    const pdfHash = window.__currentPdfHash || 'no-pdf-hash';
     for (const s of selected) {
       try {
-        const jpegDataUrl = await rasterizePage(s.pageNum, 1.6);
-        // Page-content-hash cache: same image bytes → same extraction.
-        // Defangs GPT-4o vision non-determinism (same PDF was returning
-        // slightly different numbers between runs without this).
-        const pageHash = await sha256Hex(jpegDataUrl);
-        let result = getPageCache(pageHash);
+        // Cache key: PDF bytes hash + page number + raster scale. Stable
+        // across rasterize runs regardless of canvas sub-pixel variance.
+        const cacheKey = `${pdfHash}:${s.pageNum}:${RASTER_SCALE}`;
+        let result = getPageCache(cacheKey);
         if (result) {
           cacheHits++;
         } else {
+          // Cache miss — rasterize and call AI
+          const jpegDataUrl = await rasterizePage(s.pageNum, RASTER_SCALE);
           result = await callBlueprintApi(jpegDataUrl, s);
-          setPageCache(pageHash, result);
+          setPageCache(cacheKey, result);
         }
-        perPage.push({ sheet: s, result, ok: true, cacheHit: !!getPageCache(pageHash) && cacheHits > 0 });
+        perPage.push({ sheet: s, result, ok: true });
       } catch (err) {
         console.error('Page', s.pageNum, 'failed:', err);
         perPage.push({ sheet: s, error: err.message || String(err), ok: false });
@@ -2154,6 +2161,10 @@ flooring_lvp,5,3"></textarea>
   async function sha256Hex(str) {
     const enc = new TextEncoder().encode(str);
     const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function sha256HexBytes(arrayBuf) {
+    const buf = await crypto.subtle.digest('SHA-256', arrayBuf);
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
