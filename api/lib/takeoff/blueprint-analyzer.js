@@ -171,6 +171,14 @@ If a cabinet says "Wall A" or "North", map it: Wall A/North = "top", Wall B/Sout
     ],
     "island": {"width": inches, "depth": inches} or null
   }],
+  "materials_called_out": [
+    {
+      "code": "tag exactly as written on the drawing (e.g. T1, AF1, P1, LAM1, WD1, F3, CT-1, FLR-2)",
+      "category": "quartz|granite|stone|tile|flooring|cabinet|millwork|paint|wallcovering|lighting|plumbing|hardware|other",
+      "spec": "FULL spec line VERBATIM — brand + series/color + size + finish + thickness + grout/adhesive (e.g. 'Daltile American Olean Crafter Sketch CF18 24x24, Mapei Charcoal #5047 grout 1/8\"')",
+      "location": "where on the page or which room it's spec'd for (optional but useful)"
+    }
+  ],
   "confidence": "high|medium|low"
 }`,
 
@@ -199,6 +207,43 @@ EXTRACTION RULES:
 4. CABINET SEQUENCE - Maintain order:
    - Extract cabinets left-to-right as they appear
    - This preserves the layout sequence
+
+5. MATERIALS CALLED OUT — read EVERY row of any finish schedule, finish legend,
+   millwork legend, fixture schedule, hardware schedule, or material legend
+   visible on this page. Output one entry per distinct spec'd material.
+
+   - code: the tag/symbol exactly as printed (T1, AF1, P1, LAM1, WD1, CT-1,
+     FLR-2, F3, etc). Do NOT invent codes. If a row has no code, use "—".
+   - category: pick the closest match. Common cases:
+       * Daltile/MSI/Florida Tile/porcelain/ceramic = "tile"
+       * Sheet vinyl (ALTRO, Armstrong) = "flooring"
+       * LVP/SPC/wood plank = "flooring"
+       * Quartz (Caesarstone, Cambria, MSI Q) = "quartz"
+       * Granite slab = "granite"
+       * Quartzite/marble slab = "stone"
+       * Cabinet boxes/casework = "cabinet"
+       * Trim/shiplap/wood paneling/oak/laminate face = "millwork"
+       * Sherwin Williams / Dunn-Edwards / Benjamin Moore = "paint"
+       * Wolf Gordon / Maharam wallpaper or vinyl wallcovering = "wallcovering"
+       * Light fixtures (Nora, Lights.com, Visual Comfort) = "lighting"
+       * Faucets/toilets/sinks = "plumbing"
+   - spec: the FULL spec verbatim. Include brand, product line, color,
+     dimensions, finish, thickness, grout color, integral base, etc.
+     Examples that are GOOD:
+       "Daltile American Olean Crafter Sketch CF18, 24x24, Mapei Charcoal #5047 grout, 1/8\""
+       "ALTRO Reliance 25 Storm sheet vinyl with 6\" integral base"
+       "Sherwin Williams SW 7005 Pure White, eggshell at dining / semi-gloss at restroom"
+       "Formica 5794-NG Beige Elm laminate, retail cabinet & wainscot"
+       "Nora NLCBC2-451WW 4\" Cobalt LED recessed can, white reflector trim, 12W 3000K"
+     Examples that are BAD (do not output):
+       "Tile" (no brand/sku)
+       "Quartz countertop" (no brand/color/thickness)
+       "industry average flooring" (you are inventing)
+   - NEVER invent SKUs, brands, or codes that are not visible on the page.
+   - If the page has no schedule/legend, return materials_called_out: [].
+   - This is the single most important extraction for accurate pricing —
+     a coffee shop with Daltile floors is NOT the same as a residential
+     kitchen with quartz, and the estimator can only price what you return.
 `
 };
 
