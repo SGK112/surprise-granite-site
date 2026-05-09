@@ -3483,6 +3483,47 @@ flooring_lvp,5,3"></textarea>
     }
   }
 
+  // Spot vendors named in extracted material specs that the user hasn't
+  // uploaded a catalog for. Returns a deduped, frequency-sorted list of
+  // vendor names so we can suggest "upload Daltile / MSI / Wolf Gordon"
+  // instead of leaving the user on industry-avg fallback pricing.
+  function detectMissingVendors(materials) {
+    if (!Array.isArray(materials) || !materials.length) return [];
+    // Common vendor names that show up in finish/millwork legends. Order
+    // matters — longer / more specific patterns first so "Wolf Gordon"
+    // matches before any single-word "wolf".
+    const knownVendors = [
+      'Daltile', 'American Olean', 'MSI', 'Mohawk', 'Shaw', 'Armstrong',
+      'Florida Tile', 'Marazzi', 'Crossville', 'Porcelanosa', 'Akdo',
+      'Caesarstone', 'Cambria', 'Silestone', 'Hanstone', 'Viatera', 'MSI Q',
+      'Wolf Gordon', 'Maharam', 'Knoll Textiles', 'Kvadrat',
+      'Sherwin Williams', 'Dunn Edwards', 'Benjamin Moore',
+      'Formica', 'Wilsonart', 'Pionite',
+      'Nora', 'Lights.com', 'Visual Comfort', 'Tech Lighting', 'Hubbardton Forge',
+      'Mitzi', 'Hudson Valley',
+      'ALTRO', 'Mannington', 'Tarkett',
+      'Bobrick', 'Moen', 'Kohler', 'Delta', 'Toto', 'Koala Kare', 'Hospeco',
+      'Mapei', 'Laticrete', 'Custom Building Products',
+    ];
+    // Build a set of vendor names already covered by a saved catalog
+    const haveCats = Object.values(getCatalogs()).filter(c => c.enabled !== false);
+    const haveVendors = new Set(haveCats.map(c => (c.vendor || '').toLowerCase().trim()).filter(Boolean));
+    const counts = new Map();
+    for (const m of materials) {
+      const spec = String(m?.spec || '').toLowerCase();
+      if (!spec) continue;
+      for (const v of knownVendors) {
+        const vLower = v.toLowerCase();
+        if (!spec.includes(vLower)) continue;
+        // Already have a catalog whose vendor name contains (or equals) this brand
+        const covered = [...haveVendors].some(hv => hv.includes(vLower) || vLower.includes(hv));
+        if (covered) continue;
+        counts.set(v, (counts.get(v) || 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([v]) => v);
+  }
+
   // Consolidated "needs review" panel. Aggregates every signal that the bid
   // is not yet ready to send to a customer:
   //   - Materials with no spec / TBD / by-owner placeholders
@@ -3556,6 +3597,22 @@ flooring_lvp,5,3"></textarea>
       });
     }
 
+    // Vendors mentioned in materials but missing from saved catalogs.
+    // E.g. spec "Daltile American Olean Crafter Sketch CF18" with no Daltile
+    // catalog uploaded → suggest "Upload your Daltile price sheet" so the
+    // user can convert industry-avg fallback into real wholesale pricing.
+    const missingVendors = detectMissingVendors(mats);
+    if (missingVendors.length) {
+      issues.push({
+        kind: 'missing_vendor',
+        icon: '📚',
+        count: missingVendors.length,
+        title: `${missingVendors.length} vendor${missingVendors.length>1?'s':''} spec'd but no price sheet uploaded`,
+        detail: missingVendors.slice(0,4).join(', '),
+        action: 'Upload these vendors in 📚 Vendor Catalogs to swap industry avg for your real pricing.',
+      });
+    }
+
     if (!issues.length) {
       panel.hidden = true;
       panel.innerHTML = '';
@@ -3608,7 +3665,7 @@ flooring_lvp,5,3"></textarea>
       target = document.getElementById('aiMissingPanel');
     } else if (kind === 'extraction_failed') {
       target = document.getElementById('parseProgress') || document.getElementById('step2');
-    } else if (kind === 'avg_fallback') {
+    } else if (kind === 'avg_fallback' || kind === 'missing_vendor') {
       // Open the vendor catalogs modal — fastest path to fix industry-avg
       // pricing is uploading a real vendor price sheet.
       target = document.getElementById('estTableWrap');
