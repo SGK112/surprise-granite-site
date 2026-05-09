@@ -338,31 +338,38 @@
     .proposal-body .num,.proposal-body td.num{text-align:right;font-variant-numeric:tabular-nums}
     .proposal-body strong{color:#0f0f1a}
     @media print {
-      /* Hide everything by default (visibility, not display, so layout is preserved) */
-      body * { visibility: hidden !important; }
-      /* Then make the proposal doc and everything inside it visible */
-      .proposal-doc, .proposal-doc * { visibility: visible !important; }
-      /* Yank the proposal doc out of the page flow so it prints on a clean page */
-      .proposal-doc {
-        position: absolute !important;
-        left: 0; top: 0; right: 0;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #fff !important;
-      }
-      .proposal-body {
-        box-shadow: none !important;
-        padding: 24px !important;
-        min-height: auto !important;
-      }
-      /* Hide the toolbars / send row / share row / status — only the doc body should print */
+      /* Nuke everything at the top level — including injected unified-nav,
+         hero, dinner banner, modals, footer, etc. */
+      body > * { display: none !important; }
+
+      /* Carve a path back to the proposal doc */
+      body > main { display: block !important; padding: 0 !important; max-width: none !important; }
+      body > main > *:not(#step5) { display: none !important; }
+      #step5 { display: block !important; background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+      #step5 > *:not(.proposal-doc) { display: none !important; }
+      .proposal-doc { display: block !important; }
+
+      /* Inside the proposal doc, hide everything that's not the printable body */
       .proposal-toolbar,
       .proposal-actions,
       .proposal-send-row,
       .proposal-share-row,
       .prop-send-status { display: none !important; }
-      /* Tame any backgrounds that bleed onto print */
-      body, html { background: #fff !important; }
+
+      /* The body itself: light bg, comfortable padding, no shadow */
+      .proposal-body {
+        display: block !important;
+        background: #fff !important;
+        color: #1a1a2e !important;
+        box-shadow: none !important;
+        padding: 24px !important;
+        min-height: auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+
+      /* Force light page background overall — kill the dark theme */
+      html, body { background: #fff !important; color: #1a1a2e !important; }
     }
 
     .estimate-notes{font-size:12px;color:var(--text-secondary);background:var(--sg-darker);border:1px solid var(--border);border-left:3px solid var(--sg-blue);border-radius:6px;padding:12px 16px;line-height:1.6}
