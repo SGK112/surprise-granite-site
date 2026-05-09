@@ -170,6 +170,42 @@ function pickMaterial(materials, predicate) {
   return materials.find(m => m && predicate(m));
 }
 
+// Push one combined line, OR — when both material and labor rates are
+// non-zero — push a material-supply line + a labor-install line as a pair.
+// Splitting is enabled by default: GCs want to price-shop material and labor
+// separately, mark either as owner-supplied, swap subs on the labor line, or
+// send the material list to a vendor for a quote. Same total cost either way.
+//
+// Each split line keeps category/trade/code/qty/unit/ordering identical so the
+// trade rollup and ordering math (slabs, cartons) still aggregate correctly.
+function buildSplit(opts, { splitMatLab = true } = {}) {
+  const matRate = Number(opts.matRate) || 0;
+  const labRate = Number(opts.labRate) || 0;
+  // No real split needed if one side is already zero.
+  if (!splitMatLab || matRate === 0 || labRate === 0) {
+    return [lineItem(opts)];
+  }
+  const matLine = lineItem({
+    ...opts,
+    description: `${opts.description} — material`,
+    matRate,
+    labRate: 0,
+    extra: { ...(opts.extra || {}), bid_split: 'material', paired_with: opts.rateKey || opts.category },
+  });
+  // Field hours are an attribute of labor, not material — zero out the
+  // material-side hours so they don't double-count in the rollup.
+  matLine.hours = 0;
+  const labLine = lineItem({
+    ...opts,
+    description: `${opts.description} — labor (install)`,
+    matRate: 0,
+    labRate,
+    ordering: null, // ordering math (slabs, cartons) belongs to the material line only
+    extra: { ...(opts.extra || {}), bid_split: 'labor', paired_with: opts.rateKey || opts.category },
+  });
+  return [matLine, labLine];
+}
+
 function lineItem({ category, trade, description, code, qty, unit, matRate, labRate, source, selfPerform, ordering, rateKey, crewRate, extra }) {
   const matCost = Math.round(qty * matRate);
   const labCost = Math.round(qty * labRate);
@@ -236,9 +272,18 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
 
   const wasteFor = key => (wasteOverride !== null ? wasteOverride : (WASTE_BY_CATEGORY[key] ?? 0.10));
 
+  // splitMatLab: emit two line items per trade (material + labor) instead of
+  // one combined line. Default true — GCs typically want them apart so they
+  // can price-shop materials, hire labor subs separately, or mark either as
+  // owner-supplied. Set options.splitMatLab=false to keep the legacy combined view.
+  const splitMatLab = options.splitMatLab !== false;
+
   const lineItems = [];
   const notes = [];
   const num = v => { const n = +v; return Number.isFinite(n) ? n : 0; };
+
+  // Helper that pushes either 1 combined or 2 split lines per the option.
+  const pushLine = (opts) => lineItems.push(...buildSplit(opts, { splitMatLab }));
 
   // ---- Countertop slab ----
   const ctSqft = num(takeoff.countertop_sqft);
@@ -272,7 +317,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       ? 'My Pricing (saved override)'
       : (hit ? `SG catalog (${hit.confidence} match: ${hit.matchedOn})` : 'industry avg (Phoenix mid-range)');
 
-    lineItems.push(lineItem({
+    pushLine({
       category: 'countertop',
       trade: 'countertops',
       description,
@@ -292,7 +337,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
         catalog_id: hit?.item?.id || null,
         catalog_brand: hit?.item?.brand || null,
       },
-    }));
+    });
 
     if (!ctMat) {
       notes.push(`No quartz/granite/marble spec found in materials — defaulted to ${refined} @ industry avg. Edit the Materials table to refine.`);
@@ -305,7 +350,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
   const ctLf = num(takeoff.countertop_lf);
   if (ctLf > 0) {
     const rates = ratesFor('edge_eased');
-    lineItems.push(lineItem({
+    pushLine({
       category: 'countertop_edge',
       trade: 'countertops',
       description: 'Edge profile — eased (bullnose +$6/lf, ogee +$10/lf)',
@@ -316,7 +361,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       source: rates._override ? 'My Pricing' : 'industry avg',
       selfPerform: 'self',
       rateKey: 'edge_eased', crewRate,
-    }));
+    });
   }
 
   // ---- Cabinets (install) ----
@@ -327,7 +372,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const refined = cabMat ? (refineCategory(cabMat.spec, cabMat.category) || 'cabinet_stock') : 'cabinet_stock';
     const rateKey = `${refined}_install`;
     const rates = ratesFor(rateKey).labor != null ? ratesFor(rateKey) : ratesFor('cabinet_stock_install');
-    lineItems.push(lineItem({
+    pushLine({
       category: 'cabinet',
       trade: 'cabinets',
       description: cabMat?.spec || `Cabinets — ${refined.replace(/_/g,' ')} (supply + install)`,
@@ -340,7 +385,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       selfPerform: 'self',
       rateKey, crewRate,
       extra: { cabinet_count: cabCount, owner_supplies_toggle: true },
-    }));
+    });
     if (!cabMat) {
       notes.push('Cabinet style/brand not specified on plans — assumed stock supply + install. Edit the cabinet line if owner supplies, or refine the spec for accurate pricing.');
     }
@@ -356,7 +401,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const qty = flSqft * (1 + wf);
     const codeOverride = flMat?.code ? matOverrides[flMat.code] : null;
     const matRate = codeOverride ? Number(codeOverride.material) : rates.material;
-    lineItems.push(lineItem({
+    pushLine({
       category: 'flooring',
       trade: 'flooring',
       description: codeOverride?.source || flMat?.spec || refined.replace(/_/g, ' '),
@@ -369,7 +414,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       selfPerform: 'sub',
       rateKey: refined, crewRate,
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
-    }));
+    });
   }
 
   // ---- Tile ----
@@ -383,7 +428,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     const cartons = Math.ceil(qty / tileSfPerCarton);
     const codeOverride = tileMat?.code ? matOverrides[tileMat.code] : null;
     const matRate = codeOverride ? Number(codeOverride.material) : rates.material;
-    lineItems.push(lineItem({
+    pushLine({
       category: 'tile',
       trade: 'tile',
       description: codeOverride?.source || tileMat?.spec || 'Tile (assumed floor — adjust for wall/backsplash)',
@@ -396,7 +441,7 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       selfPerform: 'sub',
       rateKey: refined, crewRate,
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
-    }));
+    });
   }
 
   // ---- General Conditions (GC overhead) ----
