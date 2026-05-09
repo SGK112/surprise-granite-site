@@ -233,6 +233,23 @@
     .materials-table .row-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
     .materials-table .row-del:hover{color:var(--sg-red);background:rgba(239,68,68,.08)}
 
+    .questions-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+    .question-row{padding:14px 16px;background:var(--sg-darker);border:1px solid var(--border);border-left:3px solid var(--sg-orange);border-radius:8px;display:grid;grid-template-columns:1fr;gap:8px}
+    .question-row.answered{border-left-color:#4ade80;opacity:.85}
+    .question-row.skipped{border-left-color:#6b7280;opacity:.6}
+    .q-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .q-kind{font-size:9px;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:3px;font-weight:700;background:rgba(249,115,22,.18);color:#fb923c}
+    .q-loc{font-size:11px;color:var(--text-muted);font-family:'Menlo',monospace}
+    .q-pages{font-size:10px;color:var(--text-muted);margin-left:auto}
+    .q-text{font-size:14px;color:#fff;line-height:1.5}
+    .q-suggested{font-size:11px;color:var(--text-muted);font-style:italic}
+    .q-answer-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .q-answer-row input{flex:1;min-width:200px;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px}
+    .q-answer-row input:focus{outline:none;border-color:var(--sg-blue)}
+    .q-answer-row .btn-tiny{padding:6px 10px;font-size:11px;border-radius:5px}
+    .q-answered{font-size:13px;color:#4ade80;font-weight:600}
+    .q-answered::before{content:"✓ ";color:#4ade80}
+
     .estimate-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;padding:14px;background:var(--sg-darker);border:1px solid var(--border);border-radius:8px}
     .estimate-controls label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600}
     .estimate-controls select,.estimate-controls input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:#fff;padding:8px 10px;font-size:13px}
@@ -516,6 +533,12 @@
         <span class="estimate-meta" id="estimateMeta"></span>
       </div>
       <div class="estimate-notes" id="estNotes"></div>
+      <div id="questionsBlock" hidden>
+        <h3 class="materials-title">Questions for human review</h3>
+        <div class="materials-hint" id="questionsHint">The AI flagged items that need a decision before the bid is final. Answer each and your answers will appear in the proposal as confirmed scope.</div>
+        <div class="questions-list" id="questionsList"></div>
+      </div>
+
       <div class="row-actions" style="margin-top:18px" id="estActions" hidden>
         <button class="btn btn-primary" id="btnGenerateProposal">Generate proposal →</button>
         <button class="btn" id="btnExportCsv">Export CSV</button>
@@ -1127,6 +1150,7 @@ flooring_lvp,5,3"></textarea>
       lastEstimate: window.__lastEstimate || null,
       lastProposalMarkdown: window.__lastProposalMarkdown || null,
       lastCoverInfo: window.__lastCoverInfo || null,
+      lastQuestions: window.__lastQuestions || null,
       perPage: window.__lastPerPage || null,
       stages: {
         index: sheets.length > 0,
@@ -1173,6 +1197,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastEstimate = p.lastEstimate || null;
     window.__lastProposalMarkdown = p.lastProposalMarkdown || null;
     window.__lastCoverInfo = p.lastCoverInfo || null;
+    window.__lastQuestions = p.lastQuestions || null;
     window.__lastPerPage = p.perPage || null;
     window.__lastSourceLabel = p.source || '';
 
@@ -1192,6 +1217,7 @@ flooring_lvp,5,3"></textarea>
       $('step3').hidden = false;
       renderTotalsFromCache();
       if (window.__lastMaterials?.length) renderMaterials();
+      if (window.__lastQuestions?.length) renderQuestions();
       if (window.__lastPerPage) renderPerPage(window.__lastPerPage);
       $('hExtracted').textContent = (window.__lastPerPage || []).filter(p => p.ok).length;
     }
@@ -1776,6 +1802,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastEstimate = null;
     window.__lastProposalMarkdown = null;
     window.__lastCoverInfo = null;
+    window.__lastQuestions = null;
     window.__lastPerPage = null;
 
     $('parseError').hidden = true;
@@ -1924,9 +1951,148 @@ flooring_lvp,5,3"></textarea>
     window.__lastPerPage = perPage;
     renderTotals(perPage);
     renderMaterials(perPage);
+    renderQuestions(perPage);
     renderPerPage(perPage);
     $('hExtracted').textContent = perPage.filter(p => p.ok).length;
     autoSave();
+  }
+
+  // ---- Questions panel ----
+  // Aggregate questions from per-page extraction results, dedupe near-duplicates
+  // by (kind + location), and render as an answerable list.
+  function aggregateQuestions(perPage) {
+    const byKey = new Map();
+    for (const p of perPage) {
+      if (!p.ok || !p.result) continue;
+      const list = Array.isArray(p.result.questions) ? p.result.questions
+                 : Array.isArray(p.result.review_questions) ? p.result.review_questions
+                 : [];
+      for (const q of list) {
+        if (!q || !q.question) continue;
+        const kind = String(q.kind || 'other').toLowerCase();
+        const location = String(q.location || '').trim();
+        const question = String(q.question).trim();
+        const suggested = String(q.suggested_answer || '').trim();
+        const key = `${kind}|${location.toLowerCase()}|${question.slice(0,60).toLowerCase()}`;
+        const existing = byKey.get(key);
+        if (existing) {
+          if (!existing.sources.find(s => s.sheetNum === p.sheet.sheetNum)) {
+            existing.sources.push(p.sheet);
+          }
+        } else {
+          // Try to preserve any existing answer the user already gave (on a re-extract)
+          const prior = (window.__lastQuestions || []).find(x => x.key === key);
+          byKey.set(key, {
+            key, kind, location, question,
+            suggested_answer: suggested,
+            answer: prior?.answer || '',
+            status: prior?.status || 'open', // open | answered | skipped
+            sources: [p.sheet],
+          });
+        }
+      }
+    }
+    return [...byKey.values()];
+  }
+
+  function renderQuestions(perPage) {
+    if (perPage) window.__lastQuestions = aggregateQuestions(perPage);
+    const qs = window.__lastQuestions || [];
+    const block = $('questionsBlock');
+    const list = $('questionsList');
+    if (!qs.length) { block.hidden = true; return; }
+    block.hidden = false;
+    const open = qs.filter(q => q.status === 'open').length;
+    $('questionsHint').textContent = open > 0
+      ? `${open} open question${open>1?'s':''} need a decision before the bid is final. Answers will appear in the proposal as confirmed scope.`
+      : `All ${qs.length} questions answered. They'll appear in the proposal as confirmed scope.`;
+
+    list.innerHTML = qs.map((q, i) => {
+      const sources = q.sources.map(s => s.sheetNum).slice(0, 3).join(', ')
+        + (q.sources.length > 3 ? ', +' + (q.sources.length - 3) : '');
+      if (q.status === 'answered') {
+        return `
+          <div class="question-row answered" data-i="${i}">
+            <div class="q-meta">
+              <span class="q-kind">${escapeHtml(q.kind.replace(/_/g,' '))}</span>
+              <span class="q-loc">${escapeHtml(q.location || '—')}</span>
+              <span class="q-pages">from ${escapeHtml(sources)}</span>
+            </div>
+            <div class="q-text">${escapeHtml(q.question)}</div>
+            <div class="q-answered">${escapeHtml(q.answer)}</div>
+            <div class="q-answer-row">
+              <button class="btn btn-tiny" data-act="reopen" data-i="${i}" type="button">Edit</button>
+              <button class="btn btn-tiny btn-ghost" data-act="skip" data-i="${i}" type="button">N/A</button>
+            </div>
+          </div>`;
+      }
+      if (q.status === 'skipped') {
+        return `
+          <div class="question-row skipped" data-i="${i}">
+            <div class="q-meta">
+              <span class="q-kind">${escapeHtml(q.kind.replace(/_/g,' '))}</span>
+              <span class="q-loc">${escapeHtml(q.location || '—')}</span>
+              <span class="q-pages">from ${escapeHtml(sources)}</span>
+            </div>
+            <div class="q-text">${escapeHtml(q.question)}</div>
+            <div class="q-answered" style="color:#9ca3af">marked N/A</div>
+            <div class="q-answer-row">
+              <button class="btn btn-tiny" data-act="reopen" data-i="${i}" type="button">Reopen</button>
+            </div>
+          </div>`;
+      }
+      // Open
+      return `
+        <div class="question-row" data-i="${i}">
+          <div class="q-meta">
+            <span class="q-kind">${escapeHtml(q.kind.replace(/_/g,' '))}</span>
+            <span class="q-loc">${escapeHtml(q.location || '—')}</span>
+            <span class="q-pages">from ${escapeHtml(sources)}</span>
+          </div>
+          <div class="q-text">${escapeHtml(q.question)}</div>
+          ${q.suggested_answer ? `<div class="q-suggested">Suggested: ${escapeHtml(q.suggested_answer)}</div>` : ''}
+          <div class="q-answer-row">
+            <input type="text" data-i="${i}" placeholder="Type your answer or accept the suggestion" value="${escapeHtml(q.suggested_answer || '')}">
+            <button class="btn btn-primary btn-tiny" data-act="save" data-i="${i}" type="button">Save</button>
+            <button class="btn btn-tiny" data-act="skip" data-i="${i}" type="button">N/A</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Wire actions
+    list.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.i;
+        const q = qs[i];
+        if (!q) return;
+        if (btn.dataset.act === 'save') {
+          const inp = list.querySelector(`input[data-i="${i}"]`);
+          q.answer = (inp?.value || q.suggested_answer || '').trim();
+          q.status = q.answer ? 'answered' : 'open';
+        } else if (btn.dataset.act === 'skip') {
+          q.status = 'skipped';
+          q.answer = '';
+        } else if (btn.dataset.act === 'reopen') {
+          q.status = 'open';
+        }
+        renderQuestions(); // redraw from cached qs
+        autoSave();
+      });
+    });
+    // Enter inside an input = save
+    list.querySelectorAll('input[data-i]').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const i = +inp.dataset.i;
+          const q = qs[i];
+          q.answer = inp.value.trim();
+          q.status = q.answer ? 'answered' : 'open';
+          renderQuestions();
+          autoSave();
+        }
+      });
+    });
   }
 
   // ---- Materials aggregation ----
@@ -2031,6 +2197,10 @@ flooring_lvp,5,3"></textarea>
       'spec = the FULL spec line VERBATIM (brand + series + color + size + finish + thickness). ' +
       'Examples: {"code":"CT-1","category":"quartz","spec":"Caesarstone 5141 Frosty Carrina, polished, 3cm"}, {"code":"FLR-2","category":"tile","spec":"Daltile DM12 12x24 porcelain matte"}. ' +
       'If no codes appear, return materials_called_out: []. NEVER invent codes or specs that are not visible on the sheet.',
+      'CRITICAL — ALSO return questions: an array of items where the drawing is ambiguous, has TBD/NIC/by-others/owner-supplied callouts, conflicts with another assumption, or otherwise needs human clarification. ' +
+      'Format: [{"kind":"material_tbd|quantity_unclear|scope_edge|conflict|allowance_needed|exclusion_check","location":"e.g. CT-2 row in finish schedule","question":"plain-English question","suggested_answer":"a sensible default the GC would assume"}]. ' +
+      'Examples: {"kind":"material_tbd","location":"CT-2","question":"Bar countertop spec listed as TBD — what material?","suggested_answer":"3cm quartz to match CT-1 unless specified otherwise"}, {"kind":"scope_edge","location":"backsplash 4\\\" upturn","question":"Is the 4\\\" backsplash upturn included in countertop scope?","suggested_answer":"yes, included"}, {"kind":"allowance_needed","location":"FLR-3","question":"Tile selection deferred to owner — use an allowance?","suggested_answer":"$8/sf allowance"}. ' +
+      'Be conservative — only flag REAL ambiguities. If the drawing is clear, return questions: []. Never ask about things that are obvious from the spec.',
     ].join(' ');
 
     const resp = await fetch(API_BASE + '/api/ai/blueprint', {
@@ -2462,6 +2632,9 @@ flooring_lvp,5,3"></textarea>
 
     try {
       $('propBar').style.width = '40%';
+      const answeredQs = (window.__lastQuestions || [])
+        .filter(q => q.status === 'answered' && q.answer)
+        .map(q => ({ kind: q.kind, location: q.location, question: q.question, answer: q.answer }));
       const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal', {
         method: 'POST',
         headers: aiHeaders(),
@@ -2469,6 +2642,7 @@ flooring_lvp,5,3"></textarea>
           estimate: est,
           customer, project, address,
           materials: window.__lastMaterials || [],
+          confirmedScope: answeredQs,
         }),
       });
       $('propBar').style.width = '85%';
@@ -2839,6 +3013,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastEstimate = null;
     window.__lastProposalMarkdown = null;
     window.__lastCoverInfo = null;
+    window.__lastQuestions = null;
     window.__lastPerPage = null;
     fileInput.value = '';
     $('step2').hidden = true;

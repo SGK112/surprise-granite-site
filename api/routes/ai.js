@@ -539,7 +539,7 @@ router.post('/blueprint/cover', async (req, res) => {
  */
 router.post('/blueprint/proposal', async (req, res) => {
   try {
-    const { estimate, customer = '', project = '', address = '', materials = [], userKey } = req.body || {};
+    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], userKey } = req.body || {};
     if (!estimate || !estimate.line_items) {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
     }
@@ -571,6 +571,10 @@ router.post('/blueprint/proposal', async (req, res) => {
     const materialLines = materials.length
       ? materials.map(m => `- ${m.code || '—'} (${m.category}): ${m.spec || '(no spec)'}`).join('\n')
       : '(no materials extracted)';
+
+    const confirmedScopeLines = (Array.isArray(confirmedScope) && confirmedScope.length)
+      ? confirmedScope.map(c => `- [${c.kind || '?'}] ${c.location ? c.location + ': ' : ''}${c.question} → ${c.answer}`).join('\n')
+      : '(none — all scope was clear from the drawings)';
 
     const systemPrompt = `You are an experienced construction estimator drafting a professional client-ready proposal for a general contractor. You write in clean, plain-English business prose — no marketing fluff, no exclamation marks.
 
@@ -611,6 +615,9 @@ Standard exclusions a GC would call out: permits, design fees, hazardous-materia
 ## Schedule & Payment
 Standard 50% deposit / balance on substantial completion language. Mention typical lead times for slabs (2-3 weeks), tile (1-2 weeks), cabinets (4-8 weeks).
 
+## Confirmed Scope (Q&A)
+Bullet list of any "Q: …  A: …" pairs from the confirmed-scope facts. These are decisions the GC made on items the drawings left ambiguous (TBD specs, owner-supplied items, allowances, scope-edge calls). If none, omit this section entirely.
+
 ## Assumptions
 Any assumption notes from the estimate (waste %, GC overhead %, industry-avg vs catalog pricing). Be transparent.
 
@@ -640,6 +647,9 @@ GC OVERHEAD: ${Math.round((estimate.gc_overhead_factor||0)*100)}%
 
 MATERIALS SPECIFIED:
 ${materialLines}
+
+CONFIRMED SCOPE (GC answers to AI-flagged ambiguities — include verbatim in the "Confirmed Scope" section):
+${confirmedScopeLines}
 
 ASSUMPTION NOTES:
 ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
