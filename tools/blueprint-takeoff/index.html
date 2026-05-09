@@ -345,6 +345,14 @@
 
     .estimate-table .order-info{display:block;font-size:11px;color:var(--sg-gold);margin-top:2px;font-family:'Menlo',monospace}
     .estimate-table .self-perform{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
+    /* "By owner" toggle on material-split lines. Click = zero out the
+       material cost, keep the labor line, mark visually. */
+    .estimate-table .owner-toggle{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;margin-left:6px;vertical-align:middle;transition:all .15s}
+    .estimate-table .owner-toggle:hover{border-color:var(--sg-blue);color:var(--text-primary)}
+    .estimate-table .owner-toggle.on{background:rgba(245,158,11,.15);border-color:#f59e0b;color:#f59e0b}
+    .estimate-table tr.owner-supplied td{color:var(--text-muted);text-decoration:line-through}
+    .estimate-table tr.owner-supplied .owner-toggle{text-decoration:none}
+    .estimate-table tr.owner-supplied .self-perform{text-decoration:none}
     .self-perform.self{background:rgba(34,197,94,.18);color:#4ade80}
     .self-perform.sub{background:rgba(156,163,175,.18);color:#9ca3af}
     .self-perform.material{background:rgba(251,191,36,.18);color:#fbbf24}
@@ -3247,11 +3255,21 @@ flooring_lvp,5,3"></textarea>
       const isGc = li.category === 'general_conditions';
       const editable = isGc ? '' : 'contenteditable="true" spellcheck="false"';
       const hours = li.hours != null ? li.hours.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+      // "By owner" toggle only meaningful on material-split lines (lines that
+      // have material cost and live as a separate material row from labor).
+      // Combined lines, labor lines, and GC overhead don't get the toggle —
+      // there's no meaningful "owner supplies labor" or "owner pays GC fee".
+      const isMaterialSplit = li.bid_split === 'material';
+      const ownerToggle = isMaterialSplit
+        ? `<button class="owner-toggle ${li.owner_supplied ? 'on' : ''}" data-i="${i}" type="button" title="Mark this material as owner-supplied (zeros the cost, keeps the labor)">${li.owner_supplied ? '✓ owner supplies' : 'by owner?'}</button>`
+        : '';
+      const rowClass = li.owner_supplied ? ' class="owner-supplied"' : '';
       return `
-      <tr data-i="${i}">
+      <tr data-i="${i}"${rowClass}>
         <td class="desc">
           ${escapeHtml(li.description || li.category)}
           <span class="self-perform ${sp}">${sp}</span>
+          ${ownerToggle}
           ${meta ? `<span class="desc-meta">${escapeHtml(meta)}</span>` : ''}
           ${li.cabinet_count ? `<span class="desc-meta">${li.cabinet_count} cabinets</span>` : ''}
         </td>
@@ -3295,6 +3313,10 @@ flooring_lvp,5,3"></textarea>
           cell.blur();
         }
       });
+    });
+    // Wire owner-supplied toggle clicks
+    $('estTableBody').querySelectorAll('.owner-toggle').forEach(btn => {
+      btn.addEventListener('click', onOwnerToggle);
     });
     $('estTableFoot').innerHTML = `
       <tr><td colspan="4">Subtotal (cost)</td><td class="num">${fmt(est.subtotals?.material)}</td><td class="num">${fmt(est.subtotals?.labor)}</td><td class="num">${fmt(est.subtotals?.subtotal)}</td></tr>
@@ -3518,6 +3540,44 @@ flooring_lvp,5,3"></textarea>
   // Inline-edit handler: parse new unit price, mutate line item, recalc
   // material/labor/total + subtotals + GC overhead + grand total + range,
   // then re-render the estimate. No backend round-trip — math is deterministic.
+  // "By owner" toggle on a material-split line. When on, zero out the
+  // material cost (and cache the prior price so toggling off restores it).
+  // The labor line for the same trade is untouched, so the bid still shows
+  // install cost. The proposal-side description gets a "(material by owner)"
+  // suffix so the customer sees what's included.
+  function onOwnerToggle(e) {
+    const btn = e.currentTarget;
+    const i = +btn.dataset.i;
+    if (!window.__lastEstimate || !Number.isFinite(i)) return;
+    const li = window.__lastEstimate.line_items[i];
+    if (!li) return;
+
+    if (li.owner_supplied) {
+      // Toggle OFF — restore prior material rate
+      li.material_unit = Number.isFinite(li._prior_material_unit) ? li._prior_material_unit : (li.material_unit || 0);
+      delete li._prior_material_unit;
+      li.owner_supplied = false;
+      // Remove the suffix if present
+      if (li.description && li.description.endsWith(' (material by owner)')) {
+        li.description = li.description.slice(0, -' (material by owner)'.length);
+      }
+    } else {
+      // Toggle ON — zero material rate, remember prior so we can restore
+      li._prior_material_unit = li.material_unit || 0;
+      li.material_unit = 0;
+      li.owner_supplied = true;
+      if (li.description && !li.description.endsWith(' (material by owner)')) {
+        li.description = li.description + ' (material by owner)';
+      }
+    }
+    li.material_cost = Math.round((li.qty || 0) * (li.material_unit || 0));
+    li.total = li.material_cost + (li.labor_cost || 0);
+
+    recalcEstimateTotals(window.__lastEstimate);
+    renderEstimate(window.__lastEstimate);
+    autoSave();
+  }
+
   function onUnitPriceEdit(e) {
     const cell = e.target;
     const tr = cell.closest('tr');
@@ -4417,6 +4477,10 @@ ${pb.license || ''}`;
     $('hPages').textContent = '—';
     $('hSelected').textContent = '—';
     $('hExtracted').textContent = '—';
+    // Hide the resume banner too — it pointed at the saved project we're
+    // now starting over from. The cloud project still exists; reloading
+    // the page will bring the banner back if the user changes their mind.
+    const rb = $('resumeBanner'); if (rb) rb.hidden = true;
     $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
