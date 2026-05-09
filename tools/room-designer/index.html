@@ -12853,13 +12853,13 @@
           </div>
         </div>
 
-        <button class="btn btn-primary" onclick="generateTakeoffReport()">
+        <button class="btn btn-primary" onclick="openInBiddingTool()" title="Send this design to the Bidding Tool — get a priced estimate, AI proposal, share link, e-sign, deposit collection">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <path d="M9 12h6M9 16h6"/>
           </svg>
-          Get Takeoffs
+          Open in Bidding Tool →
         </button>
       </div>
     </header>
@@ -15097,15 +15097,17 @@
         <div class="quote-section" id="quotePanel">
           <div class="panel-section">
             <div class="quote-header">
-              <div class="panel-title">Takeoff Summary</div>
+              <div class="panel-title">Item List &amp; Quick Quote</div>
               <div class="quote-view-toggle">
                 <button class="toggle-btn active" id="retailViewBtn" onclick="setQuoteView('retail')" title="Show retail prices">Retail</button>
                 <button class="toggle-btn" id="costViewBtn" onclick="setQuoteView('cost')" title="Show cost prices">Cost</button>
               </div>
             </div>
           </div>
-          <!-- Quick Takeoff Stats -->
-          <div id="takeoffQuickStats" style="padding: 0 12px 12px; display: none;">
+          <!-- Quick Takeoff Stats — hidden, replaced by "Open in Bidding Tool" header button.
+               The full estimate, AI proposal, share link, e-sign, and deposit flow live in
+               /tools/blueprint-takeoff/ now. -->
+          <div id="takeoffQuickStats" hidden style="padding: 0 12px 12px; display: none !important;">
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
               <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
                 <div style="font-size: 20px; font-weight: 700; color: #818cf8;" id="quickSlabCount">0</div>
@@ -21377,6 +21379,102 @@
     }
 
     // ===== GENERATE TAKEOFF REPORT =====
+    /**
+     * Hand off the current room scene to the Bidding Tool (/tools/blueprint-takeoff/).
+     * Builds the same takeoff shape the bidding tool uses (countertop sf/lf,
+     * cabinet count/lf, flooring sf, tile sf), persists to localStorage,
+     * opens the bidding tool with ?import=handoff so it skips the PDF upload
+     * + extraction steps and lands directly on the estimate page.
+     */
+    function openInBiddingTool() {
+      if (!Array.isArray(elements) || !elements.length) {
+        alert('Add some elements (cabinets, countertops, etc.) to the room first, then send to the Bidding Tool.');
+        return;
+      }
+
+      let countertop_sqft = 0, countertop_lf = 0;
+      let cabinet_count = 0, cabinet_lf = 0;
+      let flooring_sqft = 0, tile_sqft = 0;
+
+      elements.forEach(el => {
+        const cat = (typeof getElementCategory === 'function' ? getElementCategory(el.type) : '') || '';
+        const isTile = el.type && /\b(tile|backsplash)\b/i.test(el.type);
+
+        if (cat === 'cabinets') {
+          // Wide cabinet runs get broken into N physical boxes — same logic
+          // the category summary uses (the bug we just fixed).
+          const widthInches = (el.width || 0) * 12;
+          const boxCount = (Number.isFinite(el.boxCount) && el.boxCount > 0)
+            ? el.boxCount
+            : (widthInches > 36 ? Math.ceil(widthInches / 36) : 1);
+          cabinet_count += boxCount;
+          cabinet_lf += (el.width || 0); // width is in feet
+        } else if (cat === 'countertops') {
+          countertop_sqft += (typeof getElementSqft === 'function' ? getElementSqft(el) : (el.width || 0) * (el.height || 0));
+          // Approximate countertop LF as the longest exposed edge (front)
+          countertop_lf += (el.width || 0);
+        } else if (cat === 'flooring') {
+          flooring_sqft += (typeof getElementSqft === 'function' ? getElementSqft(el) : (el.width || 0) * (el.height || 0));
+        } else if (isTile) {
+          tile_sqft += (typeof getElementSqft === 'function' ? getElementSqft(el) : (el.width || 0) * (el.height || 0));
+        }
+      });
+
+      // Materials called out — derive distinct labels/SKUs from elements.
+      // Bidding tool uses these to match against vendor catalogs and
+      // pre-fill the materials table.
+      const materials = [];
+      const seen = new Set();
+      elements.forEach(el => {
+        const spec = el.materialName || el.material || el.label || el.sku;
+        if (!spec) return;
+        const key = String(spec).toLowerCase().slice(0, 60);
+        if (seen.has(key)) return;
+        seen.add(key);
+        const cat = (typeof getElementCategory === 'function' ? getElementCategory(el.type) : '') || '';
+        const mappedCategory =
+          cat === 'cabinets'    ? 'cabinet'  :
+          cat === 'countertops' ? 'quartz'   :
+          cat === 'flooring'    ? 'flooring' :
+          (el.type && /tile|backsplash/i.test(el.type)) ? 'tile' : 'other';
+        materials.push({
+          code: el.sku || `M-${materials.length + 1}`,
+          category: mappedCategory,
+          spec: String(spec),
+        });
+      });
+
+      const projectName =
+        (typeof currentRoomName !== 'undefined' && currentRoomName) ||
+        (typeof currentDesignName !== 'undefined' && currentDesignName) ||
+        'Room Designer Project';
+
+      const handoff = {
+        source: 'room-designer',
+        projectName,
+        takeoff: {
+          countertop_sqft: Math.round(countertop_sqft * 10) / 10,
+          countertop_lf:   Math.round(countertop_lf   * 10) / 10,
+          cabinet_count,
+          cabinet_lf:      Math.round(cabinet_lf      * 10) / 10,
+          flooring_sqft:   Math.round(flooring_sqft   * 10) / 10,
+          tile_sqft:       Math.round(tile_sqft       * 10) / 10,
+        },
+        materials,
+        timestamp: Date.now(),
+      };
+
+      try {
+        localStorage.setItem('sg_takeoff_handoff', JSON.stringify(handoff));
+      } catch (e) {
+        alert('Could not stage handoff data — localStorage may be full. Try clearing some saved projects.');
+        return;
+      }
+
+      window.open('/tools/blueprint-takeoff/?import=handoff', '_blank');
+    }
+    window.openInBiddingTool = openInBiddingTool;
+
     function generateTakeoffReport() {
       const takeoffs = calculateTakeoffs();
       showTakeoffModal(takeoffs);

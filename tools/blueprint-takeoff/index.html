@@ -1690,6 +1690,64 @@ flooring_lvp,5,3"></textarea>
 
   refreshProjectsStatus();
 
+  // ---- Handoff from Room Designer ----
+  // If URL has ?import=handoff and localStorage has sg_takeoff_handoff,
+  // skip the PDF/extraction steps and land directly on the estimate with
+  // the elements pre-loaded as line items.
+  (function checkHandoff() {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('import') !== 'handoff') return;
+      const raw = localStorage.getItem('sg_takeoff_handoff');
+      if (!raw) return;
+      const handoff = JSON.parse(raw);
+      if (!handoff || !handoff.takeoff) return;
+
+      window.__lastSourceLabel = handoff.source === 'room-designer'
+        ? `Room Designer · ${handoff.projectName || 'untitled'}`
+        : 'Imported takeoff';
+
+      // Synthesize totals in the shape renderTotals/aggregation produces
+      const totals = {};
+      ['countertop_sqft','countertop_lf','cabinet_count','cabinet_lf','flooring_sqft','tile_sqft'].forEach(key => {
+        const v = +handoff.takeoff[key] || 0;
+        totals[key] = {
+          value: v,
+          sources: v > 0 ? [{ sheet: { sheetNum: 'RD', type: 'IMPORT' }, value: v }] : [],
+          strategy: 'Room Designer import',
+        };
+      });
+      window.__lastTotals = totals;
+      window.__lastMaterials = Array.isArray(handoff.materials) ? handoff.materials : [];
+
+      // Skip plans + sheet index, jump straight to estimate
+      $('howStrip').hidden = true;
+      $('step1').hidden = true;
+      $('step3').hidden = false;
+
+      // Project name strip with the imported name
+      $('projectNameInput').value = handoff.projectName || 'Room Designer Import';
+      $('psSource').textContent = 'source: Room Designer';
+      $('projectStrip').hidden = false;
+
+      // Render the totals grid + materials, then auto-trigger estimate generation
+      renderTotalsFromCache();
+      if (window.__lastMaterials.length) renderMaterials();
+      $('hExtracted').textContent = 'RD';
+      $('hPages').textContent = 'imported';
+      $('hSelected').textContent = '—';
+
+      autoSave(handoff.projectName || 'Room Designer Import');
+      // Auto-fire the estimate so user lands on Step 4 with priced output
+      setTimeout(() => { try { generateEstimate(); } catch (_) {} }, 200);
+
+      // Clear the handoff key so refresh doesn't re-import
+      localStorage.removeItem('sg_takeoff_handoff');
+    } catch (e) {
+      console.warn('Handoff import failed:', e);
+    }
+  })();
+
   // Kick off cloud sync after the project list helpers are wired up.
   // Fires once on load — pulls the cloud project list and re-renders the
   // status badge. Subsequent saves auto-push to cloud via autoSave.
