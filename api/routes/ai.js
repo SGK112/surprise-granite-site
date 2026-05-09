@@ -1085,6 +1085,102 @@ router.delete('/blueprint/projects/:id', authenticateJWT, async (req, res) => {
   }
 });
 
+/**
+ * Vendor catalogs — cloud sync of price-sheet imports per user. RLS keeps
+ * each user's catalogs private; backend just forwards the JWT so the user's
+ * own permissions apply. Mirrors the takeoff_projects shape.
+ *
+ * Frontend calls these when the user is signed in; falls back to
+ * localStorage otherwise (offline-first design).
+ */
+router.get('/blueprint/catalogs', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { data, error } = await client
+      .from('vendor_catalogs')
+      .select('id, vendor, category, products, enabled, source_filename, created_at, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    res.json({ catalogs: data || [] });
+  } catch (err) {
+    logger.error('List vendor catalogs error:', err);
+    return handleApiError(res, err, 'List catalogs');
+  }
+});
+
+router.post('/blueprint/catalogs', authenticateJWT, express.json({ limit: '6mb' }), async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { id, vendor, category, products, enabled, source_filename } = req.body || {};
+    if (!Array.isArray(products)) {
+      return res.status(400).json({ error: 'products array required' });
+    }
+    const row = {
+      user_id: req.user.id,
+      vendor: vendor || 'Unknown',
+      category: category || 'other',
+      products,
+      enabled: enabled !== false,
+      source_filename: source_filename || null,
+    };
+    if (id) row.id = id;
+    const { data, error } = await client
+      .from('vendor_catalogs')
+      .upsert(row, { onConflict: 'id' })
+      .select('id, vendor, category, products, enabled, source_filename, created_at, updated_at')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    logger.error('Save vendor catalog error:', err);
+    return handleApiError(res, err, 'Save catalog');
+  }
+});
+
+router.patch('/blueprint/catalogs/:id', authenticateJWT, express.json({ limit: '1mb' }), async (req, res) => {
+  // Lightweight update — used for the on/off toggle without re-sending the
+  // whole products array. Accept any of {vendor, category, enabled}.
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const patch = {};
+    if (typeof req.body?.enabled === 'boolean') patch.enabled = req.body.enabled;
+    if (typeof req.body?.vendor === 'string')   patch.vendor = req.body.vendor;
+    if (typeof req.body?.category === 'string') patch.category = req.body.category;
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'No fields to update' });
+    const { data, error } = await client
+      .from('vendor_catalogs')
+      .update(patch)
+      .eq('id', req.params.id)
+      .select('id, vendor, category, enabled, updated_at')
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    logger.error('Patch vendor catalog error:', err);
+    return handleApiError(res, err, 'Patch catalog');
+  }
+});
+
+router.delete('/blueprint/catalogs/:id', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { error } = await client
+      .from('vendor_catalogs')
+      .delete()
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('Delete vendor catalog error:', err);
+    return handleApiError(res, err, 'Delete catalog');
+  }
+});
+
 // ============ AI ROOM SCANNER ============
 
 /**

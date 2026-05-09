@@ -1338,7 +1338,12 @@ flooring_lvp,5,3"></textarea>
       const { data: { session } } = await sbClient.auth.getSession();
       sbSession = session || null;
       if (sbSession) {
-        await fetchCloudProjects();
+        // Run both pulls in parallel — they're independent and the user may
+        // have rebuilt their catalogs on another device since last visit.
+        await Promise.all([
+          fetchCloudProjects(),
+          (typeof fetchCloudCatalogs === 'function' ? fetchCloudCatalogs() : Promise.resolve())
+        ]);
       }
       refreshCloudStatus();
     } catch (err) {
@@ -1838,7 +1843,9 @@ flooring_lvp,5,3"></textarea>
   maybeShowResumeBanner();
 
   // ---- Vendor catalogs (parsed from price-sheet PDFs) ----
+  // Cloud-synced when signed in; localStorage offline cache mirror otherwise.
   // localStorage shape: { [catalogId]: { id, vendor, category, products: [...], createdAt, enabled } }
+  // Cloud shape adds: { source_filename, created_at, updated_at } from Supabase.
   // Products: { sku, name, line, color, size, finish, thickness, price, price_unit }
   const CATALOGS_STORAGE_KEY = 'sg_custom_catalogs';
   let __catalogPreview = null; // staging area before user clicks Save
@@ -1851,6 +1858,107 @@ flooring_lvp,5,3"></textarea>
     try { localStorage.setItem(CATALOGS_STORAGE_KEY, JSON.stringify(map)); }
     catch (e) { console.warn('Catalog save failed:', e); }
     refreshCatalogsStatus();
+  }
+
+  // Pull catalogs from Supabase and merge into localStorage. Cloud wins on
+  // conflict (cloud is the source of truth when signed in). Called on init
+  // after auth is ready and on a manual refresh from the catalogs modal.
+  async function fetchCloudCatalogs() {
+    if (!isSignedIn || !isSignedIn()) return;
+    try {
+      const res = await fetch(API_BASE + '/api/ai/blueprint/catalogs', { headers: authHeaders() });
+      if (!res.ok) {
+        // 404 / table-not-yet-created — silently fall back to localStorage
+        if (res.status === 404 || res.status === 503) return;
+        console.warn('Cloud catalogs fetch failed:', res.status);
+        return;
+      }
+      const { catalogs } = await res.json();
+      if (!Array.isArray(catalogs)) return;
+      // Merge: keep any local-only catalogs (no cloud ID match), overlay cloud.
+      // Cloud catalogs use UUIDs; legacy local catalogs use 'cat_<ts>_<rand>'
+      // — those stay local until next save, when they get a cloud UUID.
+      const local = getCatalogs();
+      const merged = { ...local };
+      for (const c of catalogs) {
+        merged[c.id] = {
+          id: c.id,
+          vendor: c.vendor,
+          category: c.category,
+          products: c.products || [],
+          enabled: c.enabled !== false,
+          source_filename: c.source_filename || null,
+          createdAt: c.created_at ? new Date(c.created_at).getTime() : Date.now(),
+          updated_at: c.updated_at,
+          _synced: true,
+        };
+      }
+      try { localStorage.setItem(CATALOGS_STORAGE_KEY, JSON.stringify(merged)); } catch (_) {}
+      refreshCatalogsStatus();
+    } catch (err) {
+      console.warn('Cloud catalogs fetch error (offline ok):', err.message);
+    }
+  }
+
+  // Push a single catalog to the cloud. Returns the saved row (with cloud
+  // UUID + timestamps) or null if cloud is unavailable / not signed in.
+  async function pushCloudCatalog(catalog) {
+    if (!isSignedIn || !isSignedIn()) return null;
+    try {
+      // Strip frontend-only fields before sending
+      const body = {
+        // Only include id when it looks like a UUID — local catalogs use
+        // 'cat_<ts>_<rand>' keys, which Supabase would reject as invalid UUID.
+        id: /^[0-9a-f-]{36}$/i.test(catalog.id) ? catalog.id : undefined,
+        vendor: catalog.vendor,
+        category: catalog.category,
+        products: catalog.products,
+        enabled: catalog.enabled !== false,
+        source_filename: catalog.source_filename || null,
+      };
+      const res = await fetch(API_BASE + '/api/ai/blueprint/catalogs', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        if (res.status === 404 || res.status === 503) return null;
+        console.warn('Cloud catalog save failed:', res.status);
+        return null;
+      }
+      return await res.json();
+    } catch (err) {
+      console.warn('Cloud catalog save error (kept local):', err.message);
+      return null;
+    }
+  }
+
+  // Toggle enabled flag in the cloud (lightweight PATCH — no products payload).
+  async function patchCloudCatalog(id, patch) {
+    if (!isSignedIn || !isSignedIn()) return;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return; // local-only catalog, nothing to patch
+    try {
+      await fetch(API_BASE + '/api/ai/blueprint/catalogs/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify(patch),
+      });
+    } catch (err) {
+      console.warn('Cloud catalog patch error:', err.message);
+    }
+  }
+
+  async function deleteCloudCatalog(id) {
+    if (!isSignedIn || !isSignedIn()) return;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+    try {
+      await fetch(API_BASE + '/api/ai/blueprint/catalogs/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+    } catch (err) {
+      console.warn('Cloud catalog delete error:', err.message);
+    }
   }
   function refreshCatalogsStatus() {
     const all = getCatalogs();
@@ -1990,23 +2098,43 @@ flooring_lvp,5,3"></textarea>
     $('catalogFileInput').value = '';
   });
 
-  $('btnCatalogSave').addEventListener('click', () => {
+  $('btnCatalogSave').addEventListener('click', async () => {
     if (!__catalogPreview || !__catalogPreview.products?.length) return;
     const all = getCatalogs();
-    const id = `cat_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-    all[id] = {
-      id,
+    // Local temp ID — replaced with cloud UUID after the cloud round-trip.
+    const tempId = `cat_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const local = {
+      id: tempId,
       vendor: __catalogPreview.vendor || 'Unknown',
       category: __catalogPreview.category || 'other',
       products: __catalogPreview.products,
       enabled: true,
       createdAt: Date.now(),
+      source_filename: __catalogPreview.source_filename || null,
     };
+    all[tempId] = local;
     setCatalogs(all);
     __catalogPreview = null;
     $('catalogPreview').hidden = true;
     $('catalogFileInput').value = '';
     renderCatalogList();
+    // Fire-and-forget cloud sync. If it succeeds, swap the temp ID for the
+    // cloud UUID so future patches/deletes hit the right row. If it fails
+    // (offline, signed out, table not migrated yet), the local copy stays
+    // and will get synced next time the user is online.
+    const saved = await pushCloudCatalog(local);
+    if (saved && saved.id && saved.id !== tempId) {
+      const cur = getCatalogs();
+      delete cur[tempId];
+      cur[saved.id] = {
+        ...local,
+        id: saved.id,
+        updated_at: saved.updated_at,
+        _synced: true,
+      };
+      setCatalogs(cur);
+      renderCatalogList();
+    }
   });
 
   function renderCatalogList() {
@@ -2035,16 +2163,22 @@ flooring_lvp,5,3"></textarea>
       cb.addEventListener('change', e => {
         const id = e.target.dataset.toggle;
         const all = getCatalogs();
-        if (all[id]) { all[id].enabled = e.target.checked; setCatalogs(all); }
+        if (all[id]) {
+          all[id].enabled = e.target.checked;
+          setCatalogs(all);
+          patchCloudCatalog(id, { enabled: e.target.checked });
+        }
       });
     });
     list.querySelectorAll('.pr-del').forEach(btn => {
       btn.addEventListener('click', () => {
         if (confirm('Delete this catalog?')) {
+          const id = btn.dataset.del;
           const all = getCatalogs();
-          delete all[btn.dataset.del];
+          delete all[id];
           setCatalogs(all);
           renderCatalogList();
+          deleteCloudCatalog(id);
         }
       });
     });
