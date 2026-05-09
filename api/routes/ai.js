@@ -2210,6 +2210,14 @@ function convertAIResultToLegacy(aiResult, projectType) {
   // Check if this is the new cabinet-specific format (has cabinets array)
   const hasNewFormat = rooms.some(r => Array.isArray(r.cabinets) && r.cabinets.length > 0);
 
+  // materials_called_out lives at the top of the GPT response (Step 2 schema
+  // includes it as a peer to rooms). Pass it through both branches so the
+  // frontend aggregator can populate the Materials table — without this,
+  // the field gets stripped here even if GPT returned it correctly.
+  const materialsCalledOut = Array.isArray(takeoff.materials_called_out)
+    ? takeoff.materials_called_out
+    : [];
+
   if (hasNewFormat) {
     // New format: pass through cabinet data directly for Room Designer
     return {
@@ -2233,6 +2241,7 @@ function convertAIResultToLegacy(aiResult, projectType) {
         layoutType: room.layoutType || null,
         notes: room.notes || null
       })),
+      materials_called_out: materialsCalledOut,
       costs: aiResult.costs || null,
       // NEW: Pass through metadata
       pageType: takeoff.pageType || null,
@@ -2255,6 +2264,7 @@ function convertAIResultToLegacy(aiResult, projectType) {
       material: getMaterialTypes(room.materials),
       materials: room.materials || null
     })),
+    materials_called_out: materialsCalledOut,
     costs: aiResult.costs || null
   };
 }

@@ -23,7 +23,11 @@ const CONFIG = {
   openai: {
     apiUrl: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o', // gpt-4-vision-preview or gpt-4o
-    maxTokens: 4096
+    // 4096 was too tight once materials_called_out joined the schema —
+    // pages with multi-room finish/millwork legends were truncating mid-JSON
+    // (parseJSONResponse failed with "No valid JSON found in response").
+    // gpt-4o supports up to 16K output; 8K keeps room without going wild.
+    maxTokens: 8000
   },
 
   // Ollama (self-hosted)
@@ -208,42 +212,18 @@ EXTRACTION RULES:
    - Extract cabinets left-to-right as they appear
    - This preserves the layout sequence
 
-5. MATERIALS CALLED OUT — read EVERY row of any finish schedule, finish legend,
-   millwork legend, fixture schedule, hardware schedule, or material legend
-   visible on this page. Output one entry per distinct spec'd material.
-
-   - code: the tag/symbol exactly as printed (T1, AF1, P1, LAM1, WD1, CT-1,
-     FLR-2, F3, etc). Do NOT invent codes. If a row has no code, use "—".
-   - category: pick the closest match. Common cases:
-       * Daltile/MSI/Florida Tile/porcelain/ceramic = "tile"
-       * Sheet vinyl (ALTRO, Armstrong) = "flooring"
-       * LVP/SPC/wood plank = "flooring"
-       * Quartz (Caesarstone, Cambria, MSI Q) = "quartz"
-       * Granite slab = "granite"
-       * Quartzite/marble slab = "stone"
-       * Cabinet boxes/casework = "cabinet"
-       * Trim/shiplap/wood paneling/oak/laminate face = "millwork"
-       * Sherwin Williams / Dunn-Edwards / Benjamin Moore = "paint"
-       * Wolf Gordon / Maharam wallpaper or vinyl wallcovering = "wallcovering"
-       * Light fixtures (Nora, Lights.com, Visual Comfort) = "lighting"
-       * Faucets/toilets/sinks = "plumbing"
-   - spec: the FULL spec verbatim. Include brand, product line, color,
-     dimensions, finish, thickness, grout color, integral base, etc.
-     Examples that are GOOD:
-       "Daltile American Olean Crafter Sketch CF18, 24x24, Mapei Charcoal #5047 grout, 1/8\""
-       "ALTRO Reliance 25 Storm sheet vinyl with 6\" integral base"
-       "Sherwin Williams SW 7005 Pure White, eggshell at dining / semi-gloss at restroom"
-       "Formica 5794-NG Beige Elm laminate, retail cabinet & wainscot"
-       "Nora NLCBC2-451WW 4\" Cobalt LED recessed can, white reflector trim, 12W 3000K"
-     Examples that are BAD (do not output):
-       "Tile" (no brand/sku)
-       "Quartz countertop" (no brand/color/thickness)
-       "industry average flooring" (you are inventing)
-   - NEVER invent SKUs, brands, or codes that are not visible on the page.
-   - If the page has no schedule/legend, return materials_called_out: [].
-   - This is the single most important extraction for accurate pricing —
-     a coffee shop with Daltile floors is NOT the same as a residential
-     kitchen with quartz, and the estimator can only price what you return.
+5. MATERIALS CALLED OUT — read every row of any finish/millwork/fixture
+   schedule or legend. One entry per distinct spec'd material.
+   - code: tag exactly as printed (T1, AF1, P1, LAM1, WD1, CT-1, F3). Use "—" if no code.
+   - category: tile, flooring (sheet vinyl/LVP/wood), quartz, granite, stone (quartzite/marble),
+     cabinet, millwork (trim/wood/laminate face), paint, wallcovering, lighting, plumbing, hardware, other.
+   - spec: FULL line VERBATIM — brand + series + color + size + finish + grout/base.
+     Good: "Daltile American Olean Crafter Sketch CF18, 24x24, Mapei Charcoal #5047 grout 1/8\""
+     Bad: "Tile" or "Quartz countertop" (missing SKU/brand).
+   - Never invent. If page has no schedule, return materials_called_out: [].
+   - If the page is a finish/material schedule with no cabinets, return rooms: []
+     and put everything in materials_called_out. Do not hallucinate cabinets
+     from finish-schedule rows.
 `
 };
 
