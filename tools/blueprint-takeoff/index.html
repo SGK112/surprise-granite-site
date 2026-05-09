@@ -586,8 +586,9 @@
 
       <div id="materialsBlock" hidden>
         <h3 class="materials-title">Materials called out</h3>
-        <div class="materials-hint">Specs pulled from finish &amp; cabinet schedules. Edit any cell — corrections feed straight into the estimate.</div>
+        <div class="materials-hint">Specs pulled from finish &amp; cabinet schedules. Edit any cell — corrections feed straight into the estimate. Hover any spec for the verbatim source text the AI read.</div>
         <div id="missingSpecsBanner" class="missing-specs-banner" hidden></div>
+        <div id="aiMissingPanel" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:12px 14px;margin-bottom:10px" hidden></div>
         <div class="materials-table-wrap">
           <table class="materials-table" id="materialsTable">
             <thead>
@@ -2939,10 +2940,19 @@ flooring_lvp,5,3"></textarea>
         const code = String(m.code || '').trim() || '—';
         const category = String(m.category || 'other').toLowerCase().trim();
         const spec = String(m.spec || '').trim();
+        // verbatim_source is the raw page text GPT read this entry from.
+        // Preserve it so the UI can show "verify against source" tooltips.
+        const verbatim = String(m.verbatim_source || '').trim();
+        const location = String(m.location || '').trim();
         const key = `${category}|${code.toLowerCase()}`;
         const existing = byKey.get(key);
         if (!existing || (spec.length > existing.spec.length)) {
-          byKey.set(key, { code, category, spec, sources: existing ? existing.sources : [] });
+          byKey.set(key, {
+            code, category, spec,
+            verbatim_source: verbatim || existing?.verbatim_source || '',
+            location: location || existing?.location || '',
+            sources: existing ? existing.sources : [],
+          });
         }
         const entry = byKey.get(key);
         if (!entry.sources.find(s => s.sheetNum === p.sheet.sheetNum)) {
@@ -2955,6 +2965,30 @@ flooring_lvp,5,3"></textarea>
       if (a.category !== b.category) return a.category.localeCompare(b.category);
       return a.code.localeCompare(b.code, undefined, { numeric: true });
     });
+  }
+
+  // Aggregate "missing or unreadable" callouts from each page so the user
+  // can see what GPT couldn't confidently read. These come from the new
+  // anti-hallucination prompt — instead of inventing a spec, GPT reports
+  // the row as unreadable, and we surface it for manual review.
+  function aggregateMissing(perPage) {
+    const out = [];
+    for (const p of perPage) {
+      if (!p.ok || !p.result) continue;
+      const list = Array.isArray(p.result.missing_or_unreadable) ? p.result.missing_or_unreadable : [];
+      for (const m of list) {
+        if (!m) continue;
+        const what = String(m.what || '').trim();
+        if (!what) continue;
+        out.push({
+          sheet: p.sheet,
+          what,
+          where: String(m.where || '').trim(),
+          reason: String(m.reason || '').trim(),
+        });
+      }
+    }
+    return out;
   }
 
   function renderMaterials(perPage) {
@@ -2987,16 +3021,52 @@ flooring_lvp,5,3"></textarea>
       banner.hidden = true;
     }
 
+    // "Couldn't read these rows" panel — populated from each page's
+    // missing_or_unreadable callouts. The AI is honest about what it
+    // skipped instead of hallucinating; we surface so the GC can fill
+    // in manually rather than discover the gap on bid day.
+    const missingFromAI = perPage ? aggregateMissing(perPage) : (window.__lastMissingFromAI || []);
+    if (perPage) window.__lastMissingFromAI = missingFromAI;
+    const aiPanel = document.getElementById('aiMissingPanel');
+    if (aiPanel) {
+      if (missingFromAI.length) {
+        aiPanel.hidden = false;
+        aiPanel.innerHTML = `
+          <div style="font-weight:700;margin-bottom:6px;color:#f59e0b">⚠ AI flagged ${missingFromAI.length} item${missingFromAI.length>1?'s':''} it couldn't read clearly</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">These rows exist on the drawings but the AI didn't extract them — review the source sheets and add manually if they're in scope.</div>
+          <ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.6">
+            ${missingFromAI.slice(0, 12).map(m => `
+              <li>
+                <strong>${escapeHtml(m.what)}</strong>
+                ${m.where ? ` <span style="color:var(--text-muted)">— ${escapeHtml(m.where)}</span>` : ''}
+                ${m.sheet ? ` <span style="color:var(--text-muted)">(sheet ${escapeHtml(m.sheet.sheetNum || '?')}, p${m.sheet.pageNum})</span>` : ''}
+                ${m.reason ? `<br><span style="color:var(--text-muted);font-style:italic">${escapeHtml(m.reason)}</span>` : ''}
+              </li>
+            `).join('')}
+            ${missingFromAI.length > 12 ? `<li style="color:var(--text-muted)">+${missingFromAI.length - 12} more — open the source sheet to review</li>` : ''}
+          </ul>
+        `;
+      } else {
+        aiPanel.hidden = true;
+      }
+    }
+
     tbody.innerHTML = materials.map((m, i) => {
       const cat = KNOWN_CATS.has(m.category) ? m.category : 'other';
       const sources = m.sources.map(s => s.sheetNum).slice(0, 2).join(', ')
         + (m.sources.length > 2 ? `, +${m.sources.length - 2}` : '');
       const rowCls = isMissing(m) ? 'missing-spec' : '';
+      // verbatim_source = the raw page text GPT read this entry from. Show as
+      // a tooltip on hover so the user can verify the spec wasn't fabricated
+      // (the new anti-hallucination prompt requires GPT to populate it).
+      const verifyTitle = m.verbatim_source
+        ? `Source text on the page: "${m.verbatim_source}"${m.location ? '\n\nLocation: ' + m.location : ''}`
+        : 'No verbatim source provided — verify against the original drawing';
       return `
         <tr data-i="${i}" class="${rowCls}">
           <td class="code">${escapeHtml(m.code)}</td>
           <td><span class="cat cat-${cat}">${escapeHtml(m.category)}</span></td>
-          <td class="spec" contenteditable="true" spellcheck="false">${escapeHtml(m.spec || '(no spec — click to fill in)')}</td>
+          <td class="spec" contenteditable="true" spellcheck="false" title="${escapeHtml(verifyTitle)}">${escapeHtml(m.spec || '(no spec — click to fill in)')}${m.verbatim_source ? '<span style="margin-left:6px;font-size:10px;color:var(--text-muted);user-select:none">📄</span>' : ''}</td>
           <td class="src">${escapeHtml(sources)}</td>
           <td><button class="row-del" title="Remove" type="button">×</button></td>
         </tr>`;

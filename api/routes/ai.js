@@ -2313,6 +2313,12 @@ function convertAIResultToLegacy(aiResult, projectType) {
   const materialsCalledOut = Array.isArray(takeoff.materials_called_out)
     ? takeoff.materials_called_out
     : [];
+  // missing_or_unreadable enumerates schedule rows GPT could see but couldn't
+  // confidently read. Frontend surfaces these so the user knows what didn't
+  // make it into the bid (instead of silently dropping rows).
+  const missingOrUnreadable = Array.isArray(takeoff.missing_or_unreadable)
+    ? takeoff.missing_or_unreadable
+    : [];
 
   if (hasNewFormat) {
     // New format: pass through cabinet data directly for Room Designer
@@ -2338,6 +2344,7 @@ function convertAIResultToLegacy(aiResult, projectType) {
         notes: room.notes || null
       })),
       materials_called_out: materialsCalledOut,
+      missing_or_unreadable: missingOrUnreadable,
       costs: aiResult.costs || null,
       // NEW: Pass through metadata
       pageType: takeoff.pageType || null,
@@ -2361,6 +2368,7 @@ function convertAIResultToLegacy(aiResult, projectType) {
       materials: room.materials || null
     })),
     materials_called_out: materialsCalledOut,
+    missing_or_unreadable: missingOrUnreadable,
     costs: aiResult.costs || null
   };
 }
