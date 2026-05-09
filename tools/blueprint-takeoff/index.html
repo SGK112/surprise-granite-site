@@ -3597,6 +3597,22 @@ flooring_lvp,5,3"></textarea>
       });
     }
 
+    // Open AI questions — items GPT flagged as ambiguous (TBD specs,
+    // scope-edge questions, conflict items) that still need a human answer.
+    // Once answered they get woven into the proposal as confirmed scope, so
+    // an unanswered question = potential bid hole.
+    const openQs = (window.__lastQuestions || []).filter(q => q.status === 'open');
+    if (openQs.length) {
+      issues.push({
+        kind: 'open_questions',
+        icon: '❓',
+        count: openQs.length,
+        title: `${openQs.length} AI question${openQs.length>1?'s':''} still need a decision`,
+        detail: openQs.slice(0,3).map(q => (q.question||'').slice(0,50)).join(' · '),
+        action: 'Answer in the Questions panel — answers appear in the proposal as confirmed scope.',
+      });
+    }
+
     // Vendors mentioned in materials but missing from saved catalogs.
     // E.g. spec "Daltile American Olean Crafter Sketch CF18" with no Daltile
     // catalog uploaded → suggest "Upload your Daltile price sheet" so the
@@ -3663,6 +3679,13 @@ flooring_lvp,5,3"></textarea>
       }, 350);
     } else if (kind === 'ai_unreadable') {
       target = document.getElementById('aiMissingPanel');
+    } else if (kind === 'open_questions') {
+      target = document.getElementById('questionsBlock');
+      // Focus the first unanswered question's input so user can type immediately
+      setTimeout(() => {
+        const firstOpen = document.querySelector('#questionsList .question-row:not(.answered) input,#questionsList .question-row:not(.answered) textarea');
+        firstOpen?.focus();
+      }, 350);
     } else if (kind === 'extraction_failed') {
       target = document.getElementById('parseProgress') || document.getElementById('step2');
     } else if (kind === 'avg_fallback' || kind === 'missing_vendor') {
