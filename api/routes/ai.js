@@ -539,7 +539,8 @@ router.post('/blueprint/cover', async (req, res) => {
  */
 router.post('/blueprint/proposal', async (req, res) => {
   try {
-    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], preparedBy = {}, userKey } = req.body || {};
+    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], preparedBy = {}, bidMode = 'prime', userKey } = req.body || {};
+    const isSubBid = bidMode === 'sub';
     if (!estimate || !estimate.line_items) {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
     }
@@ -588,7 +589,15 @@ router.post('/blueprint/proposal', async (req, res) => {
       pb.tagline  && `Tagline: ${pb.tagline}`,
     ].filter(Boolean).join('\n') || '(no company info provided — proposal will use a generic header)';
 
+    const docTitle = isSubBid ? 'Subcontractor Bid' : 'Project Proposal';
+    const recipientLabel = isSubBid ? 'Submitted to (prime contractor)' : 'Prepared for';
+    const audienceNote = isSubBid
+      ? 'This is a SUBCONTRACTOR BID being submitted to a Prime General Contractor for a single-trade scope. The recipient is the prime GC, not the end owner. Frame the doc accordingly: "subcontractor bid", "trade scope", refer to the prime as "the GC" or "Prime Contractor". Do NOT use language like "we will renovate your home". Make clear this is the sub bid for the trades listed; other trades are by others.'
+      : 'This is a PROJECT PROPOSAL from a General Contractor to an end customer/owner covering all trades in scope. Frame as a complete project bid.';
+
     const systemPrompt = `You are an experienced construction estimator drafting a professional client-ready proposal for a general contractor. You write in clean, plain-English business prose — no marketing fluff, no exclamation marks.
+
+AUDIENCE: ${audienceNote}
 
 CRITICAL RULES:
 1. NEVER invent or change any dollar amount, quantity, or material spec. Use ONLY the numbers in the line-item table provided.
@@ -597,16 +606,16 @@ CRITICAL RULES:
 4. Tone: confident, concise, professional. Like a real GC estimator wrote it, not a marketing copywriter.
 5. Length: 1-2 pages. Brevity is professional.
 
-Return the proposal in this structure:
+Return the proposal in this structure (use the docTitle and recipientLabel below — they vary by bid mode):
 
-# Project Proposal — {Project Name}
+# ${docTitle} — {Project Name}
 
 **Prepared by:** {Company name from preparedBy.name}
 {Contact name (Title)} · {Email} · {Phone}
 {License} · {Website}
 {Tagline if any, in italics}
 
-**Prepared for:** {Customer}
+**${recipientLabel}:** {Customer}
 **Date:** {Today}
 **Project address:** {address or "TBD"}
 

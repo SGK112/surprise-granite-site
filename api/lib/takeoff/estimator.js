@@ -117,10 +117,13 @@ const INDUSTRY_RATES = {
   flooring_carpet:     { material: 3.5,labor: 1.5,unit: 'sf' },
   flooring_polished_concrete: { material: 0, labor: 5, unit: 'sf' },
 
-  // Cabinets (per linear foot — cabinets purchased separately, install only)
-  cabinet_stock_install:       { material: 0, labor: 175, unit: 'lf' },
-  cabinet_semi_custom_install: { material: 0, labor: 325, unit: 'lf' },
-  cabinet_custom_install:      { material: 0, labor: 525, unit: 'lf' },
+  // Cabinets (per linear foot — supply + install). GC convention varies:
+  // some GCs supply, some defer to owner. We default to supply included so
+  // SG (which sells cabinets) gets a complete bid; user can zero out the
+  // material with the "owner supplies" toggle on the cabinet line if needed.
+  cabinet_stock_install:       { material: 200, labor: 175, unit: 'lf' },
+  cabinet_semi_custom_install: { material: 425, labor: 325, unit: 'lf' },
+  cabinet_custom_install:      { material: 700, labor: 525, unit: 'lf' },
 };
 
 /**
@@ -327,18 +330,20 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
     lineItems.push(lineItem({
       category: 'cabinet',
       trade: 'cabinets',
-      description: cabMat?.spec || 'Cabinets — install labor only (cabinets supplied separately)',
+      description: cabMat?.spec || `Cabinets — ${refined.replace(/_/g,' ')} (supply + install)`,
       code: cabMat?.code,
       qty: cabLf,
       unit: 'lf',
-      matRate: 0,
+      matRate: rates.material,
       labRate: rates.labor,
-      source: rates._override ? 'My Pricing' : 'industry avg (install only)',
-      selfPerform: 'sub',
+      source: rates._override ? 'My Pricing' : 'industry avg (supply + install)',
+      selfPerform: 'self',
       rateKey, crewRate,
-      extra: { cabinet_count: cabCount },
+      extra: { cabinet_count: cabCount, owner_supplies_toggle: true },
     }));
-    notes.push('Cabinet material cost is NOT included — assumes GC or owner supplies cabinets. Add a cabinet supply line manually if SG is providing.');
+    if (!cabMat) {
+      notes.push('Cabinet style/brand not specified on plans — assumed stock supply + install. Edit the cabinet line if owner supplies, or refine the spec for accurate pricing.');
+    }
   }
 
   // ---- Flooring ----
