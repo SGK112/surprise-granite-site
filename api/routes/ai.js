@@ -36,6 +36,37 @@ function getUserClient(accessToken) {
   });
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// Service-or-JWT auth for read-only takeoff endpoints.
+//
+// VoiceNow's Aria backend reaches these endpoints server-to-server. Real
+// per-user Supabase JWTs are 1-hour expiring, so a static env var is a
+// non-starter. Instead we accept the same X-Aria-Service-Key pattern that
+// requireAdmin already uses (api/middleware/adminAuth.js:67-78) — caller
+// presents the shared secret + user_id query param, we scope the query
+// using the service-role client.
+//
+// Read-only only. POST/DELETE on these routes intentionally still require
+// a real user JWT — service-key writes have no audit trail per-user.
+// ──────────────────────────────────────────────────────────────────────
+function serviceOrJWT(req, res, next) {
+  const serviceKey = process.env.ARIA_SERVICE_KEY;
+  const presented = req.get('x-aria-service-key');
+  if (serviceKey && presented && presented === serviceKey) {
+    const userId = req.query.user_id || req.body?.user_id;
+    if (!userId) {
+      return res.status(400).json({ error: 'user_id query param required when using X-Aria-Service-Key' });
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      return res.status(400).json({ error: 'invalid user_id (expected uuid)' });
+    }
+    req.user = { id: userId };
+    req.isServiceCall = true;
+    return next();
+  }
+  return authenticateJWT(req, res, next);
+}
+
 /**
  * Validate image data URL format for OpenAI Vision API.
  * Returns the data URL if supported, or throws with a helpful error for unsupported formats.
@@ -1042,15 +1073,22 @@ function escapeHtmlServer(s) {
  * All routes require Supabase JWT auth — caller's token is forwarded so RLS
  * enforces per-user isolation.
  */
-router.get('/blueprint/projects', authenticateJWT, async (req, res) => {
+router.get('/blueprint/projects', serviceOrJWT, async (req, res) => {
   try {
-    const client = getUserClient(req.accessToken);
+    // Service calls use the service-role client + explicit user_id filter
+    // (RLS bypassed — we already validated the service key). User calls go
+    // through the JWT-scoped client (RLS enforces ownership).
+    const client = req.isServiceCall ? getServiceClient() : getUserClient(req.accessToken);
     if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
-    const { data, error } = await client
+    let query = client
       .from('takeoff_projects')
       .select('id, name, total_bid, source, stage, created_at, updated_at')
       .order('updated_at', { ascending: false })
       .limit(200);
+    if (req.isServiceCall) {
+      query = query.eq('user_id', req.user.id);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     res.json({ projects: data || [] });
   } catch (err) {
@@ -1059,15 +1097,21 @@ router.get('/blueprint/projects', authenticateJWT, async (req, res) => {
   }
 });
 
-router.get('/blueprint/projects/:id', authenticateJWT, async (req, res) => {
+router.get('/blueprint/projects/:id', serviceOrJWT, async (req, res) => {
   try {
-    const client = getUserClient(req.accessToken);
+    const client = req.isServiceCall ? getServiceClient() : getUserClient(req.accessToken);
     if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
-    const { data, error } = await client
+    let query = client
       .from('takeoff_projects')
       .select('*')
-      .eq('id', req.params.id)
-      .single();
+      .eq('id', req.params.id);
+    if (req.isServiceCall) {
+      // Ownership check at query time — service-role bypasses RLS, so we
+      // enforce it explicitly to keep tenants from reading each other's
+      // projects via service-key + a guessed project id.
+      query = query.eq('user_id', req.user.id);
+    }
+    const { data, error } = await query.single();
     if (error) throw error;
     res.json(data);
   } catch (err) {
