@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>My Bids | Surprise Granite</title>
+  <meta name="description" content="Signed proposals and deposits collected through the Blueprint Takeoff tool."/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+  <script src="/js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+  <script src="/js/supabase-init.js"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 24px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--text-muted); text-decoration: none;
+      font-size: 14px; margin-bottom: 24px;
+    }
+    .back-link:hover { color: var(--text-primary); }
+    .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; }
+    .header p { color: var(--text-secondary); margin-top: 4px; font-size: 14px; }
+    .btn {
+      padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: 1px solid var(--border-subtle); background: transparent;
+      color: var(--text-secondary); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { background: var(--dark-surface); color: var(--text-primary); }
+    .btn.primary {
+      background: var(--gold-primary); color: #000; border-color: var(--gold-primary);
+    }
+    .btn.primary:hover { background: var(--gold-dark); }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat {
+      background: var(--dark-surface); border: 1px solid var(--border-subtle);
+      border-radius: 12px; padding: 20px;
+    }
+    .stat-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .section { margin-bottom: 32px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; }
+    .pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    .pill.warning { background: rgba(245, 158, 11, .15); color: var(--warning); }
+    .pill.success { background: rgba(16, 185, 129, .15); color: var(--success); }
+    .pill.muted { background: rgba(255,255,255,.08); color: var(--text-muted); }
+    .table-wrap {
+      background: var(--dark-surface); border: 1px solid var(--border-subtle);
+      border-radius: 12px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 16px; text-align: left; font-size: 14px; }
+    th {
+      color: var(--text-muted); font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .8px;
+      background: var(--dark-elevated); border-bottom: 1px solid var(--border-subtle);
+    }
+    td { border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); color: var(--text-primary); }
+    td .strong { color: var(--text-primary); font-weight: 600; }
+    td .sub { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+    td .amount { font-variant-numeric: tabular-nums; }
+    .empty {
+      text-align: center; padding: 60px 24px; color: var(--text-muted);
+    }
+    .empty h3 { color: var(--text-secondary); font-size: 16px; margin-bottom: 8px; }
+    .empty p { font-size: 14px; max-width: 460px; margin: 0 auto 20px; }
+    .loading { display: flex; justify-content: center; padding: 60px; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border-subtle); border-top-color: var(--gold-primary);
+      border-radius: 50%; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .signed-out {
+      background: var(--dark-surface); border: 1px solid var(--border-subtle);
+      border-radius: 12px; padding: 32px; text-align: center;
+    }
+    .signed-out h2 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin-bottom: 8px; }
+    .signed-out p { color: var(--text-secondary); margin-bottom: 20px; }
+    .sig-link { color: var(--info); text-decoration: none; font-size: 13px; }
+    .sig-link:hover { text-decoration: underline; }
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+    }
+    .modal.open { display: flex; }
+    .modal-card {
+      background: var(--dark-elevated); border: 1px solid var(--border-subtle);
+      border-radius: 12px; padding: 24px; max-width: 600px; width: 100%;
+      max-height: 90vh; overflow: auto;
+    }
+    .modal-card h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 12px; }
+    .modal-card img { background: #fff; border-radius: 8px; max-width: 100%; padding: 12px; }
+    .modal-close {
+      background: transparent; border: 1px solid var(--border-subtle);
+      color: var(--text-secondary); padding: 6px 12px; border-radius: 6px;
+      cursor: pointer; margin-top: 16px;
+    }
+    @media (max-width: 720px) {
+      body { padding: 16px; }
+      .header h1 { font-size: 24px; }
+      th, td { padding: 10px 12px; font-size: 13px; }
+      th.hide-sm, td.hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/account/" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Account
+    </a>
+
+    <div class="header">
+      <div>
+        <h1>My Bids</h1>
+        <p>Signed proposals and Stripe deposits from your Blueprint Takeoff projects.</p>
+      </div>
+      <a href="/tools/blueprint-takeoff/" class="btn primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New takeoff
+      </a>
+    </div>
+
+    <div id="content">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <div class="modal" id="sigModal" onclick="if(event.target===this)closeSigModal()">
+    <div class="modal-card">
+      <h3 id="sigModalTitle">Signature</h3>
+      <div id="sigModalBody"></div>
+      <button class="modal-close" onclick="closeSigModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const fmt = n => '$' + (Math.round(Number(n) || 0)).toLocaleString();
+    const escape = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const dateFmt = ts => {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    };
+
+    // Wait for the global Supabase client created by /js/supabase-init.js
+    async function getClient() {
+      for (let i = 0; i < 50 && !window._sgSupabaseClient; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return window._sgSupabaseClient || null;
+    }
+
+    function renderSignedOut() {
+      document.getElementById('content').innerHTML = `
+        <div class="signed-out">
+          <h2>Sign in to see your bids</h2>
+          <p>Your signed proposals and deposits live in your Surprise Granite account. Sign in to load them.</p>
+          <a href="/login/?redirect=/account/bids/" class="btn primary">Sign in</a>
+        </div>
+      `;
+    }
+
+    function renderEmpty() {
+      document.getElementById('content').innerHTML = `
+        <div class="table-wrap">
+          <div class="empty">
+            <h3>No bids yet</h3>
+            <p>When a customer signs and pays a deposit on a proposal you sent through Blueprint Takeoff, it shows up here.</p>
+            <a href="/tools/blueprint-takeoff/" class="btn primary">Open Blueprint Takeoff</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function rowHtml(row) {
+      const paid = !!row.paid_at;
+      const bid = Number(row.total_bid) || 0;
+      const dep = Number(row.deposit) || 0;
+      const sigCell = row.signature_png
+        ? `<a class="sig-link" href="#" onclick="event.preventDefault();showSig('${row.id}')">View</a>`
+        : `<span style="color:var(--text-muted)">—</span>`;
+      return `
+        <tr>
+          <td>
+            <div class="strong">${escape(row.project || 'Untitled project')}</div>
+            ${row.customer ? `<div class="sub">${escape(row.customer)}</div>` : ''}
+          </td>
+          <td>
+            <div>${escape(row.accepted_by_name || '—')}</div>
+            <div class="sub">${escape(row.accepted_by_email || '')}</div>
+          </td>
+          <td class="amount strong">${fmt(bid)}</td>
+          <td class="amount">${fmt(dep)}</td>
+          <td>
+            ${paid
+              ? `<span class="pill success">Paid</span><div class="sub" style="margin-top:4px">${dateFmt(row.paid_at)}</div>`
+              : `<span class="pill warning">Awaiting deposit</span><div class="sub" style="margin-top:4px">Signed ${dateFmt(row.accepted_at)}</div>`}
+          </td>
+          <td class="hide-sm">${sigCell}</td>
+        </tr>
+      `;
+    }
+
+    let _signaturesById = {};
+    function showSig(id) {
+      const sig = _signaturesById[id];
+      if (!sig) return;
+      const modal = document.getElementById('sigModal');
+      document.getElementById('sigModalTitle').textContent = 'Customer signature';
+      document.getElementById('sigModalBody').innerHTML = `<img src="${sig}" alt="signature"/>`;
+      modal.classList.add('open');
+    }
+    function closeSigModal() {
+      document.getElementById('sigModal').classList.remove('open');
+    }
+
+    function renderRows(rows) {
+      _signaturesById = {};
+      rows.forEach(r => { if (r.signature_png) _signaturesById[r.id] = r.signature_png; });
+
+      const paid = rows.filter(r => r.paid_at);
+      const pending = rows.filter(r => !r.paid_at);
+
+      const totalPaid = paid.reduce((s, r) => s + (Number(r.deposit) || 0), 0);
+      const totalAcceptedBidValue = rows.reduce((s, r) => s + (Number(r.total_bid) || 0), 0);
+
+      const tableHtml = (group, heading, headingPill) => {
+        if (!group.length) return '';
+        return `
+          <div class="section">
+            <div class="section-header">
+              <h2 class="section-title">${heading} <span class="pill ${headingPill}">${group.length}</span></h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Signed by</th>
+                    <th>Total bid</th>
+                    <th>Deposit (50%)</th>
+                    <th>Status</th>
+                    <th class="hide-sm">Signature</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${group.map(rowHtml).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      };
+
+      document.getElementById('content').innerHTML = `
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Total signed</div>
+            <div class="stat-value">${rows.length}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Awaiting deposit</div>
+            <div class="stat-value warning">${pending.length}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Deposits collected</div>
+            <div class="stat-value success">${fmt(totalPaid)}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Accepted bid value</div>
+            <div class="stat-value">${fmt(totalAcceptedBidValue)}</div>
+          </div>
+        </div>
+        ${tableHtml(pending, 'Awaiting deposit', 'warning')}
+        ${tableHtml(paid, 'Paid', 'success')}
+      `;
+    }
+
+    async function load() {
+      const client = await getClient();
+      if (!client) {
+        document.getElementById('content').innerHTML = `<div class="empty"><h3>Couldn't load Supabase</h3><p>Refresh the page. If this persists, contact support.</p></div>`;
+        return;
+      }
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) {
+        renderSignedOut();
+        return;
+      }
+      // RLS restricts proposal_acceptances to user_id = auth.uid(); the
+      // service role linked the contractor's user_id when their email
+      // matched an sg_users row at acceptance time.
+      const { data, error } = await client
+        .from('proposal_acceptances')
+        .select('id, project, customer, accepted_by_name, accepted_by_email, total_bid, deposit, signature_png, accepted_at, paid_at, stripe_session_id')
+        .order('accepted_at', { ascending: false })
+        .limit(500);
+      if (error) {
+        document.getElementById('content').innerHTML = `<div class="empty"><h3>Couldn't load bids</h3><p>${escape(error.message)}</p></div>`;
+        return;
+      }
+      if (!data || !data.length) {
+        renderEmpty();
+        return;
+      }
+      renderRows(data);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { load().catch(err => {
+      console.error('Load bids error:', err);
+      document.getElementById('content').innerHTML = `<div class="empty"><h3>Something went wrong</h3><p>${escape(err.message || String(err))}</p></div>`;
+    }); });
+  </script>
+</body>
+</html>

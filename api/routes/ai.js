@@ -889,6 +889,7 @@ router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), as
     // Persist to Supabase if available — service-role write since the share
     // page is unauthenticated. user_id resolved by looking up the contractor
     // in auth.users by email when possible.
+    let acceptanceId = null;
     try {
       const svc = getServiceClient();
       if (svc) {
@@ -915,8 +916,13 @@ router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), as
           user_agent: record.userAgent,
           accepted_at: record.acceptedAt,
         };
-        const { error: insertErr } = await svc.from('proposal_acceptances').insert(insertRow);
+        const { data: inserted, error: insertErr } = await svc
+          .from('proposal_acceptances')
+          .insert(insertRow)
+          .select('id')
+          .single();
         if (insertErr) logger.warn('Acceptance Supabase insert failed (non-fatal):', insertErr.message);
+        else acceptanceId = inserted?.id || null;
       }
     } catch (dbErr) {
       logger.warn('Acceptance DB write failed (non-fatal):', dbErr.message);
@@ -963,7 +969,7 @@ router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), as
       }
     }
 
-    res.json({ ok: true, recordedAt: record.acceptedAt });
+    res.json({ ok: true, recordedAt: record.acceptedAt, acceptanceId });
   } catch (err) {
     logger.error('Acceptance record error:', err);
     return handleApiError(res, err, 'Acceptance record');

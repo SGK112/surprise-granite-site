@@ -288,10 +288,13 @@
         const sigDataUrl = canvas.toDataURL('image/png');
         const projectName = data.project || 'Project';
         const memo = `${projectName} — 50% deposit · accepted by ${name}`;
-        // Best-effort: log the acceptance (signature, name, email, time) for our records.
-        // The fire-and-forget call doesn't block the Stripe redirect.
+        // Record the acceptance first so we have the row ID to attach to the
+        // Stripe session metadata. Without this link, the webhook can't mark
+        // the acceptance paid. We await it but don't fail the flow if it
+        // errors — the contractor still gets paid, just without the linkage.
+        let acceptanceId = null;
         try {
-          fetch('https://surprise-granite-email-api.onrender.com/api/ai/blueprint/proposal/acceptance', {
+          const acRes = await fetch('https://surprise-granite-email-api.onrender.com/api/ai/blueprint/proposal/acceptance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -304,7 +307,11 @@
               preparedBy: data.preparedBy || {},
               acceptedAt: new Date().toISOString(),
             }),
-          }).catch(()=>{}); // non-blocking
+          });
+          if (acRes.ok) {
+            const acJson = await acRes.json();
+            acceptanceId = acJson.acceptanceId || null;
+          }
         } catch (_) { /* keep going to Stripe regardless */ }
 
         // Create Stripe checkout session — amount in cents
@@ -316,6 +323,8 @@
             email,
             invoice_ref: `proposal-${Date.now()}`,
             memo,
+            acceptance_id: acceptanceId,
+            source_kind: 'proposal_deposit',
           }),
         });
         if (!stripeResp.ok) {

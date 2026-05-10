@@ -73,7 +73,7 @@ function grossUpForFee(amount_cents) {
 
 router.post('/quick-pay', async (req, res) => {
   try {
-    const { amount, email, invoice_ref, memo, pass_fee, lead_id } = req.body;
+    const { amount, email, invoice_ref, memo, pass_fee, lead_id, acceptance_id, source_kind } = req.body;
 
     // Validate amount (must be at least $1 = 100 cents)
     if (!amount || amount < 100) {
@@ -136,11 +136,14 @@ router.post('/quick-pay', async (req, res) => {
       metadata: {
         invoice_ref: invoice_ref || '',
         memo: memo || '',
-        source: 'quick-pay',
+        source: source_kind || 'quick-pay',
         customer_email: email,
         // lead_id lets the webhook link the completed payment back to the
         // originating lead row — without it there's no way to reconcile.
         lead_id: lead_id || '',
+        // acceptance_id ties this checkout to a proposal_acceptances row so
+        // the webhook can mark it paid. Set when source_kind === 'proposal_deposit'.
+        acceptance_id: acceptance_id || '',
         pass_fee: '0',
         fee_cents: '0',
         net_cents: String(amount)

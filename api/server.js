@@ -2236,6 +2236,93 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const session = event.data.object;
         logger.info('Checkout session completed:', session.id);
 
+        // Blueprint takeoff proposal deposit — different code path than the
+        // store cart. The share page sets metadata.source='proposal_deposit'
+        // and metadata.acceptance_id pointing at proposal_acceptances. Mark
+        // it paid, notify the contractor, and skip the orders/lead/customer
+        // pipeline below (those are for storefront purchases).
+        if (session.metadata?.source === 'proposal_deposit') {
+          const acceptanceId = session.metadata.acceptance_id || null;
+          if (!acceptanceId) {
+            logger.warn('Proposal deposit completed without acceptance_id, session:', session.id);
+            break; // skip storefront pipeline regardless — this is not a store order
+          }
+          if (supabase) {
+            try {
+              // Conditional update: only mark paid if not already paid. The
+              // .select() returns the row (or empty array) so we can detect
+              // a no-op retry and skip the duplicate notification email.
+              const { data: updated, error: upErr } = await supabase
+                .from('proposal_acceptances')
+                .update({
+                  paid_at: new Date().toISOString(),
+                  stripe_session_id: session.id
+                })
+                .eq('id', acceptanceId)
+                .is('paid_at', null)
+                .select('id, prepared_by_email, accepted_by_name, accepted_by_email, project, customer, total_bid, deposit')
+                .maybeSingle();
+              if (upErr) {
+                logger.error('proposal_acceptances update error:', upErr.message);
+                throw new Error('Acceptance update failed: ' + upErr.message);
+              }
+              if (!updated) {
+                logger.info('proposal_acceptances already marked paid for', acceptanceId, '- skipping notification');
+                break;
+              }
+              logger.info('Proposal deposit marked paid:', acceptanceId, 'session:', session.id);
+
+              // Notify the contractor (best-effort, non-blocking on failure).
+              if (updated.prepared_by_email && process.env.SMTP_PASS) {
+                try {
+                  const nodemailer = require('nodemailer');
+                  const transporter = nodemailer.createTransport({
+                    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+                    port: parseInt(process.env.SMTP_PORT || '465', 10),
+                    secure: (process.env.SMTP_SECURE !== 'false'),
+                    auth: {
+                      user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
+                      pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
+                    },
+                  });
+                  const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+                  // Tool is the Remodely "Blueprint Takeoff" product. Per-tenant
+                  // dashboard URL is configurable so a future tenant install
+                  // (e.g. joesplumbing.com) can point their own bids page.
+                  const bidsUrl = process.env.BIDS_DASHBOARD_URL || 'https://www.surprisegranite.com/account/bids/';
+                  const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
+                  const escape = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                  await transporter.sendMail({
+                    from: `"Blueprint Takeoff by Remodely" <${fromEmail}>`,
+                    to: updated.prepared_by_email,
+                    replyTo: updated.accepted_by_email || fromEmail,
+                    subject: `💰 DEPOSIT RECEIVED: ${updated.project || 'proposal'} — ${updated.accepted_by_name || ''}`,
+                    html: `
+                      <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a2e">
+                        <div style="color:#666;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">Blueprint Takeoff · Remodely</div>
+                        <h2 style="color:#16a34a;margin:0 0 12px">Deposit cleared</h2>
+                        <p><strong>${escape(updated.project)}</strong>${updated.customer ? ' for ' + escape(updated.customer) : ''}</p>
+                        <table style="border-collapse:collapse;margin:16px 0">
+                          <tr><td style="padding:4px 12px 4px 0;color:#666">Customer:</td><td><strong>${escape(updated.accepted_by_name)}</strong> &lt;${escape(updated.accepted_by_email)}&gt;</td></tr>
+                          <tr><td style="padding:4px 12px 4px 0;color:#666">Total bid:</td><td><strong>${fmt(updated.total_bid)}</strong></td></tr>
+                          <tr><td style="padding:4px 12px 4px 0;color:#666">Deposit paid:</td><td><strong style="color:#16a34a">${fmt(updated.deposit)}</strong></td></tr>
+                          <tr><td style="padding:4px 12px 4px 0;color:#666">Stripe session:</td><td><code style="font-size:11px">${escape(session.id)}</code></td></tr>
+                        </table>
+                        <p style="color:#666;font-size:13px">The signature and full record are in your <a href="${escape(bidsUrl)}" style="color:#1a1a2e">My Bids dashboard</a>. Stripe will deposit the funds on its standard schedule.</p>
+                      </div>
+                    `,
+                  });
+                } catch (mailErr) {
+                  logger.warn('Deposit notification email failed (non-fatal):', mailErr.message);
+                }
+              }
+            } catch (depositErr) {
+              logger.error('Proposal deposit webhook handler error:', depositErr.message);
+            }
+          }
+          break; // skip storefront order-creation path below
+        }
+
         // Generate order number
         const orderNumber = `SG-${session.id.slice(-8).toUpperCase()}`;
 
