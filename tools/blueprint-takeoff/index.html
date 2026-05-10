@@ -358,6 +358,13 @@
        herringbone pattern). Hover shows the full reason list. */
     .estimate-table .labor-mod{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;background:rgba(245,158,11,.15);color:#f59e0b;cursor:help;text-decoration:none}
     .estimate-table .labor-mod.discount{background:rgba(34,197,94,.15);color:#22c55e}
+    /* Catalog match chip — surfaces which vendor product priced this line +
+       confidence (high/medium/low). Hover shows the matched product details
+       so the user can verify the pricing isn't a wrong-SKU collision. */
+    .estimate-table .catalog-match{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;cursor:help;text-decoration:none}
+    .estimate-table .catalog-match.high{background:rgba(34,197,94,.15);color:#22c55e}
+    .estimate-table .catalog-match.medium{background:rgba(245,158,11,.15);color:#f59e0b}
+    .estimate-table .catalog-match.low{background:rgba(239,68,68,.15);color:#ef4444}
     .self-perform.self{background:rgba(34,197,94,.18);color:#4ade80}
     .self-perform.sub{background:rgba(156,163,175,.18);color:#9ca3af}
     .self-perform.material{background:rgba(251,191,36,.18);color:#fbbf24}
@@ -2507,6 +2514,23 @@ flooring_lvp,5,3"></textarea>
         overrides[m.code] = {
           material: Number(best.product.price),
           source: `${best.vendor} catalog: ${sku}${best.product.name || best.product.line || ''}`.trim(),
+          // Match attribution — surfaced in the estimate row so the user can
+          // verify which catalog product priced this line + with what
+          // confidence. Score range is roughly 3–11 (SKU + vendor + name
+          // tokens + color + size). 6+ = strong, 4-5 = decent, 3 = weak.
+          match_score: best.score,
+          match_confidence: best.score >= 6 ? 'high' : best.score >= 4 ? 'medium' : 'low',
+          matched_product: {
+            sku: best.product.sku || null,
+            name: best.product.name || best.product.line || null,
+            color: best.product.color || null,
+            size: best.product.size || null,
+            finish: best.product.finish || null,
+            price: Number(best.product.price),
+            price_unit: best.product.price_unit || 'sf',
+          },
+          matched_vendor: best.vendor,
+          matched_against_spec: m.spec,
         };
       }
     }
@@ -4015,6 +4039,29 @@ flooring_lvp,5,3"></textarea>
       const labModHtml = (isLabor && labMod !== 1 && labReasons.length)
         ? `<span class="labor-mod ${labMod < 1 ? 'discount' : ''}" title="${escapeHtml(labReasons.join(' · '))}">labor ${labMod}×</span>`
         : '';
+      // Catalog match chip — only on lines that actually hit a vendor catalog
+      // (codeOverride was set in the estimator). Material side shows the chip;
+      // labor side stays clean (catalog matters for material price, not labor).
+      const isMaterial = li.bid_split === 'material' || !li.bid_split;
+      const matchedProd = li.matched_product;
+      const matchConf = li.match_confidence;
+      const catMatchHtml = (isMaterial && matchedProd && matchConf)
+        ? (() => {
+            const p = matchedProd;
+            const skuLine = p.sku ? `${p.sku} ` : '';
+            const variant = [p.color, p.size, p.finish].filter(Boolean).join(' · ');
+            const tooltip = [
+              `Catalog match — confidence: ${matchConf} (score ${li.match_score})`,
+              ``,
+              `Matched product: ${skuLine}${p.name || ''}${variant ? '\n' + variant : ''}`,
+              `Price: $${p.price}/${p.price_unit || 'sf'}`,
+              `From: ${li.matched_vendor || ''} catalog`,
+              ``,
+              `Matched against spec: "${li.matched_against_spec || ''}"`,
+            ].join('\n');
+            return `<span class="catalog-match ${matchConf}" title="${escapeHtml(tooltip)}">✓ ${escapeHtml(li.matched_vendor || 'catalog')}</span>`;
+          })()
+        : '';
       const rowClass = li.owner_supplied ? ' class="owner-supplied"' : '';
       return `
       <tr data-i="${i}"${rowClass}>
@@ -4023,6 +4070,7 @@ flooring_lvp,5,3"></textarea>
           <span class="self-perform ${sp}">${sp}</span>
           ${ownerToggle}
           ${labModHtml}
+          ${catMatchHtml}
           ${meta ? `<span class="desc-meta">${escapeHtml(meta)}</span>` : ''}
           ${li.cabinet_count ? `<span class="desc-meta">${li.cabinet_count} cabinets</span>` : ''}
         </td>

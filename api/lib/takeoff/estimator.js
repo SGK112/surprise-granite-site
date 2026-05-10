@@ -451,6 +451,15 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
         catalog_id: hit?.item?.id || null,
         catalog_brand: hit?.item?.brand || null,
       },
+      // Vendor catalog match attribution — passed through to the line item
+      // as `extra` so the frontend can render "matched X" tooltip + chip.
+      extra: codeOverride ? {
+        match_score: codeOverride.match_score,
+        match_confidence: codeOverride.match_confidence,
+        matched_product: codeOverride.matched_product,
+        matched_vendor: codeOverride.matched_vendor,
+        matched_against_spec: codeOverride.matched_against_spec,
+      } : undefined,
     });
 
     if (!ctMat) {
@@ -530,6 +539,13 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       rateKey: refined, crewRate,
       matchedSpec: flMat?.spec || '',
       ordering: { raw_sf: flSqft, waste_pct: Math.round(wf*100) },
+      extra: codeOverride ? {
+        match_score: codeOverride.match_score,
+        match_confidence: codeOverride.match_confidence,
+        matched_product: codeOverride.matched_product,
+        matched_vendor: codeOverride.matched_vendor,
+        matched_against_spec: codeOverride.matched_against_spec,
+      } : undefined,
     });
   }
 
@@ -558,6 +574,13 @@ function buildEstimate({ takeoff = {}, materials = [], projectType = 'commercial
       rateKey: refined, crewRate,
       matchedSpec: tileMat?.spec || '',
       ordering: { cartons, sf_per_carton: tileSfPerCarton, raw_sf: tileSqft, waste_pct: Math.round(wf*100) },
+      extra: codeOverride ? {
+        match_score: codeOverride.match_score,
+        match_confidence: codeOverride.match_confidence,
+        matched_product: codeOverride.matched_product,
+        matched_vendor: codeOverride.matched_vendor,
+        matched_against_spec: codeOverride.matched_against_spec,
+      } : undefined,
     });
   }
 
