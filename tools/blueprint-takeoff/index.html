@@ -2276,19 +2276,24 @@ flooring_lvp,5,3"></textarea>
         ? `<button class="pr-del" type="button" data-del="${c.id}" aria-label="Delete catalog">×</button>`
         : '<span style="width:24px;display:inline-block"></span>';
       return `
-        <div class="project-row">
-          <div>
-            <span class="pr-name">${escapeHtml(c.vendor)}${badge}</span>
-            <span class="pr-meta">${escapeHtml(c.category)} · ${c.products.length} product${c.products.length>1?'s':''}${!isOwner ? ' · read-only' : ''}</span>
+        <details class="project-row" style="display:block;padding:0;background:transparent">
+          <summary style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 12px;cursor:pointer;list-style:none;background:rgba(0,0,0,.15);border-radius:4px;margin-bottom:4px" data-cat-id="${c.id}">
+            <div>
+              <span class="pr-name">${escapeHtml(c.vendor)}${badge}</span>
+              <span class="pr-meta">${escapeHtml(c.category)} · ${c.products.length} product${c.products.length>1?'s':''}${!isOwner ? ' · read-only' : ''} · <span style="color:var(--text-muted);font-size:10px">click to view</span></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+              ${shareBtn}
+              <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
+                <input type="checkbox" data-toggle="${c.id}" ${c.enabled !== false ? 'checked' : ''}> on
+              </label>
+            </div>
+            <span onclick="event.stopPropagation()">${delBtn}</span>
+          </summary>
+          <div style="padding:8px 12px 14px;background:rgba(255,255,255,.02);margin:0 0 6px;border-radius:0 0 4px 4px">
+            ${renderCatalogProducts(c)}
           </div>
-          <div style="text-align:right;display:flex;align-items:center;gap:6px">
-            ${shareBtn}
-            <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
-              <input type="checkbox" data-toggle="${c.id}" ${c.enabled !== false ? 'checked' : ''}> on
-            </label>
-          </div>
-          ${delBtn}
-        </div>
+        </details>
       `;
     }).join('');
     list.querySelectorAll('input[data-toggle]').forEach(cb => {
@@ -2321,6 +2326,53 @@ flooring_lvp,5,3"></textarea>
     list.querySelectorAll('.cat-share-btn').forEach(btn => {
       btn.addEventListener('click', () => onShareCatalogClick(btn.dataset.id));
     });
+  }
+
+  // Render the products inside an expanded catalog row. Read-only table —
+  // future iteration could add inline edit (price corrections, delete bad
+  // rows, add missed products) but this gives the user visibility now.
+  function renderCatalogProducts(catalog) {
+    const products = (catalog?.products || []).filter(Boolean);
+    if (!products.length) return `<div style="font-size:12px;color:var(--text-muted);padding:8px 0">No products parsed for this catalog.</div>`;
+    // Group by line/series so a Daltile catalog doesn't show as a flat 200-row dump
+    const byLine = new Map();
+    for (const p of products) {
+      const key = p.line || p.name || '(uncategorized)';
+      if (!byLine.has(key)) byLine.set(key, []);
+      byLine.get(key).push(p);
+    }
+    const lines = [...byLine.entries()].sort((a, b) => b[1].length - a[1].length);
+    const totalPriced = products.filter(p => Number(p.price) > 0).length;
+    return `
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">
+        ${products.length} products · ${totalPriced} priced · ${lines.length} line${lines.length>1?'s':''}
+      </div>
+      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <thead style="position:sticky;top:0;background:var(--sg-darker)">
+            <tr>
+              <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600">SKU / Line</th>
+              <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600">Color</th>
+              <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600">Size / Finish</th>
+              <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-weight:600">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lines.flatMap(([lineName, prods]) => [
+              `<tr><td colspan="4" style="padding:6px 8px;font-weight:600;color:var(--text-secondary);background:rgba(255,255,255,.02)">${escapeHtml(lineName)}</td></tr>`,
+              ...prods.map(p => `
+                <tr>
+                  <td style="padding:5px 8px;border-top:1px solid var(--border);font-family:'Menlo',monospace;font-size:10px;color:var(--sg-gold)">${escapeHtml(p.sku || '—')}</td>
+                  <td style="padding:5px 8px;border-top:1px solid var(--border)">${escapeHtml(p.color || '')}</td>
+                  <td style="padding:5px 8px;border-top:1px solid var(--border);color:var(--text-muted)">${escapeHtml([p.size, p.finish, p.thickness].filter(Boolean).join(' · '))}</td>
+                  <td style="padding:5px 8px;border-top:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${Number(p.price) > 0 ? '$' + Number(p.price).toFixed(2) + (p.price_unit ? '/' + escapeHtml(p.price_unit) : '') : '<span style="color:var(--text-muted)">—</span>'}</td>
+                </tr>
+              `)
+            ]).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
   // Toggle share-with-team on a catalog. If the user has no team yet, prompt
