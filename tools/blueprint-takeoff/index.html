@@ -12,8 +12,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260502h">
-  <script defer src="/js/unified-nav.js?v=20260504f"></script>
+  <!-- SG site nav intentionally NOT loaded on this tool page — the tool is
+       a focused workspace, not a marketing surface. Other SG pages keep
+       their nav (those pages include unified-nav.css + unified-nav.js). -->
+  <!-- <link rel="stylesheet" href="/css/unified-nav.css?v=20260502h"> -->
+  <!-- <script defer src="/js/unified-nav.js?v=20260504f"></script> -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
@@ -34,21 +37,10 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--sg-darker);color:var(--text-primary);line-height:1.6;min-height:100vh}
 
-    /* Hide ALL SG site chrome on this tool page only — the tool is a
-       focused workspace; site nav/footer/promo bars just cost space.
-       Page-scoped (style only loads here). Listed every selector seen
-       in SG's Webflow + unified-nav layers so any of them get hidden. */
-    .unified-nav, .unified-footer, .unified-nav-overlay, .unified-nav-drawer,
-    .navbar_wrapper, .navbar_component, .navbar-banner_component, .navbar_menu,
-    nav.navbar_wrapper, nav[role="navigation"],
-    .footer_component, .footer_wrapper,
-    .promo-callout, .free-estimate-fab, .sticky-mobile-bar, .sg-mobile-action-bar,
-    [data-sg-chrome] { display: none !important; visibility: hidden !important; }
-    body { padding-top: 0 !important; padding-bottom: 32px !important; margin: 0 !important; }
-    /* Mark the tool body so the JS pass below knows what to keep. */
-    body > section.hero, body > nav#stepNav, body > main,
-    body > .byok-modal, body > .cmdk-overlay, body > .status-bar,
-    body > script { /* keep — these are ours */ }
+    /* Tool page is standalone (SG nav/footer scripts not loaded above).
+       Reset body to clean defaults; bottom padding leaves room for the
+       sticky status bar. */
+    body { margin: 0 !important; padding: 0 0 32px 0 !important; }
 
     /* Top toolbar with action buttons (My Co, Catalogs, BYOK, etc.)
        always accessible. Sticks at top of viewport now that the SG nav
@@ -5774,50 +5766,19 @@ ${pb.license || ''}`;
   const chips = document.querySelectorAll('#stepNav .step-nav-chip');
   const stepNavEl = $('stepNav');
 
-  // Aggressively hide any non-tool body children — the SG site injects
-  // its nav/footer/promos after page load, and CSS selectors miss whatever
-  // class names get used. This runs on load + via MutationObserver so any
-  // late injection also gets hidden.
-  const TOOL_OWN_SELECTORS = [
-    'section.hero', 'nav#stepNav', 'main', '.byok-modal',
-    '.cmdk-overlay', '.status-bar', 'script', 'style',
-  ];
-  function isToolOwn(el) {
-    if (!(el instanceof Element)) return true; // text nodes, comments — ignore
-    return TOOL_OWN_SELECTORS.some(sel => el.matches(sel));
-  }
-  function hideNonToolChrome() {
-    document.body.childNodes.forEach(node => {
-      if (!(node instanceof Element)) return;
-      if (isToolOwn(node)) return;
-      if (node.style.display !== 'none') node.style.display = 'none';
-    });
-  }
-  hideNonToolChrome();
-  // Catch late-injected SG chrome (unified-nav.js runs after DOMContentLoaded).
-  new MutationObserver(hideNonToolChrome).observe(document.body, { childList: true });
-
-  // Measure the SG nav height + stack our sticky elements below it:
-  //   [SG .unified-nav]     ← top of viewport, fixed
-  //   [hero, sticky]        ← top: navHeight, height = heroH
-  //   [step nav, sticky]    ← top: navHeight + heroH
-  // Direct .unified-nav measurement: body padding-top (140px) was set
-  // smaller than the actual rendered nav height (~290px on desktop with
-  // the sub-nav row), so trusting body padding hid our sticky elements
-  // under the bottom rows of the SG nav.
+  // Stack our sticky elements at the top of the viewport:
+  //   [hero, sticky]        ← top: 0
+  //   [step nav, sticky]    ← top: heroHeight
+  // SG nav isn't loaded on this page, so no offset needed.
   function syncStickyOffset() {
     if (!stepNavEl) return;
-    const sgNav = document.querySelector('.unified-nav');
     const hero = document.querySelector('section.hero');
-    const navH = sgNav ? sgNav.getBoundingClientRect().height
-                       : (parseInt(getComputedStyle(document.body).paddingTop, 10) || 0);
-    if (navH <= 0) return;
     if (hero) {
-      hero.style.top = navH + 'px';
+      hero.style.top = '0px';
       const heroH = hero.getBoundingClientRect().height;
-      stepNavEl.style.top = (navH + heroH) + 'px';
+      stepNavEl.style.top = heroH + 'px';
     } else {
-      stepNavEl.style.top = navH + 'px';
+      stepNavEl.style.top = '0px';
     }
   }
   syncStickyOffset();
