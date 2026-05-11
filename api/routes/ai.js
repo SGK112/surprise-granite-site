@@ -1174,12 +1174,107 @@ router.post('/blueprint/proposal/share', express.json({ limit: '4mb' }), async (
     // source, but include a server-side default for direct API consumers.
     const baseUrl = req.body?.base_url || process.env.SITE_URL || 'https://www.surprisegranite.com';
     const shareUrl = `${baseUrl.replace(/\/$/, '')}/tools/blueprint-takeoff/share.html#s=${data.id}`;
-    res.json({ id: data.id, share_url: shareUrl, created_at: data.created_at, expires_at: data.expires_at });
+
+    // Optional: send the signing link directly to the recipient. Frontend
+    // sets send_email:true (e-sign tool always does when recipient.email is
+    // filled). If SMTP isn't configured or send fails, we still return the
+    // share URL — the user can copy and send manually.
+    let emailResult = { sent: false };
+    if (req.body?.send_email === true && payload.recipient?.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.recipient.email)) {
+      emailResult = await sendShareLinkEmail({
+        to: payload.recipient.email,
+        recipientName: payload.recipient.name || '',
+        senderName: payload.preparedBy?.name || 'Surprise Granite',
+        senderEmail: payload.preparedBy?.email || '',
+        project: payload.project || 'Document for sign-off',
+        note: payload.note || '',
+        shareUrl,
+        kind: payload.type === 'plan_sign' ? 'sign' : 'review',
+      }).catch(err => ({ sent: false, error: err.message }));
+    }
+
+    res.json({
+      id: data.id,
+      share_url: shareUrl,
+      created_at: data.created_at,
+      expires_at: data.expires_at,
+      email_sent: emailResult.sent,
+      email_error: emailResult.error || undefined,
+    });
   } catch (err) {
     logger.error('Proposal share create error:', err);
     return handleApiError(res, err, 'Proposal share');
   }
 });
+
+/**
+ * Send a signing-link email to the recipient. Reuses the SMTP config that
+ * /proposal/send + /proposal/acceptance use (Resend on 587 STARTTLS by
+ * default). From-address falls back through the same chain so behavior is
+ * consistent with the rest of the email pipe.
+ */
+async function sendShareLinkEmail({ to, recipientName, senderName, senderEmail, project, note, shareUrl, kind }) {
+  if (!process.env.SMTP_PASS && !process.env.GMAIL_APP_PASSWORD) {
+    return { sent: false, error: 'SMTP not configured' };
+  }
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+  const smtpSecure = (process.env.SMTP_SECURE != null)
+    ? (process.env.SMTP_SECURE !== 'false')
+    : (smtpPort === 465);
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
+      pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+  const fromEmail = process.env.SMTP_FROM
+    || (process.env.SMTP_USER && process.env.SMTP_USER.includes('@') ? process.env.SMTP_USER : null)
+    || process.env.FROM_EMAIL
+    || process.env.GMAIL_USER
+    || process.env.ADMIN_EMAIL
+    || 'info@surprisegranite.com';
+  const fromName = (senderName || 'Surprise Granite').replace(/"/g, '');
+  const action = kind === 'sign' ? 'sign' : 'review';
+  const subject = `${senderName ? senderName + ' sent you' : 'You received'} a document to ${action}: ${project}`;
+  const noteBlock = note
+    ? `<div style="background:#fef3c7;border-left:3px solid #f59e0b;padding:12px 14px;border-radius:4px;margin:14px 0;font-size:14px;color:#1a1a2e"><strong>Message from ${escapeHtmlServer(senderName)}:</strong><br>${escapeHtmlServer(note)}</div>`
+    : '';
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${escapeHtmlServer(subject)}</title></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,Segoe UI,Roboto,sans-serif">
+  <div style="max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+    <div style="background:#1a1a2e;padding:22px 28px;border-bottom:3px solid #f9cb00">
+      <div style="color:#f9cb00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Document for ${action}-off</div>
+      <div style="color:#fff;font-size:20px;font-weight:700;margin-top:4px;font-family:'Space Grotesk',sans-serif">${escapeHtmlServer(project)}</div>
+    </div>
+    <div style="padding:28px;color:#1a1a2e;line-height:1.6">
+      <p style="margin:0 0 12px">Hi ${escapeHtmlServer(recipientName || 'there')},</p>
+      <p style="margin:0 0 14px"><strong>${escapeHtmlServer(senderName)}</strong> sent you a document to ${action}. Click below to open it and sign electronically — no account needed.</p>
+      ${noteBlock}
+      <div style="text-align:center;margin:24px 0">
+        <a href="${escapeHtmlServer(shareUrl)}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:15px">Open &amp; sign document →</a>
+      </div>
+      <p style="margin:18px 0 4px;color:#666;font-size:12px">Or paste this link into your browser:</p>
+      <p style="margin:0 0 0;color:#666;font-size:12px;word-break:break-all"><a href="${escapeHtmlServer(shareUrl)}" style="color:#666">${escapeHtmlServer(shareUrl)}</a></p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0 14px">
+      <p style="margin:0;color:#999;font-size:11px;line-height:1.5">This link is private. Your signature is time-stamped and ${escapeHtmlServer(senderName)} will be notified by email once you sign. Link expires in 90 days.</p>
+    </div>
+  </div>
+</body></html>`;
+  await transporter.sendMail({
+    from: `"${fromName}" <${fromEmail}>`,
+    to,
+    replyTo: senderEmail || process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com',
+    subject,
+    html,
+  });
+  logger.info('Share-link emailed', { to, project, from: fromEmail });
+  return { sent: true };
+}
 
 router.get('/blueprint/proposal/share/:id', async (req, res) => {
   // Public fetch — share.html anonymously hits this with the URL UUID.

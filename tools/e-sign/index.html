@@ -163,13 +163,13 @@
 
     <div class="result" id="result">
       <div class="result-head">✓ Signing link ready</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Send this link to your recipient. When they sign, you'll get an email notification.</div>
+      <div id="sendStatus" style="font-size:13px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:var(--panel-2);border-radius:6px"></div>
       <div class="url-row">
         <input type="text" id="resultUrl" readonly>
         <button class="btn-copy" id="btnCopy">Copy</button>
       </div>
       <div class="send-options" id="sendOptions">
-        <a id="sendEmail" href="#">✉ Send via email</a>
+        <a id="sendEmail" href="#">✉ Forward via email</a>
         <a id="sendSms" href="#">📱 Send via SMS</a>
         <a id="openLink" href="#" target="_blank" rel="noopener">↗ Preview signing page</a>
       </div>
@@ -342,10 +342,14 @@
           ts: Date.now(),
         };
 
+        // send_email:true tells the backend to also email the link to the
+        // recipient (if recipient.email is filled). Tool gracefully degrades:
+        // if the email fails, the share link still returns and we surface
+        // a "couldn't send" notice while keeping the copy/preview options.
         const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ payload, base_url: location.origin }),
+          body: JSON.stringify({ payload, base_url: location.origin, send_email: !!recipEmail }),
         });
         if (!resp.ok) {
           const txt = await resp.text();
@@ -358,6 +362,23 @@
         const url = data.share_url;
         $('resultUrl').value = url;
         $('openLink').href = url;
+
+        // Reflect email-send result in the UI so the user knows whether
+        // they still need to forward the link manually.
+        const sendStatus = $('sendStatus');
+        if (recipEmail && data.email_sent) {
+          sendStatus.innerHTML = `<span style="color:var(--good)">✓</span> Emailed to <strong>${recipEmail}</strong>`;
+          sendStatus.style.color = 'var(--good)';
+        } else if (recipEmail && data.email_error) {
+          sendStatus.innerHTML = `⚠ Couldn't email recipient: ${data.email_error}. Use the buttons below to send manually.`;
+          sendStatus.style.color = '#fbbf24';
+        } else if (recipEmail) {
+          sendStatus.innerHTML = `⚠ Email not sent (server didn't confirm). Use the buttons below to send manually.`;
+          sendStatus.style.color = '#fbbf24';
+        } else {
+          sendStatus.innerHTML = `No recipient email provided — use the buttons below to share the link.`;
+          sendStatus.style.color = 'var(--muted)';
+        }
 
         // Pre-fill email + SMS shortcuts. Keep them short so phone/email apps
         // don't truncate them; recipient just needs the link.
