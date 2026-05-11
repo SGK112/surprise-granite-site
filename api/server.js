@@ -2276,16 +2276,28 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               if (updated.prepared_by_email && process.env.SMTP_PASS) {
                 try {
                   const nodemailer = require('nodemailer');
+                  // Port-aware secure: 465 = implicit TLS, 587 = STARTTLS (secure: false).
+                  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+                  const smtpSecure = (process.env.SMTP_SECURE != null)
+                    ? (process.env.SMTP_SECURE !== 'false')
+                    : (smtpPort === 465);
                   const transporter = nodemailer.createTransport({
                     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-                    port: parseInt(process.env.SMTP_PORT || '465', 10),
-                    secure: (process.env.SMTP_SECURE !== 'false'),
+                    port: smtpPort,
+                    secure: smtpSecure,
                     auth: {
                       user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
                       pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
                     },
                   });
-                  const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+                  // SMTP_USER for Resend is literally "resend" (auth username,
+                  // not an email). The from header needs a real email on a
+                  // verified sender domain.
+                  const fromEmail = process.env.SMTP_FROM
+                    || (process.env.SMTP_USER && process.env.SMTP_USER.includes('@') ? process.env.SMTP_USER : null)
+                    || process.env.GMAIL_USER
+                    || process.env.ADMIN_EMAIL
+                    || 'info@surprisegranite.com';
                   // Tool is the Remodely "Blueprint Takeoff" product. Per-tenant
                   // dashboard URL is configurable so a future tenant install
                   // (e.g. joesplumbing.com) can point their own bids page.

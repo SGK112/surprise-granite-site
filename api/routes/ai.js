@@ -974,16 +974,24 @@ router.post('/blueprint/proposal/acceptance', express.json({ limit: '6mb' }), as
     if (preparedBy.email && process.env.SMTP_PASS) {
       try {
         const nodemailer = require('nodemailer');
+        const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+        const smtpSecure = (process.env.SMTP_SECURE != null)
+          ? (process.env.SMTP_SECURE !== 'false')
+          : (smtpPort === 465);
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST || 'smtp.gmail.com',
-          port: parseInt(process.env.SMTP_PORT || '465', 10),
-          secure: (process.env.SMTP_SECURE !== 'false'),
+          port: smtpPort,
+          secure: smtpSecure,
           auth: {
             user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
             pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
           },
         });
-        const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+        const fromEmail = process.env.SMTP_FROM
+          || (process.env.SMTP_USER && process.env.SMTP_USER.includes('@') ? process.env.SMTP_USER : null)
+          || process.env.GMAIL_USER
+          || process.env.ADMIN_EMAIL
+          || 'info@surprisegranite.com';
         const fmt = n => '$' + (Math.round(n)||0).toLocaleString();
         await transporter.sendMail({
           from: `"${preparedBy.name || 'Surprise Granite'}" <${fromEmail}>`,
@@ -1033,14 +1041,20 @@ router.post('/blueprint/proposal/send', async (req, res) => {
 
     // Reuse the SMTP transporter from the email router. We don't import it
     // directly to avoid coupling — instead require it lazily.
+    // Port-aware secure setting: 465 = implicit TLS, 587/2525 = STARTTLS
+    // (secure must be false). The previous hardcoded `secure: true` broke
+    // Resend (which runs on 587) and any other STARTTLS provider.
+    const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+    const smtpSecure = (process.env.SMTP_SECURE != null)
+      ? (process.env.SMTP_SECURE !== 'false')
+      : (smtpPort === 465);
     let transporter;
     try {
-      const path = require('path');
       const nodemailer = require('nodemailer');
       transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '465', 10),
-        secure: (process.env.SMTP_SECURE !== 'false'),
+        port: smtpPort,
+        secure: smtpSecure,
         auth: {
           user: process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com',
           pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
@@ -1094,17 +1108,27 @@ router.post('/blueprint/proposal/send', async (req, res) => {
   </div>
 </body></html>`;
 
-    const fromEmail = process.env.SMTP_USER || process.env.GMAIL_USER || 'info@surprisegranite.com';
+    // From address: must be a real email on a Resend-verified domain (or any
+    // SMTP provider's verified sender). SMTP_USER is the auth username
+    // (literally "resend" for Resend), NOT a sender email — using it as the
+    // from address produced "<resend>" which Resend rejects with 500.
+    // Order: explicit SMTP_FROM env var → ADMIN_EMAIL → SG default.
+    const fromEmail = process.env.SMTP_FROM
+      || (process.env.SMTP_USER && process.env.SMTP_USER.includes('@') ? process.env.SMTP_USER : null)
+      || process.env.GMAIL_USER
+      || process.env.ADMIN_EMAIL
+      || 'info@surprisegranite.com';
+    const fromName = (preparedBy.name || 'Surprise Granite').replace(/"/g, '');
     await transporter.sendMail({
-      from: `"Surprise Granite" <${fromEmail}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to,
       cc: cc || undefined,
-      replyTo: process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com',
+      replyTo: preparedBy.email || process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com',
       subject,
       html: wrapped,
     });
 
-    logger.info('Proposal emailed', { to, customer, project });
+    logger.info('Proposal emailed', { to, customer, project, from: fromEmail });
     res.json({ ok: true, sent_at: new Date().toISOString() });
   } catch (err) {
     logger.error('Proposal send error:', err);
