@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>E-Signature — drop any PDF, get it signed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0b0b14; --panel:#11111c; --panel-2:#161624; --border:rgba(255,255,255,.08);
+      --text:#f4f4f7; --muted:#9aa0b4; --accent:#f9cb00; --good:#22c55e; --bad:#ef4444;
+    }
+    html,body{height:100%}
+    body{font-family:'Inter',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh;display:flex;flex-direction:column}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+    .brand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;letter-spacing:.3px}
+    .brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+    .topbar a{color:var(--muted);text-decoration:none;font-size:12px}
+    .topbar a:hover{color:var(--text)}
+
+    main{flex:1;max-width:760px;width:100%;margin:0 auto;padding:36px 20px 60px}
+    h1{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;margin-bottom:6px;letter-spacing:-.5px}
+    .lede{color:var(--muted);font-size:15px;margin-bottom:28px;max-width:560px}
+
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px}
+    .card h2{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px}
+    .step-num{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#0b0b14;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+
+    .drop{border:2px dashed rgba(249,203,0,.4);border-radius:10px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(249,203,0,.03)}
+    .drop:hover, .drop.over{border-color:var(--accent);background:rgba(249,203,0,.08)}
+    .drop.has-file{border-color:var(--good);background:rgba(34,197,94,.06)}
+    .drop-icon{font-size:32px;margin-bottom:8px}
+    .drop-text{font-size:15px;font-weight:600;margin-bottom:4px}
+    .drop-sub{color:var(--muted);font-size:12px}
+    .drop input[type=file]{display:none}
+
+    .file-info{display:none;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;margin-top:10px;font-size:13px}
+    .file-info.show{display:flex}
+    .file-info .file-name{color:var(--text);font-weight:600}
+    .file-info .file-meta{color:var(--muted);font-size:11px;margin-top:2px}
+    .btn-remove{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit}
+    .btn-remove:hover{color:var(--bad);border-color:var(--bad)}
+
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:560px){.row{grid-template-columns:1fr}}
+    label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:5px;margin-top:10px}
+    label:first-child{margin-top:0}
+    input[type=text],input[type=email],textarea{width:100%;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit;line-height:1.4}
+    textarea{resize:vertical;min-height:60px}
+    input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+    .hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+
+    .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+    .btn{padding:11px 22px;border-radius:7px;border:none;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:all .12s}
+    .btn-go{background:var(--accent);color:#0b0b14}
+    .btn-go:hover:not(:disabled){filter:brightness(1.08)}
+    .btn-go:disabled{opacity:.5;cursor:not-allowed}
+    .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--muted)}
+    .btn-secondary:hover{color:var(--text);border-color:var(--text)}
+
+    .progress{display:none;margin-top:14px}
+    .progress.show{display:block}
+    .progress-bar{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+    .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#ffe066);transition:width .3s ease}
+    .progress-label{font-size:11px;color:var(--muted)}
+
+    .error{display:none;margin-top:12px;padding:10px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:6px;color:#fca5a5;font-size:13px}
+    .error.show{display:block}
+
+    .result{display:none;background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(34,197,94,.02));border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:20px;margin-top:18px}
+    .result.show{display:block}
+    .result-head{display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--good);margin-bottom:10px}
+    .url-row{display:flex;gap:8px;margin-top:8px}
+    .url-row input{flex:1;font-family:'SF Mono',ui-monospace,monospace;font-size:12px}
+    .btn-copy{padding:10px 14px;background:var(--accent);color:#0b0b14;border:none;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+    .send-options{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .send-options a{flex:1;min-width:140px;text-align:center;padding:9px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-size:12px;font-weight:600}
+    .send-options a:hover{border-color:var(--accent)}
+
+    .footer{padding:18px 24px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;text-align:center}
+    .footer a{color:var(--muted)}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><span class="brand-dot"></span> E-Signature</div>
+    <a href="/tools/">← All tools</a>
+  </div>
+
+  <main>
+    <h1>Get any document signed.</h1>
+    <p class="lede">Drop a PDF — a drawing, a quote, a change order, a release. We'll generate a private link your recipient can open, review, and sign right in their browser. No app, no account.</p>
+
+    <!-- Step 1: drop the PDF -->
+    <div class="card">
+      <h2><span class="step-num">1</span> Drop the PDF</h2>
+      <div class="drop" id="drop">
+        <input type="file" id="fileInput" accept="application/pdf,.pdf">
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">Drop a PDF here, or click to browse</div>
+        <div class="drop-sub">Plans, drawings, contracts — anything that needs a signature</div>
+      </div>
+      <div class="file-info" id="fileInfo">
+        <div>
+          <div class="file-name" id="fileName"></div>
+          <div class="file-meta" id="fileMeta"></div>
+        </div>
+        <button class="btn-remove" id="btnRemove" type="button">Remove</button>
+      </div>
+    </div>
+
+    <!-- Step 2: recipient + sender details -->
+    <div class="card">
+      <h2><span class="step-num">2</span> Who's signing &amp; what for</h2>
+
+      <div class="row">
+        <div>
+          <label for="recipName">Recipient name</label>
+          <input type="text" id="recipName" placeholder="Cabinet rep, customer, sub…" autocomplete="off">
+        </div>
+        <div>
+          <label for="recipEmail">Recipient email <span style="color:var(--muted);text-transform:none;font-weight:400">(optional)</span></label>
+          <input type="email" id="recipEmail" placeholder="them@example.com" autocomplete="off">
+        </div>
+      </div>
+
+      <label for="note">What are they signing? <span style="color:var(--muted);text-transform:none;font-weight:400">(shown on the signing page)</span></label>
+      <textarea id="note" placeholder="e.g. Approve cabinet drawings for State Farm breakroom — please confirm dimensions and door style before fabrication."></textarea>
+
+      <label for="project">Project / document title <span style="color:var(--muted);text-transform:none;font-weight:400">(optional)</span></label>
+      <input type="text" id="project" placeholder="State Farm Teammate Breakroom — Cabinets">
+
+      <div class="row" style="margin-top:14px">
+        <div>
+          <label for="senderName">Your name / company</label>
+          <input type="text" id="senderName" placeholder="Surprise Granite — Joshua Breese">
+        </div>
+        <div>
+          <label for="senderEmail">Your email <span style="color:var(--muted);text-transform:none;font-weight:400">(for the notification)</span></label>
+          <input type="email" id="senderEmail" placeholder="you@yourcompany.com">
+        </div>
+      </div>
+      <div class="hint">Remembered on this browser — auto-fills next time.</div>
+    </div>
+
+    <!-- Step 3: generate link -->
+    <div class="actions">
+      <button class="btn btn-go" id="btnGo" disabled>Generate signing link →</button>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">Working…</div>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="result" id="result">
+      <div class="result-head">✓ Signing link ready</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Send this link to your recipient. When they sign, you'll get an email notification.</div>
+      <div class="url-row">
+        <input type="text" id="resultUrl" readonly>
+        <button class="btn-copy" id="btnCopy">Copy</button>
+      </div>
+      <div class="send-options" id="sendOptions">
+        <a id="sendEmail" href="#">✉ Send via email</a>
+        <a id="sendSms" href="#">📱 Send via SMS</a>
+        <a id="openLink" href="#" target="_blank" rel="noopener">↗ Preview signing page</a>
+      </div>
+    </div>
+  </main>
+
+  <div class="footer">
+    Documents are stored on encrypted servers. Links expire after 90 days. Signatures are time-stamped and the sender is notified by email.
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+  (() => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // The backend share endpoint lives on the surprise-granite-email-api host
+    // (same one the takeoff tool uses). Hardcoded so this page works no matter
+    // where it's served from.
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    const $ = id => document.getElementById(id);
+    const drop = $('drop');
+    const fileInput = $('fileInput');
+    const fileInfo = $('fileInfo');
+    const fileName = $('fileName');
+    const fileMeta = $('fileMeta');
+    const btnGo = $('btnGo');
+    const errEl = $('error');
+    const resultEl = $('result');
+    const progressEl = $('progress');
+    const progressFill = $('progressFill');
+    const progressLabel = $('progressLabel');
+
+    let pdfDoc = null;
+    let chosenFile = null;
+
+    // Restore sender from localStorage so reps don't retype every time.
+    try {
+      const saved = JSON.parse(localStorage.getItem('esign_sender') || '{}');
+      if (saved.name) $('senderName').value = saved.name;
+      if (saved.email) $('senderEmail').value = saved.email;
+    } catch (_) { /* ignore */ }
+
+    function showError(msg) {
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+    }
+    function clearError() { errEl.classList.remove('show'); }
+
+    function setProgress(pct, label) {
+      progressEl.classList.add('show');
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = label;
+    }
+    function hideProgress() { progressEl.classList.remove('show'); }
+
+    function humanSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    async function acceptFile(file) {
+      clearError();
+      resultEl.classList.remove('show');
+      if (!file) return;
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        showError('That doesn\'t look like a PDF. Drop a .pdf file.');
+        return;
+      }
+      if (file.size > 40 * 1024 * 1024) {
+        showError('That PDF is over 40 MB. Try compressing it first.');
+        return;
+      }
+      chosenFile = file;
+      fileName.textContent = file.name;
+      fileMeta.textContent = humanSize(file.size) + ' · loading…';
+      fileInfo.classList.add('show');
+      drop.classList.add('has-file');
+
+      try {
+        const buf = await file.arrayBuffer();
+        pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+        fileMeta.textContent = humanSize(file.size) + ' · ' + pdfDoc.numPages + ' page' + (pdfDoc.numPages === 1 ? '' : 's');
+        btnGo.disabled = false;
+        // Auto-suggest a project title from the filename if blank
+        const projInput = $('project');
+        if (!projInput.value) {
+          projInput.value = file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').slice(0, 100);
+        }
+      } catch (err) {
+        console.error('PDF load failed:', err);
+        showError('Couldn\'t open that PDF. It may be password-protected or corrupted.');
+        chosenFile = null;
+        pdfDoc = null;
+        fileInfo.classList.remove('show');
+        drop.classList.remove('has-file');
+        btnGo.disabled = true;
+      }
+    }
+
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('over');
+      acceptFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => acceptFile(fileInput.files[0]));
+    $('btnRemove').addEventListener('click', () => {
+      chosenFile = null; pdfDoc = null;
+      fileInput.value = '';
+      fileInfo.classList.remove('show');
+      drop.classList.remove('has-file');
+      btnGo.disabled = true;
+      resultEl.classList.remove('show');
+    });
+
+    async function rasterizePage(pageNum, scale) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      return canvas.toDataURL('image/jpeg', 0.82);
+    }
+
+    btnGo.addEventListener('click', async () => {
+      clearError();
+      resultEl.classList.remove('show');
+      if (!pdfDoc) { showError('Drop a PDF first.'); return; }
+      const recipName = $('recipName').value.trim();
+      const recipEmail = $('recipEmail').value.trim();
+      const note = $('note').value.trim();
+      const project = $('project').value.trim() || (chosenFile?.name || 'Document for sign-off');
+      const senderName = $('senderName').value.trim();
+      const senderEmail = $('senderEmail').value.trim();
+
+      if (!recipName) { showError('Who\'s signing? Add a recipient name.'); return; }
+      if (!senderName) { showError('Add your name or company — recipients want to know who sent it.'); return; }
+
+      // Persist sender for next time
+      try {
+        localStorage.setItem('esign_sender', JSON.stringify({ name: senderName, email: senderEmail }));
+      } catch (_) {}
+
+      btnGo.disabled = true;
+      try {
+        const numPages = pdfDoc.numPages;
+        const pages = [];
+        // Scale 1.4 matches the takeoff tool — readable on screen, payload stays
+        // well under the 2 MB API cap for typical 5–30 page docs.
+        for (let i = 1; i <= numPages; i++) {
+          setProgress(Math.round((i - 1) / numPages * 80), `Rasterizing page ${i} of ${numPages}…`);
+          const image = await rasterizePage(i, 1.4);
+          pages.push({ pageNum: i, sheetNum: '', title: '', image });
+        }
+        setProgress(85, 'Uploading…');
+
+        const payload = {
+          v: 1,
+          type: 'plan_sign',
+          recipient: { name: recipName, email: recipEmail },
+          note,
+          project,
+          preparedBy: { name: senderName, email: senderEmail },
+          pages,
+          ts: Date.now(),
+        };
+
+        const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload, base_url: location.origin }),
+        });
+        if (!resp.ok) {
+          const txt = await resp.text();
+          throw new Error(`${resp.status}: ${txt.slice(0, 200)}`);
+        }
+        const data = await resp.json();
+        setProgress(100, 'Done.');
+        setTimeout(hideProgress, 600);
+
+        const url = data.share_url;
+        $('resultUrl').value = url;
+        $('openLink').href = url;
+
+        // Pre-fill email + SMS shortcuts. Keep them short so phone/email apps
+        // don't truncate them; recipient just needs the link.
+        const subj = encodeURIComponent(`Please sign: ${project}`);
+        const body = encodeURIComponent(
+          `Hi ${recipName},\n\n${senderName} sent you a document to review and sign.\n` +
+          (note ? `\n${note}\n` : '') +
+          `\nOpen the document and sign here:\n${url}\n\nThanks.`
+        );
+        $('sendEmail').href = recipEmail
+          ? `mailto:${recipEmail}?subject=${subj}&body=${body}`
+          : `mailto:?subject=${subj}&body=${body}`;
+        $('sendSms').href = `sms:?&body=${encodeURIComponent(`${senderName} sent you a document to sign: ${url}`)}`;
+
+        resultEl.classList.add('show');
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => { $('resultUrl').select(); }, 100);
+      } catch (err) {
+        console.error('Share error:', err);
+        hideProgress();
+        showError('Could not generate signing link: ' + err.message);
+      } finally {
+        btnGo.disabled = false;
+      }
+    });
+
+    $('btnCopy').addEventListener('click', async () => {
+      const url = $('resultUrl').value;
+      try {
+        await navigator.clipboard.writeText(url);
+        const btn = $('btnCopy');
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      } catch (_) {
+        $('resultUrl').select();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

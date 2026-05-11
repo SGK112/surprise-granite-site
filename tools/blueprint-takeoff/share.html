@@ -410,28 +410,48 @@ function renderPlanSignOff(data) {
   const pb = data.preparedBy || {};
   const recip = data.recipient || {};
   const pages = Array.isArray(data.pages) ? data.pages : [];
-  document.title = `Plan sign-off — ${data.project || 'plans'}`;
+  const _hasSheetNumsForTitle = pages.some(p => p.sheetNum && String(p.sheetNum).trim());
+  document.title = (_hasSheetNumsForTitle ? 'Plan sign-off' : 'Sign document') + ' — ' + (data.project || 'document');
 
   // Build the page DOM — header w/ sender info, pages stacked, sign card.
-  const pageHtml = pages.map((p, i) => `
+  // If any page has a real sheetNum (from the takeoff tool), label rows as
+  // "Sheet X · title". Otherwise it's a generic document (esign tool) — label
+  // as plain "Page N of M" so the recipient sees document-y wording.
+  const hasSheetNums = pages.some(p => p.sheetNum && String(p.sheetNum).trim());
+  const pageHtml = pages.map((p, i) => {
+    const label = hasSheetNums
+      ? `Sheet ${escapeHtml(p.sheetNum || ('p' + p.pageNum))}${p.title ? ' · ' + escapeHtml(p.title) : ''}`
+      : `Page ${i + 1} of ${pages.length}`;
+    return `
     <div class="plan-page" style="margin:18px 0;background:#fff;padding:8px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
       <div style="font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">
-        Sheet ${escapeHtml(p.sheetNum || ('p' + p.pageNum))}${p.title ? ' · ' + escapeHtml(p.title) : ''}
+        ${label}
       </div>
-      <img src="${p.image}" alt="Sheet ${i+1}" style="display:block;width:100%;height:auto;border-radius:4px">
+      <img src="${p.image}" alt="${escapeHtml(label)}" style="display:block;width:100%;height:auto;border-radius:4px">
     </div>
-  `).join('');
+  `;
+  }).join('');
+
+  // Headline + acknowledge copy adapts: "Plans for sign-off" reads weird on a
+  // change order or a release form. If no sheet numbers were sent it's just a
+  // generic document, so use neutral language.
+  const headline = hasSheetNums ? 'Plans for sign-off' : 'Document for sign-off';
+  const eyebrow  = pb.name || (hasSheetNums ? 'Plan sign-off' : 'Document sign-off');
+  const pagesWord = hasSheetNums ? `${pages.length} sheet${pages.length===1?'':'s'}` : `${pages.length} page${pages.length===1?'':'s'}`;
+  const ackBody = data.note
+    ? 'the scope described above'
+    : (hasSheetNums ? 'fabricate / install per these drawings' : 'the contents of this document');
 
   root.innerHTML = `
     <div class="doc">
       <div class="doc-header">
-        <div class="eyebrow">${escapeHtml(pb.name || 'Plan sign-off')}</div>
-        <h1>Plans for sign-off</h1>
+        <div class="eyebrow">${escapeHtml(eyebrow)}</div>
+        <h1>${escapeHtml(headline)}</h1>
       </div>
       <div class="doc-meta">
         ${recip.name ? `<div><strong>For:</strong> ${escapeHtml(recip.name)}</div>` : ''}
         ${data.project ? `<div><strong>Project:</strong> ${escapeHtml(data.project)}</div>` : ''}
-        <div><strong>Pages:</strong> ${pages.length} sheet${pages.length===1?'':'s'}</div>
+        <div><strong>Pages:</strong> ${pagesWord}</div>
       </div>
       <div class="doc-body" style="padding:0 24px 24px">
         ${data.note ? `<div style="background:rgba(59,130,246,.06);border-left:3px solid #3b82f6;padding:12px 14px;border-radius:4px;margin:8px 0 16px;font-size:14px;color:#1a1a2e">${escapeHtml(data.note)}</div>` : ''}
@@ -440,7 +460,7 @@ function renderPlanSignOff(data) {
 
       <div style="background:rgba(0,0,0,.03);border-top:1px solid #ddd;padding:24px;border-radius:0 0 8px 8px">
         <h3 style="margin:0 0 6px;font-family:'Space Grotesk',sans-serif">Acknowledge & sign</h3>
-        <p style="font-size:13px;color:#555;margin:0 0 14px">By signing below, you confirm you've reviewed the sheets above and agree to ${data.note ? 'the scope described' : 'fabricate / install per these drawings'}.</p>
+        <p style="font-size:13px;color:#555;margin:0 0 14px">By signing below, you confirm you've reviewed the document above and agree to ${ackBody}.</p>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
           <label style="font-size:12px;color:#666">Your name<input type="text" id="psName" value="${escapeHtml(recip.name || '')}" style="display:block;width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;margin-top:3px"></label>
