@@ -5840,6 +5840,16 @@ ${pb.license || ''}`;
     $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
+  // ?fresh=1 in URL forces a hard reset on load. Lets you share a "clean
+  // tool" link that bypasses the cloud-saved resume project.
+  if (location.search.includes('fresh=1')) {
+    setTimeout(() => {
+      hardResetProject();
+      // Strip the param so reloads don't keep re-resetting
+      history.replaceState(null, '', location.pathname + location.hash);
+    }, 200);
+  }
+
   $('btnNewPdf').addEventListener('click', () => {
     // Only confirm if there's actually work in progress to lose.
     const hasWork = !!(pdfDoc || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown || currentProjectId);
