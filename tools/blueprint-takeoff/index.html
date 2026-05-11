@@ -34,13 +34,11 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--sg-darker);color:var(--text-primary);line-height:1.6;min-height:100vh}
 
-    /* Slim hero — Bluebeam-style top bar instead of marketing-shape banner.
-       ~60px tall instead of 200px+, gives back the canvas. The marketing
-       copy (eyebrow + H1 + lede) moves into the Step 1 empty state.
-       NOT sticky — the SG unified-nav is fixed and occupies the top of the
-       viewport; making the hero sticky-at-top puts it underneath that nav.
-       Hero scrolls with content; the step-nav stays sticky below SG nav. */
-    .hero{padding:10px 16px;background:var(--sg-darker);border-bottom:1px solid var(--border)}
+    /* Slim hero — Bluebeam-style top bar with the action buttons (My Co,
+       Catalogs, BYOK, etc.) always accessible. Sticks just below the SG
+       fixed nav; step-nav sticks below the hero. Both offsets set by JS
+       at runtime since the SG nav height varies. */
+    .hero{padding:8px 16px;background:var(--sg-darker);border-bottom:1px solid var(--border);position:sticky;z-index:40}
     .hero-content{max-width:none;margin:0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .hero-meta{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:12px}
     .hero-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--sg-gold);margin:0;padding:3px 8px;background:rgba(249,203,0,.08);border:1px solid rgba(249,203,0,.25);border-radius:4px}
@@ -5759,23 +5757,21 @@ ${pb.license || ''}`;
   const chips = document.querySelectorAll('#stepNav .step-nav-chip');
   const stepNavEl = $('stepNav');
 
-  // Measure the SG nav height by checking where our own content actually
-  // starts at scroll=0. The SG nav can use non-standard class names that
-  // selector-based queries miss; this just observes the rendered layout.
-  // body { padding-top } from unified-nav.css is the truth, but resizing
-  // and async-loading content can change it, so we re-measure periodically.
+  // Measure the SG nav height + stack our sticky elements below it:
+  //   [SG fixed nav]        ← top of viewport, height = bodyPadTop
+  //   [hero, sticky]        ← top: bodyPadTop, height = heroH
+  //   [step nav, sticky]    ← top: bodyPadTop + heroH
+  // body padding-top from unified-nav.css equals the SG nav height.
   function syncStickyOffset() {
     if (!stepNavEl) return;
-    // Walk up from our hero (the first element of our content) — the gap
-    // between viewport top and the hero is where the SG nav is sitting.
     const hero = document.querySelector('section.hero');
-    if (!hero) return;
-    // Measure with scroll position considered: top + scroll = absolute Y;
-    // body padding-top + any nav above us gives the offset we need.
     const bodyPadTop = parseInt(getComputedStyle(document.body).paddingTop, 10) || 0;
-    // bodyPadTop is the measured space pushed below the SG fixed nav,
-    // which is the height of the SG nav itself.
-    if (bodyPadTop > 0 && bodyPadTop !== parseInt(stepNavEl.style.top || '0', 10)) {
+    if (bodyPadTop <= 0) return;
+    if (hero) {
+      hero.style.top = bodyPadTop + 'px';
+      const heroH = hero.getBoundingClientRect().height;
+      stepNavEl.style.top = (bodyPadTop + heroH) + 'px';
+    } else {
       stepNavEl.style.top = bodyPadTop + 'px';
     }
   }
