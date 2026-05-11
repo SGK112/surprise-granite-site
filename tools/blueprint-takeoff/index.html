@@ -52,6 +52,35 @@
        full viewport instead of getting tucked under the site nav. */
     .byok-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100000;backdrop-filter:blur(4px)}
     .byok-modal.open{display:flex}
+
+    /* Enterprise-style step navigator — sticky chip bar that lets the user
+       jump between Upload / Sheets / Materials / Estimate / Proposal without
+       scrolling past hero content. Shows completion state per step. */
+    .step-nav{position:sticky;top:0;z-index:50;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+    .step-nav::-webkit-scrollbar{display:none}
+    .step-nav-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+    .step-nav-chip:hover{color:var(--text-primary);border-color:var(--text-muted)}
+    .step-nav-chip.done{color:#22c55e;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.05)}
+    .step-nav-chip.done::before{content:'✓ ';font-weight:700}
+    .step-nav-chip.active{color:var(--sg-blue);border-color:var(--sg-blue);background:rgba(59,130,246,.08)}
+    .step-nav-chip.locked{opacity:.4;cursor:not-allowed}
+    .step-nav-chip .num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.08);font-size:10px;font-weight:700}
+    .step-nav-chip.done .num{background:rgba(34,197,94,.2)}
+    .step-nav-chip.active .num{background:rgba(59,130,246,.2)}
+
+    /* Bottom status bar — persistent save + cloud sync indicator like
+       enterprise IDEs. Sits above everything, narrow strip, always visible. */
+    .status-bar{position:fixed;bottom:0;left:0;right:0;height:28px;background:var(--sg-darker);border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 14px;font-size:11px;color:var(--text-muted);z-index:90;font-family:inherit}
+    .status-bar .stat{display:inline-flex;align-items:center;gap:5px}
+    .status-bar .dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted)}
+    .status-bar .dot.ok{background:#22c55e}
+    .status-bar .dot.warn{background:#f59e0b}
+    .status-bar .dot.err{background:#ef4444}
+    .status-bar .spacer{flex:1}
+    .status-bar a{color:var(--sg-blue);text-decoration:none}
+    .status-bar a:hover{text-decoration:underline}
+    /* Add bottom padding to body so the status bar doesn't cover content */
+    body{padding-bottom:32px}
     .byok-card{background:var(--sg-surface);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto}
     .byok-card h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px}
     .byok-card .byok-sub{color:var(--text-secondary);font-size:13px;margin-bottom:18px;line-height:1.5}
@@ -489,6 +518,16 @@
       </div>
     </div>
   </section>
+
+  <!-- Step navigator — chips for each phase of the bid; click to jump.
+       Completion + locked state derived from the data state on render. -->
+  <nav class="step-nav" id="stepNav">
+    <button class="step-nav-chip" data-step="step1" type="button"><span class="num">1</span>Upload</button>
+    <button class="step-nav-chip" data-step="step2" type="button"><span class="num">2</span>Sheets</button>
+    <button class="step-nav-chip" data-step="step3" type="button"><span class="num">3</span>Materials</button>
+    <button class="step-nav-chip" data-step="step4" type="button"><span class="num">4</span>Estimate</button>
+    <button class="step-nav-chip" data-step="step5" type="button"><span class="num">5</span>Proposal</button>
+  </nav>
 
   <main>
     <!-- Resume banner — appears on return visits when there's recent work -->
@@ -1381,6 +1420,9 @@ flooring_lvp,5,3"></textarea>
   }
 
   function isSignedIn() { return !!(sbSession && sbSession.access_token); }
+  // Expose for the status-bar IIFE (runs in a separate closure at end of body).
+  window.__bpIsSignedIn = isSignedIn;
+  window.__bpGetSession = () => sbSession;
   function authHeaders() {
     return isSignedIn()
       ? { 'Content-Type': 'application/json', Authorization: `Bearer ${sbSession.access_token}` }
@@ -1561,6 +1603,8 @@ flooring_lvp,5,3"></textarea>
       all[snap.id] = snap;
       setProjects(all);
       currentProjectId = snap.id;
+      // Notify the status bar IIFE that a save just happened
+      if (typeof window.__bpStatusTick === 'function') window.__bpStatusTick();
       // Cloud mirror — fire-and-forget; localStorage write above is the
       // fast path so the UI doesn't wait on the network.
       pushCloudProject(snap);
@@ -5653,6 +5697,106 @@ ${pb.license || ''}`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
+})();
+</script>
+
+<!-- Bottom status bar — persistent autosave + cloud-sync indicators -->
+<div class="status-bar" id="statusBar">
+  <span class="stat" id="sbSave"><span class="dot"></span><span id="sbSaveLabel">Ready</span></span>
+  <span class="stat" id="sbCloud"><span class="dot"></span><span id="sbCloudLabel">Cloud sync: signed out</span></span>
+  <span class="stat" id="sbProject" hidden><span id="sbProjectLabel"></span></span>
+  <span class="spacer"></span>
+  <span class="stat"><a href="#step1">Top ↑</a></span>
+</div>
+
+<script>
+(() => {
+  // Step navigator — wire chip clicks to scroll, keep state in sync with
+  // visible/data-populated steps. Runs every 1s as a cheap state poller
+  // since the underlying steps are mutated by many call sites.
+  const $ = id => document.getElementById(id);
+  const chips = document.querySelectorAll('#stepNav .step-nav-chip');
+
+  function refreshStepNav() {
+    const states = {
+      step1: { done: true,                                       active: false }, // always available
+      step2: { done: !$('step2')?.hidden,                        active: false },
+      step3: { done: !!(window.__lastMaterials?.length || window.__lastPerPage?.length), active: false },
+      step4: { done: !!window.__lastEstimate,                    active: false },
+      step5: { done: !!window.__lastProposalMarkdown,            active: false },
+    };
+    // Active = which section is in the viewport
+    let active = 'step1';
+    for (const id of ['step5','step4','step3','step2','step1']) {
+      const el = $(id);
+      if (!el || el.hidden) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight * 0.4) { active = id; break; }
+    }
+    chips.forEach(c => {
+      const id = c.dataset.step;
+      c.classList.toggle('done',   !!states[id]?.done && id !== active);
+      c.classList.toggle('active', id === active);
+      c.classList.toggle('locked', !states[id]?.done && id !== 'step1');
+    });
+  }
+  chips.forEach(c => c.addEventListener('click', () => {
+    const target = $(c.dataset.step);
+    if (!target || target.hidden) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+  // Refresh on scroll (active highlighting), and periodically (data state).
+  window.addEventListener('scroll', refreshStepNav, { passive: true });
+  setInterval(refreshStepNav, 1500);
+  refreshStepNav();
+
+  // Status bar — save state + cloud sync indicator. The original IIFE
+  // pings window.__bpStatusTick() on every autosave to update lastSaveAt.
+  let lastSaveAt = null;
+  window.__bpStatusTick = () => { lastSaveAt = Date.now(); };
+  function fmtAge(ms) {
+    if (!ms) return '';
+    const s = Math.round(ms / 1000);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.round(s / 60) + 'm ago';
+    return Math.round(s / 3600) + 'h ago';
+  }
+  function refreshStatusBar() {
+    const saveDot = $('sbSave').querySelector('.dot');
+    const saveLbl = $('sbSaveLabel');
+    if (lastSaveAt) {
+      saveDot.className = 'dot ok';
+      saveLbl.textContent = 'Saved ' + fmtAge(Date.now() - lastSaveAt);
+    } else if (window.__lastEstimate || window.__lastMaterials?.length) {
+      saveDot.className = 'dot warn';
+      saveLbl.textContent = 'Unsaved changes';
+    } else {
+      saveDot.className = 'dot';
+      saveLbl.textContent = 'Ready';
+    }
+    const cloudDot = $('sbCloud').querySelector('.dot');
+    const cloudLbl = $('sbCloudLabel');
+    if (typeof window.__bpIsSignedIn === 'function' && window.__bpIsSignedIn()) {
+      cloudDot.className = 'dot ok';
+      const sess = (typeof window.__bpGetSession === 'function' ? window.__bpGetSession() : null);
+      const email = sess?.user?.email || 'cloud';
+      cloudLbl.textContent = 'Cloud synced as ' + email;
+    } else {
+      cloudDot.className = 'dot';
+      cloudLbl.textContent = 'Cloud sync: signed out (localStorage only)';
+    }
+    // Project name strip (if available)
+    const projName = window.__lastSourceLabel || '';
+    const sbp = $('sbProject');
+    if (projName) {
+      sbp.hidden = false;
+      $('sbProjectLabel').textContent = '· ' + projName;
+    } else {
+      sbp.hidden = true;
+    }
+  }
+  setInterval(refreshStatusBar, 1500);
+  refreshStatusBar();
 })();
 </script>
 </body>
