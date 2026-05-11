@@ -34,16 +34,21 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--sg-darker);color:var(--text-primary);line-height:1.6;min-height:100vh}
 
-    .hero{padding:72px 20px 32px;background:linear-gradient(180deg,var(--sg-dark) 0%,var(--sg-darker) 100%);border-bottom:1px solid var(--border)}
-    @media (max-width:720px){.hero{padding:48px 20px 24px}}
-    .hero-content{max-width:1100px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
-    .hero-meta{flex:1;min-width:280px}
-    .hero-eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--sg-blue);margin-bottom:8px}
+    /* Slim hero — Bluebeam-style top bar instead of marketing-shape banner.
+       ~60px tall instead of 200px+, gives back the canvas. The marketing
+       copy (eyebrow + H1 + lede) moves into the Step 1 empty state where
+       new users actually need it. */
+    .hero{padding:10px 16px;background:var(--sg-darker);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40}
+    .hero-content{max-width:none;margin:0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .hero-meta{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:12px}
+    .hero-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--sg-gold);margin:0;padding:3px 8px;background:rgba(249,203,0,.08);border:1px solid rgba(249,203,0,.25);border-radius:4px}
+    .hero-meta h1, .hero-meta p { display:none } /* hide marketing copy in the slim bar */
     .hero h1{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;line-height:1.15;margin-bottom:6px}
     .hero p{color:var(--text-secondary);font-size:13px;max-width:640px;line-height:1.5}
-    .hero-status{display:flex;gap:18px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px}
-    .hero-status span strong{display:block;font-size:18px;color:#fff;font-family:'Space Grotesk',sans-serif;text-transform:none;letter-spacing:0;margin-top:2px}
-    .hero-key-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:6px;color:var(--sg-blue);padding:6px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+    .hero-status{display:flex;gap:10px;font-size:11px;color:var(--text-muted);align-items:center;flex-wrap:wrap}
+    .hero-status > span{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;text-transform:none;letter-spacing:0}
+    .hero-status span strong{font-size:11px;color:#fff;font-family:inherit;text-transform:none;letter-spacing:0;font-weight:700;margin:0}
+    .hero-key-btn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text-muted);padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;text-transform:none;letter-spacing:0}
     .hero-key-btn:hover{background:rgba(59,130,246,.2);border-color:var(--sg-blue)}
     .hero-key-btn.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:#4ade80}
     .hero-key-icon{font-size:13px;line-height:1}
@@ -56,7 +61,9 @@
     /* Enterprise-style step navigator — sticky chip bar that lets the user
        jump between Upload / Sheets / Materials / Estimate / Proposal without
        scrolling past hero content. Shows completion state per step. */
-    .step-nav{position:sticky;top:0;z-index:50;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+    /* Step nav sticks just below the slim hero (which is also sticky).
+       Hero is ~50px; top:50px keeps the chip bar visible as user scrolls. */
+    .step-nav{position:sticky;top:50px;z-index:39;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
     .step-nav::-webkit-scrollbar{display:none}
     .step-nav-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
     .step-nav-chip:hover{color:var(--text-primary);border-color:var(--text-muted)}
@@ -81,6 +88,22 @@
     .status-bar a:hover{text-decoration:underline}
     /* Add bottom padding to body so the status bar doesn't cover content */
     body{padding-bottom:32px}
+
+    /* Cmd+K command palette — enterprise IDE signature. Type to filter
+       actions, Enter to run, Esc to close. */
+    .cmdk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;z-index:100050;padding-top:15vh}
+    .cmdk-overlay.open{display:flex}
+    .cmdk-panel{width:min(560px,90vw);background:var(--sg-darker);border:1px solid var(--border);border-radius:10px;box-shadow:0 24px 64px rgba(0,0,0,.5);overflow:hidden}
+    .cmdk-input{width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);color:#fff;font-size:15px;outline:none;font-family:inherit}
+    .cmdk-list{max-height:50vh;overflow-y:auto;padding:6px 0}
+    .cmdk-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:var(--text-secondary);font-size:13px}
+    .cmdk-item.active{background:rgba(59,130,246,.12);color:#fff}
+    .cmdk-item .ico{font-size:14px;width:18px;text-align:center}
+    .cmdk-item .lbl{flex:1}
+    .cmdk-item .hint{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+    .cmdk-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:13px}
+    .cmdk-foot{padding:8px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between}
+    .cmdk-foot kbd{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'Menlo',monospace;font-size:9px;margin:0 2px}
     .byok-card{background:var(--sg-surface);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto}
     .byok-card h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px}
     .byok-card .byok-sub{color:var(--text-secondary);font-size:13px;margin-bottom:18px;line-height:1.5}
@@ -5700,14 +5723,28 @@ ${pb.license || ''}`;
 })();
 </script>
 
+<!-- Cmd+K command palette — quick-action launcher -->
+<div class="cmdk-overlay" id="cmdkOverlay">
+  <div class="cmdk-panel">
+    <input class="cmdk-input" id="cmdkInput" placeholder="Type a command…" autocomplete="off" spellcheck="false">
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot">
+      <span><kbd>↑↓</kbd> navigate · <kbd>↵</kbd> run · <kbd>Esc</kbd> close</span>
+      <span>⌘K to open</span>
+    </div>
+  </div>
+</div>
+
 <!-- Bottom status bar — persistent autosave + cloud-sync indicators -->
 <div class="status-bar" id="statusBar">
   <span class="stat" id="sbSave"><span class="dot"></span><span id="sbSaveLabel">Ready</span></span>
   <span class="stat" id="sbCloud"><span class="dot"></span><span id="sbCloudLabel">Cloud sync: signed out</span></span>
   <span class="stat" id="sbProject" hidden><span id="sbProjectLabel"></span></span>
   <span class="spacer"></span>
+  <span class="stat" id="sbCmdk" style="cursor:pointer" title="Open command palette (⌘K or Ctrl+K)">⌘K Commands</span>
   <span class="stat"><a href="#step1">Top ↑</a></span>
 </div>
+<script>document.getElementById('sbCmdk')?.addEventListener('click', () => document.getElementById('cmdkOverlay')?.classList.add('open'));</script>
 
 <script>
 (() => {
@@ -5797,6 +5834,120 @@ ${pb.license || ''}`;
   }
   setInterval(refreshStatusBar, 1500);
   refreshStatusBar();
+
+  // ---- Cmd+K command palette ----
+  // Enterprise-IDE keyboard launcher. Lists actions; type to filter;
+  // Enter to run; Esc to close. Actions reference elements/handlers
+  // already wired in the main IIFE — palette just clicks them.
+  const cmdkOverlay = $('cmdkOverlay');
+  const cmdkInput = $('cmdkInput');
+  const cmdkList = $('cmdkList');
+  let cmdkActive = 0;
+
+  function getActions() {
+    // Build the action list dynamically — some are only available when
+    // certain data is present (e.g. "Generate proposal" only if estimate exists).
+    const acts = [
+      { id: 'goto-step1', ico: '📤', lbl: 'Go to: Upload', kw: 'upload step 1 start' },
+      { id: 'goto-step2', ico: '📋', lbl: 'Go to: Sheets',   kw: 'sheets step 2' },
+      { id: 'goto-step3', ico: '🧱', lbl: 'Go to: Materials', kw: 'materials step 3' },
+      { id: 'goto-step4', ico: '💲', lbl: 'Go to: Estimate',  kw: 'estimate step 4 pricing' },
+      { id: 'goto-step5', ico: '📄', lbl: 'Go to: Proposal',  kw: 'proposal step 5 send' },
+      { id: 'open-catalogs',  ico: '📚', lbl: 'Open Vendor Catalogs',     btn: 'btnCatalogs',   kw: 'catalogs vendor price sheet daltile' },
+      { id: 'open-mycompany', ico: '🏢', lbl: 'Open My Company info',     btn: 'btnMyCompany',  kw: 'my company name license email phone' },
+      { id: 'open-pricing',   ico: '💲', lbl: 'Open My Pricing rates',    btn: 'btnPricingSettings', kw: 'pricing rates labor material' },
+      { id: 'open-byok',      ico: '🔑', lbl: 'Open BYOK / AI key',       btn: 'btnByokSettings', kw: 'byok api key openai anthropic' },
+      { id: 'open-projects',  ico: '📁', lbl: 'Open Saved Projects',      btn: 'btnProjects',   kw: 'projects saved cloud' },
+      { id: 'export-json',    ico: '⬇',  lbl: 'Export current estimate as JSON', btn: 'btnExportJson', kw: 'export download json' },
+      { id: 'new-pdf',        ico: '🗑',  lbl: 'Start over (delete current project)', btn: 'btnNewPdf', kw: 'start over reset fresh wipe delete' },
+    ];
+    return acts;
+  }
+
+  function openCmdk() {
+    cmdkOverlay.classList.add('open');
+    cmdkInput.value = '';
+    cmdkActive = 0;
+    renderCmdk('');
+    setTimeout(() => cmdkInput.focus(), 50);
+  }
+  function closeCmdk() { cmdkOverlay.classList.remove('open'); }
+
+  function renderCmdk(query) {
+    const q = query.toLowerCase().trim();
+    const all = getActions();
+    const matched = q
+      ? all.filter(a => a.lbl.toLowerCase().includes(q) || (a.kw || '').toLowerCase().includes(q))
+      : all;
+    if (!matched.length) {
+      cmdkList.innerHTML = `<div class="cmdk-empty">No commands match "${q}"</div>`;
+      cmdkList._matched = [];
+      return;
+    }
+    cmdkActive = Math.min(cmdkActive, matched.length - 1);
+    cmdkList.innerHTML = matched.map((a, i) => `
+      <div class="cmdk-item ${i === cmdkActive ? 'active' : ''}" data-i="${i}">
+        <div class="ico">${a.ico}</div>
+        <div class="lbl">${a.lbl}</div>
+      </div>
+    `).join('');
+    cmdkList._matched = matched;
+    cmdkList.querySelectorAll('.cmdk-item').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cmdkActive = +el.dataset.i;
+        cmdkList.querySelectorAll('.cmdk-item').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+      });
+      el.addEventListener('click', () => runCmdk(cmdkList._matched[+el.dataset.i]));
+    });
+  }
+
+  function runCmdk(a) {
+    if (!a) return;
+    closeCmdk();
+    if (a.id.startsWith('goto-')) {
+      const target = $(a.id.replace('goto-', ''));
+      if (target && !target.hidden) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (a.btn) {
+      const btn = $(a.btn);
+      if (btn) btn.click();
+    }
+  }
+
+  // Global keyboard handler
+  window.addEventListener('keydown', (e) => {
+    // Cmd+K / Ctrl+K opens
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (cmdkOverlay.classList.contains('open')) closeCmdk(); else openCmdk();
+      return;
+    }
+    if (!cmdkOverlay.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeCmdk(); return; }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const max = (cmdkList._matched || []).length - 1;
+      cmdkActive = Math.min(max, cmdkActive + 1);
+      renderCmdk(cmdkInput.value);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      cmdkActive = Math.max(0, cmdkActive - 1);
+      renderCmdk(cmdkInput.value);
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const a = (cmdkList._matched || [])[cmdkActive];
+      if (a) runCmdk(a);
+      return;
+    }
+  });
+  cmdkInput.addEventListener('input', () => { cmdkActive = 0; renderCmdk(cmdkInput.value); });
+  cmdkOverlay.addEventListener('click', (e) => { if (e.target === cmdkOverlay) closeCmdk(); });
 })();
 </script>
 </body>
