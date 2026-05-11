@@ -5410,8 +5410,19 @@ ${pb.license || ''}`;
   // that survive a page reload. Does NOT touch user-owned config (BYOK keys,
   // My Pricing, My Company, vendor catalogs, saved projects list) — those are
   // assets, not project state. Confirm because this is destructive.
+  // Truly wipe all traces of the current project — including the cloud copy
+  // and the localStorage saved entry, so the resume banner doesn't bring it
+  // back on the next page load. This is the difference between "start over"
+  // (just clear the screen) and "burn it all down" (project no longer exists
+  // anywhere). User assets that aren't project-specific (BYOK keys, My
+  // Pricing, vendor catalogs, My Company, OTHER saved projects) are
+  // intentionally preserved.
   function hardResetProject() {
-    // 1) In-memory state — every window.__last* the analyzer/estimator writes.
+    // Capture current project ID BEFORE we null it — we need it to delete
+    // the cloud + localStorage entries.
+    const idToDelete = currentProjectId;
+
+    // 1) In-memory state — every window.__last* the tool writes.
     pdfDoc = null; sheets = [];
     currentProjectId = null;
     window.__lastSourceLabel = '';
@@ -5421,16 +5432,38 @@ ${pb.license || ''}`;
     window.__lastProposalMarkdown = null;
     window.__lastCoverInfo = null;
     window.__lastQuestions = null;
+    window.__lastMissingFromAI = null;
     window.__lastMeasurements = null;
     window.__lastPerPage = null;
     window.__lastResults = null;
+    window.__lastWorkOrders = null;
+    window.__currentPdfHash = null;
 
-    // 2) localStorage project state — these are the leaks that made the
+    // 2) localStorage project caches — these are the leaks that made the
     // previous "Start over" feel like a no-op.
     try { localStorage.removeItem(PAGE_CACHE_KEY); } catch (_) {}
     try { localStorage.removeItem('sg_takeoff_handoff'); } catch (_) {}
 
-    // 3) UI reset.
+    // 3) Delete the saved project entries (local + cloud) for the project
+    // we were working on. This is what stops the resume banner from
+    // re-surfacing this exact project on next load. Other saved projects
+    // are untouched. Fire-and-forget cloud delete — failure to reach the
+    // server doesn't block local cleanup.
+    if (idToDelete) {
+      try {
+        const all = getProjects();
+        delete all[idToDelete];
+        setProjects(all);
+      } catch (_) {}
+      if (typeof isSignedIn === 'function' && isSignedIn() && /^[0-9a-f-]{36}$/i.test(idToDelete)) {
+        fetch(API_BASE + '/api/ai/blueprint/projects/' + encodeURIComponent(idToDelete), {
+          method: 'DELETE',
+          headers: authHeaders(),
+        }).catch(err => console.warn('Cloud project delete failed (local already wiped):', err.message));
+      }
+    }
+
+    // 4) UI reset.
     fileInput.value = '';
     $('step2').hidden = true;
     $('step3').hidden = true;
@@ -5444,17 +5477,23 @@ ${pb.license || ''}`;
     $('hPages').textContent = '—';
     $('hSelected').textContent = '—';
     $('hExtracted').textContent = '—';
-    // Hide the resume banner too — it pointed at the saved project we're
-    // now starting over from. The cloud project still exists; reloading
-    // the page will bring the banner back if the user changes their mind.
     const rb = $('resumeBanner'); if (rb) rb.hidden = true;
+
+    // 5) After cloud-delete, re-pull projects so any cached project list
+    // reflects the deletion. If the user has OTHER saved projects, the
+    // resume banner can still legitimately suggest the next-most-recent
+    // one — but not the project we just torched.
+    if (typeof fetchCloudProjects === 'function' && typeof isSignedIn === 'function' && isSignedIn()) {
+      fetchCloudProjects().catch(() => {});
+    }
+
     $('step1').scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
   $('btnNewPdf').addEventListener('click', () => {
     // Only confirm if there's actually work in progress to lose.
-    const hasWork = !!(pdfDoc || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown);
-    if (hasWork && !confirm('Start over and discard the current takeoff?\n\nThis wipes the page cache so the next upload re-runs vision from scratch. Your saved projects, BYOK keys, My Pricing, vendor catalogs, and My Company info are kept.')) {
+    const hasWork = !!(pdfDoc || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown || currentProjectId);
+    if (hasWork && !confirm('Start over and DELETE this project?\n\n• Local cache wiped\n• In-memory state cleared\n• Saved project deleted (local + cloud)\n• Page cache cleared so next vision call re-runs from scratch\n\nKept: BYOK keys, My Pricing, vendor catalogs, My Company info, OTHER saved projects.')) {
       return;
     }
     hardResetProject();
