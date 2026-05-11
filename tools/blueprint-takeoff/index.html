@@ -63,11 +63,11 @@
     /* Enterprise-style step navigator — sticky chip bar that lets the user
        jump between Upload / Sheets / Materials / Estimate / Proposal without
        scrolling past hero content. Shows completion state per step. */
-    /* Step nav sticks just below the SG unified-nav (which is fixed at the
-       top of the viewport at --nav-height-desktop / mobile). Hero scrolls
-       past, but the step chips stay glued below the SG nav. */
-    .step-nav{position:sticky;top:var(--nav-height-desktop,140px);z-index:39;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-    @media (max-width:720px){.step-nav{top:var(--nav-height-mobile,64px)}}
+    /* Step nav sticks just below the SG unified-nav. Top offset is set
+       dynamically via JS at load time (measures the actual rendered nav
+       height — the CSS variable from unified-nav.css doesn't always match
+       the rendered height when there are multiple stacked nav rows). */
+    .step-nav{position:sticky;top:0;z-index:39;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
     .step-nav::-webkit-scrollbar{display:none}
     .step-nav-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
     .step-nav-chip:hover{color:var(--text-primary);border-color:var(--text-muted)}
@@ -5757,6 +5757,37 @@ ${pb.license || ''}`;
   // since the underlying steps are mutated by many call sites.
   const $ = id => document.getElementById(id);
   const chips = document.querySelectorAll('#stepNav .step-nav-chip');
+  const stepNavEl = $('stepNav');
+
+  // Measure the SG unified-nav height + push the step-nav offset to clear
+  // it. Querying the actual rendered DOM is more reliable than the CSS
+  // variable (which doesn't account for stacked nav rows on this site).
+  function syncStickyOffset() {
+    if (!stepNavEl) return;
+    // Find anything fixed at the top of the viewport before our content
+    let maxBottom = 0;
+    document.querySelectorAll('header, [class*="navbar"], [class*="nav-"], [id*="nav"]').forEach(el => {
+      // Ignore our own step-nav and anything inside our content
+      if (el === stepNavEl || stepNavEl.contains(el) || el.closest('main')) return;
+      const cs = getComputedStyle(el);
+      if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
+      const r = el.getBoundingClientRect();
+      if (r.top <= 0 && r.bottom > 0 && r.bottom > maxBottom) maxBottom = r.bottom;
+    });
+    if (maxBottom > 0) {
+      stepNavEl.style.top = maxBottom + 'px';
+    }
+  }
+  // Run on load, after fonts load, and on resize. Also poll for ~3s in
+  // case the SG nav loads asynchronously (script-injected).
+  syncStickyOffset();
+  window.addEventListener('load', syncStickyOffset);
+  window.addEventListener('resize', syncStickyOffset);
+  let syncTries = 0;
+  const syncInterval = setInterval(() => {
+    syncStickyOffset();
+    if (++syncTries > 6) clearInterval(syncInterval);
+  }, 500);
 
   function refreshStepNav() {
     const states = {
