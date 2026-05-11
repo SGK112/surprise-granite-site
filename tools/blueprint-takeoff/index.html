@@ -2486,9 +2486,44 @@ flooring_lvp,5,3"></textarea>
   const MY_COMPANY_KEY = 'sg_my_company';
   const MC_FIELDS = ['name','contact','title','email','phone','address','license','website','tagline'];
 
+  // Tenant defaults — when the tool loads on a known tenant's hostname,
+  // pre-populate empty My Company fields with that tenant's public info
+  // (scraped from the tenant's own website). User-saved values always win.
+  // Future tenants (joesplumbing.com etc.) just add another entry.
+  const TENANT_DEFAULTS = {
+    'surprisegranite.com': {
+      name: 'Surprise Granite Marble & Quartz',
+      contact: 'Joshua Breese',
+      title: 'Owner',
+      email: 'info@surprisegranite.com',
+      phone: '(602) 833-3189',
+      website: 'https://www.surprisegranite.com',
+      tagline: 'Phoenix-area kitchen & bath remodel · in-house fabrication · we come to you',
+      // address + license intentionally blank — home-based business per
+      // tenant's request (don't expose home address); license is on file
+      // but the user can fill in a project-specific value if needed.
+    },
+  };
+
+  function getTenantDefaults() {
+    const host = (location.hostname || '').toLowerCase();
+    for (const [domain, defaults] of Object.entries(TENANT_DEFAULTS)) {
+      if (host === domain || host.endsWith('.' + domain)) return defaults;
+    }
+    return {};
+  }
+
   function getMyCompany() {
-    try { return JSON.parse(localStorage.getItem(MY_COMPANY_KEY) || '{}'); }
-    catch (_) { return {}; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(MY_COMPANY_KEY) || '{}');
+      const defaults = getTenantDefaults();
+      // User-saved values win over tenant defaults — only fill gaps.
+      const merged = { ...defaults };
+      for (const k of Object.keys(saved)) {
+        if (saved[k]) merged[k] = saved[k];
+      }
+      return merged;
+    } catch (_) { return getTenantDefaults(); }
   }
   function setMyCompany(obj) {
     try { localStorage.setItem(MY_COMPANY_KEY, JSON.stringify(obj || {})); }
