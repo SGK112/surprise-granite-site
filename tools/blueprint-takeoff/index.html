@@ -4363,6 +4363,19 @@ flooring_lvp,5,3"></textarea>
       const answeredQs = (window.__lastQuestions || [])
         .filter(q => q.status === 'answered' && q.answer)
         .map(q => ({ kind: q.kind, location: q.location, question: q.question, answer: q.answer }));
+      // Open questions ride into the proposal as "decisions needed" — the
+      // customer reads the bid, sees the open items + the GC's suggested
+      // default, and either accepts or replies with corrections. Avoids the
+      // back-and-forth where the GC would otherwise have to circle back
+      // mid-bid for clarifications.
+      const openQs = (window.__lastQuestions || [])
+        .filter(q => q.status !== 'answered')
+        .map(q => ({
+          kind: q.kind,
+          location: q.location,
+          question: q.question,
+          suggested_answer: q.suggested_answer || ''
+        }));
       const bidMode = $('estBidMode').value || 'prime';
       const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal', {
         method: 'POST',
@@ -4372,6 +4385,7 @@ flooring_lvp,5,3"></textarea>
           customer, project, address,
           materials: window.__lastMaterials || [],
           confirmedScope: answeredQs,
+          openQuestions: openQs,
           preparedBy: getMyCompany(),
           bidMode,
         }),

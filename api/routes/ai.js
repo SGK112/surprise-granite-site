@@ -635,7 +635,7 @@ router.post('/blueprint/cover', async (req, res) => {
  */
 router.post('/blueprint/proposal', async (req, res) => {
   try {
-    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], preparedBy = {}, bidMode = 'prime', userKey } = req.body || {};
+    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], openQuestions = [], preparedBy = {}, bidMode = 'prime', userKey } = req.body || {};
     const isSubBid = bidMode === 'sub';
     if (!estimate || !estimate.line_items) {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
@@ -672,6 +672,17 @@ router.post('/blueprint/proposal', async (req, res) => {
     const confirmedScopeLines = (Array.isArray(confirmedScope) && confirmedScope.length)
       ? confirmedScope.map(c => `- [${c.kind || '?'}] ${c.location ? c.location + ': ' : ''}${c.question} → ${c.answer}`).join('\n')
       : '(none — all scope was clear from the drawings)';
+
+    // Open AI-flagged questions (the GC didn't pre-answer them) ride into
+    // the proposal as "Decisions Needed" so the customer sees them and can
+    // reply with answers / accept the GC's suggested defaults. Beats the
+    // back-and-forth of circling back mid-bid for clarifications.
+    const openQuestionsLines = (Array.isArray(openQuestions) && openQuestions.length)
+      ? openQuestions.map(q =>
+          `- [${q.kind || '?'}] ${q.location ? q.location + ': ' : ''}${q.question}` +
+          (q.suggested_answer ? `\n  Suggested default: ${q.suggested_answer}` : '')
+        ).join('\n')
+      : '(none — no open ambiguities)';
 
     const pb = preparedBy && typeof preparedBy === 'object' ? preparedBy : {};
     const preparedByLines = [
@@ -750,6 +761,13 @@ Standard 50% deposit / balance on substantial completion language. Mention typic
 ## Confirmed Scope (Q&A)
 Bullet list of any "Q: …  A: …" pairs from the confirmed-scope facts. These are decisions the GC made on items the drawings left ambiguous (TBD specs, owner-supplied items, allowances, scope-edge calls). If none, omit this section entirely.
 
+## Decisions Needed
+Bullet list of OPEN items the AI flagged from the drawings that still need a customer/owner answer before we can lock the bid (TBD specs, allowance amounts, owner-supplied items, scope edges). Format each item as:
+- **{Question or item description}** — where it came from (e.g. "T-3 row in finish schedule")
+  Suggested default if we don't hear back: {the suggested_answer if provided}
+
+Frame this as collaborative ("we'd like your input on the following before locking the scope") not as obstacles. The customer can accept the suggested defaults by signing as-is, or reply with corrections. If no open items, omit this section entirely.
+
 ## Assumptions
 Any assumption notes from the estimate (waste %, GC overhead %, industry-avg vs catalog pricing). Be transparent.
 
@@ -785,6 +803,9 @@ ${materialLines}
 
 CONFIRMED SCOPE (GC answers to AI-flagged ambiguities — include verbatim in the "Confirmed Scope" section):
 ${confirmedScopeLines}
+
+OPEN QUESTIONS (AI-flagged items the GC has NOT answered — include in the "Decisions Needed" section so the customer sees them and can reply with answers / accept the suggested defaults):
+${openQuestionsLines}
 
 ASSUMPTION NOTES:
 ${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
