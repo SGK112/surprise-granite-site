@@ -34,13 +34,21 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--sg-darker);color:var(--text-primary);line-height:1.6;min-height:100vh}
 
-    /* Hide the SG site nav on this tool only — the tool is a focused
-       workspace, the marketing nav just costs vertical space. Page-scoped
-       (this <style> block only loads on /tools/blueprint-takeoff/), so
-       the rest of the site keeps its nav. body padding-top reset too
-       (unified-nav.css sets it to make room for the now-hidden fixed nav). */
-    .unified-nav, .unified-footer, .unified-nav-overlay, .unified-nav-drawer { display: none !important; }
-    body { padding-top: 0 !important; }
+    /* Hide ALL SG site chrome on this tool page only — the tool is a
+       focused workspace; site nav/footer/promo bars just cost space.
+       Page-scoped (style only loads here). Listed every selector seen
+       in SG's Webflow + unified-nav layers so any of them get hidden. */
+    .unified-nav, .unified-footer, .unified-nav-overlay, .unified-nav-drawer,
+    .navbar_wrapper, .navbar_component, .navbar-banner_component, .navbar_menu,
+    nav.navbar_wrapper, nav[role="navigation"],
+    .footer_component, .footer_wrapper,
+    .promo-callout, .free-estimate-fab, .sticky-mobile-bar, .sg-mobile-action-bar,
+    [data-sg-chrome] { display: none !important; visibility: hidden !important; }
+    body { padding-top: 0 !important; padding-bottom: 32px !important; margin: 0 !important; }
+    /* Mark the tool body so the JS pass below knows what to keep. */
+    body > section.hero, body > nav#stepNav, body > main,
+    body > .byok-modal, body > .cmdk-overlay, body > .status-bar,
+    body > script { /* keep — these are ours */ }
 
     /* Top toolbar with action buttons (My Co, Catalogs, BYOK, etc.)
        always accessible. Sticks at top of viewport now that the SG nav
@@ -5765,6 +5773,29 @@ ${pb.license || ''}`;
   const $ = id => document.getElementById(id);
   const chips = document.querySelectorAll('#stepNav .step-nav-chip');
   const stepNavEl = $('stepNav');
+
+  // Aggressively hide any non-tool body children — the SG site injects
+  // its nav/footer/promos after page load, and CSS selectors miss whatever
+  // class names get used. This runs on load + via MutationObserver so any
+  // late injection also gets hidden.
+  const TOOL_OWN_SELECTORS = [
+    'section.hero', 'nav#stepNav', 'main', '.byok-modal',
+    '.cmdk-overlay', '.status-bar', 'script', 'style',
+  ];
+  function isToolOwn(el) {
+    if (!(el instanceof Element)) return true; // text nodes, comments — ignore
+    return TOOL_OWN_SELECTORS.some(sel => el.matches(sel));
+  }
+  function hideNonToolChrome() {
+    document.body.childNodes.forEach(node => {
+      if (!(node instanceof Element)) return;
+      if (isToolOwn(node)) return;
+      if (node.style.display !== 'none') node.style.display = 'none';
+    });
+  }
+  hideNonToolChrome();
+  // Catch late-injected SG chrome (unified-nav.js runs after DOMContentLoaded).
+  new MutationObserver(hideNonToolChrome).observe(document.body, { childList: true });
 
   // Measure the SG nav height + stack our sticky elements below it:
   //   [SG .unified-nav]     ← top of viewport, fixed
