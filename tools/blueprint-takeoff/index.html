@@ -5758,21 +5758,26 @@ ${pb.license || ''}`;
   const stepNavEl = $('stepNav');
 
   // Measure the SG nav height + stack our sticky elements below it:
-  //   [SG fixed nav]        ← top of viewport, height = bodyPadTop
-  //   [hero, sticky]        ← top: bodyPadTop, height = heroH
-  //   [step nav, sticky]    ← top: bodyPadTop + heroH
-  // body padding-top from unified-nav.css equals the SG nav height.
+  //   [SG .unified-nav]     ← top of viewport, fixed
+  //   [hero, sticky]        ← top: navHeight, height = heroH
+  //   [step nav, sticky]    ← top: navHeight + heroH
+  // Direct .unified-nav measurement: body padding-top (140px) was set
+  // smaller than the actual rendered nav height (~290px on desktop with
+  // the sub-nav row), so trusting body padding hid our sticky elements
+  // under the bottom rows of the SG nav.
   function syncStickyOffset() {
     if (!stepNavEl) return;
+    const sgNav = document.querySelector('.unified-nav');
     const hero = document.querySelector('section.hero');
-    const bodyPadTop = parseInt(getComputedStyle(document.body).paddingTop, 10) || 0;
-    if (bodyPadTop <= 0) return;
+    const navH = sgNav ? sgNav.getBoundingClientRect().height
+                       : (parseInt(getComputedStyle(document.body).paddingTop, 10) || 0);
+    if (navH <= 0) return;
     if (hero) {
-      hero.style.top = bodyPadTop + 'px';
+      hero.style.top = navH + 'px';
       const heroH = hero.getBoundingClientRect().height;
-      stepNavEl.style.top = (bodyPadTop + heroH) + 'px';
+      stepNavEl.style.top = (navH + heroH) + 'px';
     } else {
-      stepNavEl.style.top = bodyPadTop + 'px';
+      stepNavEl.style.top = navH + 'px';
     }
   }
   syncStickyOffset();
