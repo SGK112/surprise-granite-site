@@ -1554,6 +1554,168 @@ router.post('/blueprint/orgs/:id/members', authenticateJWT, express.json({ limit
   }
 });
 
+/**
+ * Vendor upload links — let a GC generate a token, email it to their
+ * vendor rep, and have the rep submit a price-sheet PDF without needing
+ * any account. Submitted catalogs auto-attach to the GC's account.
+ *
+ * POST /vendor-upload-links            — auth required, GC creates a token
+ * GET  /vendor-upload-links            — auth required, GC lists their tokens
+ * DELETE /vendor-upload-links/:id      — auth required, GC revokes
+ * GET  /vendor-upload-links/by-token/:t — public, vendor page fetches metadata
+ * POST /vendor-upload-links/by-token/:t/submit — public, vendor submits parsed catalog
+ */
+router.post('/blueprint/vendor-upload-links', authenticateJWT, express.json({ limit: '4kb' }), async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const body = req.body || {};
+    const row = {
+      created_by: req.user.id,
+      org_id: body.org_id || null,
+      vendor_hint: (body.vendor_hint || '').slice(0, 100) || null,
+      category_hint: (body.category_hint || '').slice(0, 50) || null,
+      notify_email: (body.notify_email || req.user.email || '').slice(0, 200) || null,
+      max_uses: Math.max(1, Math.min(50, Number(body.max_uses) || 5)),
+    };
+    const { data, error } = await client
+      .from('vendor_upload_links')
+      .insert(row)
+      .select('id, vendor_hint, category_hint, notify_email, max_uses, use_count, expires_at, created_at')
+      .single();
+    if (error) throw error;
+    const baseUrl = body.base_url || process.env.SITE_URL || 'https://www.surprisegranite.com';
+    const upload_url = `${baseUrl.replace(/\/$/, '')}/tools/blueprint-takeoff/vendor-upload.html#t=${data.id}`;
+    res.json({ ...data, upload_url });
+  } catch (err) {
+    logger.error('Vendor upload link create error:', err);
+    return handleApiError(res, err, 'Create upload link');
+  }
+});
+
+router.get('/blueprint/vendor-upload-links', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { data, error } = await client
+      .from('vendor_upload_links')
+      .select('id, vendor_hint, category_hint, notify_email, max_uses, use_count, expires_at, last_used_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    res.json({ links: data || [] });
+  } catch (err) {
+    logger.error('List upload links error:', err);
+    return handleApiError(res, err, 'List upload links');
+  }
+});
+
+router.delete('/blueprint/vendor-upload-links/:id', authenticateJWT, async (req, res) => {
+  try {
+    const client = getUserClient(req.accessToken);
+    if (!client) return res.status(503).json({ error: 'Supabase not configured on server' });
+    const { error } = await client.from('vendor_upload_links').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('Delete upload link error:', err);
+    return handleApiError(res, err, 'Delete upload link');
+  }
+});
+
+router.get('/blueprint/vendor-upload-links/by-token/:token', async (req, res) => {
+  // Public — vendor page fetches metadata to render context
+  // ("upload your Daltile price sheet for Surprise Granite")
+  try {
+    const svc = getServiceClient();
+    if (!svc) return res.status(503).json({ error: 'Server not configured' });
+    const id = String(req.params.token || '').trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'invalid token' });
+    const { data: link, error } = await svc
+      .from('vendor_upload_links')
+      .select('id, vendor_hint, category_hint, max_uses, use_count, expires_at, created_by')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!link) return res.status(404).json({ error: 'Link not found or revoked.' });
+    if (link.use_count >= link.max_uses) return res.status(410).json({ error: 'Link has reached its upload limit.' });
+    if (link.expires_at && new Date(link.expires_at) < new Date()) return res.status(410).json({ error: 'Link has expired.' });
+    // Look up the GC's company name (sg_users.email or My Company stored elsewhere)
+    let gcName = '';
+    try {
+      const { data: profile } = await svc.from('sg_users').select('email').eq('id', link.created_by).maybeSingle();
+      gcName = profile?.email ? profile.email.split('@')[1].split('.')[0] : '';
+    } catch (_) {}
+    res.json({
+      vendor_hint: link.vendor_hint,
+      category_hint: link.category_hint,
+      remaining_uses: link.max_uses - link.use_count,
+      expires_at: link.expires_at,
+      gc_name: gcName,
+    });
+  } catch (err) {
+    logger.error('Fetch upload link error:', err);
+    return handleApiError(res, err, 'Fetch upload link');
+  }
+});
+
+router.post('/blueprint/vendor-upload-links/by-token/:token/submit', express.json({ limit: '6mb' }), async (req, res) => {
+  // Public — vendor submits the parsed catalog. Service role inserts
+  // the vendor_catalogs row on behalf of the GC who created the token.
+  try {
+    const svc = getServiceClient();
+    if (!svc) return res.status(503).json({ error: 'Server not configured' });
+    const id = String(req.params.token || '').trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'invalid token' });
+    const { vendor, category, products, source_filename } = req.body || {};
+    if (!Array.isArray(products) || !products.length) {
+      return res.status(400).json({ error: 'products array required (parse the PDF first)' });
+    }
+    // Validate token
+    const { data: link, error: lookupErr } = await svc
+      .from('vendor_upload_links')
+      .select('id, vendor_hint, category_hint, max_uses, use_count, expires_at, created_by, org_id, notify_email')
+      .eq('id', id)
+      .maybeSingle();
+    if (lookupErr) throw lookupErr;
+    if (!link) return res.status(404).json({ error: 'Link not found or revoked.' });
+    if (link.use_count >= link.max_uses) return res.status(410).json({ error: 'Link has reached its upload limit.' });
+    if (link.expires_at && new Date(link.expires_at) < new Date()) return res.status(410).json({ error: 'Link has expired.' });
+
+    // Insert the catalog as the GC who created the token.
+    const { data: cat, error: insertErr } = await svc
+      .from('vendor_catalogs')
+      .insert({
+        user_id: link.created_by,
+        org_id: link.org_id,
+        vendor: (vendor || link.vendor_hint || 'Unknown vendor').slice(0, 100),
+        category: (category || link.category_hint || 'other').slice(0, 50),
+        products,
+        source_filename: (source_filename || '').slice(0, 200) || null,
+        enabled: true,
+      })
+      .select('id, vendor, category, products, created_at')
+      .single();
+    if (insertErr) throw insertErr;
+
+    // Bump the link's use_count + last_used_at
+    await svc.from('vendor_upload_links')
+      .update({ use_count: link.use_count + 1, last_used_at: new Date().toISOString() })
+      .eq('id', id);
+
+    res.json({
+      ok: true,
+      catalog_id: cat.id,
+      vendor: cat.vendor,
+      products_count: cat.products?.length || 0,
+      message: `Thanks! Your ${cat.products?.length || 0}-product catalog has been delivered.`,
+    });
+  } catch (err) {
+    logger.error('Vendor upload submit error:', err);
+    return handleApiError(res, err, 'Vendor submit');
+  }
+});
+
 router.delete('/blueprint/orgs/:id/members/:userId', authenticateJWT, async (req, res) => {
   try {
     const client = getUserClient(req.accessToken);

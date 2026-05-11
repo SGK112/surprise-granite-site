@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Upload Price Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<style>
+:root { --bg:#0a0a12; --card:#12121a; --border:rgba(255,255,255,.1); --text:#fff; --muted:rgba(255,255,255,.6); --gold:#f9cb00; --blue:#3b82f6; --green:#22c55e; --red:#ef4444; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 32px 20px; }
+.container { max-width: 720px; margin: 0 auto; }
+h1 { font-family: 'Space Grotesk',sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.lede { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 16px; }
+.drop { border: 2px dashed var(--border); border-radius: 10px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all .15s; }
+.drop.dragover, .drop:hover { border-color: var(--blue); background: rgba(59,130,246,.05); }
+.drop .icon { font-size: 36px; margin-bottom: 12px; }
+.drop p { color: var(--muted); font-size: 14px; }
+.drop input[type=file] { display: none; }
+.btn { background: var(--gold); color: #000; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.btn:hover { background: #d6ad00; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.row { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.input { width: 100%; padding: 10px 12px; background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; font-family: inherit; }
+.progress { height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; margin-top: 14px; }
+.progress .bar { height: 100%; background: var(--blue); transition: width .3s; width: 0; }
+.progress-label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.preview { font-size: 12px; color: var(--muted); margin-top: 14px; }
+.preview-table { width: 100%; font-size: 12px; margin-top: 10px; max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+.preview-table table { width: 100%; border-collapse: collapse; }
+.preview-table th { text-align: left; padding: 8px 10px; background: rgba(255,255,255,.05); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; position: sticky; top: 0; }
+.preview-table td { padding: 6px 10px; border-top: 1px solid var(--border); }
+.preview-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.preview-table td .sku { font-family: 'Menlo',monospace; color: var(--gold); font-size: 10px; }
+.error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
+.success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); color: #86efac; padding: 14px 16px; border-radius: 8px; }
+.success h2 { font-family: 'Space Grotesk',sans-serif; font-size: 18px; margin-bottom: 4px; }
+.muted { color: var(--muted); }
+.tag { display: inline-block; padding: 3px 10px; background: rgba(59,130,246,.15); color: var(--blue); border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+@media (max-width: 600px) { .fields { grid-template-columns: 1fr; } }
+.loading { text-align: center; padding: 60px 0; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="content"><div class="loading">Loading…</div></div>
+</div>
+
+<script>
+(() => {
+  const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+  const content = document.getElementById('content');
+
+  function renderError(msg) {
+    content.innerHTML = `
+      <h1>Couldn't open this link</h1>
+      <div class="error">${msg}</div>
+      <p class="muted" style="font-size:13px">If the contractor sent you this link recently, ask them to generate a fresh one. Links expire after 90 days or after a few uploads.</p>
+    `;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const hash = location.hash.replace(/^#/, '');
+  const tokenMatch = hash.match(/^t=([0-9a-f-]{36})$/i);
+  if (!tokenMatch) {
+    renderError('Invalid upload link. Expected URL ending with <code>#t=&lt;uuid&gt;</code>.');
+    return;
+  }
+  const token = tokenMatch[1];
+
+  // Fetch link metadata + render the upload UI
+  fetch(`${API_BASE}/api/ai/blueprint/vendor-upload-links/by-token/${encodeURIComponent(token)}`)
+    .then(r => r.json().then(b => ({ ok: r.ok, status: r.status, body: b })))
+    .then(({ ok, status, body }) => {
+      if (!ok) return renderError(body.error || `Server error (${status})`);
+      renderUploadForm(body);
+    })
+    .catch(err => renderError('Network error: ' + err.message));
+
+  function renderUploadForm(meta) {
+    const remaining = meta.remaining_uses ?? '?';
+    content.innerHTML = `
+      <h1>Upload your price sheet</h1>
+      <p class="lede">${meta.vendor_hint ? escapeHtml(meta.vendor_hint) + ' price sheet — ' : ''}drop a PDF or image below. The AI will parse it into a product list. You can review and edit before sending.</p>
+
+      <div class="card">
+        <div class="fields">
+          <div>
+            <label>Vendor / brand</label>
+            <input class="input" id="vendor" placeholder="e.g. Daltile" value="${escapeHtml(meta.vendor_hint || '')}">
+          </div>
+          <div>
+            <label>Category</label>
+            <input class="input" id="category" placeholder="tile, flooring, quartz, paint…" value="${escapeHtml(meta.category_hint || '')}">
+          </div>
+        </div>
+
+        <div id="dropZone" class="drop">
+          <div class="icon">📄</div>
+          <p><strong>Drop a price sheet here</strong></p>
+          <p style="margin-top:4px">or <span style="color:var(--blue);text-decoration:underline">browse</span> — PDF or image</p>
+          <input type="file" id="fileInput" accept="application/pdf,image/*">
+        </div>
+        <div id="parseProgress" style="display:none">
+          <div class="progress"><div class="bar" id="bar"></div></div>
+          <div class="progress-label" id="progressLabel">Reading file…</div>
+        </div>
+        <div id="parseError" class="error" style="display:none;margin-top:14px"></div>
+        <div id="preview" style="display:none">
+          <div class="preview" id="previewMeta"></div>
+          <div class="preview-table" id="previewTable"></div>
+          <div class="row" style="justify-content:flex-end">
+            <button class="btn btn-ghost" id="btnDiscard" type="button">Discard</button>
+            <button class="btn" id="btnSubmit" type="button">Send to contractor →</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" style="font-size:12px;text-align:center">${remaining} upload${remaining===1?'':'s'} remaining on this link.</p>
+    `;
+    wireUploadForm();
+  }
+
+  let __preview = null;
+
+  function wireUploadForm() {
+    const drop = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    drop.addEventListener('click', () => fileInput.click());
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', e => { if (e.dataTransfer.files?.length) handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', e => { if (e.target.files?.length) handleFile(e.target.files[0]); });
+    document.getElementById('btnDiscard').addEventListener('click', () => {
+      __preview = null;
+      document.getElementById('preview').style.display = 'none';
+      fileInput.value = '';
+    });
+    document.getElementById('btnSubmit').addEventListener('click', submitCatalog);
+  }
+
+  async function handleFile(file) {
+    const progress = document.getElementById('parseProgress');
+    const bar = document.getElementById('bar');
+    const label = document.getElementById('progressLabel');
+    const errBox = document.getElementById('parseError');
+    progress.style.display = 'block';
+    errBox.style.display = 'none';
+    document.getElementById('preview').style.display = 'none';
+    bar.style.width = '5%';
+    label.textContent = 'Reading file…';
+    try {
+      let imageDataUrl;
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (isPdf) {
+        if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js not loaded — refresh and try again.');
+        bar.style.width = '20%'; label.textContent = 'Rendering PDF page 1…';
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.6 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        imageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      } else {
+        imageDataUrl = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = e => resolve(e.target.result);
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+      }
+      bar.style.width = '55%'; label.textContent = 'AI parsing the price sheet…';
+      const vendorHint = document.getElementById('vendor').value.trim();
+      const resp = await fetch(`${API_BASE}/api/ai/blueprint/catalog/parse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageDataUrl, vendorHint: vendorHint || file.name.replace(/\.(pdf|png|jpe?g)$/i, '') }),
+      });
+      if (!resp.ok) throw new Error(`Parse API ${resp.status}: ${(await resp.text()).slice(0,200)}`);
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      if (!data.products?.length) throw new Error('No products found on this page. Try a different page of the price list, or check that the PDF has clear product rows visible.');
+      __preview = { ...data, source_filename: file.name };
+      bar.style.width = '100%'; label.textContent = `Found ${data.products.length} product${data.products.length===1?'':'s'}`;
+      renderPreview(__preview);
+      setTimeout(() => { progress.style.display = 'none'; }, 600);
+    } catch (err) {
+      errBox.textContent = 'Could not parse: ' + err.message;
+      errBox.style.display = 'block';
+      progress.style.display = 'none';
+    }
+  }
+
+  function renderPreview(data) {
+    const box = document.getElementById('preview');
+    const meta = document.getElementById('previewMeta');
+    const tbl = document.getElementById('previewTable');
+    if (data.vendor && !document.getElementById('vendor').value) document.getElementById('vendor').value = data.vendor;
+    if (data.category && !document.getElementById('category').value) document.getElementById('category').value = data.category;
+    meta.innerHTML = `<span class="tag">${escapeHtml(data.vendor || 'Unknown')}</span> ${escapeHtml(data.category || 'other')} · <strong>${data.products.length}</strong> product${data.products.length===1?'':'s'}`;
+    tbl.innerHTML = `<table>
+      <thead><tr><th>SKU</th><th>Name / color / size</th><th class="num">Price</th></tr></thead>
+      <tbody>${data.products.slice(0,40).map(p => `<tr>
+        <td><span class="sku">${escapeHtml(p.sku || '—')}</span></td>
+        <td>${escapeHtml([p.name || p.line, p.color, p.size, p.finish].filter(Boolean).join(' · ') || '(no name)')}</td>
+        <td class="num">${p.price ? '$' + Number(p.price).toFixed(2) + (p.price_unit ? '/' + escapeHtml(p.price_unit) : '') : '—'}</td>
+      </tr>`).join('')}${data.products.length > 40 ? `<tr><td colspan="3" class="muted" style="text-align:center;padding:8px">+${data.products.length - 40} more (will all be sent)</td></tr>` : ''}</tbody>
+    </table>`;
+    box.style.display = 'block';
+  }
+
+  async function submitCatalog() {
+    if (!__preview) return;
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const resp = await fetch(`${API_BASE}/api/ai/blueprint/vendor-upload-links/by-token/${encodeURIComponent(token)}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor: document.getElementById('vendor').value.trim() || __preview.vendor || 'Unknown',
+          category: document.getElementById('category').value.trim() || __preview.category || 'other',
+          products: __preview.products,
+          source_filename: __preview.source_filename,
+        }),
+      });
+      const body = await resp.json();
+      if (!resp.ok) throw new Error(body.error || `Server returned ${resp.status}`);
+      content.innerHTML = `
+        <div class="success">
+          <h2>✓ Sent. Thank you.</h2>
+          <p style="margin-top:6px">${escapeHtml(body.message || 'Your catalog was delivered to the contractor.')}</p>
+          <p style="margin-top:10px;font-size:12px;color:var(--muted)">Vendor: ${escapeHtml(body.vendor)} · ${body.products_count} products</p>
+        </div>
+      `;
+    } catch (err) {
+      const errBox = document.getElementById('parseError');
+      errBox.textContent = 'Submit failed: ' + err.message;
+      errBox.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Send to contractor →';
+    }
+  }
+})();
+</script>
+</body>
+</html>

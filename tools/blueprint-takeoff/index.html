@@ -853,6 +853,11 @@
       <h4 style="font-size:13px;margin:24px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Team</h4>
       <div id="teamSection" hidden></div>
 
+      <h4 style="font-size:13px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Vendor upload links</h4>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Generate a link, email it to your Daltile/MSI/etc. rep, and they can drop their price sheet themselves — no account needed. AI parses it; the catalog lands in your list.</div>
+      <button class="btn btn-ghost" id="btnNewVendorLink" type="button" style="font-size:12px;padding:6px 12px">+ Generate a vendor upload link</button>
+      <div id="vendorLinksList" style="margin-top:10px"></div>
+
       <h4 style="font-size:13px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">Saved catalogs</h4>
       <div class="projects-list" id="catalogList"></div>
 
@@ -2079,6 +2084,7 @@ flooring_lvp,5,3"></textarea>
 
   function openCatalogsModal() {
     renderCatalogList();
+    renderVendorLinksList();
     $('catalogParseError').hidden = true;
     $('catalogParseProgress').hidden = true;
     $('catalogPreview').hidden = true;
@@ -3825,6 +3831,96 @@ flooring_lvp,5,3"></textarea>
       $('estNotes').textContent = '';
     }
   }
+
+  // ---- Vendor upload links (let reps submit price sheets themselves) ----
+  // A GC creates a token, emails the resulting URL to their vendor rep,
+  // and the rep drops their PDF on a public page (no account needed).
+  // The parsed catalog lands in the GC's saved catalogs automatically.
+
+  async function renderVendorLinksList() {
+    const container = document.getElementById('vendorLinksList');
+    if (!container) return;
+    if (!isSignedIn || !isSignedIn()) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Sign in to create vendor upload links.</div>';
+      return;
+    }
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/vendor-upload-links', { headers: authHeaders() });
+      if (!resp.ok) {
+        container.innerHTML = '';
+        return;
+      }
+      const { links } = await resp.json();
+      if (!links?.length) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = links.map(l => {
+        const remaining = (l.max_uses || 0) - (l.use_count || 0);
+        const url = `${location.origin}/tools/blueprint-takeoff/vendor-upload.html#t=${l.id}`;
+        const exp = l.expires_at ? new Date(l.expires_at).toLocaleDateString() : '';
+        return `
+          <div style="padding:8px 10px;background:rgba(0,0,0,.15);border-radius:6px;margin-bottom:6px;font-size:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div style="flex:1;min-width:0">
+                <strong>${escapeHtml(l.vendor_hint || 'Any vendor')}</strong>
+                <span style="color:var(--text-muted)"> · ${remaining}/${l.max_uses} uploads left · expires ${escapeHtml(exp)}</span>
+              </div>
+              <button class="btn btn-tiny" data-copy="${escapeHtml(url)}" type="button">Copy link</button>
+              <button class="btn btn-tiny btn-ghost" data-revoke="${l.id}" type="button" title="Revoke link">×</button>
+            </div>
+            <div style="font-family:'Menlo',monospace;font-size:10px;color:var(--text-muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(url)}</div>
+          </div>
+        `;
+      }).join('');
+      container.querySelectorAll('[data-copy]').forEach(b => {
+        b.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy link', 1500); }
+          catch (_) { prompt('Copy this link:', b.dataset.copy); }
+        });
+      });
+      container.querySelectorAll('[data-revoke]').forEach(b => {
+        b.addEventListener('click', async () => {
+          if (!confirm('Revoke this vendor upload link? Reps with the URL will get a "link not found" error.')) return;
+          await fetch(API_BASE + '/api/ai/blueprint/vendor-upload-links/' + encodeURIComponent(b.dataset.revoke), { method: 'DELETE', headers: authHeaders() });
+          renderVendorLinksList();
+        });
+      });
+    } catch (err) {
+      console.warn('Vendor links fetch failed:', err.message);
+    }
+  }
+
+  document.getElementById('btnNewVendorLink')?.addEventListener('click', async () => {
+    if (!isSignedIn || !isSignedIn()) {
+      alert('Sign in first — vendor upload links are tied to your account so submitted catalogs land in your list.');
+      return;
+    }
+    const vendor = prompt('Which vendor is this link for? (optional — pre-fills their form, e.g. "Daltile")', '');
+    if (vendor === null) return;
+    const category = vendor ? prompt(`Category for ${vendor}? (tile, flooring, quartz, paint, lighting…)`, '') : '';
+    if (vendor && category === null) return;
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/vendor-upload-links', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          vendor_hint: vendor || null,
+          category_hint: category || null,
+          base_url: location.origin,
+        }),
+      });
+      if (!resp.ok) throw new Error(`API ${resp.status}: ${(await resp.text()).slice(0,200)}`);
+      const data = await resp.json();
+      const url = data.upload_url;
+      // Copy + show
+      try { await navigator.clipboard.writeText(url); } catch (_) {}
+      alert(`Link copied to clipboard:\n\n${url}\n\nPaste it into an email to your ${vendor || 'vendor'} rep. They can use it up to ${data.max_uses} times in the next 90 days.`);
+      renderVendorLinksList();
+    } catch (err) {
+      alert('Could not create link: ' + err.message);
+    }
+  });
 
   // Spot vendors named in extracted material specs that the user hasn't
   // uploaded a catalog for. Returns a deduped, frequency-sorted list of
