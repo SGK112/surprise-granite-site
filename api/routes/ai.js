@@ -1141,6 +1141,79 @@ function escapeHtmlServer(s) {
 }
 
 /**
+ * Proposal shares — short-link backing for /share.html.
+ * Replaces the base64-in-URL-fragment scheme that produced ~4 KB URLs.
+ * The proposal payload lives in proposal_shares (Supabase); the share URL
+ * carries only a UUID. Public read by id; service-role inserts.
+ *
+ * POST creates a share, returns { id, share_url }. Anonymous-friendly so
+ * the share button works whether the user is signed in or not (public page).
+ */
+router.post('/blueprint/proposal/share', express.json({ limit: '4mb' }), async (req, res) => {
+  try {
+    const svc = getServiceClient();
+    if (!svc) return res.status(503).json({ error: 'Server not configured for share storage' });
+    const payload = req.body?.payload;
+    if (!payload || typeof payload !== 'object') {
+      return res.status(400).json({ error: 'payload object required' });
+    }
+    // Sanity-cap payload size — block anyone trying to use this as a generic
+    // pastebin. ~2MB raw JSON is plenty for even the most elaborate proposal.
+    const approxBytes = JSON.stringify(payload).length;
+    if (approxBytes > 2_000_000) {
+      return res.status(413).json({ error: `payload too large (${approxBytes} bytes); max 2MB` });
+    }
+    const createdByEmail = (payload.preparedBy?.email || req.body?.created_by_email || '').slice(0, 200) || null;
+    const { data, error } = await svc
+      .from('proposal_shares')
+      .insert({ payload, created_by_email: createdByEmail })
+      .select('id, created_at, expires_at')
+      .single();
+    if (error) throw error;
+    // Build the share URL. Frontend's location.origin is the more reliable
+    // source, but include a server-side default for direct API consumers.
+    const baseUrl = req.body?.base_url || process.env.SITE_URL || 'https://www.surprisegranite.com';
+    const shareUrl = `${baseUrl.replace(/\/$/, '')}/tools/blueprint-takeoff/share.html#s=${data.id}`;
+    res.json({ id: data.id, share_url: shareUrl, created_at: data.created_at, expires_at: data.expires_at });
+  } catch (err) {
+    logger.error('Proposal share create error:', err);
+    return handleApiError(res, err, 'Proposal share');
+  }
+});
+
+router.get('/blueprint/proposal/share/:id', async (req, res) => {
+  // Public fetch — share.html anonymously hits this with the URL UUID.
+  // Service role select bypasses RLS but the policy allows anon select anyway.
+  try {
+    const svc = getServiceClient();
+    if (!svc) return res.status(503).json({ error: 'Server not configured for share storage' });
+    const id = String(req.params.id || '').trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'invalid share id' });
+    const { data, error } = await svc
+      .from('proposal_shares')
+      .select('id, payload, created_at, expires_at, view_count')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'share not found or expired' });
+    // Cheap view-count bump — fire and forget. If it errors we still return
+    // the payload (analytics aren't worth blocking the response on).
+    svc.from('proposal_shares').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id)
+      .then(() => {}, () => {});
+    res.json({
+      id: data.id,
+      payload: data.payload,
+      created_at: data.created_at,
+      expires_at: data.expires_at,
+      view_count: (data.view_count || 0) + 1,
+    });
+  } catch (err) {
+    logger.error('Proposal share fetch error:', err);
+    return handleApiError(res, err, 'Proposal share fetch');
+  }
+});
+
+/**
  * Blueprint takeoff project storage (cloud-primary, localStorage offline cache).
  * All routes require Supabase JWT auth — caller's token is forwarded so RLS
  * enforces per-user isolation.

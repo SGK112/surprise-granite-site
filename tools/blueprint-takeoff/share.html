@@ -179,23 +179,48 @@
     return out.join('\n');
   }
 
-  // Read payload from URL fragment (no server roundtrip)
+  // Two share-link formats supported:
+  //   #s=<uuid>     — short link, fetch payload via API (newer, ~80-char URLs)
+  //   #<base64>     — embedded payload, decode locally (legacy, multi-KB URLs)
+  // Both supported indefinitely so old shared URLs keep working.
   const hash = location.hash.replace(/^#/, '');
   if (!hash) {
     showError('No proposal data in the URL. Ask the sender to regenerate the share link.');
     return;
   }
-  let data;
-  try {
-    const b64 = hash.replace(/-/g,'+').replace(/_/g,'/');
-    const padded = b64 + '==='.slice((b64.length + 3) % 4);
-    const json = decodeURIComponent(escape(atob(padded)));
-    data = JSON.parse(json);
-  } catch (e) {
-    showError('The share link looks corrupted. Ask the sender to regenerate it.');
-    return;
+
+  const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+  // Defer the rest of the render until we have data. loadPayload returns a
+  // promise that resolves to the proposal payload object.
+  loadPayload(hash).then(renderProposal).catch(err => {
+    console.error('Share load error:', err);
+    showError(err.message || 'The share link could not be loaded.');
+  });
+
+  async function loadPayload(h) {
+    if (h.startsWith('s=')) {
+      // Short link → fetch from API
+      const id = h.slice(2);
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error('Invalid share ID in URL.');
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share/' + encodeURIComponent(id));
+      if (resp.status === 404) throw new Error('This proposal share has expired or was deleted.');
+      if (!resp.ok) throw new Error('Could not load the proposal (server returned ' + resp.status + ').');
+      const data = await resp.json();
+      return data.payload;
+    }
+    // Legacy embedded payload
+    try {
+      const b64 = h.replace(/-/g,'+').replace(/_/g,'/');
+      const padded = b64 + '==='.slice((b64.length + 3) % 4);
+      const json = decodeURIComponent(escape(atob(padded)));
+      return JSON.parse(json);
+    } catch (e) {
+      throw new Error('The share link looks corrupted. Ask the sender to regenerate it.');
+    }
   }
 
+function renderProposal(data) {
   const pb = data.preparedBy || {};
   const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
   const websiteUrl = pb.website ? (/^https?:\/\//.test(pb.website) ? pb.website : 'https://' + pb.website) : '';
@@ -371,6 +396,7 @@
       </div>
     </div>
   `;
+} // end renderProposal
 })();
 </script>
 </body>

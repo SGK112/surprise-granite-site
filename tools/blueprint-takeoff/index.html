@@ -5150,10 +5150,22 @@ ${pb.license || ''}`;
             preparedBy: getMyCompany(),
             ts: Date.now(),
           };
-          const json = JSON.stringify(payload);
-          const b64 = btoa(unescape(encodeURIComponent(json)))
-            .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-          const url = `${location.origin}/tools/blueprint-takeoff/share.html#${b64}`;
+          // Try short-link API first; fall back to legacy embedded URL.
+          let url = null;
+          try {
+            const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ payload, base_url: location.origin }),
+            });
+            if (resp.ok) url = (await resp.json()).share_url;
+          } catch (_) { /* fall through */ }
+          if (!url) {
+            const json = JSON.stringify(payload);
+            const b64 = btoa(unescape(encodeURIComponent(json)))
+              .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+            url = `${location.origin}/tools/blueprint-takeoff/share.html#${b64}`;
+          }
           try {
             await navigator.clipboard.writeText(url);
             status.textContent = 'Share URL copied ✓'; status.className = 'so-status ok';
@@ -5310,15 +5322,21 @@ ${pb.license || ''}`;
   }
 
   // ---- Share link ----
-  // Encodes the proposal payload into a URL fragment so the recipient can
-  // open a read-only view without needing accounts or backend storage.
-  // Self-contained, free, instant — but the URL is long. Backend short-link
-  // version can come later if needed.
-  $('btnShareProposal').addEventListener('click', () => {
+  // Posts the proposal payload to /api/ai/blueprint/proposal/share which
+  // stores it in Supabase and returns a short UUID. Share URL becomes
+  // ~80 chars instead of the 4 KB base64-fragment URLs the previous
+  // version produced. Falls back to the legacy in-URL encoding if the
+  // backend is unreachable (offline/dev) so the button never breaks.
+  $('btnShareProposal').addEventListener('click', async () => {
     if (!window.__lastProposalMarkdown) return;
+    const btn = $('btnShareProposal');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generating link…';
     const payload = {
       v: 1,
       customer: $('propCustomer').value.trim(),
+      customerAddress: ($('propCustomerAddress')?.value || '').trim(),
       project: $('propProject').value.trim(),
       address: $('propAddress').value.trim(),
       total: window.__lastEstimate?.total || 0,
@@ -5326,15 +5344,39 @@ ${pb.license || ''}`;
       preparedBy: getMyCompany(),
       ts: Date.now(),
     };
-    // Compress to base64url for shorter URL. JSON → utf8 → btoa → URL-safe.
-    const json = JSON.stringify(payload);
-    const b64 = btoa(unescape(encodeURIComponent(json)))
-      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    const url = `${location.origin}/tools/blueprint-takeoff/share.html#${b64}`;
+
+    let url = null;
+    // Primary: short-link via backend
+    try {
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload, base_url: location.origin }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        url = data.share_url;
+      } else {
+        console.warn('Short-link API responded', resp.status, '— falling back to embedded URL');
+      }
+    } catch (err) {
+      console.warn('Short-link API unreachable, falling back:', err.message);
+    }
+
+    // Fallback: legacy base64-in-fragment URL (offline-friendly)
+    if (!url) {
+      const json = JSON.stringify(payload);
+      const b64 = btoa(unescape(encodeURIComponent(json)))
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      url = `${location.origin}/tools/blueprint-takeoff/share.html#${b64}`;
+    }
+
     $('shareUrlOutput').value = url;
     $('proposalShareRow').hidden = false;
     $('proposalSendRow').hidden = true;
     setTimeout(() => { $('shareUrlOutput').select(); }, 50);
+    btn.disabled = false;
+    btn.textContent = originalText;
   });
   $('btnCopyShare').addEventListener('click', async () => {
     const url = $('shareUrlOutput').value;
