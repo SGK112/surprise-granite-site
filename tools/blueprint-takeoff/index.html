@@ -5759,34 +5759,33 @@ ${pb.license || ''}`;
   const chips = document.querySelectorAll('#stepNav .step-nav-chip');
   const stepNavEl = $('stepNav');
 
-  // Measure the SG unified-nav height + push the step-nav offset to clear
-  // it. Querying the actual rendered DOM is more reliable than the CSS
-  // variable (which doesn't account for stacked nav rows on this site).
+  // Measure the SG nav height by checking where our own content actually
+  // starts at scroll=0. The SG nav can use non-standard class names that
+  // selector-based queries miss; this just observes the rendered layout.
+  // body { padding-top } from unified-nav.css is the truth, but resizing
+  // and async-loading content can change it, so we re-measure periodically.
   function syncStickyOffset() {
     if (!stepNavEl) return;
-    // Find anything fixed at the top of the viewport before our content
-    let maxBottom = 0;
-    document.querySelectorAll('header, [class*="navbar"], [class*="nav-"], [id*="nav"]').forEach(el => {
-      // Ignore our own step-nav and anything inside our content
-      if (el === stepNavEl || stepNavEl.contains(el) || el.closest('main')) return;
-      const cs = getComputedStyle(el);
-      if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
-      const r = el.getBoundingClientRect();
-      if (r.top <= 0 && r.bottom > 0 && r.bottom > maxBottom) maxBottom = r.bottom;
-    });
-    if (maxBottom > 0) {
-      stepNavEl.style.top = maxBottom + 'px';
+    // Walk up from our hero (the first element of our content) — the gap
+    // between viewport top and the hero is where the SG nav is sitting.
+    const hero = document.querySelector('section.hero');
+    if (!hero) return;
+    // Measure with scroll position considered: top + scroll = absolute Y;
+    // body padding-top + any nav above us gives the offset we need.
+    const bodyPadTop = parseInt(getComputedStyle(document.body).paddingTop, 10) || 0;
+    // bodyPadTop is the measured space pushed below the SG fixed nav,
+    // which is the height of the SG nav itself.
+    if (bodyPadTop > 0 && bodyPadTop !== parseInt(stepNavEl.style.top || '0', 10)) {
+      stepNavEl.style.top = bodyPadTop + 'px';
     }
   }
-  // Run on load, after fonts load, and on resize. Also poll for ~3s in
-  // case the SG nav loads asynchronously (script-injected).
   syncStickyOffset();
   window.addEventListener('load', syncStickyOffset);
   window.addEventListener('resize', syncStickyOffset);
   let syncTries = 0;
   const syncInterval = setInterval(() => {
     syncStickyOffset();
-    if (++syncTries > 6) clearInterval(syncInterval);
+    if (++syncTries > 8) clearInterval(syncInterval);
   }, 500);
 
   function refreshStepNav() {
