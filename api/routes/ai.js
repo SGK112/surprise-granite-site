@@ -635,7 +635,7 @@ router.post('/blueprint/cover', async (req, res) => {
  */
 router.post('/blueprint/proposal', async (req, res) => {
   try {
-    const { estimate, customer = '', project = '', address = '', materials = [], confirmedScope = [], openQuestions = [], preparedBy = {}, bidMode = 'prime', userKey } = req.body || {};
+    const { estimate, customer = '', customerAddress = '', project = '', address = '', materials = [], confirmedScope = [], openQuestions = [], preparedBy = {}, bidMode = 'prime', userKey } = req.body || {};
     const isSubBid = bidMode === 'sub';
     if (!estimate || !estimate.line_items) {
       return res.status(400).json({ error: 'estimate object with line_items is required' });
@@ -726,6 +726,7 @@ Return the proposal in this structure (use the docTitle and recipientLabel below
 *{Tagline if any, italicized}*
 
 **${recipientLabel}:** {Customer}
+{If customerAddress was provided, on the next line: \`{customerAddress}\` — formats the recipient's mailing address right under their name. Skip the line entirely if blank.}
 **Date:** {Today}
 **Project address:** {address or "TBD"}
 
@@ -780,8 +781,9 @@ PREPARED BY (the contractor — appears in header):
 ${preparedByLines}
 
 CUSTOMER: ${customer || '(not provided)'}
+CUSTOMER MAILING ADDRESS: ${customerAddress || '(not provided — omit the line under their name)'}
 PROJECT: ${project || '(not provided)'}
-ADDRESS: ${address || 'TBD'}
+PROJECT ADDRESS (job site): ${address || 'TBD'}
 TODAY: ${today}
 
 TRADE BREAKOUT:

@@ -693,8 +693,9 @@
       <div class="hint">AI-drafted client-ready proposal: cover, scope of work, exclusions, payment schedule, and assumptions. Edit anything before sending.</div>
       <div class="proposal-controls">
         <label><span id="propCustomerLabel">Customer name</span> <input type="text" id="propCustomer" placeholder="Better Buzz Coffee"></label>
+        <label><span id="propCustomerAddressLabel">Customer mailing address</span> <input type="text" id="propCustomerAddress" placeholder="e.g. 1995 N Batavia St, Orange, CA 92865"></label>
         <label>Project name <input type="text" id="propProject" placeholder="Surprise State Farm — Memorabilia &amp; Waiting"></label>
-        <label>Project address <input type="text" id="propAddress" placeholder="optional"></label>
+        <label>Project address <input type="text" id="propAddress" placeholder="job-site address (different from above)"></label>
         <button class="btn btn-primary" id="btnDraftProposal">Draft proposal →</button>
       </div>
       <div id="propError" class="error-box" hidden></div>
@@ -3746,12 +3747,16 @@ flooring_lvp,5,3"></textarea>
       $('estGcOverhead').value = 0;
       $('estGcOverhead').disabled = true;
       $('propCustomerLabel').textContent = 'Submitted to (Prime GC)';
-      $('propCustomer').placeholder = 'ABC Construction (the prime GC)';
+      $('propCustomer').placeholder = 'PR Construction, Inc.';
+      const cal = $('propCustomerAddressLabel'); if (cal) cal.textContent = "Prime GC's mailing address";
+      const ca = $('propCustomerAddress'); if (ca) ca.placeholder = "e.g. 1995 N Batavia St, Orange, CA 92865";
     } else {
       if (parseFloat($('estGcOverhead').value) === 0) $('estGcOverhead').value = 8;
       $('estGcOverhead').disabled = false;
       $('propCustomerLabel').textContent = 'Customer name';
       $('propCustomer').placeholder = 'Better Buzz Coffee';
+      const cal = $('propCustomerAddressLabel'); if (cal) cal.textContent = "Customer mailing address";
+      const ca = $('propCustomerAddress'); if (ca) ca.placeholder = "where to send the bid (optional)";
     }
     if (window.__lastEstimate) {
       recalcEstimateTotals(window.__lastEstimate);
@@ -4350,6 +4355,7 @@ flooring_lvp,5,3"></textarea>
     // in case the user is intentionally drafting a rough cut.
     if (!confirmReviewItemsBeforeProposal()) return;
     const customer = $('propCustomer').value.trim();
+    const customerAddress = ($('propCustomerAddress')?.value || '').trim();
     const project  = $('propProject').value.trim();
     const address  = $('propAddress').value.trim();
 
@@ -4382,7 +4388,7 @@ flooring_lvp,5,3"></textarea>
         headers: aiHeaders(),
         body: JSON.stringify({
           estimate: est,
-          customer, project, address,
+          customer, customerAddress, project, address,
           materials: window.__lastMaterials || [],
           confirmedScope: answeredQs,
           openQuestions: openQs,
