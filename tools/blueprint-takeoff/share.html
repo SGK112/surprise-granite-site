@@ -221,6 +221,13 @@
   }
 
 function renderProposal(data) {
+  // Plan sign-off mode: payload has type:'plan_sign' + pages[] (rasterized sheets).
+  // Render the page images stacked + a sign-and-acknowledge bar at the bottom.
+  // Reuses the same signature canvas + sender notification path as the
+  // proposal flow.
+  if (data && data.type === 'plan_sign') {
+    return renderPlanSignOff(data);
+  }
   const pb = data.preparedBy || {};
   const fmt = n => '$' + (Math.round(n) || 0).toLocaleString();
   const websiteUrl = pb.website ? (/^https?:\/\//.test(pb.website) ? pb.website : 'https://' + pb.website) : '';
@@ -397,6 +404,122 @@ function renderProposal(data) {
     </div>
   `;
 } // end renderProposal
+
+// Plan sign-off renderer. data.pages[] = [{image: dataURL, sheetNum, title}]
+function renderPlanSignOff(data) {
+  const pb = data.preparedBy || {};
+  const recip = data.recipient || {};
+  const pages = Array.isArray(data.pages) ? data.pages : [];
+  document.title = `Plan sign-off — ${data.project || 'plans'}`;
+
+  // Build the page DOM — header w/ sender info, pages stacked, sign card.
+  const pageHtml = pages.map((p, i) => `
+    <div class="plan-page" style="margin:18px 0;background:#fff;padding:8px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">
+        Sheet ${escapeHtml(p.sheetNum || ('p' + p.pageNum))}${p.title ? ' · ' + escapeHtml(p.title) : ''}
+      </div>
+      <img src="${p.image}" alt="Sheet ${i+1}" style="display:block;width:100%;height:auto;border-radius:4px">
+    </div>
+  `).join('');
+
+  root.innerHTML = `
+    <div class="doc">
+      <div class="doc-header">
+        <div class="eyebrow">${escapeHtml(pb.name || 'Plan sign-off')}</div>
+        <h1>Plans for sign-off</h1>
+      </div>
+      <div class="doc-meta">
+        ${recip.name ? `<div><strong>For:</strong> ${escapeHtml(recip.name)}</div>` : ''}
+        ${data.project ? `<div><strong>Project:</strong> ${escapeHtml(data.project)}</div>` : ''}
+        <div><strong>Pages:</strong> ${pages.length} sheet${pages.length===1?'':'s'}</div>
+      </div>
+      <div class="doc-body" style="padding:0 24px 24px">
+        ${data.note ? `<div style="background:rgba(59,130,246,.06);border-left:3px solid #3b82f6;padding:12px 14px;border-radius:4px;margin:8px 0 16px;font-size:14px;color:#1a1a2e">${escapeHtml(data.note)}</div>` : ''}
+        ${pageHtml}
+      </div>
+
+      <div style="background:rgba(0,0,0,.03);border-top:1px solid #ddd;padding:24px;border-radius:0 0 8px 8px">
+        <h3 style="margin:0 0 6px;font-family:'Space Grotesk',sans-serif">Acknowledge & sign</h3>
+        <p style="font-size:13px;color:#555;margin:0 0 14px">By signing below, you confirm you've reviewed the sheets above and agree to ${data.note ? 'the scope described' : 'fabricate / install per these drawings'}.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <label style="font-size:12px;color:#666">Your name<input type="text" id="psName" value="${escapeHtml(recip.name || '')}" style="display:block;width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;margin-top:3px"></label>
+          <label style="font-size:12px;color:#666">Email (so they get a copy)<input type="email" id="psEmail" value="${escapeHtml(recip.email || '')}" style="display:block;width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;margin-top:3px"></label>
+        </div>
+
+        <div style="font-size:12px;color:#666;margin-bottom:6px">Sign here:</div>
+        <canvas id="psSig" style="display:block;width:100%;height:140px;background:#fff;border:1px dashed #bbb;border-radius:4px;touch-action:none;cursor:crosshair"></canvas>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <button id="psClear" type="button" style="background:transparent;border:1px solid #ccc;color:#555;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer">Clear signature</button>
+          <button id="psSubmit" type="button" style="background:#16a34a;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-weight:600;font-size:14px;cursor:pointer">✓ Acknowledge & sign</button>
+        </div>
+        <div id="psStatus" style="font-size:13px;margin-top:10px;color:#666"></div>
+      </div>
+    </div>
+  `;
+
+  // Wire the signature canvas
+  const canvas = document.getElementById('psSig');
+  const ctx = canvas.getContext('2d');
+  let hasInk = false;
+  function resizeCanvas() {
+    const r = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    canvas.width = w * r;
+    canvas.height = 140 * r;
+    ctx.scale(r, r);
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a1a2e';
+  }
+  resizeCanvas();
+  let drawing = false, lastX, lastY;
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches?.[0] || e;
+    return [t.clientX - r.left, t.clientY - r.top];
+  }
+  canvas.addEventListener('pointerdown', e => { drawing = true; [lastX, lastY] = pos(e); hasInk = true; });
+  canvas.addEventListener('pointermove', e => { if (!drawing) return; const [x,y] = pos(e); ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(x,y); ctx.stroke(); [lastX,lastY]=[x,y]; });
+  canvas.addEventListener('pointerup', () => { drawing = false; });
+  canvas.addEventListener('pointerleave', () => { drawing = false; });
+  document.getElementById('psClear').addEventListener('click', () => { ctx.clearRect(0,0,canvas.width,canvas.height); hasInk = false; });
+
+  document.getElementById('psSubmit').addEventListener('click', async () => {
+    const name = document.getElementById('psName').value.trim();
+    const email = document.getElementById('psEmail').value.trim();
+    const status = document.getElementById('psStatus');
+    if (!name) { status.textContent = 'Please enter your name.'; status.style.color = '#dc2626'; return; }
+    if (!hasInk) { status.textContent = 'Please sign in the box.'; status.style.color = '#dc2626'; return; }
+    const sigPng = canvas.toDataURL('image/png');
+    const btn = document.getElementById('psSubmit');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    status.textContent = ''; status.style.color = '#666';
+    try {
+      const resp = await fetch('https://surprise-granite-email-api.onrender.com/api/ai/blueprint/proposal/acceptance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acceptedBy: { name, email },
+          signaturePng: sigPng,
+          project: data.project || 'Plan sign-off',
+          customer: pb.name || '',
+          total: 0,
+          deposit: 0,
+          preparedBy: pb,
+          acceptedAt: new Date().toISOString(),
+        }),
+      });
+      if (!resp.ok) throw new Error('Server returned ' + resp.status);
+      status.textContent = '✓ Signed. Thank you — the sender has been notified.';
+      status.style.color = '#16a34a';
+      btn.style.background = '#666';
+      btn.textContent = 'Signed ✓';
+    } catch (err) {
+      status.textContent = 'Could not submit: ' + err.message;
+      status.style.color = '#dc2626';
+      btn.disabled = false; btn.textContent = '✓ Acknowledge & sign';
+    }
+  });
+}
 })();
 </script>
 </body>

@@ -646,6 +646,7 @@
       <div class="sheet-list" id="sheetList"></div>
       <div class="row-actions" style="margin-top:18px">
         <button class="btn btn-primary" id="btnExtract">Extract takeoffs from selected →</button>
+        <button class="btn" id="btnSignOff" title="Skip extraction — just share these sheets and request a signature">📨 Send for sign-off</button>
         <span class="progress-label" id="estimateLabel" style="margin:auto 0;text-align:left"></span>
       </div>
     </section>
@@ -887,6 +888,39 @@
   </div>
 
   <!-- Catalogs modal -->
+  <!-- Send-for-sign-off modal: rasterize selected sheets, package + share -->
+  <div class="byok-modal" id="signOffModal" role="dialog" aria-modal="true" aria-labelledby="signOffTitle">
+    <div class="byok-card" style="max-width:560px">
+      <h3 id="signOffTitle" style="margin:0 0 6px">📨 Send plans for sign-off</h3>
+      <p class="byok-hint" style="font-size:13px;color:var(--text-muted);margin:0 0 18px">
+        Share the selected sheets with a sub / customer / GC and request a signature. They sign on the share page; you get the timestamp + signature stored.
+      </p>
+      <div class="byok-form">
+        <label>Sent to (name)<input type="text" id="soName" placeholder="e.g. Cabinet Co. — Bob"></label>
+        <label>Their email (optional — for the email receipt)<input type="email" id="soEmail" placeholder="bob@cabinetco.com"></label>
+        <label>What are they signing off on?<textarea id="soNote" rows="2" placeholder="e.g. Acknowledge dimensions and construction notes before fabrication">Acknowledge dimensions, materials, and construction notes per the attached sheets. By signing you confirm you'll fabricate / install per these drawings.</textarea></label>
+        <div class="byok-hint" style="font-size:12px;color:var(--text-muted)" id="soPagesHint"></div>
+      </div>
+      <div id="soProgress" hidden style="margin-top:12px">
+        <div class="progress"><div class="bar" id="soBar"></div></div>
+        <div class="progress-label" id="soLabel">Rasterizing sheets…</div>
+      </div>
+      <div id="soError" class="error-box" hidden style="margin-top:10px"></div>
+      <div id="soResult" hidden style="margin-top:14px">
+        <p style="font-size:13px;margin:0 0 6px">Share this link with the recipient:</p>
+        <div style="display:flex;gap:8px">
+          <input class="byok-input" id="soUrl" readonly style="flex:1;font-family:'Menlo',monospace;font-size:12px">
+          <button class="btn" id="soCopy" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="byok-actions" style="margin-top:14px">
+        <button class="btn btn-ghost" id="signOffCancel" type="button">Close</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" id="signOffGo" type="button">Generate share link →</button>
+      </div>
+    </div>
+  </div>
+
   <div class="byok-modal" id="catalogsModal" role="dialog" aria-modal="true" aria-labelledby="catalogsTitle">
     <div class="byok-card" style="max-width:720px">
       <h3 id="catalogsTitle">Vendor Catalogs</h3>
@@ -3071,6 +3105,98 @@ flooring_lvp,5,3"></textarea>
 
   // ---- Step 3: extract ----
   $('btnExtract').addEventListener('click', extractAll);
+
+  // ---- Send for sign-off ---------------------------------------------------
+  // Skips the extract/estimate/proposal pipeline. Rasterizes the currently
+  // selected sheets into a packet, drops them in proposal_shares with
+  // type:'plan_sign', and gives the user a short URL to send. Recipient opens
+  // → sees the pages stacked → signs the canvas at the bottom → record stored.
+  function openSignOff() {
+    if (!pdfDoc) { alert('Upload a PDF first (Step 1).'); return; }
+    const sel = sheets.filter(s => s.selected);
+    if (!sel.length) { alert('Select at least one sheet to send.'); return; }
+    $('soPagesHint').textContent = `${sel.length} sheet${sel.length>1?'s':''} will be packaged: ` +
+      sel.slice(0,8).map(s => s.sheetNum || `p${s.pageNum}`).join(', ') +
+      (sel.length > 8 ? `, +${sel.length-8} more` : '');
+    $('soResult').hidden = true;
+    $('soError').hidden = true;
+    $('soProgress').hidden = true;
+    $('signOffModal').classList.add('open');
+  }
+  $('btnSignOff').addEventListener('click', openSignOff);
+  $('signOffCancel').addEventListener('click', () => $('signOffModal').classList.remove('open'));
+  $('signOffModal').addEventListener('click', e => { if (e.target === $('signOffModal')) $('signOffModal').classList.remove('open'); });
+  $('soCopy').addEventListener('click', async () => {
+    const url = $('soUrl').value;
+    try { await navigator.clipboard.writeText(url); $('soCopy').textContent = 'Copied ✓'; setTimeout(() => $('soCopy').textContent = 'Copy', 1500); }
+    catch (_) { $('soUrl').select(); }
+  });
+
+  $('signOffGo').addEventListener('click', async () => {
+    const name = $('soName').value.trim();
+    const email = $('soEmail').value.trim();
+    const note = $('soNote').value.trim();
+    if (!name) { $('soError').textContent = 'Recipient name required.'; $('soError').hidden = false; return; }
+    const sel = sheets.filter(s => s.selected);
+    if (!sel.length) { $('soError').textContent = 'No sheets selected.'; $('soError').hidden = false; return; }
+
+    $('soError').hidden = true;
+    $('soProgress').hidden = false;
+    $('signOffGo').disabled = true;
+    const bar = $('soBar');
+    const label = $('soLabel');
+
+    try {
+      // Rasterize each selected sheet to a JPEG. Cap quality to keep payload
+      // manageable; recipient's screen doesn't need print resolution.
+      const pages = [];
+      for (let i = 0; i < sel.length; i++) {
+        const s = sel[i];
+        label.textContent = `Rasterizing sheet ${i+1} of ${sel.length}…`;
+        bar.style.width = Math.round((i / sel.length) * 70) + '%';
+        const jpeg = await rasterizePage(s.pageNum, 1.4);
+        pages.push({
+          pageNum: s.pageNum,
+          sheetNum: s.sheetNum || '',
+          title: (s.title || '').slice(0, 80),
+          image: jpeg,
+        });
+      }
+      label.textContent = 'Uploading to share storage…';
+      bar.style.width = '85%';
+
+      const payload = {
+        v: 1,
+        type: 'plan_sign',
+        recipient: { name, email },
+        note,
+        project: window.__lastSourceLabel || '',
+        preparedBy: getMyCompany(),
+        pages,
+        ts: Date.now(),
+      };
+
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/proposal/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload, base_url: location.origin }),
+      });
+      if (!resp.ok) throw new Error(`Share API ${resp.status}: ${(await resp.text()).slice(0,200)}`);
+      const data = await resp.json();
+      bar.style.width = '100%';
+      label.textContent = 'Done.';
+      $('soUrl').value = data.share_url;
+      $('soResult').hidden = false;
+      setTimeout(() => { $('soUrl').select(); }, 50);
+    } catch (err) {
+      console.error('Sign-off share error:', err);
+      $('soError').textContent = 'Could not generate link: ' + err.message;
+      $('soError').hidden = false;
+      $('soProgress').hidden = true;
+    } finally {
+      $('signOffGo').disabled = false;
+    }
+  });
 
   async function extractAll() {
     const selected = sheets.filter(s => s.selected);
