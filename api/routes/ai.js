@@ -762,15 +762,32 @@ Standard 50% deposit / balance on substantial completion language. Mention typic
 ## Confirmed Scope (Q&A)
 Bullet list of any "Q: …  A: …" pairs from the confirmed-scope facts. These are decisions the GC made on items the drawings left ambiguous (TBD specs, owner-supplied items, allowances, scope-edge calls). If none, omit this section entirely.
 
-## Decisions Needed
-Bullet list of OPEN items the AI flagged from the drawings that still need a customer/owner answer before we can lock the bid (TBD specs, allowance amounts, owner-supplied items, scope edges). Format each item as:
-- **{Question or item description}** — where it came from (e.g. "T-3 row in finish schedule")
-  Suggested default if we don't hear back: {the suggested_answer if provided}
+## Project Assumptions
+Customer-facing operational assumptions only. Things the bid presumes about THEIR project / site / scope. Examples of GOOD assumptions to include:
+- Standard daytime work hours (no after-hours, weekend, or premium-time labor priced)
+- Site is reasonably accessible (no hoist, lift, or special access fees)
+- Power and water available within working distance of the work area
+- Existing structure is sound; no hidden conditions priced
+- Material lead times are standard from the spec'd vendors
+- Customer handles permit submittal (or contractor does — pick the one that matches)
+- Demolition / disposal scope as listed (not extending to off-scope areas)
 
-Frame this as collaborative ("we'd like your input on the following before locking the scope") not as obstacles. The customer can accept the suggested defaults by signing as-is, or reply with corrections. If no open items, omit this section entirely.
+DO NOT include internal estimating-method notes here. Specifically do NOT write any of:
+- "Industry average pricing was used"
+- "Waste % defaulted to per-category"
+- "GC overhead at X%"
+- "No catalog match — used industry avg $X/sf"
+- "Cabinet style not specified — assumed stock"
+The customer doesn't need to read about how we built the price internally. If the user-supplied notes contain only those internal-method items, write a CUSTOMER-FACING set of operational assumptions instead (drawn from your construction-estimator knowledge), or omit this section entirely.
 
-## Assumptions
-Any assumption notes from the estimate (waste %, GC overhead %, industry-avg vs catalog pricing). Be transparent.
+## Questions & Clarifications Needed
+Customer-facing list of things you'd like their input on before locking the bid. This is where AI-flagged ambiguities the GC didn't pre-answer go (TBD specs, allowance amounts, owner-supplied items, scope edges) — PLUS any internal "we had to guess" items from the estimator notes that REALLY are decisions the customer should make (e.g. "Cabinet brand wasn't specified — please confirm preference, or we'll use stock").
+
+Format each item as:
+- **{Plain-English question}** — context: {where it came from, e.g. "finish schedule row T-3", or "cabinet line item"}
+  Our default if we don't hear back: {the suggested answer / default we'd use}
+
+Frame as collaborative — "we'd like your input on the following before locking the scope" — not as obstacles. The customer can accept the suggested defaults by signing as-is, or reply with corrections and we'll re-bid. If there are zero open items AND no estimator-internal guesses worth surfacing, omit this section entirely.
 
 ## Acceptance
 Standard signature/date block.`;
@@ -809,8 +826,10 @@ ${confirmedScopeLines}
 OPEN QUESTIONS (AI-flagged items the GC has NOT answered — include in the "Decisions Needed" section so the customer sees them and can reply with answers / accept the suggested defaults):
 ${openQuestionsLines}
 
-ASSUMPTION NOTES:
-${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}`;
+INTERNAL ESTIMATOR NOTES (FOR YOUR REFERENCE ONLY — see system prompt for what to surface vs what to translate):
+${(estimate.notes || []).map(n => '- ' + n).join('\n') || '(none)'}
+
+These are the GC's internal estimating-method notes. Do NOT paste them verbatim into the customer-facing proposal. If any of them point at a decision the customer should make (e.g. "Cabinet style not specified"), translate it into a plain-English question for the "Questions & Clarifications Needed" section. Otherwise discard them — they belong in the GC's internal worksheet, not in a customer bid.`;
 
     const fetch = (await import('node-fetch')).default;
     let markdown = '';
