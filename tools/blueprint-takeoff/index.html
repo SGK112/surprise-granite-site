@@ -36,9 +36,11 @@
 
     /* Slim hero — Bluebeam-style top bar instead of marketing-shape banner.
        ~60px tall instead of 200px+, gives back the canvas. The marketing
-       copy (eyebrow + H1 + lede) moves into the Step 1 empty state where
-       new users actually need it. */
-    .hero{padding:10px 16px;background:var(--sg-darker);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40}
+       copy (eyebrow + H1 + lede) moves into the Step 1 empty state.
+       NOT sticky — the SG unified-nav is fixed and occupies the top of the
+       viewport; making the hero sticky-at-top puts it underneath that nav.
+       Hero scrolls with content; the step-nav stays sticky below SG nav. */
+    .hero{padding:10px 16px;background:var(--sg-darker);border-bottom:1px solid var(--border)}
     .hero-content{max-width:none;margin:0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .hero-meta{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:12px}
     .hero-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--sg-gold);margin:0;padding:3px 8px;background:rgba(249,203,0,.08);border:1px solid rgba(249,203,0,.25);border-radius:4px}
@@ -61,9 +63,11 @@
     /* Enterprise-style step navigator — sticky chip bar that lets the user
        jump between Upload / Sheets / Materials / Estimate / Proposal without
        scrolling past hero content. Shows completion state per step. */
-    /* Step nav sticks just below the slim hero (which is also sticky).
-       Hero is ~50px; top:50px keeps the chip bar visible as user scrolls. */
-    .step-nav{position:sticky;top:50px;z-index:39;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+    /* Step nav sticks just below the SG unified-nav (which is fixed at the
+       top of the viewport at --nav-height-desktop / mobile). Hero scrolls
+       past, but the step chips stay glued below the SG nav. */
+    .step-nav{position:sticky;top:var(--nav-height-desktop,140px);z-index:39;background:rgba(10,10,18,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+    @media (max-width:720px){.step-nav{top:var(--nav-height-mobile,64px)}}
     .step-nav::-webkit-scrollbar{display:none}
     .step-nav-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
     .step-nav-chip:hover{color:var(--text-primary);border-color:var(--text-muted)}
