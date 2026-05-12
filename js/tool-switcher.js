@@ -8,6 +8,7 @@
   const TOOLS = [
     { id: 'visualizer', short: '3D Visualizer',   href: '/tools/room-designer/' },
     { id: 'takeoff',    short: 'Blueprint Takeoff', href: '/tools/blueprint-takeoff/' },
+    { id: 'invoicing',  short: 'Invoicing',         href: '/tools/invoicing/' },
     { id: 'esign',      short: 'E-Sign',           href: '/tools/e-sign/' },
   ];
   const current = (document.currentScript && document.currentScript.dataset.current) || '';
