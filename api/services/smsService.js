@@ -6,10 +6,121 @@
 // Load environment variables
 require('dotenv').config();
 
+const { createClient } = require('@supabase/supabase-js');
+
 // Twilio Configuration
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+
+// Lazy-init Supabase service-role client. Used only for the opt-out check —
+// we don't take a runtime dep on the rest of the app passing supabase in.
+let _supabase = null;
+function supa() {
+  if (_supabase) return _supabase;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (url && key) _supabase = createClient(url, key);
+  return _supabase;
+}
+
+// In-memory opt-out cache — 60s TTL. Most inbound STOPs propagate to all
+// callers within that window without hammering Supabase every send.
+const OPT_OUT_CACHE_TTL_MS = 60_000;
+const _optOutCache = new Map(); // phone -> { optedOut: bool, at: ms }
+
+/**
+ * Is this phone opted out of SMS? Checks cache, then Supabase. Fails OPEN
+ * only when Supabase is not configured (local dev with no creds); fails
+ * CLOSED on real query errors so a transient DB issue cannot accidentally
+ * resume sending to someone who opted out.
+ */
+async function isOptedOut(e164Phone) {
+  if (!e164Phone) return false;
+
+  const cached = _optOutCache.get(e164Phone);
+  if (cached && Date.now() - cached.at < OPT_OUT_CACHE_TTL_MS) {
+    return cached.optedOut;
+  }
+
+  const sb = supa();
+  if (!sb) {
+    // No Supabase configured — local dev only. Allow sends but log loud.
+    console.warn('[SMS] No Supabase configured — opt-out check SKIPPED. NEVER ship this to prod.');
+    return false;
+  }
+
+  try {
+    const { data, error } = await sb
+      .from('sms_opt_outs')
+      .select('phone')
+      .eq('phone', e164Phone)
+      .maybeSingle();
+
+    if (error) {
+      // Relation-doesn't-exist (42P01) means the migration hasn't been run.
+      // Log loud and fall through to "not opted out" so SMS keeps flowing —
+      // shipping the table behind the code is a known temporary state.
+      if (error.code === '42P01') {
+        console.error('[SMS] sms_opt_outs table missing — run migration 20260513000001');
+        return false;
+      }
+      // Any other error: fail CLOSED. TCPA penalty > one missed reminder.
+      console.error('[SMS] Opt-out check failed, BLOCKING send:', error.message);
+      return true;
+    }
+
+    const optedOut = !!data;
+    _optOutCache.set(e164Phone, { optedOut, at: Date.now() });
+    return optedOut;
+  } catch (err) {
+    console.error('[SMS] Opt-out check threw, BLOCKING send:', err.message);
+    return true;
+  }
+}
+
+/** Manually mark a number as opted out. Used by the inbound webhook. */
+async function markOptedOut(e164Phone, keyword, source = 'inbound_webhook') {
+  if (!e164Phone) return;
+  const sb = supa();
+  if (!sb) return;
+  try {
+    await sb.from('sms_opt_outs').upsert({
+      phone: e164Phone,
+      keyword: keyword || null,
+      source,
+      opted_out_at: new Date().toISOString()
+    }, { onConflict: 'phone' });
+    _optOutCache.set(e164Phone, { optedOut: true, at: Date.now() });
+  } catch (err) {
+    console.error('[SMS] markOptedOut failed:', err.message);
+  }
+}
+
+/** Re-opt a number in. Used by inbound START / UNSTOP / YES keyword. */
+async function markOptedIn(e164Phone) {
+  if (!e164Phone) return;
+  const sb = supa();
+  if (!sb) return;
+  try {
+    await sb.from('sms_opt_outs').delete().eq('phone', e164Phone);
+    _optOutCache.set(e164Phone, { optedOut: false, at: Date.now() });
+  } catch (err) {
+    console.error('[SMS] markOptedIn failed:', err.message);
+  }
+}
+
+// Twilio-honored STOP keywords (case-insensitive, exact match on trimmed body).
+// Source: https://help.twilio.com/articles/223134027
+const OPT_OUT_KEYWORDS = new Set(['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT']);
+const OPT_IN_KEYWORDS  = new Set(['START', 'YES', 'UNSTOP']);
+
+function classifyKeyword(body) {
+  const k = (body || '').trim().toUpperCase();
+  if (OPT_OUT_KEYWORDS.has(k)) return { type: 'optout', keyword: k };
+  if (OPT_IN_KEYWORDS.has(k))  return { type: 'optin',  keyword: k };
+  return { type: null, keyword: null };
+}
 
 // Initialize Twilio client (lazy load)
 let twilioClient = null;
@@ -58,7 +169,10 @@ function formatPhoneNumber(phone) {
 }
 
 /**
- * Send SMS message
+ * Send SMS message. Honors the sms_opt_outs registry — if the recipient
+ * has texted STOP/UNSUBSCRIBE/CANCEL/END/QUIT/STOPALL to any of our
+ * numbers, this call returns { success:false, error:'opted_out' } without
+ * billing Twilio. TCPA compliance — see [[feedback_sms_opt_out]].
  */
 async function sendSMS(to, message) {
   if (!isConfigured()) {
@@ -70,6 +184,11 @@ async function sendSMS(to, message) {
   if (!formattedPhone) {
     console.log('[SMS] Invalid phone number:', to);
     return { success: false, error: 'Invalid phone number' };
+  }
+
+  if (await isOptedOut(formattedPhone)) {
+    console.log('[SMS] Recipient opted out — not sending:', formattedPhone);
+    return { success: false, error: 'opted_out' };
   }
 
   try {
@@ -298,6 +417,14 @@ module.exports = {
   sendSMS,
   isConfigured,
   formatPhoneNumber,
+
+  // TCPA opt-out registry
+  isOptedOut,
+  markOptedOut,
+  markOptedIn,
+  classifyKeyword,
+  OPT_OUT_KEYWORDS,
+  OPT_IN_KEYWORDS,
 
   // Message generators
   generateAppointmentReminder,

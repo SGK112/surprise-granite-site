@@ -30,6 +30,11 @@ const COMPANY = {
 };
 
 // Create transporter
+//
+// Timeouts are mandatory. Without them, nodemailer sits on a half-open TLS
+// socket forever when Gmail SMTP stalls (rate-limit, IPv6 flake, rotated App
+// Password). Any caller that `await`s sendMail then hangs the entire HTTP
+// request — that was the "new leads silently hang" bug.
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: SMTP_PORT,
@@ -37,7 +42,10 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
-  }
+  },
+  connectionTimeout: 8000,
+  greetingTimeout:   8000,
+  socketTimeout:    10000
 });
 
 /**

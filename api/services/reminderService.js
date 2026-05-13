@@ -117,17 +117,19 @@ const reminderService = {
       let contactPhone = event.metadata?.contact_phone;
       let contactName = event.metadata?.contact_name || 'Valued Customer';
 
-      // Try to get from linked lead
+      // Try to get from linked lead — live schema uses email/phone/full_name
+      // (legacy code selected homeowner_* which doesn't exist; PostgREST silently
+      // returned error and lead came back null, so reminders never fired).
       if (!contactEmail && event.lead_id) {
         const { data: lead } = await supabase
           .from('leads')
-          .select('homeowner_email, homeowner_phone, homeowner_name')
+          .select('email, phone, full_name, first_name')
           .eq('id', event.lead_id)
           .single();
         if (lead) {
-          contactEmail = contactEmail || lead.homeowner_email;
-          contactPhone = contactPhone || lead.homeowner_phone;
-          contactName = lead.homeowner_name || contactName;
+          contactEmail = contactEmail || lead.email;
+          contactPhone = contactPhone || lead.phone;
+          contactName = lead.full_name || lead.first_name || contactName;
         }
       }
 
@@ -227,9 +229,10 @@ const reminderService = {
       const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
       // Get leads that are still "new" and created more than 48h ago
+      // (live schema: email/phone/full_name — not the legacy homeowner_* names)
       const { data: staleLeads } = await supabase
         .from('leads')
-        .select('id, homeowner_name, homeowner_email, homeowner_phone, project_type, created_at, user_id')
+        .select('id, full_name, first_name, email, phone, project_type, created_at, user_id')
         .eq('status', 'new')
         .lt('created_at', cutoff.toISOString())
         .limit(50);
@@ -237,6 +240,9 @@ const reminderService = {
       for (const lead of (staleLeads || [])) {
         const alreadySent = await this.hasReminderBeenSent(lead.id, 'follow-up-48h', 'lead');
         if (alreadySent) continue;
+
+        const leadDisplayName = lead.full_name || lead.first_name || 'Unnamed lead';
+        const daysSince = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (24 * 60 * 60 * 1000));
 
         // Get admin email to notify
         const { data: owner } = await supabase
@@ -248,16 +254,16 @@ const reminderService = {
         if (owner?.email) {
           const emailHtml = this.generateLeadFollowUpEmail({
             ownerName: owner.full_name || 'Team',
-            leadName: lead.homeowner_name,
-            leadEmail: lead.homeowner_email,
-            leadPhone: lead.homeowner_phone,
+            leadName: leadDisplayName,
+            leadEmail: lead.email,
+            leadPhone: lead.phone,
             projectType: lead.project_type,
-            daysSince: Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (24 * 60 * 60 * 1000))
+            daysSince
           });
 
           await emailService.sendNotification(
             owner.email,
-            `Follow-up needed: ${lead.homeowner_name} waiting ${Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (24 * 60 * 60 * 1000))} days`,
+            `Follow-up needed: ${leadDisplayName} waiting ${daysSince} days`,
             emailHtml
           );
           sent.email++;

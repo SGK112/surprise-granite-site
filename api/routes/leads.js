@@ -11,6 +11,7 @@ const { leadRateLimiter } = require('../middleware/rateLimiter');
 const { asyncHandler } = require('../middleware/errorHandler');
 const emailService = require('../services/emailService');
 const notificationService = require('../services/notificationService');
+const { adminAccess } = require('../middleware/adminAuth');
 
 /**
  * Arizona timezone offset (MST, no DST)
@@ -121,7 +122,11 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     appointment_time,
     project_address,
     message,
-    image_urls
+    image_urls,
+    // Caller can suppress the customer welcome email. Default true preserves
+    // existing public-form behavior; admin/CRM callers pass false when adding
+    // a lead at an early stage where a welcome would be premature.
+    send_welcome_email = true
   } = req.body;
 
   // Input validation
@@ -405,7 +410,10 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     }
   }
 
-  // Send admin notification
+  // Side-effect notifications are FIRE-AND-FORGET. The HTTP response must not
+  // wait on SMTP — a stalled mail server (Gmail rate-limit, TLS hang) used to
+  // pin the request indefinitely, which is the bug users saw as "save hangs,
+  // refresh, works, breaks again" (the refresh hit the dedup early-return path).
   try {
     const adminEmail = emailService.generateLeadNotificationEmail({
       name: homeowner_name,
@@ -414,35 +422,33 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
       project_type,
       source,
       message: project_details || message,
-      // Include appointment details if present
       appointment_date: isAppointment ? appointment_date : null,
       appointment_time: isAppointment ? appointment_time : null,
       project_address: project_address
     });
-    await emailService.sendAdminNotification(adminEmail.subject, adminEmail.html);
-
-    // Also send via notification service for in-app + SMS alerts
-    if (isAppointment) {
-      notificationService.notifyAppointmentBooked({
-        customer_name: homeowner_name,
-        customer_email: homeowner_email,
-        customer_phone: homeowner_phone,
-        start_time: `${appointment_date}T${convertTo24Hour(appointment_time)}`,
-        project_type: project_type,
-        address: project_address,
-        lead_id: savedLead?.id
-      }).catch(err => logger.warn('Appointment notification failed', { error: err.message }));
-    }
+    emailService.sendAdminNotification(adminEmail.subject, adminEmail.html)
+      .catch(err => logger.warn('Admin notification failed', { error: err.message }));
   } catch (emailErr) {
-    logger.apiError(emailErr, { context: 'Admin notification failed' });
+    logger.apiError(emailErr, { context: 'Admin notification compose failed' });
   }
 
-  // Send customer confirmation with portal link
-  if (homeowner_email) {
+  // In-app + SMS appointment notification (already fire-and-forget below)
+  if (isAppointment) {
+    notificationService.notifyAppointmentBooked({
+      customer_name: homeowner_name,
+      customer_email: homeowner_email,
+      customer_phone: homeowner_phone,
+      start_time: `${appointment_date}T${convertTo24Hour(appointment_time)}`,
+      project_type: project_type,
+      address: project_address,
+      lead_id: savedLead?.id
+    }).catch(err => logger.warn('Appointment notification failed', { error: err.message }));
+  }
+
+  // Customer welcome email — gated by send_welcome_email flag, fire-and-forget.
+  if (homeowner_email && send_welcome_email) {
     try {
       let customerEmail;
-
-      // If appointment was scheduled and portal was created, send appointment+portal email
       if (isAppointment && portalUrl) {
         customerEmail = emailService.generateAppointmentWithPortalEmail({
           name: homeowner_name,
@@ -451,25 +457,23 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
           portal_url: portalUrl,
           address: project_address
         });
-      }
-      // If portal was created (no appointment), send portal welcome email
-      else if (portalUrl) {
+      } else if (portalUrl) {
         customerEmail = emailService.generatePortalWelcomeEmail({
           name: homeowner_name,
           portal_url: portalUrl
         });
-      }
-      // Fallback to regular confirmation
-      else {
+      } else {
         customerEmail = emailService.generateCustomerConfirmationEmail({
           name: homeowner_name
         });
       }
-
-      await emailService.sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
+      emailService.sendNotification(homeowner_email, customerEmail.subject, customerEmail.html)
+        .catch(err => logger.warn('Customer welcome email failed', { error: err.message }));
     } catch (emailErr) {
-      logger.apiError(emailErr, { context: 'Customer email failed' });
+      logger.apiError(emailErr, { context: 'Customer email compose failed' });
     }
+  } else if (homeowner_email && !send_welcome_email) {
+    logger.info('Welcome email suppressed by caller', { source });
   }
 
   res.json({
@@ -484,9 +488,9 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
 
 /**
  * Get leads with filters
- * GET /api/leads
+ * GET /api/leads — admin only (reads PII for every lead in the system)
  */
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', adminAccess, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
@@ -523,9 +527,9 @@ router.get('/', asyncHandler(async (req, res) => {
 
 /**
  * Get single lead by ID
- * GET /api/leads/:id
+ * GET /api/leads/:id — admin only
  */
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', adminAccess, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
@@ -548,9 +552,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
 /**
  * Update lead status
- * PATCH /api/leads/:id/status
+ * PATCH /api/leads/:id/status — admin only
  */
-router.patch('/:id/status', asyncHandler(async (req, res) => {
+router.patch('/:id/status', adminAccess, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
@@ -591,9 +595,9 @@ router.patch('/:id/status', asyncHandler(async (req, res) => {
  * was un-provable: the Leads view didn't know, and the webhook couldn't
  * reconcile a later payment to the lead.
  *
- * POST /api/leads/:id/record-quick-pay  { url, amount, pass_fee }
+ * POST /api/leads/:id/record-quick-pay  { url, amount, pass_fee } — admin only
  */
-router.post('/:id/record-quick-pay', asyncHandler(async (req, res) => {
+router.post('/:id/record-quick-pay', adminAccess, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });

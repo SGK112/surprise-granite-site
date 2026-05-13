@@ -10,6 +10,14 @@ const { handleApiError, isValidEmail, sanitizeString } = require('../utils/secur
 const { asyncHandler } = require('../middleware/errorHandler');
 const stripeService = require('../services/stripeService');
 const emailService = require('../services/emailService');
+const { adminAccess } = require('../middleware/adminAuth');
+
+// Every route in this file mutates or reads invoice financial data. Admin
+// only. The deployed `api/server.js` defines its own /api/invoices handlers
+// with inline admin checks; this router is the dev-mode mount via top-level
+// server.js. Gating it at the router level keeps the two paths in lockstep
+// so a future deploy swap can't silently drop auth.
+router.use(adminAccess);
 
 /**
  * Create a new invoice

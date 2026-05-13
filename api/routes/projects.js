@@ -551,6 +551,16 @@ router.patch('/:id/status', verifyUser, validateBody(schemas.updateStatus), asyn
   const { id } = req.params;
   const { status } = req.body;
 
+  // Read previous status so we can detect the in_progress → completed
+  // transition and fire the review-request flow exactly once.
+  const { data: prior } = await supabase
+    .from('projects')
+    .select('status')
+    .eq('id', id)
+    .eq('user_id', req.user.id)
+    .single();
+  const becameCompleted = status === 'completed' && prior && prior.status !== 'completed';
+
   const { data: project, error } = await supabase
     .from('projects')
     .update({ status })
@@ -568,8 +578,72 @@ router.patch('/:id/status', verifyUser, validateBody(schemas.updateStatus), asyn
 
   logger.info('Project status updated', { projectId: id, status, userId: req.user.id });
 
+  // Project just completed — fire review request via email + SMS. Both are
+  // fire-and-forget; the response is not gated on either. Opt-out honored by
+  // smsService.sendSMS automatically.
+  if (becameCompleted) {
+    triggerReviewRequest(project).catch(err =>
+      logger.warn('Review-request trigger failed', { projectId: id, error: err.message })
+    );
+  }
+
   res.json({ success: true, project });
 }));
+
+// Review request — fires when a project transitions to status='completed'.
+// Single send (no drip yet) — Joshua can layer a 14-day follow-up via the
+// automation_sequences worker once a template is configured. The Google
+// review URL is the canonical one from emailService.COMPANY.googleReviewUrl.
+async function triggerReviewRequest(project) {
+  const emailService = require('../services/emailService');
+  const smsService = require('../services/smsService');
+
+  const name  = project.customer_name  || 'there';
+  const email = project.customer_email;
+  const phone = project.customer_phone;
+  const reviewUrl = 'https://g.page/r/CXsLJCVtUF84EAE/review';
+
+  if (email) {
+    const html = emailService.wrapEmailTemplate(`
+      <div style="text-align:center;margin-bottom:25px;">
+        <div style="width:70px;height:70px;background:linear-gradient(135deg,#f9cb00 0%,#e0b300 100%);border-radius:50%;margin:0 auto 20px;line-height:70px;">
+          <span style="font-size:35px;">⭐</span>
+        </div>
+        <h2 style="margin:0 0 10px;color:#1a1a2e;font-size:24px;">How did we do, ${name}?</h2>
+      </div>
+      <p style="margin:0 0 20px;color:#444;font-size:15px;">
+        Thanks for choosing Surprise Granite. Your project is wrapped up and we'd love to hear how it went.
+      </p>
+      <p style="margin:0 0 25px;color:#444;font-size:15px;">
+        If we did right by you, a quick Google review goes a long way for a small AZ business.
+      </p>
+      <div style="text-align:center;margin:30px 0;">
+        <a href="${reviewUrl}" style="display:inline-block;background:#f9cb00;color:#1a1a2e;text-decoration:none;font-weight:700;padding:14px 32px;border-radius:8px;font-size:16px;">Leave a Review</a>
+      </div>
+      <p style="margin:0;color:#666;font-size:13px;text-align:center;">
+        Something not right? Reply to this email and we'll make it right.
+      </p>
+    `, { headerColor: '#1a1a2e', headerText: 'Thank you' });
+
+    emailService.sendNotification(email, 'How did we do? Quick review request', html)
+      .catch(err => logger.warn('Review-request email failed', { error: err.message }));
+  }
+
+  if (phone) {
+    const sms = `Hi ${name}, thanks for trusting Surprise Granite with your project! If we did good, a quick Google review would mean a lot: ${reviewUrl} - Reply STOP to opt out.`;
+    smsService.sendSMS(phone, sms)
+      .catch(err => logger.warn('Review-request SMS failed', { error: err.message }));
+  }
+
+  if (email || phone) {
+    await supabase.from('project_activity').insert({
+      project_id: project.id,
+      user_id: project.user_id,
+      action: 'review_request_sent',
+      description: `Review request sent to ${[email, phone].filter(Boolean).join(' / ')}`
+    }).catch(() => {}); // best-effort log; missing table shouldn't break the response
+  }
+}
 
 // ============================================================
 // DELETE /:id - Delete project

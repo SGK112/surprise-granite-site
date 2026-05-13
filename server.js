@@ -955,6 +955,9 @@ app.get('/shop.html', (req, res) => res.redirect(301, '/marketplace/'));
 try {
   const remindersRouter = require('./api/routes/reminders');
   app.use('/api/reminders', remindersRouter);
+
+  const smsWebhookRouter = require('./api/routes/sms-webhook');
+  app.use('/api/sms', smsWebhookRouter);
   console.log('Reminders API loaded');
 } catch (err) {
   console.warn('Reminders API not available:', err.message);
@@ -1069,5 +1072,18 @@ app.listen(PORT, () => {
       console.log('Scheduler service started');
     } catch (err) {
       console.warn('Scheduler service not available:', err.message);
+    }
+
+    // Automation worker — drips, welcome series, review requests. Mirrors the
+    // wiring in api/server.js so local dev exercises the same background work
+    // that prod runs. Until 2026-05-13 this never ran anywhere.
+    try {
+      const automationWorker = require('./api/workers/automation-worker');
+      automationWorker.runWorker().catch(err => {
+        console.error('Automation worker crashed:', err.message);
+      });
+      console.log('Automation worker started');
+    } catch (err) {
+      console.warn('Automation worker not available:', err.message);
     }
 });

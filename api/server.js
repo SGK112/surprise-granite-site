@@ -4022,6 +4022,13 @@ app.use('/api/automation', automationRouter);
 const remindersRouter = require('./routes/reminders');
 app.use('/api/reminders', remindersRouter);
 
+// ============ TWILIO INBOUND SMS WEBHOOK ============
+// Handles STOP / UNSUBSCRIBE / START keywords + logs all inbound SMS for
+// the per-customer comms timeline. Configure Twilio number's "A Message
+// Comes In" webhook to POST to /api/sms/inbound.
+const smsWebhookRouter = require('./routes/sms-webhook');
+app.use('/api/sms', smsWebhookRouter);
+
 // ============ PROJECTS CRUD ROUTES ============
 app.use('/api/projects', projectsRouter);
 
@@ -13081,4 +13088,29 @@ server.listen(PORT, () => {
   logger.info(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
   logger.info(`SMTP configured: ${!!SMTP_USER}`);
   logger.info(`Aria Realtime WebSocket: /api/aria-realtime`);
+
+  // Background workers — must run inside this listener so they only start on
+  // the actual deployed service (not during one-off CLI invocations / tests).
+  // Render deploys `api/server.js`; the top-level `server.js` is local-dev
+  // only. Until 2026-05-13 these were ONLY wired in the local-dev file, so in
+  // production: appointment reminders, lead follow-ups, payment reminders,
+  // drip campaigns, welcome series, and post-job review requests were all
+  // silent no-ops — they enqueued and never fired.
+  try {
+    const schedulerService = require('./services/schedulerService');
+    schedulerService.start();
+    logger.info('Scheduler service started (appointment + lead + payment reminders)');
+  } catch (err) {
+    logger.warn('Scheduler service failed to start', { error: err.message });
+  }
+
+  try {
+    const automationWorker = require('./workers/automation-worker');
+    automationWorker.runWorker().catch(err => {
+      logger.error('Automation worker crashed', { error: err.message });
+    });
+    logger.info('Automation worker started (drip / welcome / review-request sequences)');
+  } catch (err) {
+    logger.warn('Automation worker failed to start', { error: err.message });
+  }
 });
