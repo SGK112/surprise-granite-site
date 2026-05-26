@@ -144,8 +144,13 @@ CREATE POLICY "org_members_service_role_all"
 -- stay tied to the catalog's owner (sharing doesn't transfer ownership).
 -- ============================================================
 
--- Drop the old read policy and replace with a broader one
+-- Drop the old read policy and replace with a broader one.
+-- Also drop the NEW name in case the migration partially applied previously
+-- (CI was hitting SQLSTATE 42710 here because an earlier statement in this
+-- file errored out, leaving the new policy created but the migration not
+-- marked applied — so retry kept hitting "already exists").
 DROP POLICY IF EXISTS "vendor_catalogs_select_own" ON public.vendor_catalogs;
+DROP POLICY IF EXISTS "vendor_catalogs_select_own_or_org" ON public.vendor_catalogs;
 CREATE POLICY "vendor_catalogs_select_own_or_org"
   ON public.vendor_catalogs FOR SELECT
   TO authenticated
