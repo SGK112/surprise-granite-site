@@ -30,7 +30,10 @@ CREATE INDEX IF NOT EXISTS idx_project_contractors_contractor ON project_contrac
 -- Enable RLS
 ALTER TABLE project_contractors ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for project_contractors
+-- RLS Policies for project_contractors. Postgres CREATE POLICY has no
+-- IF NOT EXISTS — drop-then-create makes the migration idempotent so CI
+-- replays don't fail on second apply.
+DROP POLICY IF EXISTS "Users can view project contractors for their projects" ON project_contractors;
 CREATE POLICY "Users can view project contractors for their projects"
   ON project_contractors FOR SELECT
   USING (
@@ -41,6 +44,7 @@ CREATE POLICY "Users can view project contractors for their projects"
     )
   );
 
+DROP POLICY IF EXISTS "Users can assign contractors to their projects" ON project_contractors;
 CREATE POLICY "Users can assign contractors to their projects"
   ON project_contractors FOR INSERT
   WITH CHECK (
@@ -51,6 +55,7 @@ CREATE POLICY "Users can assign contractors to their projects"
     )
   );
 
+DROP POLICY IF EXISTS "Users can update contractors on their projects" ON project_contractors;
 CREATE POLICY "Users can update contractors on their projects"
   ON project_contractors FOR UPDATE
   USING (
@@ -61,6 +66,7 @@ CREATE POLICY "Users can update contractors on their projects"
     )
   );
 
+DROP POLICY IF EXISTS "Users can remove contractors from their projects" ON project_contractors;
 CREATE POLICY "Users can remove contractors from their projects"
   ON project_contractors FOR DELETE
   USING (
