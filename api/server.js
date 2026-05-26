@@ -2343,6 +2343,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Non-critical side-effects (emails, CRM, inventory, promo)
         // are individually try-caught so they never block the 200.
         let orderCreated = false;
+        // Hoisted so the post-DB email block (~line 2640) can branch its copy
+        // on whether the order ships. Set inside the supabase block once we
+        // have line items; defaults to true so a missing classification still
+        // produces the standard order-confirmation email.
+        let requiresShipment = true;
         if (supabase) {
           try {
             // Retrieve line items from Stripe session
@@ -2414,12 +2419,29 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               break;
             }
 
+            // Classify shippable vs payment-only. Mirrors the backfill rules in
+            // supabase/migrations/20260526000001_orders_requires_shipment.sql so
+            // new orders behave the same as the historical backfill.
+            // "Invoice Payment" alone is intentionally NOT a non-shippable
+            // signal — too ambiguous (could be a real product mislabeled).
+            const md = session.metadata || {};
+            const PROJECT_RE = /(deposit|final\s*payment|balance|EST-?\d|INV-?\d|countertop|backsplash|remodel|installation|f&i\s|change\s*order|materials\s*for)/i;
+            const itemNamesJoined = orderItems.map(i => i.name || '').join(' ');
+            requiresShipment = !(
+              ['invoice','deposit','balance','final','quick-pay','custom','subscription','lead_purchase'].includes(md.payment_type) ||
+              md.source === 'quick-pay' ||
+              md.invoice_ref || md.invoice_id || md.lead_id ||
+              (orderItems.length === 0 && !shippingAddress.line1) ||
+              PROJECT_RE.test(itemNamesJoined)
+            );
+
             // Insert order record
             const { data: order, error: orderErr } = await supabase
               .from('orders')
               .insert({
                 order_number: orderNumber,
-                status: 'confirmed',
+                status: requiresShipment ? 'confirmed' : 'paid',
+                requires_shipment: requiresShipment,
                 customer_email: session.customer_details?.email,
                 customer_name: session.customer_details?.name || session.shipping_details?.name,
                 customer_phone: session.customer_details?.phone,
@@ -2447,7 +2469,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 paid_at: session.payment_status === 'paid' ? new Date().toISOString() : null,
                 metadata: {
                   mode: session.mode,
-                  currency: session.currency
+                  currency: session.currency,
+                  // Audit trail for the requires_shipment decision so we can
+                  // trace back why an order was queued (or not) months later.
+                  ...(md.payment_type ? { payment_type: md.payment_type } : {}),
+                  ...(md.source ? { source: md.source } : {}),
+                  ...(md.invoice_ref ? { invoice_ref: md.invoice_ref } : {}),
+                  ...(md.invoice_id ? { invoice_id: md.invoice_id } : {}),
+                  ...(md.lead_id ? { lead_id: md.lead_id } : {})
                 }
               })
               .select()
@@ -2636,10 +2665,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           ? (session.amount_total / 100).toFixed(2) : '0.00';
         const safeOrderNum = session.id?.slice(-8)?.toUpperCase() || 'UNKNOWN';
 
-        // Customer confirmation
+        // Customer receipt. Branch on whether anything ships: a "preparing
+        // your shipment" line is wrong copy for a deposit/invoice payment.
         try {
           if (session.customer_details?.email) {
-            const orderEmail = {
+            const orderEmail = requiresShipment ? {
               subject: `Order Confirmed - Surprise Granite #SG-${safeOrderNum}`,
               html: `
 <!DOCTYPE html>
@@ -2675,6 +2705,51 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions about your order?</p>
               <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.phone}</a></p>
               <p style="margin: 15px 0 0; color: #999; font-size: 11px;">${COMPANY.license} • Licensed & Insured</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+            } : {
+              // Non-shippable payment (deposit, balance, paid invoice, etc.)
+              // — no "we're preparing your shipment" copy. Just a receipt.
+              subject: `Payment Received - Surprise Granite #SG-${safeOrderNum}`,
+              html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px; text-align: center;">
+              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 40px; color: #fff; line-height: 80px;">✓</span>
+              </div>
+              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px; font-weight: 600;">Payment Received</h2>
+              <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Receipt #SG-${safeOrderNum}</p>
+              <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Thank you — your payment has been received.</p>
+              <div style="background: #f8f8f8; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e5e5;">
+                <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Amount Paid</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${safeTotal}</p>
+              </div>
+              <p style="margin: 0 0 20px; color: #666; font-size: 14px;">A copy of this receipt has been kept on your customer record. Your project team will follow up with next steps directly.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f8f8; padding: 25px; text-align: center; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions about this payment?</p>
+              <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.email}</a> &bull; <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.phone}</a></p>
+              <p style="margin: 15px 0 0; color: #999; font-size: 11px;">${COMPANY.license} &bull; Licensed &amp; Insured</p>
             </td>
           </tr>
         </table>
@@ -4072,36 +4147,32 @@ app.use('/api/admin/orders', ordersRouter);
 try {
   const aspnRouter = require('./routes/aspn');
   app.use('/api/aspn', aspnRouter);
-  console.log('ASPN API loaded');
 } catch (err) {
-  console.warn('ASPN API not available:', err.message);
+  logger.warn('ASPN API not available:', err.message);
 }
 
 // ============ Catalog (live products from scrapers) ============
 try {
   const catalogRouter = require('./routes/catalog');
   app.use('/api/catalog', catalogRouter);
-  console.log('Catalog API loaded');
 } catch (err) {
-  console.warn('Catalog API not available:', err.message);
+  logger.warn('Catalog API not available:', err.message);
 }
 
 // ============ Drop-ship sample orders ============
 try {
   const dropshipRouter = require('./routes/dropship');
   app.use('/api/dropship', dropshipRouter);
-  console.log('Drop-ship API loaded');
 } catch (err) {
-  console.warn('Drop-ship API not available:', err.message);
+  logger.warn('Drop-ship API not available:', err.message);
 }
 
 // ============ Catalog admin (vendor management, scrape, edits) ============
 try {
   const adminCatalogRouter = require('./routes/admin-catalog');
   app.use('/api/admin/catalog', adminCatalogRouter);
-  console.log('Admin catalog API loaded');
 } catch (err) {
-  console.warn('Admin catalog API not available:', err.message);
+  logger.warn('Admin catalog API not available:', err.message);
 }
 
 // Admin identity — lets clients and Aria confirm they have admin access.
@@ -6506,6 +6577,7 @@ app.post('/api/create-vendor-subscription', authenticateJWT, async (req, res) =>
       success_url: success_url || `https://www.surprisegranite.com/vendor/dashboard/?subscription=success`,
       cancel_url: cancel_url || `https://www.surprisegranite.com/vendor/select-plan/?canceled=true`,
       metadata: {
+        payment_type: 'subscription',
         vendor_id: vendor_id,
         plan: plan_name.toLowerCase(),
         billing_cycle: billing_cycle,
@@ -7312,6 +7384,7 @@ app.post('/api/purchase-lead', authenticateJWT, async (req, res) => {
       success_url: success_url || `https://www.surprisegranite.com/vendor/dashboard/leads/?purchased=${lead_id}`,
       cancel_url: cancel_url || `https://www.surprisegranite.com/vendor/dashboard/leads/`,
       metadata: {
+        payment_type: 'lead_purchase',
         vendor_id: vendor_id,
         lead_id: lead_id,
         type: 'lead_purchase'

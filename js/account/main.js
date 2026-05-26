@@ -3249,7 +3249,12 @@
 
     function renderActionRequired(storeOrders) {
       const container = document.getElementById('orders-action-required');
+      // Only physical-goods orders show here. Deposits, balances, invoice
+      // payments, and other non-shippable transactions have requires_shipment
+      // === false from the migration / webhook classifier — they belong on
+      // the customer's payment history, not in a shipment queue.
       const unfulfilled = storeOrders.filter(o => {
+        if (o.requires_shipment === false) return false;
         const s = (o.status || '').toLowerCase();
         return o.payment_status === 'paid' && !['shipped', 'delivered'].includes(s);
       });
@@ -3274,6 +3279,7 @@
                 <div style="display: flex; gap: 6px;">
                   <button onclick="event.stopPropagation(); showOrderDetail('${order.id}')" class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;">Details</button>
                   <button onclick="event.stopPropagation(); quickAddTracking('${order.id}')" class="btn-modern primary" style="padding: 6px 12px; font-size: 12px;">Add Tracking</button>
+                  <button onclick="event.stopPropagation(); dismissFromShipmentQueue('${order.id}')" class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px; color: var(--text-muted);" title="Mark as not needing shipment (deposit, paid invoice, etc.)">Dismiss</button>
                 </div>
               </div>`;
           }).join('')}
@@ -3283,6 +3289,20 @@
     function quickAddTracking(orderId) {
       // Open the order detail modal scrolled to tracking section
       showOrderDetail(orderId);
+    }
+
+    async function dismissFromShipmentQueue(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      const label = order ? `${order.order_number} (${order.customer_name || 'customer'})` : 'this order';
+      if (!confirm(`Remove ${label} from the shipment queue?\n\nUse this for paid invoices, deposits, or anything that doesn't ship physically. The payment stays on the customer's record — only the shipment queue stops showing it.`)) return;
+      try {
+        await orderAction_apiCall('PATCH', `/api/admin/orders/${orderId}/requires-shipment`, { requires_shipment: false });
+        if (order) { order.requires_shipment = false; order.status = 'completed'; }
+        updateOrderStats();
+        renderOrders();
+      } catch (err) {
+        alert('Failed to dismiss: ' + (err.message || err));
+      }
     }
 
     function switchOrderSource(source) {
@@ -9464,6 +9484,69 @@
                       </td>
                     </tr>
                   `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
+        } else if (tab === 'payments') {
+          // Every Stripe payment we have on file for this customer —
+          // cart orders, deposits, balances, invoice settlements alike.
+          // Joins on customer_email (case-insensitive) and stripe_customer_id.
+          const email = (selectedCustomer.email || '').trim();
+          const stripeCustId = selectedCustomer.stripe_customer_id || null;
+          let query = supabaseClient
+            .from('orders')
+            .select('id, order_number, total, items, status, payment_status, requires_shipment, stripe_session_id, stripe_payment_intent_id, paid_at, created_at, metadata')
+            .order('created_at', { ascending: false });
+          if (email && stripeCustId) {
+            query = query.or(`customer_email.ilike.${email},stripe_customer_id.eq.${stripeCustId}`);
+          } else if (email) {
+            query = query.ilike('customer_email', email);
+          } else if (stripeCustId) {
+            query = query.eq('stripe_customer_id', stripeCustId);
+          } else {
+            container.innerHTML = '<div class="empty-state"><p>No email or Stripe customer ID on file — can\'t link payments.</p></div>';
+            return;
+          }
+          const { data: payments, error: payErr } = await query;
+          if (payErr) {
+            container.innerHTML = `<div class="empty-state"><p style="color: var(--error)">Error loading payments: ${escapeHtml(payErr.message)}</p></div>`;
+            return;
+          }
+          if (!payments || payments.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>No payments on file for this customer yet.</p></div>';
+          } else {
+            const totalPaid = payments
+              .filter(p => p.payment_status === 'paid')
+              .reduce((s, p) => s + (parseFloat(p.total) || 0), 0);
+            container.innerHTML = `
+              <div style="margin-bottom: 12px; padding: 12px 16px; background: var(--dark-elevated); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 13px; color: var(--text-muted);">Total received from this customer</div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${totalPaid.toFixed(2)}</div>
+              </div>
+              <table>
+                <thead><tr><th>Date</th><th>Order #</th><th>Description</th><th>Amount</th><th>Type</th><th>Stripe</th></tr></thead>
+                <tbody>
+                  ${payments.map(p => {
+                    const items = Array.isArray(p.items) ? p.items : [];
+                    const desc = items.length
+                      ? items.map(i => i.name || i.title || 'Item').join(', ').slice(0, 60)
+                      : (p.metadata?.payment_type ? `(${p.metadata.payment_type})` : '—');
+                    const kind = p.requires_shipment === false ? 'Payment' : 'Order';
+                    const stripeUrl = p.stripe_payment_intent_id
+                      ? `https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`
+                      : null;
+                    return `
+                      <tr>
+                        <td>${new Date(p.paid_at || p.created_at).toLocaleDateString()}</td>
+                        <td style="font-weight: 600;">${escapeHtml(p.order_number || '-')}</td>
+                        <td>${escapeHtml(desc)}</td>
+                        <td style="color: var(--gold-primary); font-weight: 600;">$${(parseFloat(p.total) || 0).toFixed(2)}</td>
+                        <td><span class="status-badge status-${(p.payment_status || 'unpaid').toLowerCase()}">${kind}</span></td>
+                        <td>${stripeUrl ? `<a href="${stripeUrl}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px;">View</a>` : '-'}</td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             `;

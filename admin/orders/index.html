@@ -679,6 +679,20 @@
               <button class="btn btn-sm btn-secondary" onclick="saveNotes('${orderId}')">Save Notes</button>
             </div>
           </div>
+
+          <!-- Shipment classification -->
+          <div class="action-panel">
+            <h4>Shipment Queue</h4>
+            <p style="color:var(--text-muted);font-size:12px;margin:0 0 10px;">
+              ${order.requires_shipment === false
+                ? 'This order is currently <strong>not</strong> in the shipment queue (treated as a payment-only transaction).'
+                : 'This order is currently in the shipment queue and waits for tracking.'}
+            </p>
+            <button class="btn btn-sm ${order.requires_shipment === false ? 'btn-primary' : 'btn-secondary'}"
+                    onclick="toggleRequiresShipment('${orderId}', ${order.requires_shipment === false ? 'true' : 'false'})">
+              ${order.requires_shipment === false ? 'Restore to shipment queue' : 'Dismiss from shipment queue'}
+            </button>
+          </div>
         `;
       }
 
@@ -844,6 +858,17 @@
       try {
         await apiCall('PUT', `/api/admin/orders/${orderId}/notes`, { internal_notes: notes });
         showToast('Notes saved', 'success');
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function toggleRequiresShipment(orderId, nextRequires) {
+      try {
+        await apiCall('PATCH', `/api/admin/orders/${orderId}/requires-shipment`, { requires_shipment: nextRequires });
+        showToast(nextRequires ? 'Restored to shipment queue' : 'Dismissed from shipment queue', 'success');
+        document.getElementById('orderModal').classList.remove('active');
+        await loadOrders();
       } catch (err) {
         showToast('Failed: ' + err.message, 'error');
       }

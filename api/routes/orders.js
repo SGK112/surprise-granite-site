@@ -345,6 +345,45 @@ router.post('/:id/close', adminAccess, async (req, res) => {
 });
 
 /**
+ * PATCH /api/admin/orders/:id/requires-shipment — flip the shipment flag.
+ * Used by the "Dismiss" button on the queue to remove an order that doesn't
+ * actually need to ship (e.g. mislabeled invoice payment), or by the
+ * "Restore" action to put one back into the queue if the classifier was wrong.
+ * Body: { requires_shipment: boolean }
+ */
+router.patch('/:id/requires-shipment', adminAccess, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { id } = req.params;
+    const next = req.body?.requires_shipment;
+    if (typeof next !== 'boolean') {
+      return res.status(400).json({ error: 'requires_shipment must be a boolean' });
+    }
+    const updates = { requires_shipment: next, updated_at: new Date().toISOString() };
+    // Dismissing also marks the order completed so it falls out of any
+    // status-based queue. Restoring puts status back to confirmed only if
+    // it was 'paid' (the state set by the webhook for non-shippable).
+    if (next === false) updates.status = 'completed';
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: 'Failed to update order' });
+    await logOrderEvent(
+      supabase, id, 'requires_shipment_change',
+      next ? 'Restored to shipment queue' : 'Dismissed from shipment queue',
+      req.adminUser?.email
+    );
+    res.json({ order: data });
+  } catch (err) {
+    logger.error('Error toggling requires_shipment:', err.message);
+    res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+/**
  * POST /api/admin/orders/:id/refund — Issue a Stripe refund against an order
  * Body: { amount?: number (dollars, omit for full), reason?: string, notify_customer?: boolean }
  */

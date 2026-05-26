@@ -134,6 +134,10 @@ router.post('/quick-pay', async (req, res) => {
       success_url: `${baseUrl}/pay/success/?${successParams.toString()}`,
       cancel_url: `${baseUrl}/pay/?${cancelParams.toString()}`,
       metadata: {
+        // payment_type drives the requires_shipment classifier. Quick-pay
+        // covers deposits, balances, paid invoices, proposal deposits — none
+        // of which ship a physical product.
+        payment_type: ['deposit','balance','final','invoice'].includes(source_kind) ? source_kind : 'quick-pay',
         invoice_ref: invoice_ref || '',
         memo: memo || '',
         source: source_kind || 'quick-pay',
@@ -269,6 +273,9 @@ router.post('/checkout', async (req, res) => {
       },
       phone_number_collection: { enabled: true },
       metadata: {
+        // payment_type drives the requires_shipment classifier in the webhook.
+        // 'product' = real cart, will ship physically.
+        payment_type: 'product',
         order_source: 'website_cart',
         validated_total: validation.calculatedTotals.total,
         price_adjustments: validation.warnings.length > 0 ? 'yes' : 'no',
@@ -482,6 +489,7 @@ router.post('/pro-subscription', async (req, res) => {
       success_url: success_url || `https://www.surprisegranite.com/tools/room-designer/?subscription=success&plan=${plan}`,
       cancel_url: cancel_url || `https://www.surprisegranite.com/tools/room-designer/?subscription=canceled`,
       metadata: {
+        payment_type: 'subscription',
         user_id,
         plan: plan.toLowerCase(),
         billing_cycle,
