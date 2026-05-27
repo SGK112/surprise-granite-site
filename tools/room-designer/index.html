@@ -27057,20 +27057,30 @@
       }
     }
 
+    // Run a single init step in isolation — log + continue on throw so one
+    // bad step doesn't take down all the steps after it (drag/drop, event
+    // listeners, room init, etc).
+    function _safe(label, fn) {
+      try { fn(); }
+      catch (e) { console.error(`[room-designer] init step "${label}" failed:`, e); }
+    }
+
     function _initializeWorkspaceUnsafe() {
-      // Initialize DOM cache for frequently accessed elements
-      initDomCache();
+      _safe('initDomCache', () => initDomCache());
 
       canvas = document.getElementById('canvas');
-      ctx = canvas.getContext('2d');
+      if (!canvas) {
+        console.error('[room-designer] #canvas not in DOM — workspace cannot initialize');
+        return;
+      }
+      try { ctx = canvas.getContext('2d'); }
+      catch (e) { console.error('[room-designer] canvas.getContext failed:', e); }
 
-      renderSidebar();
-      renderFloorPlans();
-      renderMaterials('granite');
-
-      // Initialize cabinet catalog with series dropdown
-      changeCatalog(currentCatalog);
-      renderCabinetCatalog();
+      _safe('renderSidebar',        () => renderSidebar());
+      _safe('renderFloorPlans',     () => renderFloorPlans());
+      _safe('renderMaterials',      () => renderMaterials('granite'));
+      _safe('changeCatalog',        () => changeCatalog(currentCatalog));
+      _safe('renderCabinetCatalog', () => renderCabinetCatalog());
 
       // Load extended data sources (async, non-blocking)
       loadStonePricing().then(count => {
@@ -27096,9 +27106,9 @@
         }, 1000);
       });
 
-      setupEventListeners();
-      setupDragDrop();
-      fitToScreen();
+      _safe('setupEventListeners', () => setupEventListeners());
+      _safe('setupDragDrop',       () => setupDragDrop());
+      _safe('fitToScreen',         () => fitToScreen());
 
       // Initialize room dimension displays
       const rwInit = document.getElementById('roomWidthDisplay');
@@ -27123,7 +27133,7 @@
       }
 
       // Initialize multi-room system (only creates new room if no rooms exist from autosave)
-      initializeRooms();
+      _safe('initializeRooms', () => initializeRooms());
 
       // Only sync elements with first room if we DIDN'T load from autosave
       // (autosave already has proper room-element associations)
