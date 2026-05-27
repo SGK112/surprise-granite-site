@@ -12920,6 +12920,14 @@
                 </svg>
                 <span>Auto Filler</span>
               </button>
+              <button class="tool-btn" id="toolRotateRoom" onclick="rotateRoom()" title="Rotate the whole room 90° clockwise (swaps width and depth, rotates everything inside)" aria-label="Rotate room 90 degrees clockwise">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="4" y="4" width="16" height="16" rx="2"/>
+                  <path d="M16 9l3-3-3-3" stroke-linecap="round"/>
+                  <path d="M9 6h7a3 3 0 0 1 3 3v6" stroke-linecap="round"/>
+                </svg>
+                <span>Rotate Room</span>
+              </button>
               <button class="tool-btn" id="toolAlign" onclick="showAlignMenu()" title="Align selected elements" data-shortcut="A" aria-label="Align selected elements, keyboard shortcut A" aria-haspopup="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <line x1="4" y1="6" x2="20" y2="6"/>
@@ -42879,6 +42887,76 @@
       } else {
         showSnapFeedback('Countertops/caps already exist');
       }
+    }
+
+    // Rotate the entire room 90° clockwise. Swaps roomWidth <-> roomDepth,
+    // rotates every element and wall around the OLD room frame's top-left, then
+    // refits the canvas (and rescales pixel positions if fitToScreen changed ppf).
+    // Old top-left → new top-right.
+    function rotateRoom() {
+      const ppf = pixelsPerFoot;
+      const oldD = roomDepth;       // feet
+      const oldW = roomWidth;
+      const oldDpx = oldD * ppf;
+
+      // Elements: x/y in pixels, width/height in FEET. Rotation field absorbs
+      // the 90° so stored w/h stay unchanged; only the center position moves.
+      elements.forEach(el => {
+        const wPx = (el.width || 0) * ppf;
+        const hPx = (el.height || 0) * ppf;
+        const cxPx = (el.x || 0) + wPx / 2;
+        const cyPx = (el.y || 0) + hPx / 2;
+        const newCxPx = oldDpx - cyPx;
+        const newCyPx = cxPx;
+        el.x = newCxPx - wPx / 2;
+        el.y = newCyPx - hPx / 2;
+        el.rotation = (((el.rotation || 0) + 90) % 360 + 360) % 360;
+      });
+
+      // Walls (and area markers) in walls[]: x/y AND width/height all in PIXELS,
+      // rendered axis-aligned (no rotation field). Swap w/h and reposition.
+      walls.forEach(w => {
+        const wPx = w.width || 0;
+        const hPx = w.height || 0;
+        const cxPx = (w.x || 0) + wPx / 2;
+        const cyPx = (w.y || 0) + hPx / 2;
+        const newCxPx = oldDpx - cyPx;
+        const newCyPx = cxPx;
+        w.x = newCxPx - hPx / 2;
+        w.y = newCyPx - wPx / 2;
+        w.width = hPx;
+        w.height = wPx;
+      });
+
+      // Swap room dimensions
+      roomWidth = oldD;
+      roomDepth = oldW;
+
+      const widthInput = document.getElementById('roomWidth');
+      const depthInput = document.getElementById('roomDepth');
+      if (widthInput) widthInput.value = Math.round(roomWidth * 12) + '"';
+      if (depthInput) depthInput.value = Math.round(roomDepth * 12) + '"';
+
+      // Refit; rescale pixel positions if ppf changed (mirrors updateRoom() pattern)
+      const oldPPF = pixelsPerFoot;
+      if (typeof fitToScreen === 'function') fitToScreen();
+      if (pixelsPerFoot !== oldPPF && oldPPF > 0) {
+        const ratio = pixelsPerFoot / oldPPF;
+        elements.forEach(el => { el.x = (el.x || 0) * ratio; el.y = (el.y || 0) * ratio; });
+        walls.forEach(w => {
+          w.x = (w.x || 0) * ratio;
+          w.y = (w.y || 0) * ratio;
+          w.width = (w.width || 0) * ratio;
+          w.height = (w.height || 0) * ratio;
+        });
+      }
+
+      saveUndoState();
+      elementListDirty = true;
+      draw();
+      if (typeof update3DScene === 'function') update3DScene();
+      if (typeof calculateQuote === 'function') calculateQuote();
+      showSnapFeedback(`Room rotated 90° (now ${Math.round(roomWidth)}' × ${Math.round(roomDepth)}')`);
     }
 
     // Drop filler-strip elements into gaps between adjacent cabinets in a row
