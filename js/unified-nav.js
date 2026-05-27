@@ -607,6 +607,9 @@
       // Pro tools (blueprint takeoff, room designer, calculators) are workspace
       // surfaces — keep marketing widgets off them.
       if (path.startsWith('/tools/')) return;
+      // Error pages — 404, etc. Marking via body class on the error template
+      // since pathname is whatever the user typed.
+      if (document.body && document.body.classList.contains('page-404')) return;
 
       // If user previously dismissed the full callout, show the small
       // re-open pill instead so the offer never fully disappears.
@@ -726,6 +729,9 @@
   // Click it → wipe the flag and re-show the full callout.
   function injectPromoReopenPill() {
     if (document.querySelector('.sg-promo-reopen')) return;
+    // Same error-page suppression as insertPromoCallout — the pill is the
+    // dismissed-state cousin and shouldn't haunt the 404 either.
+    if (document.body && document.body.classList.contains('page-404')) return;
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'sg-promo-reopen';
