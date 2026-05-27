@@ -8622,30 +8622,27 @@
 
     /* Keyboard Shortcuts - auto-hide after delay */
     .shortcuts-hint {
+      /* Out of the way: bottom-LEFT, low z-index, small, fully transparent
+         until hover. Was sitting top-right blocking the room selector. */
       position: fixed;
-      bottom: 12px;
-      right: 12px;
+      bottom: 8px;
+      left: 8px;
       background: var(--dark-surface);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       font-size: 9px;
       color: var(--text-muted);
       display: flex;
-      gap: 12px;
-      opacity: 1;
-      transition: opacity 0.5s ease-out;
-      z-index: 100;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease-out;
+      z-index: 10;
     }
 
     .shortcuts-hint.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .shortcuts-hint:hover {
-      opacity: 1 !important;
-      pointer-events: auto !important;
+      display: none;
     }
 
     .shortcut {
