@@ -87,6 +87,17 @@ services:
       - type: rewrite
         source: /commercial
         destination: /commercial.html
+      # ASPN member profiles — single template at /aspn/members/index.html
+      # reads the slug from window.location.pathname and fetches the member
+      # via /api/aspn/members/:slug. Without these rewrites, slug folders
+      # 404 (mcneil-custom-stone etc. don't have a dedicated folder; only
+      # surprise-granite was hand-created).
+      - type: rewrite
+        source: /aspn/members/*/
+        destination: /aspn/members/index.html
+      - type: rewrite
+        source: /aspn/members/*
+        destination: /aspn/members/index.html
       # Company pages
       - type: rewrite
         source: /company/about-us

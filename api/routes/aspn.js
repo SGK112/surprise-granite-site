@@ -320,6 +320,117 @@ router.post('/members/:id/approve', async (req, res) => {
 });
 
 /**
+ * POST /api/aspn/admin/invite
+ * Admin-only (X-Admin-Key). Sends an ASPN signup invite to one or many
+ * email addresses. Each recipient gets the same templated email pointing
+ * to /aspn/join/.
+ *
+ * Body: {
+ *   recipients: string[] | string,   // emails (array or single)
+ *   business_name?: string,          // optional personalization ("Hi Acme,")
+ *   sender_name?: string,            // sign-off (defaults to "Joshua")
+ *   note?: string                    // optional short custom paragraph
+ * }
+ */
+// Build the invite email HTML. Shared between POST /admin/invite (send)
+// and GET /invite/preview (render in browser for QA).
+function buildInviteHtml({ business_name, sender_name, note } = {}) {
+  const senderName = sender_name || 'Joshua';
+  const greeting = business_name ? `Hi ${business_name} team,` : 'Hi there,';
+  const noteBlock = note
+    ? `<p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">${String(note).replace(/[<>]/g, '')}</p>`
+    : '';
+  return `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f7f5f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e7e2d6;">
+        <tr><td style="padding:32px 40px 24px;border-bottom:3px solid #f59e0b;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:.15em;color:#92400e;text-transform:uppercase;margin-bottom:6px;">Arizona Stone Providers Network</div>
+          <div style="font-size:26px;font-weight:800;color:#1c1917;letter-spacing:-.01em;">ASPN</div>
+        </td></tr>
+        <tr><td style="padding:36px 40px;">
+          <h2 style="margin:0 0 16px;color:#1c1917;font-size:22px;font-weight:700;line-height:1.3;">${greeting}</h2>
+          <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.7;">
+            You're invited to claim a <strong>free founding-member</strong> profile in the Arizona Stone Providers Network &mdash; the new public directory connecting Arizona homeowners, designers, and GCs with the people who actually do the work.
+          </p>
+          ${noteBlock}
+          <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
+            Stone yards, fabricators, tile and flooring installers, designers, and surface pros are all welcome. Signup takes about 60 seconds &mdash; just your business name, email, and category. You'll get a verified profile, a directory listing, and a founding-member badge.
+          </p>
+          <table cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td style="background:#f59e0b;border-radius:8px;">
+            <a href="https://www.surprisegranite.com/aspn/join/" style="display:inline-block;padding:14px 32px;color:#1c1917;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;">Claim your free profile &rarr;</a>
+          </td></tr></table>
+          <p style="margin:24px 0 0;color:#6b7280;font-size:13px;line-height:1.6;">
+            Questions? Just reply to this email.<br/>
+            &mdash; ${senderName}, Surprise Granite
+          </p>
+        </td></tr>
+        <tr><td style="background:#faf8f3;padding:20px 40px;border-top:1px solid #e7e2d6;color:#9ca3af;font-size:11px;line-height:1.5;">
+          You're getting this because we think your business would be a strong fit for ASPN. Don't want any more? <a href="mailto:joshb@surprisegranite.com?subject=Unsubscribe%20ASPN%20invites" style="color:#6b7280;">Reply and we'll take you off the list.</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+/**
+ * GET /api/aspn/invite/preview — renders the invite email HTML so admins
+ * can QA it in a browser before sending. Query params override defaults:
+ *   ?business_name=Acme&sender_name=Joshua&note=...
+ */
+router.get('/invite/preview', (req, res) => {
+  const html = buildInviteHtml({
+    business_name: sanitize(req.query.business_name, 120),
+    sender_name: sanitize(req.query.sender_name, 80),
+    note: sanitize(req.query.note, 600)
+  });
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
+router.post('/admin/invite', async (req, res) => {
+  try {
+    const adminKey = process.env.ADMIN_KEY || process.env.ASPN_ADMIN_KEY;
+    if (!adminKey) return res.status(503).json({ error: 'Admin not configured' });
+    if (req.headers['x-admin-key'] !== adminKey) return res.status(401).json({ error: 'Unauthorized' });
+
+    const body = req.body || {};
+    const rawRecipients = Array.isArray(body.recipients)
+      ? body.recipients
+      : (typeof body.recipients === 'string' ? body.recipients.split(/[,\s\n]+/) : []);
+    const recipients = rawRecipients
+      .map(s => sanitize(s, 254))
+      .filter(s => s && isValidEmail(s));
+    if (recipients.length === 0) return res.status(400).json({ error: 'No valid recipient emails' });
+    if (recipients.length > 100) return res.status(400).json({ error: 'Max 100 recipients per call' });
+
+    const html = buildInviteHtml({
+      business_name: sanitize(body.business_name, 120),
+      sender_name: sanitize(body.sender_name, 80),
+      note: sanitize(body.note, 600)
+    });
+
+    const emailService = require('../services/emailService');
+    const subject = `Your free spot in the Arizona Stone Providers Network`;
+    const results = await Promise.allSettled(recipients.map(to => emailService.send({ to, subject, html })));
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.length - sent;
+    if (failed > 0) {
+      logger.warn('ASPN invite partial failures', {
+        sent, failed,
+        errors: results.filter(r => r.status === 'rejected').map(r => r.reason?.message || String(r.reason)).slice(0, 5)
+      });
+    }
+    return res.json({ success: true, sent, failed, total: recipients.length });
+  } catch (e) {
+    logger.error('ASPN invite error', { error: e.message });
+    return res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+/**
  * GET /api/aspn/admin/pending
  * Admin-only. Lists members awaiting approval.
  */

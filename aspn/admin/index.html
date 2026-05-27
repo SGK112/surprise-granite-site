@@ -58,6 +58,37 @@
         <button class="aspn-btn aspn-btn--primary" id="loadBtn" style="padding:12px 20px;">Load Members</button>
       </div>
 
+      <!-- Invite panel: send the templated ASPN invite to a list of emails. -->
+      <details style="background:#fff;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius-lg);padding:0;margin-bottom:24px;">
+        <summary style="padding:16px 20px;cursor:pointer;font-weight:700;font-size:1rem;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+          <span>Send Invites</span>
+          <span style="font-size:.8rem;color:var(--aspn-text-3);font-weight:500;">Click to expand &#9662;</span>
+        </summary>
+        <div style="padding:0 20px 20px;border-top:1px solid var(--aspn-line);">
+          <p style="margin:16px 0;color:var(--aspn-text-2);font-size:.9rem;">
+            Paste one or more emails (comma, space, or newline separated). Each recipient gets the same invite linking to <code>/aspn/join/</code>.
+          </p>
+          <textarea id="inviteRecipients" rows="4" placeholder="jane@stoneworks.com&#10;contact@granitepros.com" style="width:100%;padding:10px 12px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);font-family:inherit;font-size:.9rem;"></textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div>
+              <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:var(--aspn-text-2);">Business name (optional)</label>
+              <input id="inviteBusinessName" type="text" placeholder="leave blank for generic greeting" style="width:100%;padding:8px 10px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);font-size:.9rem;"/>
+            </div>
+            <div>
+              <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:var(--aspn-text-2);">Sender name</label>
+              <input id="inviteSenderName" type="text" placeholder="Joshua" style="width:100%;padding:8px 10px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);font-size:.9rem;"/>
+            </div>
+          </div>
+          <label style="display:block;font-size:.8rem;font-weight:600;margin:12px 0 4px;color:var(--aspn-text-2);">Custom note (optional)</label>
+          <textarea id="inviteNote" rows="2" placeholder="e.g. 'I saw your work at the Phoenix Home Show — would love to have you in the directory.'" style="width:100%;padding:8px 10px;border:1px solid var(--aspn-line);border-radius:var(--aspn-radius);font-family:inherit;font-size:.9rem;"></textarea>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:16px;">
+            <button class="aspn-btn aspn-btn--primary" id="sendInvitesBtn" style="padding:10px 20px;">Send Invites</button>
+            <a href="/api/aspn/invite/preview" id="previewLink" target="_blank" style="color:var(--aspn-text-2);font-size:.85rem;text-decoration:underline;">Preview email →</a>
+            <span id="inviteMsg" style="font-size:.85rem;"></span>
+          </div>
+        </div>
+      </details>
+
       <div id="adminMsg"></div>
       <div id="memberList"></div>
     </div>
@@ -151,6 +182,48 @@
     }
     window.setStatus = setStatus;
     document.getElementById('loadBtn').addEventListener('click', loadMembers);
+
+    // ===== Invite sender =====
+    const inviteMsg = document.getElementById('inviteMsg');
+    document.getElementById('sendInvitesBtn').addEventListener('click', async () => {
+      const key = keyInput.value.trim();
+      if (!key) { inviteMsg.innerHTML = '<span style="color:#b91c1c;">Admin key required (top of page).</span>'; return; }
+      const raw = document.getElementById('inviteRecipients').value.trim();
+      if (!raw) { inviteMsg.innerHTML = '<span style="color:#b91c1c;">Add at least one recipient.</span>'; return; }
+      const recipients = raw.split(/[,\s\n]+/).map(s => s.trim()).filter(Boolean);
+      const business_name = document.getElementById('inviteBusinessName').value.trim() || null;
+      const sender_name = document.getElementById('inviteSenderName').value.trim() || null;
+      const note = document.getElementById('inviteNote').value.trim() || null;
+
+      if (!confirm(`Send invite to ${recipients.length} recipient${recipients.length === 1 ? '' : 's'}?`)) return;
+      inviteMsg.innerHTML = '<span style="color:var(--aspn-text-3);">Sending…</span>';
+      try {
+        const r = await fetch(API_BASE + '/api/aspn/admin/invite', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'X-Admin-Key': key },
+          body: JSON.stringify({ recipients, business_name, sender_name, note })
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'Send failed');
+        inviteMsg.innerHTML = `<span style="color:#15803d;font-weight:600;">Sent ${j.sent}/${j.total}${j.failed ? ` (${j.failed} failed — check logs)` : ''}.</span>`;
+        if (j.sent > 0) document.getElementById('inviteRecipients').value = '';
+      } catch (e) {
+        inviteMsg.innerHTML = `<span style="color:#b91c1c;">${e.message}</span>`;
+      }
+    });
+
+    // Preview link — open the rendered email in a new tab
+    document.getElementById('previewLink').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const business_name = document.getElementById('inviteBusinessName').value.trim();
+      const sender_name = document.getElementById('inviteSenderName').value.trim();
+      const note = document.getElementById('inviteNote').value.trim();
+      const qs = new URLSearchParams();
+      if (business_name) qs.set('business_name', business_name);
+      if (sender_name) qs.set('sender_name', sender_name);
+      if (note) qs.set('note', note);
+      window.open(API_BASE + '/api/aspn/invite/preview' + (qs.toString() ? '?' + qs : ''), '_blank');
+    });
   </script>
 </body>
 </html>
