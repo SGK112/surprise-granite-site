@@ -18,10 +18,11 @@
     const wrap = document.createElement('div');
     wrap.id = 'sg-tool-switcher';
     wrap.setAttribute('aria-label', 'SG Pro tools');
-    // Bottom-right: doesn't collide with any of the three tools' top bars
-    // (e-sign "All tools" link, blueprint BYOK chip, room-designer zoom).
+    // Bottom-CENTER: centered horizontally so it doesn't sit on top of
+    // the room-designer's right-side panel (Default Room selector, Price
+    // List, Margins) or any other tool's right-edge controls.
     wrap.style.cssText = [
-      'position:fixed','bottom:14px','right:14px','z-index:90',
+      'position:fixed','bottom:14px','left:50%','transform:translateX(-50%)','z-index:90',
       'display:flex','gap:4px','align-items:center',
       'background:rgba(15,15,26,.82)','backdrop-filter:blur(8px)',
       '-webkit-backdrop-filter:blur(8px)',
