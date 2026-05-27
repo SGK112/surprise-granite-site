@@ -51,10 +51,19 @@
           return;
         }
 
-        // Get current session with error handling for AbortError
+        // Get current session with error handling for AbortError.
+        // 5s timeout because supabase.auth.getSession() has been observed
+        // to hang indefinitely (typically when localStorage is corrupt or
+        // the auth server is slow). Without the timeout, every consumer
+        // that awaits SgAuth.init() — including the room designer's full
+        // initialization chain — hangs too, leaving a dead workspace.
         try {
           console.log('SG Auth: Checking for existing session...');
-          const { data: { session }, error } = await supabaseClient.auth.getSession();
+          const sessionPromise = supabaseClient.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('SgAuth getSession timed out after 5s')), 5000)
+          );
+          const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
 
           console.log('SG Auth: Session check result:', {
             hasSession: !!session,

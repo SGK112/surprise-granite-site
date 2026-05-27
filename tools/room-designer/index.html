@@ -72986,10 +72986,20 @@
 
         // Hard ceiling — if nothing ever calls hidePreloader(), force the
         // splash down after 10s so the workspace is at least visible.
+        // ALSO force-init the workspace if it never got initialized: the
+        // init flow does `await window.SgAuth.init()` which itself awaits
+        // supabaseClient.auth.getSession() — a known-to-hang Supabase call.
+        // Without this fallback, hidePreloader runs but canvas + event
+        // handlers never wire up and the workspace is dead chrome.
         preloaderWatchdog = setTimeout(() => {
           console.warn('[room-designer] preloader watchdog fired — forcing hide after', PRELOADER_MAX_MS, 'ms');
           if (progressBar) progressBar.style.width = '100%';
           hidePreloaderNow();
+          if (typeof workspaceInitialized !== 'undefined' && !workspaceInitialized) {
+            console.warn('[room-designer] workspace never initialized — forcing initializeWorkspace()');
+            try { initializeWorkspace(); }
+            catch (e) { console.error('[room-designer] forced init failed:', e); }
+          }
         }, PRELOADER_MAX_MS);
       }
     }
