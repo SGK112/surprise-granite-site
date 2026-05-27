@@ -9489,64 +9489,97 @@
             `;
           }
         } else if (tab === 'payments') {
-          // Every Stripe payment we have on file for this customer —
-          // cart orders, deposits, balances, invoice settlements alike.
-          // Joins on customer_email (case-insensitive) and stripe_customer_id.
+          // Every dollar this customer has paid us, from two surfaces:
+          //   1. orders   — Stripe Checkout (cart, quick-pay deposits, etc.)
+          //   2. invoices — Stripe-hosted invoices the customer paid
+          // Jobs intentionally omitted: they're derivative of invoices.paid
+          // (the webhook creates a job from each paid invoice), so showing
+          // both would double-count the same dollar.
           const email = (selectedCustomer.email || '').trim();
           const stripeCustId = selectedCustomer.stripe_customer_id || null;
-          let query = supabaseClient
-            .from('orders')
-            .select('id, order_number, total, items, status, payment_status, requires_shipment, stripe_session_id, stripe_payment_intent_id, paid_at, created_at, metadata')
-            .order('created_at', { ascending: false });
-          if (email && stripeCustId) {
-            query = query.or(`customer_email.ilike.${email},stripe_customer_id.eq.${stripeCustId}`);
-          } else if (email) {
-            query = query.ilike('customer_email', email);
-          } else if (stripeCustId) {
-            query = query.eq('stripe_customer_id', stripeCustId);
-          } else {
+          if (!email && !stripeCustId) {
             container.innerHTML = '<div class="empty-state"><p>No email or Stripe customer ID on file — can\'t link payments.</p></div>';
             return;
           }
-          const { data: payments, error: payErr } = await query;
-          if (payErr) {
-            container.innerHTML = `<div class="empty-state"><p style="color: var(--error)">Error loading payments: ${escapeHtml(payErr.message)}</p></div>`;
+
+          // Build the orders query
+          let ordersQ = supabaseClient
+            .from('orders')
+            .select('id, order_number, total, items, status, payment_status, requires_shipment, stripe_session_id, stripe_payment_intent_id, paid_at, created_at, metadata');
+          if (email && stripeCustId) ordersQ = ordersQ.or(`customer_email.ilike.${email},stripe_customer_id.eq.${stripeCustId}`);
+          else if (email)            ordersQ = ordersQ.ilike('customer_email', email);
+          else                       ordersQ = ordersQ.eq('stripe_customer_id', stripeCustId);
+
+          // Build the invoices query — only include those with money received
+          let invQ = supabaseClient
+            .from('invoices')
+            .select('id, invoice_number, total, amount_paid, status, customer_id, customer_email, deposit_paid_at, project_name, project_description, stripe_invoice_id, stripe_hosted_url, created_at, updated_at')
+            .or(`customer_email.ilike.${email || '__none__'},customer_id.eq.${selectedCustomer.id}`)
+            .gt('amount_paid', 0);
+
+          const [oRes, iRes] = await Promise.all([ordersQ, invQ]);
+          if (oRes.error) {
+            container.innerHTML = `<div class="empty-state"><p style="color: var(--error)">Error loading orders: ${escapeHtml(oRes.error.message)}</p></div>`;
             return;
           }
-          if (!payments || payments.length === 0) {
+
+          // Normalize into a single list keyed for the table
+          const rows = [];
+          for (const o of (oRes.data || [])) {
+            const items = Array.isArray(o.items) ? o.items : [];
+            const desc = items.length
+              ? items.map(i => i.name || i.title || 'Item').join(', ').slice(0, 60)
+              : (o.metadata?.payment_type ? `(${o.metadata.payment_type})` : '—');
+            rows.push({
+              date: o.paid_at || o.created_at,
+              ref: o.order_number || '-',
+              desc,
+              amount: parseFloat(o.total) || 0,
+              kind: o.requires_shipment === false ? 'Payment' : 'Order',
+              paid: o.payment_status === 'paid',
+              stripeUrl: o.stripe_payment_intent_id
+                ? `https://dashboard.stripe.com/payments/${o.stripe_payment_intent_id}`
+                : null
+            });
+          }
+          if (!iRes.error) {
+            for (const inv of (iRes.data || [])) {
+              rows.push({
+                date: inv.deposit_paid_at || inv.updated_at || inv.created_at,
+                ref: inv.invoice_number || '-',
+                desc: (inv.project_description || inv.project_name || 'Invoice payment').slice(0, 60),
+                amount: parseFloat(inv.amount_paid) || 0,
+                kind: 'Invoice',
+                paid: true,
+                stripeUrl: inv.stripe_hosted_url || (inv.stripe_invoice_id
+                  ? `https://dashboard.stripe.com/invoices/${inv.stripe_invoice_id}` : null)
+              });
+            }
+          }
+          rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+          if (rows.length === 0) {
             container.innerHTML = '<div class="empty-state"><p>No payments on file for this customer yet.</p></div>';
           } else {
-            const totalPaid = payments
-              .filter(p => p.payment_status === 'paid')
-              .reduce((s, p) => s + (parseFloat(p.total) || 0), 0);
+            const totalPaid = rows.filter(r => r.paid).reduce((s, r) => s + r.amount, 0);
             container.innerHTML = `
               <div style="margin-bottom: 12px; padding: 12px 16px; background: var(--dark-elevated); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 13px; color: var(--text-muted);">Total received from this customer</div>
                 <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${totalPaid.toFixed(2)}</div>
               </div>
               <table>
-                <thead><tr><th>Date</th><th>Order #</th><th>Description</th><th>Amount</th><th>Type</th><th>Stripe</th></tr></thead>
+                <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Amount</th><th>Type</th><th>Stripe</th></tr></thead>
                 <tbody>
-                  ${payments.map(p => {
-                    const items = Array.isArray(p.items) ? p.items : [];
-                    const desc = items.length
-                      ? items.map(i => i.name || i.title || 'Item').join(', ').slice(0, 60)
-                      : (p.metadata?.payment_type ? `(${p.metadata.payment_type})` : '—');
-                    const kind = p.requires_shipment === false ? 'Payment' : 'Order';
-                    const stripeUrl = p.stripe_payment_intent_id
-                      ? `https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`
-                      : null;
-                    return `
-                      <tr>
-                        <td>${new Date(p.paid_at || p.created_at).toLocaleDateString()}</td>
-                        <td style="font-weight: 600;">${escapeHtml(p.order_number || '-')}</td>
-                        <td>${escapeHtml(desc)}</td>
-                        <td style="color: var(--gold-primary); font-weight: 600;">$${(parseFloat(p.total) || 0).toFixed(2)}</td>
-                        <td><span class="status-badge status-${(p.payment_status || 'unpaid').toLowerCase()}">${kind}</span></td>
-                        <td>${stripeUrl ? `<a href="${stripeUrl}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px;">View</a>` : '-'}</td>
-                      </tr>
-                    `;
-                  }).join('')}
+                  ${rows.map(r => `
+                    <tr>
+                      <td>${new Date(r.date).toLocaleDateString()}</td>
+                      <td style="font-weight: 600;">${escapeHtml(r.ref)}</td>
+                      <td>${escapeHtml(r.desc)}</td>
+                      <td style="color: var(--gold-primary); font-weight: 600;">$${r.amount.toFixed(2)}</td>
+                      <td><span class="status-badge status-${r.paid ? 'paid' : 'unpaid'}">${r.kind}</span></td>
+                      <td>${r.stripeUrl ? `<a href="${r.stripeUrl}" target="_blank" class="btn-modern secondary" style="padding: 4px 8px; font-size: 12px;">View</a>` : '-'}</td>
+                    </tr>
+                  `).join('')}
                 </tbody>
               </table>
             `;
