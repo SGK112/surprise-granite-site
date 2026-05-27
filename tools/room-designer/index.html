@@ -27051,11 +27051,21 @@
       initializeWorkspace();
     }
 
-    // Initialize the workspace (called after auth check passes)
+    // Initialize the workspace (called after auth check passes).
+    // Wrapped so any throw inside still hides the splash — otherwise the
+    // user is staring at a frozen "Surprise Granite / Room Designer" page.
     function initializeWorkspace() {
       if (workspaceInitialized) return; // Prevent double initialization
       workspaceInitialized = true;
+      try {
+        _initializeWorkspaceUnsafe();
+      } catch (initErr) {
+        console.error('[room-designer] initializeWorkspace threw:', initErr);
+        hidePreloader();
+      }
+    }
 
+    function _initializeWorkspaceUnsafe() {
       // Initialize DOM cache for frequently accessed elements
       initDomCache();
 
@@ -72915,6 +72925,12 @@
     let preloaderProgress = 0;
     let preloaderInterval = null;
 
+    // Watchdog timer — even if initializeWorkspace throws or stalls, the
+    // splash MUST come down. Without this the user sees a permanent
+    // "Surprise Granite / Room Designer" screen and can't do anything.
+    let preloaderWatchdog = null;
+    const PRELOADER_MAX_MS = 10000; // 10s ceiling
+
     function showPreloader(message, companyName) {
       const preloader = document.getElementById('cloudPreloader');
       const companyEl = document.getElementById('preloaderCompanyMain');
@@ -72936,6 +72952,7 @@
 
         // Clear any existing interval
         if (preloaderInterval) clearInterval(preloaderInterval);
+        if (preloaderWatchdog) clearTimeout(preloaderWatchdog);
 
         // Animate progress bar
         preloaderInterval = setInterval(() => {
@@ -72948,6 +72965,14 @@
             setTimeout(hidePreloaderNow, 300);
           }
         }, 40);
+
+        // Hard ceiling — if nothing ever calls hidePreloader(), force the
+        // splash down after 10s so the workspace is at least visible.
+        preloaderWatchdog = setTimeout(() => {
+          console.warn('[room-designer] preloader watchdog fired — forcing hide after', PRELOADER_MAX_MS, 'ms');
+          if (progressBar) progressBar.style.width = '100%';
+          hidePreloaderNow();
+        }, PRELOADER_MAX_MS);
       }
     }
 
@@ -72967,6 +72992,10 @@
       if (preloaderInterval) {
         clearInterval(preloaderInterval);
         preloaderInterval = null;
+      }
+      if (preloaderWatchdog) {
+        clearTimeout(preloaderWatchdog);
+        preloaderWatchdog = null;
       }
       if (preloader) {
         preloader.classList.add('loaded');
