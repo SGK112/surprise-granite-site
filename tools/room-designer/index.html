@@ -6,7 +6,11 @@
   <title>Room Designer Pro | Remodely.ai | Surprise Granite</title>
   <link rel="icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script defer src="/js/tool-switcher.js" data-current="visualizer"></script>
+  <!-- tool-switcher removed on room-designer: this page has dense full-height
+       side panels (Tools, Elements, Cabinet Catalog on the left; Room
+       Settings, Item List, Building Standards on the right). Any floating
+       bottom bar overlaps them. The top nav already covers tool switching. -->
+  <!-- <script defer src="/js/tool-switcher.js" data-current="visualizer"></script> -->
 
   <!-- Three.js r147 for 3D (last version with global script support) -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -8622,22 +8626,10 @@
 
     /* Keyboard Shortcuts - auto-hide after delay */
     .shortcuts-hint {
-      /* Bottom-LEFT (the tool-switcher pill owns bottom-center now). */
-      position: fixed;
-      bottom: 8px;
-      left: 8px;
-      background: var(--dark-surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 9px;
-      color: var(--text-muted);
-      display: flex;
-      gap: 10px;
-      opacity: 0.6;
-      transition: opacity 0.25s ease-out;
-      z-index: 10;
-      pointer-events: auto;
+      /* Hidden by default on this page. The side panels (Tools left,
+         Room Settings right) span full height, so any floating element
+         at the bottom overlaps them. Keyboard shortcuts still work. */
+      display: none !important;
     }
 
     .shortcuts-hint.hidden {
