@@ -27013,18 +27013,26 @@
         }
 
         if (!session) {
-          // Not logged in. Init the workspace anyway so canvas + event
-          // handlers are wired up — without this, if the login modal
-          // glitches (or the user dismisses it), every tool button crashes
-          // because `canvas` is undefined. continueAsGuest() also calls
-          // initializeWorkspace() but it has a guard against double-init,
-          // so calling twice is safe.
-          pendingAuthInit = true;
+          // Not logged in. Initialize the workspace as guest IMMEDIATELY and
+          // do NOT show a required (pointer-blocking) login modal — that
+          // modal has data-required="true" + class="modal-overlay active",
+          // a full-viewport overlay that intercepts every click and made
+          // tools/zoom/save/AI-Chat look broken. Users still see a Sign In
+          // button in the nav and can click it if they want to log in.
+          pendingAuthInit = false;
           PRICING_ACCESS.accountType = PRICING_ACCESS.accountType || 'guest';
           PRICING_ACCESS.canViewPricing = false;
           hidePreloader();
           initializeWorkspace();
-          showLoginPromptRequired();
+          // One-time toast so the user knows they're in guest mode
+          setTimeout(() => {
+            if (typeof showToast === 'function') {
+              showToast('You\'re using Guest Mode. Sign in (top right) to save designs.', 'info');
+            }
+            if (typeof showGuestModeIndicator === 'function') {
+              showGuestModeIndicator();
+            }
+          }, 1500);
 
           // Listen for auth state changes (for when user logs in)
           try {

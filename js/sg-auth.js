@@ -51,17 +51,26 @@
           return;
         }
 
-        // Get current session with error handling for AbortError.
-        // 5s timeout because supabase.auth.getSession() has been observed
-        // to hang indefinitely (typically when localStorage is corrupt or
-        // the auth server is slow). Without the timeout, every consumer
-        // that awaits SgAuth.init() — including the room designer's full
-        // initialization chain — hangs too, leaving a dead workspace.
+        // Get current session. supabase.auth.getSession() can hang
+        // indefinitely under bad network / corrupt localStorage conditions.
+        // Strategy:
+        //   • Race the call against a 5s deadline so SgAuth.init() can
+        //     resolve and unblock page init even if Supabase is slow.
+        //   • DO NOT give up on the underlying promise — let it keep
+        //     running in the background. When it eventually resolves,
+        //     hydrate currentUser + notify listeners so the UI updates
+        //     from "Sign In" to the user's name without a page reload.
+        //
+        // Earlier version: when the 5s timeout fired, currentUser stayed
+        // null even when the user IS logged in, leaving the nav stuck on
+        // "Sign In" until a manual refresh. That's the bug Joshua flagged.
+        const TIMEOUT_MS = 5000;
+        const sessionPromise = supabaseClient.auth.getSession();
+        let timedOut = false;
         try {
           console.log('SG Auth: Checking for existing session...');
-          const sessionPromise = supabaseClient.auth.getSession();
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('SgAuth getSession timed out after 5s')), 5000)
+            setTimeout(() => { timedOut = true; reject(new Error('SgAuth getSession timed out after 5s — continuing in background')); }, TIMEOUT_MS)
           );
           const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
 
@@ -80,13 +89,29 @@
             console.log('SG Auth: No active session found');
           }
         } catch (sessionErr) {
-          // AbortError happens when page is refreshing or network issues
           if (sessionErr.name === 'AbortError') {
             console.log('SG Auth: Session check aborted (page refresh or network)');
           } else {
             console.warn('SG Auth: Session check error', sessionErr.message);
           }
-          // Continue without session - user can log in manually
+          // If we hit the timeout, keep listening — the real session may
+          // resolve a moment later and we want to hydrate the UI then.
+          if (timedOut) {
+            sessionPromise.then(async (result) => {
+              try {
+                const session = result?.data?.session;
+                if (session && !currentUser) {
+                  console.log('SG Auth: late session resolved — hydrating user');
+                  currentUser = session.user;
+                  await loadUserProfile();
+                  notifyListeners('login', { user: currentUser, profile: userProfile });
+                  updateNavUI();
+                }
+              } catch (e) {
+                console.warn('SG Auth: late session hydrate failed:', e.message);
+              }
+            }).catch(() => { /* genuine failure; already logged above */ });
+          }
         }
 
         // Listen for auth changes
