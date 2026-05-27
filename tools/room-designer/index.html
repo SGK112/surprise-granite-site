@@ -38589,62 +38589,104 @@
         const screenY = e.clientY - rect.top;
         const { x, y } = screenToWorld(screenX, screenY);
 
-        const wx = Math.min(wallStart.x, x);
-        const wy = Math.min(wallStart.y, y);
-        let ww = Math.abs(x - wallStart.x);
-        let wh = Math.abs(y - wallStart.y);
+        const dx = x - wallStart.x;
+        const dy = y - wallStart.y;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        const dragLengthPx = Math.sqrt(dx * dx + dy * dy);
 
-        // Make it a proper wall (thin in one dimension)
-        if (ww < wh) {
-          ww = CONFIG.WALL_THICKNESS;
-        } else {
-          wh = CONFIG.WALL_THICKNESS;
-        }
+        const wallTypeSelect = document.getElementById('wallTypeSelect');
+        const wallType = wallTypeSelect ? wallTypeSelect.value : 'full';
+        const autoCapCheckbox = document.getElementById('wallAutoCapCheckbox');
+        const autoCap = autoCapCheckbox ? autoCapCheckbox.checked : true;
+        const WALL_THICKNESS_FT = 0.5; // 6" physical wall thickness
 
-        if (ww > 10 || wh > 10) {
-          const wallTypeSelect = document.getElementById('wallTypeSelect');
-          const wallType = wallTypeSelect ? wallTypeSelect.value : 'full';
-          const autoCapCheckbox = document.getElementById('wallAutoCapCheckbox');
-          const autoCap = autoCapCheckbox ? autoCapCheckbox.checked : true;
+        // ANGLED detection: both axes substantial (>= ~6"), neither dominates
+        // 4:1. Pure axis-aligned drags fall through to the orthogonal branch.
+        const minAngledAxisPx = WALL_THICKNESS_FT * pixelsPerFoot; // 6" in pixels
+        const isAngled = absDx > minAngledAxisPx && absDy > minAngledAxisPx &&
+                         Math.max(absDx, absDy) < 4 * Math.min(absDx, absDy);
 
-          if (wallType === 'full') {
-            // Full height wall - existing behavior
-            addWall(wx, wy, ww, wh);
-          } else {
-            // Pony, bar-top, or knee wall - stored as element.
-            // Element convention: x/y in pixels, width/height in feet.
-            // ww/wh above are in pixels (one snapped to CONFIG.WALL_THICKNESS).
-            const WALL_THICKNESS_FT = 0.5; // 6" physical wall thickness
-            let widthFt, heightFt;
-            if (ww === CONFIG.WALL_THICKNESS) {
-              widthFt = WALL_THICKNESS_FT;
-              heightFt = wh / pixelsPerFoot;
-            } else {
-              widthFt = ww / pixelsPerFoot;
-              heightFt = WALL_THICKNESS_FT;
-            }
-            const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5 };
-            const wallLabels = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall' };
-            const ponyWall = {
-              id: Date.now() + Math.random(),
-              type: wallType,
-              x: wx,
-              y: wy,
-              width: widthFt,
-              height: heightFt,
-              color: '#888',
-              label: wallLabels[wallType] || 'Pony Wall',
-              wallHeight: wallHeights[wallType] || 3.5,
-              rotation: 0,
-              roomId: currentRoom
-            };
-            elements.push(ponyWall);
+        if (isAngled && dragLengthPx > 10) {
+          // Angled wall — stored as rotated element. Snap to 15° increments
+          // unless Shift held for free angle.
+          let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+          if (!e.shiftKey) angleDeg = Math.round(angleDeg / 15) * 15;
 
-            if (autoCap) {
-              generateWallCaps([ponyWall]);
-            }
+          const lengthFt = dragLengthPx / pixelsPerFoot;
+          const thicknessPx = WALL_THICKNESS_FT * pixelsPerFoot;
+          const midX = (wallStart.x + x) / 2;
+          const midY = (wallStart.y + y) / 2;
+
+          const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5, 'full': roomHeight || 8 };
+          const wallLabels  = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall', 'full': 'Wall' };
+
+          const angledWall = {
+            id: Date.now() + Math.random(),
+            // Full-height angled walls render as 'wall' (8'/roomHeight); partial walls keep their type.
+            type: wallType === 'full' ? 'wall' : wallType,
+            // Store top-left so the unrotated bbox is centered on the drag midpoint.
+            x: midX - dragLengthPx / 2,
+            y: midY - thicknessPx / 2,
+            width: lengthFt,
+            height: WALL_THICKNESS_FT,
+            color: wallType === 'full' ? '#666' : '#888',
+            label: wallLabels[wallType] || 'Wall',
+            wallHeight: wallHeights[wallType] || (roomHeight || 8),
+            rotation: angleDeg,
+            roomId: currentRoom
+          };
+          elements.push(angledWall);
+          // Caps are stone tops for partial walls only — full-height walls don't get them.
+          if (autoCap && wallType !== 'full') {
+            generateWallCaps([angledWall]);
           }
           saveUndoState();
+        } else {
+          // ORTHOGONAL — original axis-aligned behavior.
+          const wx = Math.min(wallStart.x, x);
+          const wy = Math.min(wallStart.y, y);
+          let ww = absDx;
+          let wh = absDy;
+          if (ww < wh) {
+            ww = CONFIG.WALL_THICKNESS;
+          } else {
+            wh = CONFIG.WALL_THICKNESS;
+          }
+
+          if (ww > 10 || wh > 10) {
+            if (wallType === 'full') {
+              addWall(wx, wy, ww, wh);
+            } else {
+              // Element convention: x/y in pixels, width/height in feet.
+              let widthFt, heightFt;
+              if (ww === CONFIG.WALL_THICKNESS) {
+                widthFt = WALL_THICKNESS_FT;
+                heightFt = wh / pixelsPerFoot;
+              } else {
+                widthFt = ww / pixelsPerFoot;
+                heightFt = WALL_THICKNESS_FT;
+              }
+              const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5 };
+              const wallLabels = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall' };
+              const ponyWall = {
+                id: Date.now() + Math.random(),
+                type: wallType,
+                x: wx,
+                y: wy,
+                width: widthFt,
+                height: heightFt,
+                color: '#888',
+                label: wallLabels[wallType] || 'Pony Wall',
+                wallHeight: wallHeights[wallType] || 3.5,
+                rotation: 0,
+                roomId: currentRoom
+              };
+              elements.push(ponyWall);
+              if (autoCap) generateWallCaps([ponyWall]);
+            }
+            saveUndoState();
+          }
         }
 
         isDrawingWall = false;
