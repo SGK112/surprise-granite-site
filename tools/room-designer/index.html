@@ -38581,51 +38581,92 @@
         const screenY = e.clientY - rect.top;
         const { x, y } = screenToWorld(screenX, screenY);
 
-        const wx = Math.min(wallStart.x, x);
-        const wy = Math.min(wallStart.y, y);
-        let ww = Math.abs(x - wallStart.x);
-        let wh = Math.abs(y - wallStart.y);
+        const dx = x - wallStart.x;
+        const dy = y - wallStart.y;
+        const dragLength = Math.sqrt(dx * dx + dy * dy);
 
-        // Make it a proper wall (thin in one dimension)
-        if (ww < wh) {
-          ww = CONFIG.WALL_THICKNESS;
-        } else {
-          wh = CONFIG.WALL_THICKNESS;
+        // Decide ORTHOGONAL vs ANGLED. If one axis is at least 4× larger
+        // than the other, the user clearly wants axis-aligned (the old
+        // behavior). Otherwise treat as an angled wall — needed for
+        // clipped corners, peninsulas, etc.
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        const isAngled = absDx > CONFIG.WALL_THICKNESS * 3
+                      && absDy > CONFIG.WALL_THICKNESS * 3
+                      && Math.max(absDx, absDy) < 4 * Math.min(absDx, absDy);
+
+        if (dragLength < 10) {
+          // Too short to be intentional
+          isDrawingWall = false;
+          wallStart = null;
+          draw();
+          return;
         }
 
-        if (ww > 10 || wh > 10) {
-          const wallTypeSelect = document.getElementById('wallTypeSelect');
-          const wallType = wallTypeSelect ? wallTypeSelect.value : 'full';
-          const autoCapCheckbox = document.getElementById('wallAutoCapCheckbox');
-          const autoCap = autoCapCheckbox ? autoCapCheckbox.checked : true;
+        const wallTypeSelect = document.getElementById('wallTypeSelect');
+        const wallType = wallTypeSelect ? wallTypeSelect.value : 'full';
+        const autoCapCheckbox = document.getElementById('wallAutoCapCheckbox');
+        const autoCap = autoCapCheckbox ? autoCapCheckbox.checked : true;
 
-          if (wallType === 'full') {
-            // Full height wall - existing behavior
-            addWall(wx, wy, ww, wh);
-          } else {
-            // Pony, bar-top, or knee wall - create as element
-            const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5 };
-            const wallLabels = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall' };
-            const ponyWall = {
-              id: Date.now() + Math.random(),
-              type: wallType,
-              x: wx * pixelsPerFoot,
-              y: wy * pixelsPerFoot,
-              width: ww,
-              height: wh,
-              color: '#888',
-              label: wallLabels[wallType] || 'Pony Wall',
-              wallHeight: wallHeights[wallType] || 3.5,
-              rotation: 0,
-              roomId: currentRoom
-            };
-            elements.push(ponyWall);
-
-            if (autoCap) {
-              generateWallCaps([ponyWall]);
-            }
-          }
+        if (isAngled) {
+          // ANGLED WALL — store as an element with rotation. Snap angle to
+          // 15° increments unless Shift is held for free angle.
+          let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+          if (!e.shiftKey) angleDeg = Math.round(angleDeg / 15) * 15;
+          const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5, 'full': 8 };
+          const wallLabels  = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall', 'full': 'Wall' };
+          // Element is anchored at wallStart with width=dragLength along its
+          // local X axis and thickness on the Y. Rotation positions it
+          // along the original drag vector.
+          const angledWall = {
+            id: Date.now() + Math.random(),
+            type: wallType === 'full' ? 'pony-wall' : wallType, // full walls have no rotation render path; treat as pony for now
+            x: wallStart.x * pixelsPerFoot,
+            y: wallStart.y * pixelsPerFoot,
+            width: dragLength,
+            height: CONFIG.WALL_THICKNESS,
+            color: '#666',
+            label: wallLabels[wallType] || 'Wall',
+            wallHeight: wallHeights[wallType] || 3.5,
+            rotation: angleDeg,
+            roomId: currentRoom
+          };
+          elements.push(angledWall);
+          if (autoCap) generateWallCaps([angledWall]);
           saveUndoState();
+        } else {
+          // ORTHOGONAL WALL — old behavior: snap shorter dim to wall thickness.
+          const wx = Math.min(wallStart.x, x);
+          const wy = Math.min(wallStart.y, y);
+          let ww = absDx;
+          let wh = absDy;
+          if (ww < wh) ww = CONFIG.WALL_THICKNESS;
+          else         wh = CONFIG.WALL_THICKNESS;
+
+          if (ww > 10 || wh > 10) {
+            if (wallType === 'full') {
+              addWall(wx, wy, ww, wh);
+            } else {
+              const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5 };
+              const wallLabels = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall' };
+              const ponyWall = {
+                id: Date.now() + Math.random(),
+                type: wallType,
+                x: wx * pixelsPerFoot,
+                y: wy * pixelsPerFoot,
+                width: ww,
+                height: wh,
+                color: '#888',
+                label: wallLabels[wallType] || 'Pony Wall',
+                wallHeight: wallHeights[wallType] || 3.5,
+                rotation: 0,
+                roomId: currentRoom
+              };
+              elements.push(ponyWall);
+              if (autoCap) generateWallCaps([ponyWall]);
+            }
+            saveUndoState();
+          }
         }
 
         isDrawingWall = false;
