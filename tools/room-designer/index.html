@@ -8622,27 +8622,33 @@
 
     /* Keyboard Shortcuts - auto-hide after delay */
     .shortcuts-hint {
-      /* Out of the way: bottom-LEFT, low z-index, small, fully transparent
-         until hover. Was sitting top-right blocking the room selector. */
+      /* Bottom-CENTER, low z-index. Centered horizontally via left:50%
+         + translateX(-50%). Won't sit on top of the room selector or
+         any side panel. */
       position: fixed;
       bottom: 8px;
-      left: 8px;
+      left: 50%;
+      transform: translateX(-50%);
       background: var(--dark-surface);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 9px;
+      padding: 6px 12px;
+      font-size: 10px;
       color: var(--text-muted);
       display: flex;
-      gap: 10px;
-      opacity: 0;
-      pointer-events: none;
+      gap: 12px;
+      opacity: 0.85;
       transition: opacity 0.25s ease-out;
       z-index: 10;
+      pointer-events: auto;
     }
 
     .shortcuts-hint.hidden {
       display: none;
+    }
+
+    .shortcuts-hint:hover {
+      opacity: 1;
     }
 
     .shortcut {
@@ -16872,7 +16878,7 @@
   <input type="file" id="materialUpload" accept="image/*" style="display: none" onchange="handleMaterialUpload(event)">
 
   <!-- Keyboard Shortcuts (hidden in review mode) -->
-  <div class="shortcuts-hint hidden" id="shortcutsHint" hidden>
+  <div class="shortcuts-hint" id="shortcutsHint">
     <div class="shortcut"><kbd>V</kbd> Select</div>
     <div class="shortcut"><kbd>W</kbd> Wall</div>
     <div class="shortcut"><kbd>C</kbd> Counter</div>
