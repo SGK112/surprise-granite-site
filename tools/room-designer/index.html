@@ -23767,7 +23767,16 @@
       'sink-base-30': 'sink-base', 'sink-base-33': 'sink-base', 'sink-base-36': 'sink-base',
       'sink-base-42': 'sink-base',
       // Apron front sink base sizes
-      'sink-base-apron-30': 'sink-base-apron', 'sink-base-apron-33': 'sink-base-apron'
+      'sink-base-apron-30': 'sink-base-apron', 'sink-base-apron-33': 'sink-base-apron',
+      // Base + top drawer variants — share the base-cabinet icon
+      'base-1drawer': 'base-cabinet',
+      'base-1drawer-18': 'base-cabinet', 'base-1drawer-21': 'base-cabinet',
+      'base-1drawer-24': 'base-cabinet', 'base-1drawer-27': 'base-cabinet',
+      'base-1drawer-30': 'base-cabinet', 'base-1drawer-33': 'base-cabinet',
+      'base-1drawer-36': 'base-cabinet',
+      // Refrigerator size variants — share the refrigerator icon
+      'refrigerator-30': 'refrigerator', 'refrigerator-33': 'refrigerator',
+      'refrigerator-36-cd': 'refrigerator', 'refrigerator-48': 'refrigerator'
     };
 
     // Add cabinet icons to ELEMENT_ICONS (reference base icons)
@@ -23814,6 +23823,15 @@
         { type: 'base-cabinet-27', width: 2.25, height: 2, color: '#8B7355', label: 'Base Cabinet 27"' },
         { type: 'base-cabinet-30', width: 2.5, height: 2, color: '#8B7355', label: 'Base Cabinet 30"' },
         { type: 'base-cabinet-33', width: 2.75, height: 2, color: '#8B7355', label: 'Base Cabinet 33"' },
+        // Base cabinets with single top drawer + door(s) below (most common kitchen base style).
+        // Stored as type='base-cabinet' with topDrawer:true so all existing filters/takeoff just work.
+        { type: 'base-1drawer-18', width: 1.5, height: 2, color: '#8B7355', label: 'Base+Drawer 18"', topDrawer: true },
+        { type: 'base-1drawer-21', width: 1.75, height: 2, color: '#8B7355', label: 'Base+Drawer 21"', topDrawer: true },
+        { type: 'base-1drawer-24', width: 2, height: 2, color: '#8B7355', label: 'Base+Drawer 24"', topDrawer: true },
+        { type: 'base-1drawer-27', width: 2.25, height: 2, color: '#8B7355', label: 'Base+Drawer 27"', topDrawer: true },
+        { type: 'base-1drawer-30', width: 2.5, height: 2, color: '#8B7355', label: 'Base+Drawer 30"', topDrawer: true },
+        { type: 'base-1drawer-33', width: 2.75, height: 2, color: '#8B7355', label: 'Base+Drawer 33"', topDrawer: true },
+        { type: 'base-1drawer-36', width: 3, height: 2, color: '#8B7355', label: 'Base+Drawer 36"', topDrawer: true },
         // Sized drawer base cabinets (width in inches, depth always 24"/2ft)
         { type: 'drawer-base-12', width: 1, height: 2, color: '#8B7355', label: 'Drawer Base 12"' },
         { type: 'drawer-base-15', width: 1.25, height: 2, color: '#8B7355', label: 'Drawer Base 15"' },
@@ -23901,7 +23919,11 @@
         { type: 'stove', width: 2.5, height: 2.17, color: '#2F2F2F', label: 'Freestanding Range' },
         { type: 'slide-in-range', width: 2.5, height: 2.17, color: '#2F2F2F', label: 'Slide-In Range' },
         { type: 'cooktop', width: 2.5, height: 1.75, color: '#1a1a1a', label: 'Cooktop' },
-        { type: 'refrigerator', width: 3, height: 2.5, color: '#A9A9A9', label: 'Refrigerator' },
+        { type: 'refrigerator', width: 3, height: 2.5, color: '#A9A9A9', label: 'Refrigerator 36" (Std Depth)' },
+        { type: 'refrigerator-36-cd', width: 3, height: 2.08, color: '#A9A9A9', label: 'Refrigerator 36" (Counter-Depth)' },
+        { type: 'refrigerator-33', width: 2.75, height: 2.5, color: '#A9A9A9', label: 'Refrigerator 33"' },
+        { type: 'refrigerator-30', width: 2.5, height: 2.5, color: '#A9A9A9', label: 'Refrigerator 30"' },
+        { type: 'refrigerator-48', width: 4, height: 2.5, color: '#A9A9A9', label: 'Refrigerator 48" (French Door)' },
         { type: 'dishwasher', width: 2, height: 2, color: '#808080', label: 'Dishwasher' },
         { type: 'microwave', width: 2.5, height: 1.33, color: '#4a4a4a', label: 'Microwave' },
         { type: 'range-hood', width: 2.5, height: 1.67, color: '#696969', label: 'Range Hood' },
@@ -31790,16 +31812,62 @@
             ctx.fillRect(x + toeKickRecess, y + cabinetBodyH, w - toeKickRecess * 2, 2);
           }
 
-          // Calculate door layout
+          // For base cabinets with a single top drawer + door(s) below.
+          // Drawer takes ~22% of the cabinet body, doors fill the rest.
+          const hasTopDrawer = !isWallCab && el.topDrawer === true;
+          const drawerBandH = hasTopDrawer ? Math.max(10, cabinetBodyH * 0.22) : 0;
+
+          if (hasTopDrawer) {
+            const drx = x + 3;
+            const dry = y + 3;
+            const drw = w - 6;
+            const drh = drawerBandH - 6;
+
+            // Drawer face
+            ctx.fillStyle = el.color;
+            ctx.fillRect(drx, dry, drw, drh);
+
+            // Drawer outline + recessed-panel detail (matches the door cabinet style)
+            ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(drx + 0.5, dry + 0.5, drw - 1, drh - 1);
+            const drPanelInset = Math.min(6, Math.max(4, drh * 0.18));
+            ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+            ctx.strokeRect(drx + drPanelInset + 0.5, dry + drPanelInset + 0.5,
+                           drw - drPanelInset * 2 - 1, Math.max(1, drh - drPanelInset * 2 - 1));
+
+            // Edge highlights (top + left light, bottom + right dark — matches door styling)
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.fillRect(drx, dry, drw, 1);
+            ctx.fillRect(drx, dry, 1, drh);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(drx, dry + drh - 1, drw, 1);
+            ctx.fillRect(drx + drw - 1, dry, 1, drh);
+
+            // Centered bar pull
+            const drHandleLen = Math.min(drw * 0.35, 40);
+            const drHandleX = drx + drw / 2 - drHandleLen / 2;
+            const drHandleY = dry + drh / 2 - 1.5;
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(drHandleX + 1, drHandleY + 1, drHandleLen, 3);
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(drHandleX, drHandleY, drHandleLen, 3);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillRect(drHandleX, drHandleY, drHandleLen, 1);
+          }
+
+          // Calculate door layout (below the drawer band, if any)
+          const doorAreaY = y + drawerBandH;
+          const doorAreaH = cabinetBodyH - drawerBandH;
           const doorCount = Math.max(1, Math.floor(w / (pixelsPerFoot * 1.5)));
           const doorWidth = (w - 6) / doorCount; // Minimal gap between doors
           const doorGap = 2;
 
           for (let i = 0; i < doorCount; i++) {
             const dx = x + 3 + i * doorWidth;
-            const dy = y + 3;
+            const dy = doorAreaY + 3;
             const dw = doorWidth - doorGap;
-            const dh = cabinetBodyH - 6;
+            const dh = doorAreaH - 6;
 
             // Door face - clean solid
             ctx.fillStyle = el.color;
@@ -39460,6 +39528,16 @@
       if (!defaults) return;
 
       const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
+      // base-1drawer-XX is a UI variant that's stored as a regular base-cabinet
+      // with topDrawer=true. Remap the type here so all downstream filters
+      // (auto-counter, takeoff, snapping) treat it like any other base cabinet.
+      const isTopDrawerVariant = type === 'base-1drawer' || type.startsWith('base-1drawer-');
+      if (isTopDrawerVariant) type = 'base-cabinet';
+      // Sized refrigerator variants (refrigerator-30, refrigerator-33, refrigerator-36-cd,
+      // refrigerator-48) all render via the existing 'refrigerator' code path. Catalog
+      // entry already carries the right width/depth — just remap the type so the renderer
+      // and get3DHeight find a match.
+      if (/^refrigerator-(\d+(-cd)?)$/.test(type)) type = 'refrigerator';
       // All cabinet types that should receive cabinet settings (construction, doorStyle, etc.)
       const CABINET_TYPES = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan', 'blind-corner', 'island',
@@ -39540,6 +39618,8 @@
         doorOverlay: isCabinet ? cabinetSettings.doorOverlay : undefined,
         cabinetFinish: isCabinet ? cabinetSettings.cabinetFinish : undefined,
         grainType: isCabinet ? cabinetSettings.grainType : undefined,
+        // Top-drawer flag for base-cabinet variants with a drawer above the door(s)
+        topDrawer: isTopDrawerVariant || defaults.topDrawer || undefined,
         // Sink-specific settings
         mountType: isSink ? (defaults.mountType || 'undermount') : undefined,
         sinkColor: isSink ? 'stainless' : undefined,
