@@ -27013,9 +27013,17 @@
         }
 
         if (!session) {
-          // Not logged in - show login prompt with guest option
+          // Not logged in. Init the workspace anyway so canvas + event
+          // handlers are wired up — without this, if the login modal
+          // glitches (or the user dismisses it), every tool button crashes
+          // because `canvas` is undefined. continueAsGuest() also calls
+          // initializeWorkspace() but it has a guard against double-init,
+          // so calling twice is safe.
           pendingAuthInit = true;
+          PRICING_ACCESS.accountType = PRICING_ACCESS.accountType || 'guest';
+          PRICING_ACCESS.canViewPricing = false;
           hidePreloader();
+          initializeWorkspace();
           showLoginPromptRequired();
 
           // Listen for auth state changes (for when user logs in)
@@ -41090,7 +41098,10 @@
         hoveredElement = null;
         // Clear measurement when switching away from measure tool
         if (tool !== 'measure') { measureStart = null; measureEnd = null; measureFixed = null; }
-        canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout' || tool === 'peninsula' || tool === 'measure') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
+        // Guard against undefined canvas (init may have returned early).
+        if (canvas) {
+          canvas.style.cursor = (tool === 'wall' || tool === 'countertop' || tool === 'layout' || tool === 'peninsula' || tool === 'measure') ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
+        }
         draw();
       } catch (err) {
         console.error('setTool error:', err);
@@ -41635,7 +41646,12 @@
       layoutMode.currentDirection = null;
       layoutMode.active = false;
       layoutMode.points = [];
-      canvas.style.cursor = currentTool === 'layout' ? 'crosshair' : 'default';
+      // Guard: canvas may be undefined if init returned early. Without this
+      // guard, every tool button onclick crashed with "Cannot read properties
+      // of undefined (reading 'style')" and the entire toolbar was dead.
+      if (canvas) {
+        canvas.style.cursor = currentTool === 'layout' ? 'crosshair' : 'default';
+      }
     }
 
     // Continue drawing layout path on mouse move
