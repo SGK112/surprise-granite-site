@@ -38611,16 +38611,27 @@
             // Full height wall - existing behavior
             addWall(wx, wy, ww, wh);
           } else {
-            // Pony, bar-top, or knee wall - create as element
+            // Pony, bar-top, or knee wall - stored as element.
+            // Element convention: x/y in pixels, width/height in feet.
+            // ww/wh above are in pixels (one snapped to CONFIG.WALL_THICKNESS).
+            const WALL_THICKNESS_FT = 0.5; // 6" physical wall thickness
+            let widthFt, heightFt;
+            if (ww === CONFIG.WALL_THICKNESS) {
+              widthFt = WALL_THICKNESS_FT;
+              heightFt = wh / pixelsPerFoot;
+            } else {
+              widthFt = ww / pixelsPerFoot;
+              heightFt = WALL_THICKNESS_FT;
+            }
             const wallHeights = { 'pony-wall': 3.5, 'pony-wall-bar': 3.5, 'knee-wall': 2.5 };
             const wallLabels = { 'pony-wall': 'Pony Wall', 'pony-wall-bar': 'Bar Top Wall', 'knee-wall': 'Knee Wall' };
             const ponyWall = {
               id: Date.now() + Math.random(),
               type: wallType,
-              x: wx * pixelsPerFoot,
-              y: wy * pixelsPerFoot,
-              width: ww,
-              height: wh,
+              x: wx,
+              y: wy,
+              width: widthFt,
+              height: heightFt,
               color: '#888',
               label: wallLabels[wallType] || 'Pony Wall',
               wallHeight: wallHeights[wallType] || 3.5,
