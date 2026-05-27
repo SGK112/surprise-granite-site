@@ -12911,6 +12911,15 @@
                 </svg>
                 <span>Auto Top</span>
               </button>
+              <button class="tool-btn" id="toolAutoFiller" onclick="autoFillCabinetGaps()" title="Auto-fill gaps between cabinets with filler panels (1.5–36&quot;)" aria-label="Auto-fill cabinet gaps with filler panels">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="2" y="10" width="6" height="10" rx="1"/>
+                  <rect x="16" y="10" width="6" height="10" rx="1"/>
+                  <rect x="10" y="10" width="4" height="10" rx="0.5" fill="currentColor" opacity="0.5"/>
+                  <path d="M9 7v2M15 7v2" stroke-width="1.5"/>
+                </svg>
+                <span>Auto Filler</span>
+              </button>
               <button class="tool-btn" id="toolAlign" onclick="showAlignMenu()" title="Align selected elements" data-shortcut="A" aria-label="Align selected elements, keyboard shortcut A" aria-haspopup="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <line x1="4" y1="6" x2="20" y2="6"/>
@@ -42790,6 +42799,123 @@
       } else {
         showSnapFeedback('Countertops/caps already exist');
       }
+    }
+
+    // Drop filler-strip elements into gaps between adjacent cabinets in a row
+    // or column. Uses the same grouping approach as generateCountertopsOverCabinets:
+    // cabinets close in Y form a row (horizontal run); cabinets close in X form a
+    // column (vertical run). A gap of 1.5"–36" between two cabinets in the same
+    // run gets a filler matching the adjacent cabinet's depth, color, and rotation.
+    function autoFillCabinetGaps() {
+      const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'sink-base-apron',
+                                'corner-cabinet', 'lazy-susan', 'blind-corner', 'island',
+                                'wall-cabinet', 'microwave-cabinet', 'above-microwave-cabinet',
+                                'tall-cabinet', 'pantry', 'fridge-cabinet',
+                                'single-oven-cabinet', 'double-oven-cabinet'];
+      const cabinets = elements.filter(el => baseCabinetTypes.includes(el.type));
+      if (cabinets.length < 2) {
+        showSnapFeedback(cabinets.length === 0 ? 'No cabinets on canvas to fill gaps between' : 'Need at least 2 cabinets to find a gap');
+        return 0;
+      }
+
+      const ppf = pixelsPerFoot;
+      const MIN_GAP_FT = TAKEOFF_STANDARDS.filler.minWidth / 12; // 1.5" -> ft
+      const MAX_GAP_FT = 3; // 36" - bigger than this is a missing cabinet, not a filler
+      const tolerancePx = ppf * 0.5; // 6" row/column tolerance, matches Auto Top
+
+      // Pick the smallest standard filler width that covers the gap (3, 6, 12 in)
+      const pickFillerInches = (gapIn) => {
+        const widths = TAKEOFF_STANDARDS.filler.standardWidths;
+        return widths.find(w => w >= gapIn) || gapIn;
+      };
+
+      // Track which gaps we've already filled so column-pass doesn't duplicate row-pass.
+      const placedKeys = new Set();
+      const created = [];
+
+      const placeFiller = (left, right, axis) => {
+        // axis: 'x' (horizontal gap, filler runs along X) or 'y' (vertical gap)
+        const leftRightInPx = axis === 'x'
+          ? (left.x + left.width * ppf)
+          : (left.y + left.height * ppf);
+        const rightStartPx = axis === 'x' ? right.x : right.y;
+        const gapPx = rightStartPx - leftRightInPx;
+        if (gapPx < MIN_GAP_FT * ppf || gapPx > MAX_GAP_FT * ppf) return;
+
+        const gapIn = Math.round(gapPx / ppf * 12);
+        const fillerIn = pickFillerInches(gapIn);
+        const fillerFt = fillerIn / 12;
+
+        // Dedup key: round position to nearest 0.1ft and bucket by axis
+        const key = `${axis}:${Math.round(leftRightInPx / ppf * 10)},${Math.round((axis === 'x' ? left.y : left.x) / ppf * 10)}`;
+        if (placedKeys.has(key)) return;
+        placedKeys.add(key);
+
+        const adjacent = left; // copy depth/color from the cabinet to the LEFT (or above)
+        const filler = {
+          id: 'filler-' + Date.now() + Math.random(),
+          type: 'filler',
+          x: axis === 'x' ? leftRightInPx : adjacent.x,
+          y: axis === 'x' ? adjacent.y : leftRightInPx,
+          // For horizontal runs, the filler is THIN along X (width = gap) and
+          // matches cabinet depth on Y (height). Vice versa for vertical runs.
+          width:  axis === 'x' ? fillerFt           : adjacent.width,
+          height: axis === 'x' ? adjacent.height    : fillerFt,
+          color: adjacent.color || '#654321',
+          label: `Filler ${fillerIn}"`,
+          rotation: adjacent.rotation || 0,
+          locked: false,
+          roomId: adjacent.roomId || currentRoom,
+          gapFilled: gapIn // for the takeoff cross-ref
+        };
+        elements.push(filler);
+        created.push(filler);
+      };
+
+      // Group by Y rows (horizontal runs), find adjacent X gaps.
+      const rows = [];
+      cabinets.forEach(cab => {
+        const centerY = cab.y + (cab.height * ppf) / 2;
+        const row = rows.find(r => Math.abs(r.y - centerY) < tolerancePx);
+        if (row) row.cabs.push(cab);
+        else rows.push({ y: centerY, cabs: [cab] });
+      });
+      rows.forEach(row => {
+        if (row.cabs.length < 2) return;
+        row.cabs.sort((a, b) => a.x - b.x);
+        for (let i = 0; i < row.cabs.length - 1; i++) {
+          placeFiller(row.cabs[i], row.cabs[i + 1], 'x');
+        }
+      });
+
+      // Group by X columns (vertical runs along side walls), find Y gaps.
+      const cols = [];
+      cabinets.forEach(cab => {
+        const centerX = cab.x + (cab.width * ppf) / 2;
+        const col = cols.find(c => Math.abs(c.x - centerX) < tolerancePx);
+        if (col) col.cabs.push(cab);
+        else cols.push({ x: centerX, cabs: [cab] });
+      });
+      cols.forEach(col => {
+        if (col.cabs.length < 2) return;
+        col.cabs.sort((a, b) => a.y - b.y);
+        for (let i = 0; i < col.cabs.length - 1; i++) {
+          placeFiller(col.cabs[i], col.cabs[i + 1], 'y');
+        }
+      });
+
+      if (created.length === 0) {
+        showSnapFeedback('No fillable gaps found (looking for 1.5"–36" gaps in a run)');
+        return 0;
+      }
+
+      saveUndoState();
+      elementListDirty = true;
+      if (typeof calculateQuote === 'function') calculateQuote();
+      draw();
+      if (typeof update3DScene === 'function') update3DScene();
+      showSnapFeedback(`Added ${created.length} filler panel${created.length === 1 ? '' : 's'}`);
+      return created.length;
     }
 
     // Generate wall caps over pony walls, knee walls, bar walls, etc.
