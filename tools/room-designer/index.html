@@ -18107,9 +18107,41 @@
           fr.readAsDataURL(blob);
         });
       }
+      // Step 0 probe: try the browser's NATIVE image decode pipeline via canvas.
+      // Safari (and any future Chrome with HEIC support) can decode HEIC into
+      // an <img>, so canvas.toDataURL gives us a JPEG in a few milliseconds
+      // with no library and no server roundtrip. Returns null if the browser
+      // can't decode the format.
+      function tryNativeCanvasDecode(dataUrl) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            if (!img.naturalWidth || !img.naturalHeight) return resolve(null);
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              canvas.getContext('2d').drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/jpeg', 0.92));
+            } catch (e) {
+              resolve(null);
+            }
+          };
+          img.onerror = () => resolve(null);
+          img.src = dataUrl;
+        });
+      }
+
       async function convertHeicDataUrlToJpeg(dataUrl) {
+        // 0) Native decode probe — instant on Safari, returns null on Chrome.
+        try {
+          const nativeJpeg = await tryNativeCanvasDecode(dataUrl);
+          if (nativeJpeg) return nativeJpeg;
+        } catch (_) { /* fall through */ }
+
         const heicBlob = dataUrlToBlob(dataUrl);
-        // 1) Try client-side heic2any first (fast, no network round-trip).
+        // 1) Try client-side heic2any (libheif WASM). Works in Chrome on
+        // older HEIC variants; newer iPhone files often fail here.
         if (typeof heic2any === 'function') {
           try {
             const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
