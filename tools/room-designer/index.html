@@ -18561,9 +18561,19 @@
         if (depthInput) depthInput.value = Math.round(roomDepth * 12) + '"';
       }
 
-      // Calculate positions along each wall
-      // wallCursor tracks how far along each wall we've placed elements (in feet from the wall's start)
-      const wallCursor = { top: 0, bottom: 0, left: 0, right: 0 };
+      // Calculate positions along each wall, split by TIER so wall cabinets
+      // (and other upper-level items like range hoods and microwaves) stack
+      // ABOVE base cabinets at the same X position instead of being inserted
+      // between them along the wall (which used to make a kitchen layout
+      // sprawl twice as wide as it should).
+      const wallCursor = {
+        base:  { top: 0, bottom: 0, left: 0, right: 0 },
+        upper: { top: 0, bottom: 0, left: 0, right: 0 }
+      };
+      const UPPER_TIER_TYPES = new Set(['wall-cabinet','microwave-cabinet','above-microwave-cabinet','range-hood','hood']);
+      function getTier(elementType) {
+        return UPPER_TIER_TYPES.has(elementType) ? 'upper' : 'base';
+      }
       const wallPadding = 0.5; // Half foot padding from wall corners
 
       // Pre-flight: estimate total run length per wall and expand the room if
@@ -18643,56 +18653,57 @@
       }
 
       // Place a single element on its assigned wall, returns { x, y, canvasW, canvasH }
-      // Canvas coordinates: x,y = top-left corner of bounding box; canvasW/canvasH = dimensions on canvas
-      // For top/bottom walls: elements run left-to-right, face-width = widthFt, face-depth = depthFt
-      // For left/right walls: elements run top-to-bottom, the face-width runs vertically
-      function placeOnWall(wall, widthFt, depthFt, gapFt) {
+      // tier: 'base' for floor-level cabinets / appliances, 'upper' for wall cabinets,
+      // microwaves and range hoods (so they stack ABOVE base cabinets at the same X).
+      function placeOnWall(wall, widthFt, depthFt, gapFt, tier) {
+        if (!tier) tier = 'base';
+        const tierCursor = wallCursor[tier] || wallCursor.base;
         let x, y, canvasW, canvasH;
 
         switch (wall) {
           case 'top': {
             // Elements sit against top wall, facing down. Run left to right.
-            if (wallCursor.top === 0) wallCursor.top = wallPadding;
-            wallCursor.top += gapFt;
-            x = wallCursor.top;
+            if (tierCursor.top === 0) tierCursor.top = wallPadding;
+            tierCursor.top += gapFt;
+            x = tierCursor.top;
             y = 0; // Flush against top room edge
             canvasW = widthFt;
             canvasH = depthFt;
-            wallCursor.top += widthFt;
+            tierCursor.top += widthFt;
             break;
           }
           case 'bottom': {
             // Elements sit against bottom wall, facing up. Run left to right.
-            if (wallCursor.bottom === 0) wallCursor.bottom = wallPadding;
-            wallCursor.bottom += gapFt;
-            x = wallCursor.bottom;
+            if (tierCursor.bottom === 0) tierCursor.bottom = wallPadding;
+            tierCursor.bottom += gapFt;
+            x = tierCursor.bottom;
             y = roomDepth - depthFt; // Flush against bottom room edge
             canvasW = widthFt;
             canvasH = depthFt;
-            wallCursor.bottom += widthFt;
+            tierCursor.bottom += widthFt;
             break;
           }
           case 'left': {
             // Elements sit against left wall, facing right. Run top to bottom.
             // Face-width goes vertically, depth goes horizontally
-            if (wallCursor.left === 0) wallCursor.left = wallPadding;
-            wallCursor.left += gapFt;
+            if (tierCursor.left === 0) tierCursor.left = wallPadding;
+            tierCursor.left += gapFt;
             x = 0; // Flush against left room edge
-            y = wallCursor.left;
+            y = tierCursor.left;
             canvasW = depthFt;   // depth is the horizontal extent
             canvasH = widthFt;   // face-width runs vertically
-            wallCursor.left += widthFt;
+            tierCursor.left += widthFt;
             break;
           }
           case 'right': {
             // Elements sit against right wall, facing left. Run top to bottom.
-            if (wallCursor.right === 0) wallCursor.right = wallPadding;
-            wallCursor.right += gapFt;
+            if (tierCursor.right === 0) tierCursor.right = wallPadding;
+            tierCursor.right += gapFt;
             x = roomWidth - depthFt; // Flush against right room edge
-            y = wallCursor.right;
+            y = tierCursor.right;
             canvasW = depthFt;   // depth is the horizontal extent
             canvasH = widthFt;   // face-width runs vertically
-            wallCursor.right += widthFt;
+            tierCursor.right += widthFt;
             break;
           }
           case 'island': {
@@ -18704,13 +18715,13 @@
           }
           default: {
             // Fallback to top wall
-            if (wallCursor.top === 0) wallCursor.top = wallPadding;
-            wallCursor.top += gapFt;
-            x = wallCursor.top;
+            if (tierCursor.top === 0) tierCursor.top = wallPadding;
+            tierCursor.top += gapFt;
+            x = tierCursor.top;
             y = 0;
             canvasW = widthFt;
             canvasH = depthFt;
-            wallCursor.top += widthFt;
+            tierCursor.top += widthFt;
           }
         }
         return { x, y, canvasW, canvasH };
@@ -18733,12 +18744,26 @@
         const depthFt = (cab.depth || 24) / 12;
         const elementType = getElementType(cab.type);
 
-        // Use AI-provided gap or default small gap
-        const gapFt = cab.gapBefore != null ? (cab.gapBefore / 12) : 0.1;
+        // Use AI-provided gap, but cap at 6" — the AI sometimes reports
+        // 2-3 ft gaps between cabinets which makes a galley run look
+        // disconnected. Anything wider than 6" is almost always either
+        // a filler space or an over-estimated gap from a partially-
+        // obscured photo. Drop it to a tight 1/2" gap.
+        const rawGapFt = cab.gapBefore != null ? (cab.gapBefore / 12) : 0.1;
+        const gapFt = rawGapFt > 0.5 ? 0.04 /* ~0.5" */ : rawGapFt;
 
-        const pos = placeOnWall(wall, widthFt, depthFt, gapFt);
+        const pos = placeOnWall(wall, widthFt, depthFt, gapFt, getTier(elementType));
 
-        // Create element — NO rotation needed, we swap w/h in placeOnWall for left/right
+        // Rotation orients the cabinet's front face (doors) toward the aisle
+        // in 3D. 0 = +Z (south from top wall), 90 = -X (left from right wall),
+        // 180 = -Z (north from bottom wall), 270 = +X (right from left wall).
+        // The drawElement swap-on-draw at index.html:37077 handles the 2D
+        // bbox correctly when combined with the pre-swapped dims from
+        // placeOnWall for left/right walls.
+        const wallRotation = { top: 0, right: 90, bottom: 180, left: 270 }[wall] ?? 0;
+
+        // Create element. Dimensions pre-oriented by placeOnWall; rotation
+        // orients the door-face for 3D rendering.
         const element = {
           id: Date.now() + Math.random(),
           type: elementType,
@@ -18746,7 +18771,7 @@
           y: pos.y * pixelsPerFoot,
           width: pos.canvasW,
           height: pos.canvasH,
-          rotation: 0, // No rotation — dimensions already oriented for canvas
+          rotation: wallRotation,
           color: getCabinetColor(cab.type, cab),
           label: cab.label || elementType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           locked: false,
@@ -18815,10 +18840,13 @@
         const depthFt = defaults.depth / 12;
         const elementType = defaults.type;
 
-        // Use AI-provided gap or default
-        const gapFt = app.gapBefore != null ? (app.gapBefore / 12) : 0.1;
+        // Cap appliance gaps the same way — see cabinet loop above. Big AI
+        // gaps between e.g. range and microwave look like the run fell apart.
+        const rawGapFt = app.gapBefore != null ? (app.gapBefore / 12) : 0.1;
+        const gapFt = rawGapFt > 0.5 ? 0.04 : rawGapFt;
+        const appTier = getTier(elementType);
 
-        const pos = placeOnWall(wall, widthFt, depthFt, gapFt);
+        const pos = placeOnWall(wall, widthFt, depthFt, gapFt, appTier);
 
         const label = app.label || (app.type ? app.type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Appliance');
 
