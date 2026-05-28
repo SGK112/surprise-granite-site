@@ -44,6 +44,9 @@
   <!-- PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <!-- HEIC decoder (so iPhone photos uploaded to the AI room scanner work in Chrome/Firefox) -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
   <!-- SheetJS for Excel/CSV parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
@@ -18076,31 +18079,53 @@
       };
 
       // Convert a base64 data URL to JPEG via canvas (for formats OpenAI doesn't support)
-      // Safari can decode HEIC natively; Chrome/Firefox cannot.
-      function convertDataUrlToJpeg(dataUrl) {
+      // Safari decodes HEIC natively; Chrome/Firefox need the heic2any library
+      // loaded via CDN above. If the library isn't present we fall back to a
+      // clear error message instead of a silent failure.
+      function dataUrlToBlob(dataUrl) {
+        const [header, b64] = dataUrl.split(',');
+        const mime = (header.match(/data:([^;,]+)/) || [,'application/octet-stream'])[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+      }
+      function blobToDataUrl(blob) {
         return new Promise((resolve, reject) => {
-          // Already a supported format? Pass through.
-          if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) {
-            resolve(dataUrl);
-            return;
-          }
-          const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result);
+          fr.onerror = () => reject(fr.error || new Error('blob read failed'));
+          fr.readAsDataURL(blob);
+        });
+      }
+      async function convertHeicDataUrlToJpeg(dataUrl) {
+        if (typeof heic2any !== 'function') {
+          throw new Error('HEIC decoder not loaded — refresh the page to try again, or convert the image to JPEG/PNG yourself first.');
+        }
+        const heicBlob = dataUrlToBlob(dataUrl);
+        const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
+        // heic2any can return either a Blob or an array of Blobs (for multi-frame HEIC)
+        const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+        return blobToDataUrl(out);
+      }
+      async function convertDataUrlToJpeg(dataUrl) {
+        // Already a supported format? Pass through.
+        if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) return dataUrl;
+        const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
+        if (isHeic) {
+          return convertHeicDataUrlToJpeg(dataUrl);
+        }
+        // Other unknown formats: try to draw into a canvas (works for some tiff/bmp/etc in some browsers).
+        return new Promise((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             canvas.getContext('2d').drawImage(img, 0, 0);
-            const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
-            resolve(jpegUrl);
+            resolve(canvas.toDataURL('image/jpeg', 0.92));
           };
-          img.onerror = () => {
-            if (isHeic) {
-              reject(new Error('Your browser cannot process HEIC images. Please use Safari, or convert the image to JPEG/PNG first (e.g. open in Preview → File → Export as JPEG).'));
-            } else {
-              reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
-            }
-          };
+          img.onerror = () => reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
           img.src = dataUrl;
         });
       }
@@ -18142,6 +18167,7 @@
           showToast('Maximum 4 images allowed', 'error');
           return;
         }
+        const isHeic = /\.(heic|heif)$/i.test(file.name) || /^image\/(heic|heif)/i.test(file.type);
         const reader = new FileReader();
         reader.onload = async (e) => {
           let added = 0;
@@ -18162,7 +18188,20 @@
               return;
             }
           } else {
-            uploadedMultiImages.push({ data: e.target.result, label: '' });
+            // iPhone photos: convert HEIC → JPEG up front so the preview tile renders
+            // (browsers other than Safari can't decode HEIC). Falls through to the
+            // raw data URL if conversion fails so the user at least gets feedback.
+            let dataUrl = e.target.result;
+            if (isHeic) {
+              try {
+                showToast('Converting HEIC photo from iPhone… (one moment)', 'info');
+                dataUrl = await convertHeicDataUrlToJpeg(dataUrl);
+              } catch (err) {
+                showToast('Could not convert HEIC: ' + err.message, 'error');
+                return;
+              }
+            }
+            uploadedMultiImages.push({ data: dataUrl, label: '' });
             added = 1;
           }
           uploadedImageData = null;
