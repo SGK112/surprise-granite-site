@@ -18566,6 +18566,35 @@
       const wallCursor = { top: 0, bottom: 0, left: 0, right: 0 };
       const wallPadding = 0.5; // Half foot padding from wall corners
 
+      // Pre-flight: estimate total run length per wall and expand the room if
+      // the AI returned more cabinetry than fits. Otherwise elements get
+      // placed past the room edge and look "disconnected" (per Joshua's
+      // 2026-05-27 screenshot — Refrigerator landed 8ft past the right wall).
+      const wallRuns = { top: 0, bottom: 0, left: 0, right: 0 };
+      const accumulateRun = (item) => {
+        const wall = item.wall || 'top';
+        if (!wallRuns.hasOwnProperty(wall)) return;
+        const widthFt = (item.width || 0) / 12;
+        const gapFt = item.gapBefore != null ? (item.gapBefore / 12) : 0.1;
+        wallRuns[wall] += widthFt + gapFt;
+      };
+      cabinets.forEach(accumulateRun);
+      appliances.forEach(accumulateRun);
+      const needHoriz = Math.max(wallRuns.top, wallRuns.bottom) + wallPadding * 2;
+      const needVert  = Math.max(wallRuns.left, wallRuns.right) + wallPadding * 2;
+      if (updateRoomSize && needHoriz > roomWidth) {
+        roomWidth = Math.ceil(needHoriz);
+        result.warnings.push(`Room widened to ${roomWidth}ft to fit the detected cabinet run.`);
+        const widthInput = document.getElementById('roomWidth');
+        if (widthInput) widthInput.value = Math.round(roomWidth * 12) + '"';
+      }
+      if (updateRoomSize && needVert > roomDepth) {
+        roomDepth = Math.ceil(needVert);
+        result.warnings.push(`Room deepened to ${roomDepth}ft to fit the detected side-wall cabinets.`);
+        const depthInput = document.getElementById('roomDepth');
+        if (depthInput) depthInput.value = Math.round(roomDepth * 12) + '"';
+      }
+
       // Helper to get element type from AI cabinet type
       function getElementType(cabType) {
         const typeMap = {
@@ -18820,18 +18849,49 @@
         result.appliancesAdded++;
       }
 
-      // Auto-place range hood if range was detected but no hood was explicitly placed
-      const hasHood = appliances.some(a => a.type === 'hood' || a.type === 'range-hood');
+      // Auto-place range hood if range was detected but no hood was explicitly placed.
+      // The hood mounts on the WALL ABOVE the range — in 2D top-down it should
+      // sit flush against that wall (not on top of the range itself). Old code
+      // placed it at the range's exact x/y which produced a visual overlap.
+      // Case-insensitive match — AI sometimes returns "Range Hood", "range_hood",
+      // or "rangehood". The strict equality check used to miss these and add a
+      // duplicate auto-hood on top of the AI-provided one.
+      const hasHood = appliances.some(a => /hood/i.test((a.type || '') + ' ' + (a.label || '')));
       if (detectedRangeWall && !hasHood) {
         const hoodWidthFt = detectedRangeWall.widthFt;
         const hoodDepthFt = 20 / 12; // 20" depth standard
+        // Snap the hood's depth-axis position to the same wall as the range.
+        let hoodX = detectedRangeWall.x;
+        let hoodY = detectedRangeWall.y;
+        let hoodW = hoodWidthFt;
+        let hoodH = hoodDepthFt;
+        switch (detectedRangeWall.wall) {
+          case 'bottom':
+            // Range against bottom wall, hood directly above it on same wall
+            hoodY = roomDepth - hoodDepthFt;
+            break;
+          case 'top':
+            hoodY = 0;
+            break;
+          case 'left':
+            hoodX = 0;
+            // For side walls, swap so the hood runs along the wall axis like the range
+            hoodW = hoodDepthFt;
+            hoodH = hoodWidthFt;
+            break;
+          case 'right':
+            hoodX = roomWidth - hoodDepthFt;
+            hoodW = hoodDepthFt;
+            hoodH = hoodWidthFt;
+            break;
+        }
         const hoodElement = {
           id: Date.now() + Math.random(),
           type: 'range-hood',
-          x: detectedRangeWall.x * pixelsPerFoot,
-          y: detectedRangeWall.y * pixelsPerFoot,
-          width: detectedRangeWall.wall === 'left' || detectedRangeWall.wall === 'right' ? hoodDepthFt : hoodWidthFt,
-          height: detectedRangeWall.wall === 'left' || detectedRangeWall.wall === 'right' ? hoodWidthFt : hoodDepthFt,
+          x: hoodX * pixelsPerFoot,
+          y: hoodY * pixelsPerFoot,
+          width: hoodW,
+          height: hoodH,
           rotation: 0,
           color: '#C0C0C0',
           label: 'Range Hood',
@@ -18846,18 +18906,44 @@
         result.appliancesAdded++;
       }
 
-      // Handle countertops from AI detection
+      // Handle countertops from AI detection.
+      // AI usually returns width/material but not position. If x/y are missing
+      // (which is most of the time), snap the countertop to the same wall as
+      // the just-placed cabinets so it doesn't float in the top-left corner.
+      const aiPlacedBases = elements.filter(el => el.aiImported && ['base-cabinet','sink-base','sink-base-apron','drawer-base','corner-cabinet','blind-corner','lazy-susan','island'].includes(el.type));
+      const inferCountertopWall = () => {
+        // Pick the wall with the most base cabinets on it.
+        const counts = { top: 0, bottom: 0, left: 0, right: 0 };
+        aiPlacedBases.forEach(el => { if (counts.hasOwnProperty(el.aiWall)) counts[el.aiWall]++; });
+        let best = 'bottom', max = 0;
+        for (const w in counts) { if (counts[w] > max) { max = counts[w]; best = w; } }
+        return best;
+      };
       for (const counter of countertops) {
-        const widthFt = (counter.width || 96) / 12;
-        const depthFt = (counter.depth || 25.5) / 12;
+        const counterWall = counter.wall || inferCountertopWall();
+        const counterWidthFt = (counter.width || 96) / 12;
+        const counterDepthFt = (counter.depth || 25.5) / 12;
+        // If AI gave x/y, trust them; otherwise compute from the inferred wall.
+        let cx, cy, cw, ch;
+        if (counter.x != null && counter.y != null) {
+          cx = counter.x; cy = counter.y; cw = counterWidthFt; ch = counterDepthFt;
+        } else {
+          switch (counterWall) {
+            case 'top':    cx = wallPadding; cy = 0;                       cw = counterWidthFt; ch = counterDepthFt; break;
+            case 'bottom': cx = wallPadding; cy = roomDepth - counterDepthFt; cw = counterWidthFt; ch = counterDepthFt; break;
+            case 'left':   cx = 0;           cy = wallPadding;             cw = counterDepthFt; ch = counterWidthFt; break;
+            case 'right':  cx = roomWidth - counterDepthFt; cy = wallPadding; cw = counterDepthFt; ch = counterWidthFt; break;
+            default:       cx = wallPadding; cy = roomDepth - counterDepthFt; cw = counterWidthFt; ch = counterDepthFt;
+          }
+        }
 
         const element = {
           id: Date.now() + Math.random(),
           type: 'countertop',
-          x: (counter.x || 0.5) * pixelsPerFoot,
-          y: (counter.y || 0.5) * pixelsPerFoot,
-          width: widthFt,
-          height: depthFt,
+          x: cx * pixelsPerFoot,
+          y: cy * pixelsPerFoot,
+          width: cw,
+          height: ch,
           rotation: counter.rotation || 0,
           color: '#4a5568',
           label: counter.material || 'Countertop',
@@ -18871,6 +18957,7 @@
           overhangLeft: 0.125,
           overhangRight: 0.125,
           aiImported: true,
+          aiWall: counterWall,
           aiMaterial: counter.material
         };
 
@@ -19055,8 +19142,11 @@
         });
       }
 
-      // Overlap detection and nudging pass for AI-placed elements
-      const aiElements = elements.filter(el => el.aiImported && el.type !== 'countertop' && el.type !== 'backsplash' && el.type !== 'wall-cabinet');
+      // Overlap detection and nudging pass for AI-placed elements.
+      // Range-hood is excluded because it's mounted on the wall ABOVE the
+      // range — in top-down 2D they correctly overlap at the same location.
+      // Without this exclusion the nudge pushed the hood past the room edge.
+      const aiElements = elements.filter(el => el.aiImported && el.type !== 'countertop' && el.type !== 'backsplash' && el.type !== 'wall-cabinet' && el.type !== 'range-hood');
       for (let i = 0; i < aiElements.length; i++) {
         for (let j = i + 1; j < aiElements.length; j++) {
           const a = aiElements[i];
