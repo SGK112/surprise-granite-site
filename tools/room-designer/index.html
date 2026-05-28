@@ -44,9 +44,6 @@
   <!-- PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <!-- HEIC decoder (so iPhone photos uploaded to the AI room scanner work in Chrome/Firefox) -->
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-
   <!-- SheetJS for Excel/CSV parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
@@ -18088,108 +18085,31 @@
       };
 
       // Convert a base64 data URL to JPEG via canvas (for formats OpenAI doesn't support)
-      // Safari decodes HEIC natively; Chrome/Firefox need the heic2any library
-      // loaded via CDN above. If the library isn't present we fall back to a
-      // clear error message instead of a silent failure.
-      function dataUrlToBlob(dataUrl) {
-        const [header, b64] = dataUrl.split(',');
-        const mime = (header.match(/data:([^;,]+)/) || [,'application/octet-stream'])[1];
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        return new Blob([bytes], { type: mime });
-      }
-      function blobToDataUrl(blob) {
+      // Safari can decode HEIC natively; Chrome/Firefox cannot.
+      function convertDataUrlToJpeg(dataUrl) {
         return new Promise((resolve, reject) => {
-          const fr = new FileReader();
-          fr.onload = () => resolve(fr.result);
-          fr.onerror = () => reject(fr.error || new Error('blob read failed'));
-          fr.readAsDataURL(blob);
-        });
-      }
-      // Step 0 probe: try the browser's NATIVE image decode pipeline via canvas.
-      // Safari (and any future Chrome with HEIC support) can decode HEIC into
-      // an <img>, so canvas.toDataURL gives us a JPEG in a few milliseconds
-      // with no library and no server roundtrip. Returns null if the browser
-      // can't decode the format.
-      function tryNativeCanvasDecode(dataUrl) {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            if (!img.naturalWidth || !img.naturalHeight) return resolve(null);
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth;
-              canvas.height = img.naturalHeight;
-              canvas.getContext('2d').drawImage(img, 0, 0);
-              resolve(canvas.toDataURL('image/jpeg', 0.92));
-            } catch (e) {
-              resolve(null);
-            }
-          };
-          img.onerror = () => resolve(null);
-          img.src = dataUrl;
-        });
-      }
-
-      async function convertHeicDataUrlToJpeg(dataUrl) {
-        // 0) Native decode probe — instant on Safari, returns null on Chrome.
-        try {
-          const nativeJpeg = await tryNativeCanvasDecode(dataUrl);
-          if (nativeJpeg) return nativeJpeg;
-        } catch (_) { /* fall through */ }
-
-        const heicBlob = dataUrlToBlob(dataUrl);
-        // 1) Try client-side heic2any (libheif WASM). Works in Chrome on
-        // older HEIC variants; newer iPhone files often fail here.
-        if (typeof heic2any === 'function') {
-          try {
-            const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
-            const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-            return await blobToDataUrl(out);
-          } catch (clientErr) {
-            console.warn('Client HEIC decode failed, trying server fallback:', clientErr?.message || clientErr);
+          // Already a supported format? Pass through.
+          if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) {
+            resolve(dataUrl);
+            return;
           }
-        }
-        // 2) Server fallback: send the raw bytes to /api/convert-heic (libheif
-        // native via heic-convert). More reliable for newer HEIC variants.
-        const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
-        let response;
-        try {
-          response = await fetch(`${apiBase}/api/convert-heic`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/octet-stream' },
-            body: heicBlob
-          });
-        } catch (netErr) {
-          throw new Error('Could not reach the server to convert this HEIC. Open it in Preview → File → Export As → JPEG, then drag the JPEG in.');
-        }
-        if (!response.ok) {
-          let detail = 'server could not decode it';
-          try { detail = (await response.json()).error || detail; } catch (_) {}
-          throw new Error(detail);
-        }
-        const jpegBlob = await response.blob();
-        return blobToDataUrl(jpegBlob);
-      }
-      async function convertDataUrlToJpeg(dataUrl) {
-        // Already a supported format? Pass through.
-        if (/^data:image\/(jpeg|png|gif|webp)[;,]/.test(dataUrl)) return dataUrl;
-        const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
-        if (isHeic) {
-          return convertHeicDataUrlToJpeg(dataUrl);
-        }
-        // Other unknown formats: try to draw into a canvas (works for some tiff/bmp/etc in some browsers).
-        return new Promise((resolve, reject) => {
+          const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             canvas.getContext('2d').drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg', 0.92));
+            const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
+            resolve(jpegUrl);
           };
-          img.onerror = () => reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
+          img.onerror = () => {
+            if (isHeic) {
+              reject(new Error('Your browser cannot process HEIC images. Please use Safari, or convert the image to JPEG/PNG first (e.g. open in Preview → File → Export as JPEG).'));
+            } else {
+              reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
+            }
+          };
           img.src = dataUrl;
         });
       }
@@ -18231,7 +18151,6 @@
           showToast('Maximum 4 images allowed', 'error');
           return;
         }
-        const isHeic = /\.(heic|heif)$/i.test(file.name) || /^image\/(heic|heif)/i.test(file.type);
         const reader = new FileReader();
         reader.onload = async (e) => {
           let added = 0;
@@ -18252,20 +18171,7 @@
               return;
             }
           } else {
-            // iPhone photos: convert HEIC → JPEG up front so the preview tile renders
-            // (browsers other than Safari can't decode HEIC). Falls through to the
-            // raw data URL if conversion fails so the user at least gets feedback.
-            let dataUrl = e.target.result;
-            if (isHeic) {
-              try {
-                showToast('Converting HEIC photo from iPhone… (one moment)', 'info');
-                dataUrl = await convertHeicDataUrlToJpeg(dataUrl);
-              } catch (err) {
-                showToast('Could not convert HEIC: ' + err.message, 'error');
-                return;
-              }
-            }
-            uploadedMultiImages.push({ data: dataUrl, label: '' });
+            uploadedMultiImages.push({ data: e.target.result, label: '' });
             added = 1;
           }
           uploadedImageData = null;
@@ -65189,14 +65095,7 @@
           height3DDisplay.textContent = formatDimension(h3d);
         }
 
-        // <input type="color"> only accepts #rrggbb. Some legacy elements
-        // stored 3-digit hex like '#666'; expand before assigning to avoid
-        // browser warnings.
-        const rawColor = selectedElement.color || '#888888';
-        const normColor = /^#[0-9a-fA-F]{3}$/.test(rawColor)
-          ? '#' + rawColor.slice(1).split('').map(c => c + c).join('')
-          : (/^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#888888');
-        document.getElementById('propColor').value = normColor;
+        document.getElementById('propColor').value = selectedElement.color;
         document.getElementById('propRotation').textContent = (selectedElement.rotation || 0) + '°';
 
         // Area & perimeter calculations

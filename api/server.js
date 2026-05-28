@@ -4138,35 +4138,6 @@ app.use('/api/pricing', pricingRouter);
 // ============ SCRAPER MANAGEMENT ROUTES ============
 app.use('/api/scrapers', scrapersRouter);
 
-// ============ HEIC → JPEG conversion (server-side fallback) ============
-// Used by the AI room scanner when client-side heic2any can't decode an
-// iPhone HEIC file. POST body is the raw HEIC bytes (Content-Type:
-// application/octet-stream or image/heic); response is a JPEG buffer.
-app.post('/api/convert-heic',
-  express.raw({ type: ['application/octet-stream', 'image/heic', 'image/heif'], limit: '25mb' }),
-  async (req, res) => {
-    try {
-      if (!req.body || req.body.length === 0) {
-        return res.status(400).json({ error: 'No HEIC payload received' });
-      }
-      const heicConvert = require('heic-convert');
-      const jpegBuffer = await heicConvert({
-        buffer: req.body,
-        format: 'JPEG',
-        quality: 0.9
-      });
-      res.set('Content-Type', 'image/jpeg');
-      res.set('Cache-Control', 'no-store');
-      return res.send(Buffer.from(jpegBuffer));
-    } catch (err) {
-      logger.warn('HEIC convert failed:', err.message);
-      return res.status(415).json({
-        error: 'Server could not decode this HEIC file. Open it in Preview and use File → Export As → JPEG, then drag the JPEG in.'
-      });
-    }
-  }
-);
-
 // ============ FLOORING & HEALTH ROUTES ============
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
