@@ -18108,14 +18108,37 @@
         });
       }
       async function convertHeicDataUrlToJpeg(dataUrl) {
-        if (typeof heic2any !== 'function') {
-          throw new Error('HEIC decoder not loaded — refresh the page to try again, or convert the image to JPEG/PNG yourself first.');
-        }
         const heicBlob = dataUrlToBlob(dataUrl);
-        const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
-        // heic2any can return either a Blob or an array of Blobs (for multi-frame HEIC)
-        const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-        return blobToDataUrl(out);
+        // 1) Try client-side heic2any first (fast, no network round-trip).
+        if (typeof heic2any === 'function') {
+          try {
+            const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
+            const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+            return await blobToDataUrl(out);
+          } catch (clientErr) {
+            console.warn('Client HEIC decode failed, trying server fallback:', clientErr?.message || clientErr);
+          }
+        }
+        // 2) Server fallback: send the raw bytes to /api/convert-heic (libheif
+        // native via heic-convert). More reliable for newer HEIC variants.
+        const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        let response;
+        try {
+          response = await fetch(`${apiBase}/api/convert-heic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            body: heicBlob
+          });
+        } catch (netErr) {
+          throw new Error('Could not reach the server to convert this HEIC. Open it in Preview → File → Export As → JPEG, then drag the JPEG in.');
+        }
+        if (!response.ok) {
+          let detail = 'server could not decode it';
+          try { detail = (await response.json()).error || detail; } catch (_) {}
+          throw new Error(detail);
+        }
+        const jpegBlob = await response.blob();
+        return blobToDataUrl(jpegBlob);
       }
       async function convertDataUrlToJpeg(dataUrl) {
         // Already a supported format? Pass through.
@@ -65134,7 +65157,14 @@
           height3DDisplay.textContent = formatDimension(h3d);
         }
 
-        document.getElementById('propColor').value = selectedElement.color;
+        // <input type="color"> only accepts #rrggbb. Some legacy elements
+        // stored 3-digit hex like '#666'; expand before assigning to avoid
+        // browser warnings.
+        const rawColor = selectedElement.color || '#888888';
+        const normColor = /^#[0-9a-fA-F]{3}$/.test(rawColor)
+          ? '#' + rawColor.slice(1).split('').map(c => c + c).join('')
+          : (/^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#888888');
+        document.getElementById('propColor').value = normColor;
         document.getElementById('propRotation').textContent = (selectedElement.rotation || 0) + '°';
 
         // Area & perimeter calculations
