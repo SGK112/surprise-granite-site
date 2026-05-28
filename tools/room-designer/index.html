@@ -39705,15 +39705,40 @@
     }
 
     function rotateSelectedElement(degrees) {
-      if (selectedElement && !selectedElement.locked) {
-        selectedElement.rotation = ((selectedElement.rotation || 0) + degrees) % 360;
-        selectedElement._rotationLocked = true; // Prevent auto-rotate from overriding manual rotation
-        updateProperties();
-        saveUndoState();
-        draw();
-        update3DScene();
-        showSnapFeedback(`Rotated ${degrees}°`);
+      if (!selectedElement || selectedElement.locked) return;
+      const el = selectedElement;
+      const oldRot = (((el.rotation || 0) % 360) + 360) % 360;
+      const newRot = (((oldRot + degrees) % 360) + 360) % 360;
+
+      // The codebase stores side-wall elements (rotation 90/270) with
+      // width=depth and height=run-length, so drawElement's swap and ctx.rotate
+      // produce the right visual bbox. When the user crosses the 0/180 <-> 90/270
+      // boundary, we have to swap the stored width/height to match — otherwise
+      // a 36"-wide × 24"-deep base cabinet rotated to the east wall renders
+      // 36" deep and 24" long (the "fatter on east/west" bug).
+      const wasSideWall = (oldRot === 90 || oldRot === 270);
+      const willBeSideWall = (newRot === 90 || newRot === 270);
+      if (wasSideWall !== willBeSideWall) {
+        const ppf = pixelsPerFoot;
+        const wOld = el.width || 0;
+        const hOld = el.height || 0;
+        // Swap stored dimensions
+        el.width = hOld;
+        el.height = wOld;
+        // Keep the visual center stable: drawElement centers on (x + w*ppf/2,
+        // y + h*ppf/2) using the STORED w/h. So shifting by half the swap delta
+        // preserves the center.
+        el.x = (el.x || 0) + (wOld - hOld) * ppf / 2;
+        el.y = (el.y || 0) + (hOld - wOld) * ppf / 2;
       }
+
+      el.rotation = newRot;
+      el._rotationLocked = true; // Prevent auto-rotate from overriding manual rotation
+      updateProperties();
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Rotated ${degrees}°`);
     }
 
     function flipSelectedElement(axis) {
