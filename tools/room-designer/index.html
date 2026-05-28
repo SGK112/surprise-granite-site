@@ -18283,25 +18283,37 @@
         }
 
         try {
-          // Progress simulation
-          const progressSteps = [
-            { pct: 10, text: 'Uploading image...', detail: 'Preparing for analysis' },
-            { pct: 25, text: 'Analyzing with AI...', detail: 'Detecting room layout' },
-            { pct: 50, text: 'Identifying elements...', detail: 'Finding cabinets & counters' },
-            { pct: 75, text: 'Extracting dimensions...', detail: 'Calculating measurements' },
-            { pct: 90, text: 'Building layout...', detail: 'Creating quote elements' }
+          // Progress simulation. The actual OpenAI vision call takes 20-40s on
+          // a real iPhone photo. The earlier UI looped through 5 steps in 7.5s
+          // then froze at 90% / "Building layout..." while the API kept running
+          // — which felt like a hang. Now we cycle the messages indefinitely
+          // and show elapsed seconds so the user can tell it's alive.
+          const progressMessages = [
+            { text: 'Uploading image…',     detail: 'Preparing for analysis' },
+            { text: 'Analyzing with AI…',    detail: 'Detecting room layout' },
+            { text: 'Identifying elements…', detail: 'Finding cabinets & counters' },
+            { text: 'Extracting dimensions…', detail: 'Calculating measurements' },
+            { text: 'Building layout…',      detail: 'Creating quote elements (typically 20-40s)' }
           ];
 
+          const t0 = Date.now();
           let stepIndex = 0;
           const progressInterval = setInterval(() => {
-            if (stepIndex < progressSteps.length) {
-              const step = progressSteps[stepIndex];
-              progressFill.style.width = step.pct + '%';
-              statusText.textContent = step.text;
-              statusDetail.textContent = step.detail;
+            const elapsedS = ((Date.now() - t0) / 1000);
+            // Asymptote progress to 95% over ~40s so it visibly advances but
+            // doesn't pretend to be done. Math: 95 * (1 - 1/(1 + t/8))
+            const pct = Math.min(95, Math.round(95 * (1 - 1 / (1 + elapsedS / 8))));
+            progressFill.style.width = pct + '%';
+            const step = progressMessages[Math.min(stepIndex, progressMessages.length - 1)];
+            statusText.textContent = step.text + ' (' + Math.round(elapsedS) + 's)';
+            statusDetail.textContent = step.detail;
+            // Cycle to next message every 4 seconds; last message ("Building
+            // layout…") sticks so the user sees the elapsed-second counter
+            // climbing while the AI works.
+            if (stepIndex < progressMessages.length - 1 && elapsedS > (stepIndex + 1) * 4) {
               stepIndex++;
             }
-          }, 1500);
+          }, 600);
 
           // Helper to safely parse response and check for errors
           // Returns parsed JSON — consumes the body exactly once
