@@ -14357,6 +14357,15 @@
                 </svg>
               </button>
             </div>
+            <!-- Trim Actions — shown only when a cabinet is selected. Inserts a
+                 filler / scribe next to the cabinet edge, or a toe kick under it. -->
+            <div id="trimActionsRow" class="quick-actions" style="display: none; gap: 4px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
+              <button class="quick-btn" onclick="insertTrimNextToSelected('filler','left')" title="Insert 3&quot; filler to the LEFT of this cabinet (along its run direction)" style="font-size:11px; padding:4px 8px;">+ Filler L</button>
+              <button class="quick-btn" onclick="insertTrimNextToSelected('filler','right')" title="Insert 3&quot; filler to the RIGHT of this cabinet" style="font-size:11px; padding:4px 8px;">+ Filler R</button>
+              <button class="quick-btn" onclick="insertTrimNextToSelected('scribe','left')" title="Insert 0.75&quot; scribe to the LEFT (use against an uneven wall)" style="font-size:11px; padding:4px 8px;">+ Scribe L</button>
+              <button class="quick-btn" onclick="insertTrimNextToSelected('scribe','right')" title="Insert 0.75&quot; scribe to the RIGHT (use against an uneven wall)" style="font-size:11px; padding:4px 8px;">+ Scribe R</button>
+              <button class="quick-btn" onclick="insertTrimNextToSelected('toe-kick','center')" title="Insert toe-kick panel spanning this cabinet's full run length" style="font-size:11px; padding:4px 8px;">+ Toe Kick</button>
+            </div>
             <div class="property-row">
               <span class="property-label">Type</span>
               <span class="property-value" id="propType">-</span>
@@ -43147,6 +43156,97 @@
       return created.length;
     }
 
+    // One-click trim insertion next to the selected cabinet. Drops a filler,
+    // scribe, or toe-kick element flush against the cabinet's L/R edge along
+    // its run axis (or covering the full run for toe-kick). Matches the
+    // cabinet's depth, color, and rotation so the side-wall storage
+    // convention (width=depth, height=run-length on rot=90/270) is preserved.
+    function insertTrimNextToSelected(trimType, side /* 'left' | 'right' */) {
+      if (!selectedElement) {
+        showSnapFeedback('Select a cabinet first');
+        return;
+      }
+      const el = selectedElement;
+      const ppf = pixelsPerFoot;
+      const rot = (((el.rotation || 0) % 360) + 360) % 360;
+      const isSideWall = (rot === 90 || rot === 270);
+
+      // Standard widths (feet) — 3" filler, 0.75" scribe.
+      const trimWidthFt = trimType === 'filler' ? 0.25
+                        : trimType === 'scribe' ? 0.0625
+                        : 0;
+      // Cabinet depth (perpendicular to wall) lives in `width` when the cabinet
+      // is on a side wall (rot=90/270 storage convention), otherwise in `height`.
+      const cabDepthFt = isSideWall ? (el.width || 0) : (el.height || 0);
+      const cabRunFt   = isSideWall ? (el.height || 0) : (el.width || 0);
+
+      let trim;
+
+      if (trimType === 'toe-kick') {
+        // Toe-kick spans the full run, sits at the cabinet front. Stored same
+        // orientation as the cabinet — thin in the depth axis (~1") and full
+        // length on the run axis.
+        const tkThickFt = 0.0833; // ~1"
+        if (isSideWall) {
+          trim = { x: el.x, y: el.y, width: tkThickFt, height: cabRunFt };
+        } else {
+          trim = { x: el.x, y: el.y + (cabDepthFt - tkThickFt) * ppf, width: cabRunFt, height: tkThickFt };
+        }
+      } else {
+        // Filler / scribe: thin strip on one end of the run, matching cabinet depth.
+        if (isSideWall) {
+          // Cabinet runs along canvas Y; before = -Y, after = +Y
+          const yEnd = el.y + cabRunFt * ppf;
+          trim = {
+            x: el.x,
+            y: side === 'left' ? el.y - trimWidthFt * ppf : yEnd,
+            width: cabDepthFt,           // depth axis (storage X)
+            height: trimWidthFt          // run axis (storage Y, small for trim)
+          };
+        } else {
+          // Cabinet runs along canvas X; left = -X, right = +X
+          const xEnd = el.x + cabRunFt * ppf;
+          trim = {
+            x: side === 'left' ? el.x - trimWidthFt * ppf : xEnd,
+            y: el.y,
+            width: trimWidthFt,          // run axis (storage X, small for trim)
+            height: cabDepthFt           // depth axis (storage Y)
+          };
+        }
+      }
+
+      const labelIn = trimType === 'toe-kick'
+        ? `Toe Kick ${Math.round(cabRunFt * 12)}"`
+        : `${trimType === 'scribe' ? 'Scribe' : 'Filler'} ${(Math.round(trimWidthFt * 12 * 4) / 4)}"`;
+      const defaultColor = trimType === 'scribe' ? '#8B7355'
+                         : trimType === 'toe-kick' ? '#3a2818'
+                         : '#654321';
+
+      const newEl = {
+        id: trimType + '-' + Date.now() + Math.random(),
+        type: trimType === 'toe-kick' ? 'filler' : trimType,  // toe-kick stored as filler subtype
+        subtype: trimType === 'toe-kick' ? 'toe-kick' : undefined,
+        x: trim.x,
+        y: trim.y,
+        width: trim.width,
+        height: trim.height,
+        color: el.color || defaultColor,
+        label: labelIn,
+        rotation: rot,
+        locked: false,
+        roomId: el.roomId || currentRoom,
+        adjacentCabinetId: el.id
+      };
+      elements.push(newEl);
+      selectedElement = newEl;
+      draw();
+      saveUndoState();
+      elementListDirty = true;
+      updateProperties();
+      if (typeof calculateQuote === 'function') calculateQuote();
+      showSnapFeedback(`Added ${labelIn}${side && trimType !== 'toe-kick' ? ' (' + side + ')' : ''}`);
+    }
+
     // Generate wall caps over pony walls, knee walls, bar walls, etc.
     function generateWallCaps(walls) {
       if (!walls || walls.length === 0) return 0;
@@ -64986,6 +65086,23 @@
       if (selectedElement) {
         empty.style.display = 'none';
         content.style.display = 'block';
+
+        // Show contextual trim insertion buttons only for cabinet-like elements.
+        const trimRow = document.getElementById('trimActionsRow');
+        if (trimRow) {
+          const t = selectedElement.type || '';
+          const isCabForTrim = t === 'base-cabinet' || t === 'wall-cabinet' || t === 'tall-cabinet' ||
+                               t === 'drawer-base' || t === 'sink-base' || t === 'sink-base-apron' ||
+                               t === 'corner-cabinet' || t === 'lazy-susan' || t === 'blind-corner' ||
+                               t === 'fridge-cabinet' || t === 'pantry' ||
+                               t === 'single-oven-cabinet' || t === 'double-oven-cabinet' ||
+                               t === 'tall-oven' || t === 'microwave-cabinet' || t === 'above-microwave-cabinet' ||
+                               t === 'island' ||
+                               t.startsWith('base-cabinet-') || t.startsWith('wall-cabinet-') ||
+                               t.startsWith('tall-cabinet-') || t.startsWith('drawer-base-') ||
+                               t.startsWith('sink-base-') || t.startsWith('corner-cabinet-');
+          trimRow.style.display = isCabForTrim ? 'flex' : 'none';
+        }
 
         document.getElementById('propType').textContent = selectedElement.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         document.getElementById('propLabel').value = selectedElement.label || '';
