@@ -629,6 +629,24 @@
   }
 
   /**
+   * Force a session refresh. Returns the new session ({ access_token, ... })
+   * or null if refresh failed (signed-out user, network error, etc.).
+   * Direct callers can use this to retry a 401 from a Supabase REST request
+   * the way apiRequest does internally.
+   */
+  async function refreshSession() {
+    if (!supabaseClient) await init();
+    try {
+      const { data: { session }, error } = await supabaseClient.auth.refreshSession();
+      if (error || !session) return null;
+      currentUser = session.user;
+      return session;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
    * Make authenticated API request with JWT
    * @param {string} path - API endpoint path (e.g., '/api/marketplace/slabs')
    * @param {Object} options - Fetch options (method, body, headers, etc.)
@@ -1171,6 +1189,7 @@
     updateNavUI,
     // API helpers with JWT
     getAccessToken,
+    refreshSession,
     apiRequest,
     apiGet,
     apiPost,

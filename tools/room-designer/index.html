@@ -77433,14 +77433,37 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
             ...designData
           };
 
-          const response = await fetch(`${SUPABASE_URL}/rest/v1/room_designs`, {
+          // Supabase RLS rejects with 401 + code 42501 when the JWT has expired
+          // (the request falls back to the anon role, which can't insert).
+          // Try once, refresh on 401, retry once — then surface a clear "sign
+          // in again" message instead of a cryptic Postgrest error.
+          const doPost = (hdrs) => fetch(`${SUPABASE_URL}/rest/v1/room_designs`, {
             method: 'POST',
-            headers,
+            headers: hdrs,
             body: JSON.stringify(insertData)
           });
+          let response = await doPost(headers);
+          if (response.status === 401 && window.SgAuth?.refreshSession) {
+            try {
+              const refreshed = await window.SgAuth.refreshSession();
+              const newToken = refreshed?.access_token || refreshed?.session?.access_token;
+              if (newToken) {
+                const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
+                response = await doPost(retryHeaders);
+              }
+            } catch (e) {
+              console.warn('Token refresh failed before save retry:', e);
+            }
+          }
 
           if (!response.ok) {
             const errorText = await response.text();
+            // Friendlier message for the RLS-after-expired-JWT case
+            if (response.status === 401 || /42501|row-level security/.test(errorText)) {
+              saveDesignLocally();
+              showToast('Your session expired — design saved locally. Please sign out and sign back in to upload it to the cloud.', 'error');
+              return;
+            }
             throw new Error(`Save failed: ${response.status} - ${errorText}`);
           }
 
@@ -77475,20 +77498,37 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
             }
           }
         } else {
-          // Update existing design
+          // Update existing design (same refresh-on-401 retry as the insert path)
           const updateData = {
             ...designData,
             updated_at: new Date().toISOString()
           };
 
-          const response = await fetch(`${SUPABASE_URL}/rest/v1/room_designs?id=eq.${designId}`, {
+          const doPatch = (hdrs) => fetch(`${SUPABASE_URL}/rest/v1/room_designs?id=eq.${designId}`, {
             method: 'PATCH',
-            headers,
+            headers: hdrs,
             body: JSON.stringify(updateData)
           });
+          let response = await doPatch(headers);
+          if (response.status === 401 && window.SgAuth?.refreshSession) {
+            try {
+              const refreshed = await window.SgAuth.refreshSession();
+              const newToken = refreshed?.access_token || refreshed?.session?.access_token;
+              if (newToken) {
+                response = await doPatch({ ...headers, 'Authorization': `Bearer ${newToken}` });
+              }
+            } catch (e) {
+              console.warn('Token refresh failed before update retry:', e);
+            }
+          }
 
           if (!response.ok) {
             const errorText = await response.text();
+            if (response.status === 401 || /42501|row-level security/.test(errorText)) {
+              saveDesignLocally();
+              showToast('Your session expired — design saved locally. Please sign out and sign back in to upload it to the cloud.', 'error');
+              return;
+            }
             throw new Error(`Update failed: ${response.status} - ${errorText}`);
           }
 
