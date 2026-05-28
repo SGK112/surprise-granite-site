@@ -22527,6 +22527,13 @@
         const inches = parseInt(feetInchMatch[2]) || 0;
         const fracNum = parseInt(feetInchMatch[3]) || 0;
         const fracDen = parseInt(feetInchMatch[4]) || 1;
+        // If only the "feet" number was given AND it's bigger than any plausible
+        // room dimension (>30 ft), the user almost certainly typed the foot mark
+        // when they meant the inch mark — e.g. "128'" instead of "128"" on a
+        // keyboard that autocorrected the quote. Treat as inches instead.
+        if (feet > 30 && inches === 0 && fracNum === 0) {
+          return feet / 12;
+        }
         return feet + (inches + fracNum/fracDen) / 12;
       }
 
@@ -63346,9 +63353,16 @@
       const parsedD = parseDimension(document.getElementById('roomDepth').value);
       roomWidth = parsedW > 0 ? parsedW : 20;  // default 240" = 20ft
       roomDepth = parsedD > 0 ? parsedD : 16;  // default 192" = 16ft
-      // Clamp to reasonable range (8ft - 100ft)
-      roomWidth = Math.max(8, Math.min(100, roomWidth));
-      roomDepth = Math.max(8, Math.min(100, roomDepth));
+      // Clamp to a sane range. If a value would clamp, tell the user so they
+      // don't silently end up with the cap (e.g. mis-typed feet vs. inches
+      // marks used to land 128' here and clobber to 100'/1200").
+      const clampMin = 4, clampMax = 200;
+      const beforeW = roomWidth, beforeD = roomDepth;
+      roomWidth = Math.max(clampMin, Math.min(clampMax, roomWidth));
+      roomDepth = Math.max(clampMin, Math.min(clampMax, roomDepth));
+      if ((beforeW !== roomWidth || beforeD !== roomDepth) && typeof showSnapFeedback === 'function') {
+        showSnapFeedback(`Room dim clamped to ${clampMin}–${clampMax} ft. Use \" for inches, ' for feet.`);
+      }
       // Update input display with " mark and feet'-inches" display
       document.getElementById('roomWidth').value = Math.round(roomWidth * 12) + '"';
       document.getElementById('roomDepth').value = Math.round(roomDepth * 12) + '"';

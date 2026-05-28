@@ -2002,36 +2002,9 @@
   };
 
   // === DIMENSION INPUT HELPER ===
-  window.parseDimension = function(input) {
-    if (!input) return null;
-    input = input.toString().trim().toLowerCase();
-
-    // Handle various formats: "3'6\"", "3'-6\"", "3' 6\"", "42\"", "42", "3.5'"
-    let inches = 0;
-
-    // Feet and inches: 3'6", 3'-6", 3' 6"
-    const feetInches = input.match(/(\d+(?:\.\d+)?)\s*['']\s*-?\s*(\d+(?:\.\d+)?)\s*["""]?/);
-    if (feetInches) {
-      inches = parseFloat(feetInches[1]) * 12 + parseFloat(feetInches[2]);
-      return inches;
-    }
-
-    // Just feet: 3', 3.5'
-    const justFeet = input.match(/^(\d+(?:\.\d+)?)\s*['']\s*$/);
-    if (justFeet) {
-      inches = parseFloat(justFeet[1]) * 12;
-      return inches;
-    }
-
-    // Just inches: 42", 42
-    const justInches = input.match(/^(\d+(?:\.\d+)?)\s*["""]?\s*$/);
-    if (justInches) {
-      inches = parseFloat(justInches[1]);
-      return inches;
-    }
-
-    return null;
-  };
+  // (window.parseDimension lives in tools/room-designer/index.html and returns
+  // FEET. An earlier override here returned INCHES, silently corrupting the
+  // room-dimension inputs — see the 2026-05-27 fix.)
 
   window.formatDimensionFull = function(inches) {
     if (inches === null || inches === undefined) return '';
