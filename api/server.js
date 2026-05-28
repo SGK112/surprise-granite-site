@@ -4138,6 +4138,64 @@ app.use('/api/pricing', pricingRouter);
 // ============ SCRAPER MANAGEMENT ROUTES ============
 app.use('/api/scrapers', scrapersRouter);
 
+// ============ HEIC → JPEG via Cloudinary ============
+// Used by the AI Room Scanner + AI Chat when the client-side heic2any
+// fallback can't decode a modern iPhone HEIC. Upload the raw HEIC bytes,
+// Cloudinary stores them, and we return the URL with the f_jpg + w_1568
+// transform so the browser fetches a downscaled JPEG directly from
+// Cloudinary's CDN — no HEIC bytes ever flow back through Render.
+//
+// Requires CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+// env vars (same set the upload-images.js script uses). If they're missing,
+// the endpoint returns 503 with a clear message instead of crashing.
+app.post('/api/heic-to-jpeg',
+  express.raw({ type: ['application/octet-stream', 'image/heic', 'image/heif'], limit: '25mb' }),
+  async (req, res) => {
+    try {
+      if (!req.body || req.body.length === 0) {
+        return res.status(400).json({ error: 'No HEIC payload received' });
+      }
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+      const apiKey = process.env.CLOUDINARY_API_KEY;
+      const apiSecret = process.env.CLOUDINARY_API_SECRET;
+      if (!cloudName || !apiKey || !apiSecret) {
+        return res.status(503).json({
+          error: 'Cloudinary HEIC conversion not configured on this server. Use Safari, or convert the photo to JPEG locally (Preview → File → Export As).'
+        });
+      }
+      const cloudinary = require('cloudinary').v2;
+      cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'sg-heic-uploads',
+            resource_type: 'image',
+            tags: ['heic-conversion'],
+            timeout: 60000
+          },
+          (err, result) => err ? reject(err) : resolve(result)
+        );
+        stream.end(req.body);
+      });
+
+      // Cloudinary URL transform: f_jpg = on-the-fly JPEG; w_1568 = downscale
+      // to OpenAI's vision "auto" detail size; q_auto:good = sensible quality.
+      const transform = 'f_jpg,w_1568,q_auto:good';
+      const transformedUrl = uploadResult.secure_url.replace(
+        '/upload/',
+        `/upload/${transform}/`
+      );
+      return res.json({ url: transformedUrl, publicId: uploadResult.public_id });
+    } catch (err) {
+      logger.warn('Cloudinary HEIC upload failed:', err.message);
+      return res.status(415).json({
+        error: 'Could not convert this HEIC. Use Safari, or convert the photo to JPEG locally.'
+      });
+    }
+  }
+);
+
 // ============ FLOORING & HEALTH ROUTES ============
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);

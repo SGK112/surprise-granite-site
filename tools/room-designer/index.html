@@ -18125,6 +18125,29 @@
           img.src = url;
         });
       }
+      async function heicViaCloudinary(dataUrl) {
+        // Server-side fallback: upload the HEIC bytes to Cloudinary via our
+        // api endpoint, fetch the f_jpg-transformed JPEG, convert to dataUrl.
+        const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const heicBlob = dataUrlToBlobLocal(dataUrl);
+        const upResp = await fetch(`${apiBase}/api/heic-to-jpeg`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: heicBlob
+        });
+        if (!upResp.ok) {
+          let msg = `server returned ${upResp.status}`;
+          try { msg = (await upResp.json()).error || msg; } catch (_) {}
+          throw new Error(msg);
+        }
+        const { url } = await upResp.json();
+        // Fetch the auto-converted JPEG from Cloudinary's CDN
+        const jpegResp = await fetch(url);
+        if (!jpegResp.ok) throw new Error('JPEG fetch from Cloudinary failed');
+        const jpegBlob = await jpegResp.blob();
+        const decoded = await blobToImageLocal(jpegBlob);
+        return drawAndExportJpeg(decoded);
+      }
       function convertDataUrlToJpeg(dataUrl) {
         const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
         return new Promise((resolve, reject) => {
@@ -18133,22 +18156,28 @@
           const img = new Image();
           img.onload = () => resolve(drawAndExportJpeg(img));
           img.onerror = async () => {
-            // 2) Fallback: route HEIC through heic2any wasm decoder.
-            if (isHeic && typeof heic2any === 'function') {
-              try {
-                const heicBlob = dataUrlToBlobLocal(dataUrl);
-                const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
-                const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-                const decoded = await blobToImageLocal(out);
-                resolve(drawAndExportJpeg(decoded));
-                return;
-              } catch (_) { /* fall through to error */ }
-            }
             if (isHeic) {
-              reject(new Error('Could not decode this HEIC photo. Try a different photo, switch to Safari, or in iPhone Settings → Camera → Formats → Most Compatible so future shots are JPEG.'));
-            } else {
-              reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
+              // 2) Try client-side heic2any wasm decoder (fast on supported variants).
+              if (typeof heic2any === 'function') {
+                try {
+                  const heicBlob = dataUrlToBlobLocal(dataUrl);
+                  const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
+                  const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+                  const decoded = await blobToImageLocal(out);
+                  resolve(drawAndExportJpeg(decoded));
+                  return;
+                } catch (_) { /* fall through to Cloudinary */ }
+              }
+              // 3) Server fallback: Cloudinary HEIC → JPEG transform.
+              try {
+                resolve(await heicViaCloudinary(dataUrl));
+                return;
+              } catch (cloudErr) {
+                reject(new Error('Could not decode this HEIC photo. ' + (cloudErr.message || '') + ' — try Safari, or convert to JPEG locally.'));
+                return;
+              }
             }
+            reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
           };
           img.src = dataUrl;
         });
@@ -19885,28 +19914,56 @@
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         return new Blob([bytes], { type: mime });
       };
+      const loadJpegBlob = (blob) => new Promise((res, rej) => {
+        const url = URL.createObjectURL(blob);
+        const i2 = new Image();
+        i2.onload = () => { URL.revokeObjectURL(url); res(i2); };
+        i2.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decoded blob load failed')); };
+        i2.src = url;
+      });
+      const heicCloud = async () => {
+        // Server-side fallback via Cloudinary's HEIC → JPEG transform.
+        const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const upResp = await fetch(`${apiBase}/api/heic-to-jpeg`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: blobFromDataUrl(dataUrl)
+        });
+        if (!upResp.ok) {
+          let msg = `server ${upResp.status}`;
+          try { msg = (await upResp.json()).error || msg; } catch (_) {}
+          throw new Error(msg);
+        }
+        const { url } = await upResp.json();
+        const jpegResp = await fetch(url);
+        if (!jpegResp.ok) throw new Error('JPEG fetch failed');
+        const decoded = await loadJpegBlob(await jpegResp.blob());
+        return draw(decoded);
+      };
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(draw(img));
         img.onerror = async () => {
-          if (isHeic && typeof heic2any === 'function') {
+          if (!isHeic) {
+            reject(new Error('Could not process this image format. Use JPEG or PNG.'));
+            return;
+          }
+          // 2) Try client-side heic2any first
+          if (typeof heic2any === 'function') {
             try {
               const jpegBlob = await heic2any({ blob: blobFromDataUrl(dataUrl), toType: 'image/jpeg', quality: 0.9 });
               const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
-              const url = URL.createObjectURL(out);
-              const decoded = await new Promise((res, rej) => {
-                const i2 = new Image();
-                i2.onload = () => { URL.revokeObjectURL(url); res(i2); };
-                i2.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decoded blob load failed')); };
-                i2.src = url;
-              });
+              const decoded = await loadJpegBlob(out);
               resolve(draw(decoded));
               return;
-            } catch (_) { /* fall through */ }
+            } catch (_) { /* fall through to Cloudinary */ }
           }
-          reject(new Error(isHeic
-            ? 'Could not decode this HEIC. Try Safari, or set iPhone Settings → Camera → Formats → Most Compatible (so future photos are JPEG).'
-            : 'Could not process this image format. Use JPEG or PNG.'));
+          // 3) Server fallback: Cloudinary
+          try {
+            resolve(await heicCloud());
+          } catch (cloudErr) {
+            reject(new Error('Could not decode this HEIC photo. ' + (cloudErr.message || '') + ' — try Safari, or convert to JPEG locally.'));
+          }
         };
         img.src = dataUrl;
       });
