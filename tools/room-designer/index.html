@@ -44,6 +44,11 @@
   <!-- PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <!-- HEIC decoder for Chrome/Firefox (Safari handles HEIC natively).
+       Used as a fallback in convertDataUrlToJpeg when the canvas <img>
+       decode fails on a HEIC dataUrl. -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
   <!-- SheetJS for Excel/CSV parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
@@ -18087,33 +18092,60 @@
       // Convert a base64 data URL to JPEG via canvas, downscaling to <= 1568px
       // on the long side. Modern iPhone photos are 12MP / 4032x3024 — sending
       // a 5-8MB base64 payload to OpenAI vision stalls or times out around 60s.
-      // 1568px is what OpenAI's "auto" detail mode resizes to internally anyway,
-      // so this loses no useful information and drops the payload to ~500KB
-      // (10-15s API call instead of 60+).
-      // Safari can decode HEIC natively in <img>; Chrome/Firefox cannot.
-      function convertDataUrlToJpeg(dataUrl) {
-        const MAX_DIM = 1568;
+      // 1568px is what OpenAI's "auto" detail mode resizes to internally,
+      // so this loses no useful information and drops the payload to ~500KB.
+      // Safari can decode HEIC natively in <img>; Chrome/Firefox use heic2any.
+      const MAX_DOWNSCALE_DIM = 1568;
+      function drawAndExportJpeg(img) {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const longSide = Math.max(w, h);
+        const scale = longSide > MAX_DOWNSCALE_DIM ? (MAX_DOWNSCALE_DIM / longSide) : 1;
+        const targetW = Math.round(w * scale);
+        const targetH = Math.round(h * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        canvas.getContext('2d').drawImage(img, 0, 0, targetW, targetH);
+        return canvas.toDataURL('image/jpeg', 0.85);
+      }
+      function dataUrlToBlobLocal(dataUrl) {
+        const [header, b64] = dataUrl.split(',');
+        const mime = (header.match(/data:([^;,]+)/) || [,'application/octet-stream'])[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+      }
+      function blobToImageLocal(blob) {
         return new Promise((resolve, reject) => {
-          const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
           const img = new Image();
-          img.onload = () => {
-            // Downscale if the long side exceeds MAX_DIM.
-            const w = img.naturalWidth, h = img.naturalHeight;
-            const longSide = Math.max(w, h);
-            const scale = longSide > MAX_DIM ? (MAX_DIM / longSide) : 1;
-            const targetW = Math.round(w * scale);
-            const targetH = Math.round(h * scale);
-            const canvas = document.createElement('canvas');
-            canvas.width = targetW;
-            canvas.height = targetH;
-            canvas.getContext('2d').drawImage(img, 0, 0, targetW, targetH);
-            // 0.85 quality on a downscaled image is still visually faithful
-            // for AI vision and ~30% smaller than 0.92.
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
-          };
-          img.onerror = () => {
+          const url = URL.createObjectURL(blob);
+          img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('blob image load failed')); };
+          img.src = url;
+        });
+      }
+      function convertDataUrlToJpeg(dataUrl) {
+        const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
+        return new Promise((resolve, reject) => {
+          // 1) Try native <img> decode. Works for JPEG/PNG/WebP/GIF and
+          //    for HEIC on Safari. Returns null/rejects on Chrome HEIC.
+          const img = new Image();
+          img.onload = () => resolve(drawAndExportJpeg(img));
+          img.onerror = async () => {
+            // 2) Fallback: route HEIC through heic2any wasm decoder.
+            if (isHeic && typeof heic2any === 'function') {
+              try {
+                const heicBlob = dataUrlToBlobLocal(dataUrl);
+                const jpegBlob = await heic2any({ blob: heicBlob, toType: 'image/jpeg', quality: 0.9 });
+                const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+                const decoded = await blobToImageLocal(out);
+                resolve(drawAndExportJpeg(decoded));
+                return;
+              } catch (_) { /* fall through to error */ }
+            }
             if (isHeic) {
-              reject(new Error('Your browser cannot process HEIC images. Please use Safari, or convert the image to JPEG/PNG first (e.g. open in Preview → File → Export as JPEG).'));
+              reject(new Error('Could not decode this HEIC photo. Try a different photo, switch to Safari, or in iPhone Settings → Camera → Formats → Most Compatible so future shots are JPEG.'));
             } else {
               reject(new Error('Could not process this image format. Please convert to JPEG or PNG first.'));
             }
@@ -19741,14 +19773,14 @@
             <button class="quick-action" onclick="sendAIChatMessage('Add countertops over all base cabinets')">Add countertops</button>
             <button class="quick-action" onclick="sendAIChatMessage('Clear the room and start fresh')">Clear room</button>
           </div>
-          <!-- Pending image preview (shown when user attaches a photo before sending) -->
-          <div id="aiChatPendingImage" style="display:none; padding:8px 12px; background:rgba(99,102,241,0.08); border-radius:8px; margin-bottom:8px; align-items:center; gap:8px;">
-            <img id="aiChatPendingThumb" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid var(--border, #444);">
-            <span style="font-size:12px; color:var(--text-muted, #888); flex:1;">Photo attached — ask Aria to design from it.</span>
-            <button onclick="clearAiChatPendingImage()" style="background:transparent; border:0; color:var(--text-muted, #888); cursor:pointer; font-size:18px; padding:0 4px;" title="Remove photo">×</button>
+          <!-- Pending image preview (shown when user attaches photos before sending). Up to 4. -->
+          <div id="aiChatPendingImage" style="display:none; padding:8px 12px; background:rgba(99,102,241,0.08); border-radius:8px; margin-bottom:8px; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div id="aiChatPendingThumbs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+            <span style="font-size:12px; color:var(--text-muted, #888); flex:1; min-width:160px;">Photos attached — ask Aria to design from them. Up to 4 angles.</span>
+            <button onclick="clearAiChatPendingImage()" style="background:transparent; border:0; color:var(--text-muted, #888); cursor:pointer; font-size:12px; padding:0 4px;" title="Remove all">Clear all</button>
           </div>
           <div class="chat-input-wrapper">
-            <input type="file" id="aiChatFileInput" accept="image/*,.heic,.heif" style="display:none;" onchange="onAiChatFilePicked(event)">
+            <input type="file" id="aiChatFileInput" accept="image/*,.heic,.heif" multiple style="display:none;" onchange="onAiChatFilePicked(event)">
             <button onclick="document.getElementById('aiChatFileInput').click()" title="Attach a photo of your kitchen" style="background:transparent; border:0; cursor:pointer; padding:8px; color:var(--text-muted, #888); display:flex; align-items:center;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
@@ -19828,62 +19860,118 @@
       if (indicator) indicator.remove();
     }
 
-    // Same downscale + JPEG-encode pipeline the AI Scanner uses (definition
-    // there is closed over inside showAIImporter, so we keep an independent
-    // copy here for the chat). Max 1568px long side → ~500KB payload → fast
-    // OpenAI vision call.
+    // Same downscale + JPEG-encode pipeline the AI Scanner uses (with the
+    // heic2any fallback so Chrome/Firefox can decode iPhone HEIC photos).
     function chatConvertDataUrlToJpeg(dataUrl) {
       const MAX_DIM = 1568;
+      const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
+      const draw = (img) => {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const longSide = Math.max(w, h);
+        const scale = longSide > MAX_DIM ? (MAX_DIM / longSide) : 1;
+        const targetW = Math.round(w * scale);
+        const targetH = Math.round(h * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        canvas.getContext('2d').drawImage(img, 0, 0, targetW, targetH);
+        return canvas.toDataURL('image/jpeg', 0.85);
+      };
+      const blobFromDataUrl = (du) => {
+        const [header, b64] = du.split(',');
+        const mime = (header.match(/data:([^;,]+)/) || [,'application/octet-stream'])[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+      };
       return new Promise((resolve, reject) => {
-        const isHeic = /^data:image\/(heic|heif)/i.test(dataUrl) || /^data:application\/octet/i.test(dataUrl);
         const img = new Image();
-        img.onload = () => {
-          const w = img.naturalWidth, h = img.naturalHeight;
-          const longSide = Math.max(w, h);
-          const scale = longSide > MAX_DIM ? (MAX_DIM / longSide) : 1;
-          const targetW = Math.round(w * scale);
-          const targetH = Math.round(h * scale);
-          const canvas = document.createElement('canvas');
-          canvas.width = targetW;
-          canvas.height = targetH;
-          canvas.getContext('2d').drawImage(img, 0, 0, targetW, targetH);
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        img.onload = () => resolve(draw(img));
+        img.onerror = async () => {
+          if (isHeic && typeof heic2any === 'function') {
+            try {
+              const jpegBlob = await heic2any({ blob: blobFromDataUrl(dataUrl), toType: 'image/jpeg', quality: 0.9 });
+              const out = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+              const url = URL.createObjectURL(out);
+              const decoded = await new Promise((res, rej) => {
+                const i2 = new Image();
+                i2.onload = () => { URL.revokeObjectURL(url); res(i2); };
+                i2.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decoded blob load failed')); };
+                i2.src = url;
+              });
+              resolve(draw(decoded));
+              return;
+            } catch (_) { /* fall through */ }
+          }
+          reject(new Error(isHeic
+            ? 'Could not decode this HEIC. Try Safari, or set iPhone Settings → Camera → Formats → Most Compatible (so future photos are JPEG).'
+            : 'Could not process this image format. Use JPEG or PNG.'));
         };
-        img.onerror = () => reject(new Error(isHeic
-          ? 'Your browser couldn\'t decode this HEIC. Open in Preview → Export As → JPEG, or use Safari.'
-          : 'Could not process this image format. Use JPEG or PNG.'));
         img.src = dataUrl;
       });
     }
 
-    // Pending image attached to the chat (set by onAiChatFilePicked, cleared
-    // by sendAIChatMessage after dispatch or by user clicking ×). Held as a
-    // dataUrl so we can show a thumbnail and forward it as JPEG to the AI.
-    let aiChatPendingImage = null;
+    // Pending images attached to the chat (up to 4). Set by onAiChatFilePicked,
+    // cleared by sendAIChatMessage after dispatch or by the user.
+    let aiChatPendingImages = [];
+    // Back-compat shim — older code referenced singular aiChatPendingImage
+    Object.defineProperty(window, 'aiChatPendingImage', {
+      get: () => aiChatPendingImages[0] || null,
+      set: (v) => { aiChatPendingImages = v ? [v] : []; }
+    });
     async function onAiChatFilePicked(ev) {
-      const file = ev.target?.files?.[0];
-      if (!file) return;
+      const files = Array.from(ev.target?.files || []);
+      if (!files.length) return;
       ev.target.value = ''; // reset input so picking the same file twice works
-      // Read as dataUrl. Safari decodes HEIC natively when rendered in <img>;
-      // for AI dispatch we'll route through convertDataUrlToJpeg (which
-      // downscales to ≤1568px and re-encodes to JPEG) — see the AI Scanner.
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        aiChatPendingImage = e.target.result;
-        const preview = document.getElementById('aiChatPendingImage');
-        const thumb = document.getElementById('aiChatPendingThumb');
-        if (thumb) thumb.src = aiChatPendingImage;
-        if (preview) preview.style.display = 'flex';
-        const input = document.getElementById('aiChatInput');
-        if (input && !input.value) input.value = 'Build this kitchen from the photo.';
-        input?.focus();
-      };
-      reader.readAsDataURL(file);
+      const remainingSlots = 4 - aiChatPendingImages.length;
+      if (remainingSlots <= 0) {
+        addChatMessage('assistant', 'You already have 4 photos attached — that\'s the max per message. Send these first or click ✕ on one to swap it out.');
+        return;
+      }
+      const toAdd = files.slice(0, remainingSlots);
+      for (const file of toAdd) {
+        const dataUrl = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = (e) => res(e.target.result);
+          r.onerror = () => rej(r.error || new Error('file read failed'));
+          r.readAsDataURL(file);
+        });
+        aiChatPendingImages.push(dataUrl);
+      }
+      renderAiChatPendingImages();
+      const input = document.getElementById('aiChatInput');
+      if (input && !input.value) {
+        input.value = aiChatPendingImages.length > 1
+          ? 'Build this kitchen — different angles attached.'
+          : 'Build this kitchen from the photo.';
+      }
+      input?.focus();
     }
-    window.clearAiChatPendingImage = function() {
-      aiChatPendingImage = null;
+    function renderAiChatPendingImages() {
       const preview = document.getElementById('aiChatPendingImage');
-      if (preview) preview.style.display = 'none';
+      const container = document.getElementById('aiChatPendingThumbs');
+      if (!preview || !container) return;
+      if (aiChatPendingImages.length === 0) {
+        preview.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+      preview.style.display = 'flex';
+      container.innerHTML = aiChatPendingImages.map((du, i) => `
+        <div style="position:relative; width:48px; height:48px;">
+          <img src="${du}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid var(--border, #444);">
+          <button onclick="removeAiChatPendingImage(${i})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.7); border:0; color:white; font-size:11px; line-height:16px; cursor:pointer; padding:0;" title="Remove">×</button>
+        </div>
+      `).join('');
+    }
+    window.removeAiChatPendingImage = function(idx) {
+      aiChatPendingImages.splice(idx, 1);
+      renderAiChatPendingImages();
+    };
+    window.clearAiChatPendingImage = function() {
+      aiChatPendingImages = [];
+      renderAiChatPendingImages();
     };
 
     // Pending layout from a vision call — surfaced as a "Build this layout"
@@ -19913,50 +20001,76 @@
       const input = document.getElementById('aiChatInput');
       const sendBtn = document.getElementById('aiChatSendBtn');
       const message = presetMessage || input?.value?.trim();
-      const attachedImage = aiChatPendingImage; // capture before we clear
+      const attachedImages = aiChatPendingImages.slice(); // capture array before clearing
 
-      if ((!message && !attachedImage) || aiChatProcessing) return;
+      if ((!message && !attachedImages.length) || aiChatProcessing) return;
 
       // Clear input + pending image preview
       if (input && !presetMessage) {
         input.value = '';
         input.style.height = 'auto';
       }
-      if (attachedImage) clearAiChatPendingImage();
+      if (attachedImages.length) clearAiChatPendingImage();
 
-      // Add user message to chat (with thumbnail if an image was attached)
-      const displayMsg = attachedImage
-        ? `<img src="${attachedImage}" style="max-width:140px; max-height:140px; border-radius:6px; display:block; margin-bottom:6px;">${message || '(photo)'}`
+      // Add user message to chat (with thumbnails if images were attached)
+      const thumbsHtml = attachedImages.map(du =>
+        `<img src="${du}" style="max-width:140px; max-height:140px; border-radius:6px; margin:0 4px 4px 0; display:inline-block; vertical-align:top;">`
+      ).join('');
+      const displayMsg = attachedImages.length
+        ? `<div style="display:flex; flex-wrap:wrap;">${thumbsHtml}</div>${message || '(photo)'}`
         : message;
       addChatMessage('user', displayMsg);
-      aiChatHistory.push({ role: 'user', content: message || '(photo attached)' });
+      aiChatHistory.push({
+        role: 'user',
+        content: message || (attachedImages.length > 1 ? `(${attachedImages.length} photos attached)` : '(photo attached)')
+      });
 
       // ----- IMAGE PATH: route to the vision endpoint (proven path) -----
-      // The /api/ai/design-chat tool channel is text-only; vision goes through
-      // /api/ai/room-scan which we already use for the AI Room Scanner.
+      // Single image → /api/ai/room-scan; 2+ images → /api/ai/room-scan-multi.
       // Result is held as aiChatPendingLayout and confirmed by the user via
-      // a "Build it" chat action.
-      if (attachedImage) {
+      // the "Build it" chat action.
+      if (attachedImages.length) {
         aiChatProcessing = true;
         if (sendBtn) sendBtn.disabled = true;
         showTypingIndicator();
         try {
-          const imageToSend = await chatConvertDataUrlToJpeg(attachedImage);
+          const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
           const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 90000);
+          const tid = setTimeout(() => ctrl.abort(), 120000); // multi-image takes longer
           let resp;
           try {
-            resp = await fetch(`${(window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com'}/api/ai/room-scan`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: ctrl.signal,
-              body: JSON.stringify({
-                image: imageToSend,
-                scanMode: 'room-photo',
-                projectType: 'kitchen',
-                userContext: message || ''
-              })
-            });
+            if (attachedImages.length >= 2) {
+              // Parallel convert all images, send as one multi-image request
+              const converted = await Promise.all(
+                attachedImages.map(async (du, i) => ({
+                  data: await chatConvertDataUrlToJpeg(du),
+                  label: `Angle ${i+1}`
+                }))
+              );
+              resp = await fetch(`${apiBase}/api/ai/room-scan-multi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: ctrl.signal,
+                body: JSON.stringify({
+                  images: converted,
+                  projectType: 'kitchen',
+                  userContext: message || ''
+                })
+              });
+            } else {
+              const imageToSend = await chatConvertDataUrlToJpeg(attachedImages[0]);
+              resp = await fetch(`${apiBase}/api/ai/room-scan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: ctrl.signal,
+                body: JSON.stringify({
+                  image: imageToSend,
+                  scanMode: 'room-photo',
+                  projectType: 'kitchen',
+                  userContext: message || ''
+                })
+              });
+            }
           } finally { clearTimeout(tid); }
 
           const text = await resp.text();
