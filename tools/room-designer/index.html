@@ -51,6 +51,9 @@
   <!-- Live camera capture for the Aria design chat — kept in its own module to
        keep index.html from growing. Feeds frames via window.aiChatAttachDataUrl. -->
   <script defer src="aria-camera.js"></script>
+  <!-- Realtime voice (OpenAI Realtime over WebRTC). Routes Aria's tool calls
+       through window.aiApplyVoiceAction. Also external to keep index.html lean. -->
+  <script defer src="aria-voice.js"></script>
 
   <!-- SheetJS for Excel/CSV parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -19846,6 +19849,7 @@
 
         <div class="chat-input-area">
           <div class="quick-actions">
+            <button class="quick-action" id="aiVoiceChip" onclick="toggleAriaVoice()" title="Talk to Aria out loud — she'll change the room as you speak" style="font-weight:600;">🎙️ Talk to Aria</button>
             <button class="quick-action" onclick="openAiChatCamera()" title="Open your camera and walk Aria through the room live" style="font-weight:600;">📸 Live camera</button>
             <button class="quick-action" onclick="document.getElementById('aiChatFileInput').click()" title="Attach photos of your kitchen — Aria will design from them" style="font-weight:600;">🖼️ Upload photos</button>
             <button class="quick-action" onclick="sendAIChatMessage('Create a basic L-shaped kitchen')">L-shaped kitchen</button>
@@ -20112,6 +20116,24 @@
       return true;
     };
     window.aiChatPendingCount = () => aiChatPendingImages.length;
+
+    // Bridges for the external voice module (aria-voice.js): run a tool call
+    // Aria makes during a live conversation through the SAME executor as text
+    // chat, then refresh canvas/quote/3D; and read current room context.
+    window.aiApplyVoiceAction = async function(action) {
+      const result = await executeAIDesignAction(action);
+      if (result) { draw(); calculateQuote(); saveUndoState(); update3DScene(); }
+      return result;
+    };
+    window.getAiRoomState = function() {
+      return {
+        roomWidth, roomDepth, elementCount: elements.length,
+        elements: elements.map(el => ({
+          type: el.type, label: el.label, width: el.width, height: el.height,
+          wall: el.aiWall || 'unknown', x: el.x / pixelsPerFoot, y: el.y / pixelsPerFoot
+        }))
+      };
+    };
 
     // Pending layout from a vision call — surfaced as a "Build this layout"
     // chat action so the user confirms before we slam elements onto the canvas.

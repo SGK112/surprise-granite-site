@@ -2814,6 +2814,51 @@ GUIDELINES:
 });
 
 /**
+ * POST /api/ai/realtime-session
+ * Mints a short-lived ephemeral token so the browser can open an OpenAI
+ * Realtime (voice) session over WebRTC WITHOUT ever seeing our API key.
+ * The client uses the returned client_secret to negotiate directly with
+ * OpenAI; it registers the design tools + room context via session.update.
+ */
+router.post('/realtime-session', async (req, res) => {
+  try {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(503).json({ error: 'Voice is not configured on this server (no OpenAI key).' });
+    }
+    const model = process.env.ARIA_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-12-17';
+    const voice = process.env.ARIA_REALTIME_VOICE || 'alloy';
+
+    const resp = await fetchWithAbort('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'realtime=v1'
+      },
+      body: JSON.stringify({
+        model,
+        voice,
+        // Persona only — the client sends the full tool list + live room state
+        // via session.update once connected (keeps this endpoint thin).
+        instructions: "You are Aria, a warm, expert kitchen & bath designer talking with a homeowner in their kitchen. Be concise and conversational. When they ask for a change (white shaker cabinets, move the range, quartz counters, a backsplash), CALL the matching tool. When they ask your opinion, give real design advice. Confirm out loud what you changed."
+      })
+    }, 15000);
+
+    const data = await resp.json();
+    if (data.error || !data.client_secret) {
+      logger.error('[Realtime] session error:', data.error || 'no client_secret');
+      return res.status(502).json({ error: (data.error && data.error.message) || 'Could not start a voice session.' });
+    }
+    return res.json({ client_secret: data.client_secret, model });
+  } catch (err) {
+    logger.error('[Realtime] Error:', err.message);
+    if (err.name === 'AbortError') return res.status(504).json({ error: 'Voice session request timed out.' });
+    return handleApiError(res, err, 'Realtime session');
+  }
+});
+
+/**
  * Generate demo response for design chat (when no API key)
  */
 function generateDemoDesignResponse(message, roomState) {
