@@ -12499,4 +12499,27 @@
   #view2D, #view3D, #userMenuBtn, #saveDesignBtn, #undoBtn, #redoBtn,
   #lockViewBtn, .help-btn { min-height: 40px; min-width: 40px; }
   .toolbar-group { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+  /* ===== Header (the jumble) ===== The header is locked to height:56px, so
+     its ~10 action buttons wrapped OUTSIDE the box and overlapped the canvas
+     (transparent bg let everything bleed through). Let it grow, wrap into
+     clean rows, and go solid. */
+  .header {
+    height: auto !important; min-height: 52px !important; max-height: none !important;
+    flex-wrap: wrap !important; align-items: center; row-gap: 6px;
+    padding: 8px 10px !important;
+    background: #15152a !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  }
+  .header-left { flex: 1 1 auto; min-width: 0; }
+  .header-left .project-input { max-width: 100%; }
+  /* stack the 2D/3D + zoom row and the action-button row full-width below */
+  .header-center { order: 3; width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+  .header-right  { order: 4; width: 100%; flex-wrap: wrap !important; gap: 6px !important; justify-content: flex-start; }
+  /* solid pills so the canvas no longer shows through (Save/AI Scan keep their
+     own inline gradient/colour — inline styles win over this) */
+  .header-right .btn {
+    flex: 0 0 auto; min-height: 38px; padding: 7px 12px !important; font-size: 13px !important;
+    background: #1e1e36; border: 1px solid rgba(255,255,255,.12);
+  }
 }
