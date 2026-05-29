@@ -19898,7 +19898,11 @@
       }
     }
 
-    function addChatMessage(role, content, actions = []) {
+    // NOTE: named aiChatSay (not addChatMessage) to avoid colliding with the
+    // collaboration-chat addChatMessage(userName,message,...) defined later in
+    // this same script — the later declaration wins, so AI-chat replies were
+    // silently routed to the wrong panel and never rendered.
+    function aiChatSay(role, content, actions = []) {
       const messages = document.getElementById('aiChatMessages');
       if (!messages) return;
 
@@ -20030,7 +20034,7 @@
       ev.target.value = ''; // reset input so picking the same file twice works
       const remainingSlots = 4 - aiChatPendingImages.length;
       if (remainingSlots <= 0) {
-        addChatMessage('assistant', 'You already have 4 photos attached — that\'s the max per message. Send these first or click ✕ on one to swap it out.');
+        aiChatSay('assistant', 'You already have 4 photos attached — that\'s the max per message. Send these first or click ✕ on one to swap it out.');
         return;
       }
       const toAdd = files.slice(0, remainingSlots);
@@ -20249,9 +20253,9 @@
         if (typeof update3DScene === 'function') update3DScene();
         if (typeof calculateQuote === 'function') calculateQuote();
         saveUndoState();
-        addChatMessage('assistant', `Built it — ${importResult.cabinetsAdded || 0} cabinets, ${importResult.appliancesAdded || 0} appliances, ${importResult.countertopsAdded || 0} countertops. Now just tell me what to fix — e.g. "make the room 11 feet deep", "add a 36\" sink base", or "clear it and start over".`);
+        aiChatSay('assistant', `Built it — ${importResult.cabinetsAdded || 0} cabinets, ${importResult.appliancesAdded || 0} appliances, ${importResult.countertopsAdded || 0} countertops. Now just tell me what to fix — e.g. "make the room 11 feet deep", "add a 36\" sink base", or "clear it and start over".`);
       } catch (e) {
-        addChatMessage('assistant', `Couldn't build the layout: ${e.message}`);
+        aiChatSay('assistant', `Couldn't build the layout: ${e.message}`);
       }
     };
 
@@ -20277,7 +20281,7 @@
       const displayMsg = attachedImages.length
         ? `<div style="display:flex; flex-wrap:wrap;">${thumbsHtml}</div>${message || '(photo)'}`
         : message;
-      addChatMessage('user', displayMsg);
+      aiChatSay('user', displayMsg);
       aiChatHistory.push({
         role: 'user',
         content: message || (attachedImages.length > 1 ? `(${attachedImages.length} photos attached)` : '(photo attached)')
@@ -20348,7 +20352,7 @@
           presentAriaClarify(data);
         } catch (e) {
           hideTypingIndicator();
-          addChatMessage('assistant', `Image analysis failed: ${e.message}`);
+          aiChatSay('assistant', `Image analysis failed: ${e.message}`);
         } finally {
           aiChatProcessing = false;
           if (sendBtn) sendBtn.disabled = false;
@@ -20410,7 +20414,7 @@
         }
 
         // Add assistant response
-        addChatMessage('assistant', data.response, executedActions);
+        aiChatSay('assistant', data.response, executedActions);
         aiChatHistory.push({ role: 'assistant', content: data.response });
 
         // Update canvas if actions were taken
@@ -20424,7 +20428,7 @@
       } catch (error) {
         hideTypingIndicator();
         console.error('AI Chat error:', error);
-        addChatMessage('assistant', `Sorry, I encountered an error: ${error.message}. Please try again.`);
+        aiChatSay('assistant', `Sorry, I encountered an error: ${error.message}. Please try again.`);
       } finally {
         aiChatProcessing = false;
         if (sendBtn) sendBtn.disabled = false;
@@ -20483,10 +20487,167 @@
           }
           return null;
 
+        // ----- Phase 1 design verbs: let Aria actually change the room -----
+        case 'SET_FINISH':
+          return applyAIFinish(params);
+        case 'SET_MATERIAL':
+          return applyAIMaterial(params);
+        case 'MOVE_ELEMENT':
+          return moveAIElement(params);
+        case 'ADD_BACKSPLASH':
+          return addAIBacksplash(params);
+
         default:
           console.log('Unknown action:', type);
           return null;
       }
+    }
+
+    // Resolve which existing elements a chat command targets. `target` can be
+    // 'all', a family keyword ('cabinets','countertops','island','backsplash'),
+    // an appliance/type keyword ('range','oven','sink','fridge'), or a label
+    // substring. `kinds` (optional) restricts the 'all' case to a family.
+    function resolveAITargets(target, kinds) {
+      const t = (target == null ? 'all' : target).toString().toLowerCase().trim();
+      const inKinds = (el) => !kinds || kinds.some(k => el.type === k || el.type?.startsWith(k));
+      if (t === '' || t === 'all' || t === 'everything') return elements.filter(inKinds);
+      const families = {
+        cabinet: ['base-cabinet','wall-cabinet','tall-cabinet','sink-base','drawer-base','corner-cabinet'],
+        cabinets: ['base-cabinet','wall-cabinet','tall-cabinet','sink-base','drawer-base','corner-cabinet'],
+        countertop: ['countertop'], countertops: ['countertop'], counter: ['countertop'], counters: ['countertop'],
+        backsplash: ['backsplash'], island: ['island']
+      };
+      if (families[t]) return elements.filter(el => families[t].some(k => el.type === k || el.type?.startsWith(k)));
+      return elements.filter(el =>
+        (el.type && el.type.toLowerCase().includes(t)) ||
+        (el.label && el.label.toLowerCase().includes(t)));
+    }
+
+    const AI_FINISH_COLORS = { white:'#FAFAFA', cream:'#F5F0E6', gray:'#9AA0A6', grey:'#9AA0A6', charcoal:'#3A3A3A', black:'#2A2A2A', navy:'#2C3E50', blue:'#3B5168', green:'#3F5A48', sage:'#9CAF88', espresso:'#3B2A20', walnut:'#5A3E2B', oak:'#C8A06A', natural:'#C8A06A', cherry:'#7A3B2E', maple:'#E0C9A6' };
+    const AI_DOOR_STYLES = ['shaker','slab','flat','raised','beaded','glass'];
+    const AI_WOOD_TONES = ['oak','natural','walnut','cherry','maple','espresso'];
+
+    // "white shaker", "navy slab", "espresso flat" -> doorStyle + finish + color.
+    function applyAIFinish(params) {
+      const desc = `${params.style || ''} ${params.finish || ''} ${params.color || ''}`.toLowerCase();
+      let doorStyle = (params.doorStyle || AI_DOOR_STYLES.find(s => desc.includes(s)) || '').replace('slab','flat');
+      const colorKey = Object.keys(AI_FINISH_COLORS).find(c => desc.includes(c));
+      const color = params.colorHex || (colorKey ? AI_FINISH_COLORS[colorKey] : null);
+      const painted = !!colorKey && !AI_WOOD_TONES.includes(colorKey);
+      const targets = resolveAITargets(params.target || 'cabinets',
+        ['base-cabinet','wall-cabinet','tall-cabinet','sink-base','drawer-base','corner-cabinet']);
+      if (!targets.length) return null;
+      targets.forEach(el => {
+        if (doorStyle) el.doorStyle = doorStyle;
+        if (color) el.color = color;
+        if (colorKey) el.cabinetFinish = painted ? 'painted' : 'wood-grain';
+        if (el.id) markElement3DDirty(el.id);
+      });
+      if (doorStyle) cabinetSettings.doorStyle = doorStyle;
+      if (painted) cabinetSettings.cabinetFinish = 'painted';
+      elementListDirty = true;
+      const desc2 = [colorKey, doorStyle].filter(Boolean).join(' ') || 'a new finish';
+      return `Changed ${targets.length} cabinet${targets.length > 1 ? 's' : ''} to ${desc2}`;
+    }
+
+    const AI_MATERIAL_COLORS = { granite:'#6B6B6B', quartz:'#E8E6E1', marble:'#EDEDE8', quartzite:'#D8D6CE', laminate:'#8A8A8A', 'butcher-block':'#B5803F', butcher:'#B5803F', wood:'#B5803F', soapstone:'#3C3F41', concrete:'#9C9C9C', porcelain:'#E0DED8', dekton:'#D9D7D0', tile:'#CFC8BB', subway:'#ECECEC' };
+
+    // Restyle countertops / island / backsplash to a stone or surface material.
+    function applyAIMaterial(params) {
+      const mat = (params.material || 'quartz').toString().toLowerCase();
+      const matKey = Object.keys(AI_MATERIAL_COLORS).find(k => mat.includes(k));
+      const color = params.colorHex || (matKey ? AI_MATERIAL_COLORS[matKey] : '#D8D6CE');
+      const targets = resolveAITargets(params.target || 'countertops', ['countertop','island','backsplash']);
+      if (!targets.length) return null;
+      const pretty = mat.replace(/(^|\s|-)\w/g, m => m.toUpperCase());
+      targets.forEach(el => {
+        el.material = mat;
+        el.materialName = params.materialName || pretty;
+        el.color = color;
+        if (el.id) markElement3DDirty(el.id);
+      });
+      elementListDirty = true;
+      return `Set ${targets.length} surface${targets.length > 1 ? 's' : ''} to ${pretty}`;
+    }
+
+    // Move an element to another wall (with the right rotation + dim swap) and/or
+    // to a position (feet) along that wall.
+    function moveAIElement(params) {
+      const el = resolveAITargets(params.label || params.target, null)[0];
+      if (!el) return null;
+      const padding = 0.5;
+      const curRot = ((el.rotation || 0) % 360 + 360) % 360;
+      const curVert = (curRot === 90 || curRot === 270);
+      const faceFt = curVert ? el.height : el.width;   // length along the wall
+      const depthFt = curVert ? el.width : el.height;  // depth from the wall
+      const wall = params.wall;
+      if (wall && ['top','bottom','left','right'].includes(wall)) {
+        const isVert = (wall === 'left' || wall === 'right');
+        const posFt = params.position != null ? params.position : padding;
+        let x, y, rotation = 0;
+        switch (wall) {
+          case 'top':    x = posFt; y = padding; rotation = 0; break;
+          case 'bottom': x = posFt; y = roomDepth - depthFt - padding; rotation = 180; break;
+          case 'left':   x = padding; y = posFt; rotation = 270; break;
+          case 'right':  x = roomWidth - depthFt - padding; y = posFt; rotation = 90; break;
+        }
+        el.x = x * pixelsPerFoot; el.y = y * pixelsPerFoot;
+        el.width = isVert ? depthFt : faceFt;
+        el.height = isVert ? faceFt : depthFt;
+        el.rotation = rotation; el.aiWall = wall;
+      } else if (params.position != null) {
+        if (curVert) el.y = params.position * pixelsPerFoot; else el.x = params.position * pixelsPerFoot;
+      } else if (params.dx != null || params.dy != null) {
+        el.x += (params.dx || 0) * pixelsPerFoot;
+        el.y += (params.dy || 0) * pixelsPerFoot;
+      } else {
+        return null;
+      }
+      if (el.id) markElement3DDirty(el.id);
+      elementListDirty = true;
+      return `Moved ${el.label || el.type}${wall ? ' to the ' + wall + ' wall' : ''}`;
+    }
+
+    // Add a backsplash along each wall that has a counter/base run.
+    function addAIBacksplash(params) {
+      const material = (params.material || 'tile').toString().toLowerCase();
+      const matKey = Object.keys(AI_MATERIAL_COLORS).find(k => material.includes(k));
+      const color = params.colorHex || (matKey ? AI_MATERIAL_COLORS[matKey] : '#CFC8BB');
+      const wallParam = (params.wall || 'all').toLowerCase();
+      const walls = wallParam === 'all' ? ['top','bottom','left','right'] : [wallParam];
+      let added = 0;
+      walls.forEach(wall => {
+        if (elements.some(e => e.type === 'backsplash' && e.aiWall === wall)) return;
+        const counters = elements.filter(e => e.type === 'countertop' && e.aiWall === wall);
+        const cabs = elements.filter(e => ['base-cabinet','sink-base','drawer-base'].includes(e.type) && e.aiWall === wall);
+        const run = counters.length ? counters : cabs;
+        if (!run.length) return;
+        const isVert = (wall === 'left' || wall === 'right');
+        const bsThick = 0.08;
+        run.sort((a, b) => isVert ? a.y - b.y : a.x - b.x);
+        const first = run[0], last = run[run.length - 1];
+        elements.push({
+          id: Date.now() + Math.random() + added,
+          type: 'backsplash',
+          x: isVert ? (wall === 'left' ? 0 : (roomWidth - bsThick) * pixelsPerFoot) : first.x,
+          y: isVert ? first.y : (wall === 'top' ? 0 : (roomDepth - bsThick) * pixelsPerFoot),
+          width: isVert ? bsThick : ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot),
+          height: isVert ? ((last.y + last.height * pixelsPerFoot - first.y) / pixelsPerFoot) : bsThick,
+          rotation: 0,
+          color, material,
+          materialName: material.replace(/(^|\s|-)\w/g, m => m.toUpperCase()),
+          label: `${wall.charAt(0).toUpperCase() + wall.slice(1)} Backsplash`,
+          locked: false,
+          roomId: currentRoom,
+          verticalHeight: 1.5,
+          tileType: material.includes('subway') || material === 'tile' ? 'subway' : 'slab',
+          aiWall: wall,
+          aiGenerated: true
+        });
+        added++;
+      });
+      elementListDirty = true;
+      return added ? `Added ${material} backsplash on ${added} wall${added > 1 ? 's' : ''}` : null;
     }
 
     // Helper: Add cabinet from AI

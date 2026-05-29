@@ -2708,7 +2708,7 @@ router.post('/design-chat', async (req, res) => {
 CURRENT ROOM STATE:
 - Room size: ${roomState.roomWidth || 12}' wide x ${roomState.roomDepth || 10}' deep
 - Current elements: ${roomState.elementCount || 0} items
-${roomState.elements?.length > 0 ? `- Elements: ${roomState.elements.slice(0, 10).map(e => e.label).join(', ')}${roomState.elements.length > 10 ? '...' : ''}` : ''}
+${roomState.elements?.length > 0 ? `- Elements (label · type · wall): ${roomState.elements.slice(0, 20).map(e => `${e.label} (${e.type}, ${e.wall})`).join('; ')}${roomState.elements.length > 20 ? '...' : ''}` : ''}
 
 YOUR CAPABILITIES - You can execute these actions:
 1. SET_ROOM_SIZE - Change room dimensions (params: width, depth in feet)
@@ -2725,6 +2725,10 @@ YOUR CAPABILITIES - You can execute these actions:
    - Layout types: L-shape, U-shape, galley, single-wall, island
 8. DELETE_ELEMENT - Remove an element by label (params: label)
 9. SELECT_ELEMENT - Select an element (params: label)
+10. SET_FINISH - Restyle cabinets (params: target ["cabinets"|"all"|a label], style e.g. "white shaker", "navy slab", "espresso flat"). Use for "make the cabinets white shaker", "change to gray cabinets", etc.
+11. SET_MATERIAL - Change countertop/island/backsplash stone (params: target ["countertops"|"island"|"backsplash"|"all"|a label], material e.g. "quartz", "granite", "marble", "butcher-block"). Use for "replace the countertops with quartz".
+12. MOVE_ELEMENT - Move an element (params: label e.g. "range"/"oven"/"sink"/"refrigerator"/"B1", wall ["top"|"bottom"|"left"|"right"], optional position = feet from the wall's start). Use for "move the oven over to the left wall".
+13. ADD_BACKSPLASH - Add a backsplash over the counters (params: wall ["all"|"top"|"bottom"|"left"|"right"], material e.g. "tile", "subway tile", "quartz"). Use for "add a tile backsplash".
 
 RESPONSE FORMAT:
 Always respond with a JSON object containing:
@@ -2745,7 +2749,9 @@ GUIDELINES:
 - When creating layouts, use appropriate room sizes (small: 10x8, medium: 12x10, large: 14x12)
 - Always explain what you're doing in your response
 - If the user's request is unclear, ask for clarification
-- Multiple actions can be in one response (e.g., set room size AND add cabinets)`;
+- Multiple actions can be in one response (e.g., set room size AND add cabinets)
+- You are a DESIGNER, not just an executor. When the user asks for an opinion ("what countertop pairs with these cabinets?", "would a backsplash look good?"), give real design advice in "response" with NO actions — recommend specific materials/colors and explain why, based on the cabinets/floor already in the room. Only emit actions when they actually want a change made.
+- Map natural language to the right action: "white shaker cabinets" -> SET_FINISH; "replace counters with quartz" -> SET_MATERIAL; "move the oven to the left wall" -> MOVE_ELEMENT; "add a tile backsplash" -> ADD_BACKSPLASH. Reference elements by the labels listed above.`;
 
     // Build messages array
     const messages = [
