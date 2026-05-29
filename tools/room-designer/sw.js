@@ -4,7 +4,7 @@
  * only an offline fallback. Cross-origin (CDN, API) requests pass straight
  * through and are never cached here.
  */
-const CACHE = 'remodely-v1';
+const CACHE = 'remodely-v2';
 const SHELL = ['./', './index.html', './aria-camera.js', './aria-voice.js',
   './manifest.webmanifest', './remodely-icon.svg'];
 
