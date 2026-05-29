@@ -6109,15 +6109,31 @@
       if (isLoadingLeads) return;
       isLoadingLeads = true;
       try {
-        const { data, error } = await supabaseClient
-          .from('leads')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1000);
+        // Load via a bounded raw PostgREST fetch instead of supabaseClient.from()
+        // — same reason the save path was changed: supabase-js's fetch has no
+        // timeout and its navigator.locks auto-refresh can deadlock, hanging the
+        // query until loadWithTimeout() trips with "Loading timed out". Reading
+        // the JWT from storage (getAuthTokenAsync) sidesteps the lock entirely,
+        // exactly like getAuthToken() already does elsewhere in this file.
+        const token = await getAuthTokenAsync();
+        const resp = await fetchWithTimeout(
+          `${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc&limit=1000`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`
+            }
+          },
+          12000
+        );
 
-        if (error) throw error;
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => '');
+          throw new Error(`Failed to load leads (${resp.status})${txt ? ': ' + txt.slice(0, 200) : ''}`);
+        }
 
-        allLeads = data || [];
+        const data = await resp.json();
+        allLeads = Array.isArray(data) ? data : [];
         updateStats();
         renderLeads();
       } catch (err) {
