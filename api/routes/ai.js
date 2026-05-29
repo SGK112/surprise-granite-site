@@ -2753,6 +2753,30 @@ GUIDELINES:
 - You are a DESIGNER, not just an executor. When the user asks for an opinion ("what countertop pairs with these cabinets?", "would a backsplash look good?"), give real design advice in "response" with NO actions — recommend specific materials/colors and explain why, based on the cabinets/floor already in the room. Only emit actions when they actually want a change made.
 - Map natural language to the right action: "white shaker cabinets" -> SET_FINISH; "replace counters with quartz" -> SET_MATERIAL; "move the oven to the left wall" -> MOVE_ELEMENT; "add a tile backsplash" -> ADD_BACKSPLASH. Reference elements by the labels listed above.`;
 
+    // Prefer a paired Claude Code bridge (Opus on the user's flat subscription)
+    // over a metered API call when one is connected. Any failure falls through
+    // to the OpenAI path below, so the bridge can never break design-chat.
+    try {
+      const bridge = require('../services/bridgeStore');
+      const owner = process.env.BRIDGE_OWNER_ID || 'owner';
+      if (bridge.hasLiveBridge(owner)) {
+        const convo = (history || []).slice(-6).map(h => `${h.role}: ${h.content}`).join('\n');
+        const bridgePrompt = `${systemPrompt}\n\nConversation so far:\n${convo}\n\nUser: ${message}\n\nReply with ONLY a JSON object: {"response":"<what you say to the user>","actions":[{"type":"ACTION_TYPE","params":{...}}]}. No prose, no code fences — just the JSON.`;
+        const out = await bridge.dispatchToBridge(owner,
+          { prompt: bridgePrompt, model: process.env.ARIA_BRIDGE_MODEL || 'claude-opus-4-7' },
+          { timeoutMs: 90_000 });
+        const m = (out && out.text || '').match(/\{[\s\S]*\}/);
+        if (m) {
+          const parsed = JSON.parse(m[0]);
+          logger.info(`[Design-Chat] via bridge — actions: ${parsed.actions?.length || 0}`);
+          return res.json({ success: true, response: parsed.response || "Done.", actions: parsed.actions || [], via: 'bridge' });
+        }
+        logger.warn('[Design-Chat] bridge gave no JSON — falling back to API');
+      }
+    } catch (e) {
+      logger.warn('[Design-Chat] bridge path failed — falling back to API:', e.message);
+    }
+
     // Build messages array
     const messages = [
       { role: 'system', content: systemPrompt },

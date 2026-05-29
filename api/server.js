@@ -4201,6 +4201,13 @@ app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
 
+// ============ Bridge — pair a local Claude Code for the designer brain ============
+try {
+  app.use('/api/bridge', require('./routes/bridge'));
+} catch (err) {
+  logger.warn('Bridge API not available:', err.message);
+}
+
 // ============ ASPN — Arizona Stone Providers Network ============
 try {
   const aspnRouter = require('./routes/aspn');
