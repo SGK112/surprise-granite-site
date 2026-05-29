@@ -18603,6 +18603,52 @@
       const appliances = room.appliances || [];
       const countertops = room.countertops || data.countertops || [];
 
+      // ---- HARDENING: correct physically-impossible wall assignments the
+      // single-photo vision scanner produces. A flat photo has no depth, so
+      // GPT mirrors walls and orphans wall-hung items (the floating range
+      // hood + microwave in Joshua's 2026-05-28 screenshot). These rules only
+      // relocate items that CANNOT be right — an upper item with no base
+      // beneath it — so they never disturb an already-correct layout. This is
+      // the stopgap; LiDAR wall capture (Aria Vision) removes the guessing.
+      (function hardenAiWallAssignments() {
+        const WALLS = ['top', 'bottom', 'left', 'right'];
+        const lc = (s) => (s || '').toString().toLowerCase();
+        const isHood = (t) => /hood/.test(lc(t));
+        const isMicrowave = (t) => /microwave/.test(lc(t));
+        const isWallHung = (t) => isHood(t) || isMicrowave(t) || /wall-cabinet|above-microwave/.test(lc(t));
+        const isFloorAppliance = (t) => !isHood(t) && !isMicrowave(t) &&
+          /range|stove|cooktop|refriger|fridge|dishwash|oven|washer|dryer|sink/.test(lc(t));
+
+        // Walls that have something at floor level to hang an upper item over.
+        const baseWalls = new Set();
+        const countByWall = {};
+        const note = (w) => { if (WALLS.includes(w)) countByWall[w] = (countByWall[w] || 0) + 1; };
+        cabinets.forEach((c) => { note(c.wall); if (!isWallHung(c.type) && WALLS.includes(c.wall)) baseWalls.add(c.wall); });
+        appliances.forEach((a) => { note(a.wall); if (isFloorAppliance(a.type) && WALLS.includes(a.wall)) baseWalls.add(a.wall); });
+
+        // Wall of the cooking surface — hoods + over-range microwaves belong here.
+        let cookWall = null;
+        appliances.forEach((a) => { if (/range|stove|cooktop/.test(lc(a.type)) && WALLS.includes(a.wall)) cookWall = a.wall; });
+
+        // Where to send an orphaned upper item: busiest wall that has a base.
+        const busiestBaseWall = WALLS
+          .filter((w) => baseWalls.has(w))
+          .sort((a, b) => (countByWall[b] || 0) - (countByWall[a] || 0))[0] || null;
+
+        let moved = 0;
+        [...cabinets, ...appliances].forEach((item) => {
+          if (!isWallHung(item.type)) return;
+          // A range hood always shares the cooktop's wall.
+          if (isHood(item.type) && cookWall && item.wall !== cookWall) { item.wall = cookWall; moved++; return; }
+          // No wall-hung item may float on a wall with no base beneath it.
+          if (!baseWalls.has(item.wall)) {
+            const target = (isHood(item.type) || isMicrowave(item.type)) ? (cookWall || busiestBaseWall) : busiestBaseWall;
+            if (target && item.wall !== target) { item.wall = target; moved++; }
+          }
+        });
+        if (moved) result.warnings.push(`Re-anchored ${moved} floating wall-hung item${moved > 1 ? 's' : ''} onto a wall with cabinetry below.`);
+      })();
+
       // Clear existing elements if requested
       if (clearExisting) {
         elements.length = 0;
@@ -19994,7 +20040,17 @@
           r.onerror = () => rej(r.error || new Error('file read failed'));
           r.readAsDataURL(file);
         });
-        aiChatPendingImages.push(dataUrl);
+        // Convert to a browser-displayable JPEG up front so the thumbnail
+        // actually paints (Chrome/Firefox can't render HEIC in an <img>) and
+        // so the bytes we ultimately send to vision are already JPEG. If
+        // conversion fails (e.g. Cloudinary fallback down), keep the raw
+        // dataUrl — the send path will retry conversion — so we never drop
+        // the photo; only the thumbnail preview is lost in that edge case.
+        let stored = dataUrl;
+        try {
+          stored = await chatConvertDataUrlToJpeg(dataUrl);
+        } catch (_) { /* keep raw; send path converts again */ }
+        aiChatPendingImages.push(stored);
       }
       renderAiChatPendingImages();
       const input = document.getElementById('aiChatInput');
@@ -20034,11 +20090,155 @@
     // Pending layout from a vision call — surfaced as a "Build this layout"
     // chat action so the user confirms before we slam elements onto the canvas.
     let aiChatPendingLayout = null;
+    // Answers Aria collects before building (shape / sink wall / fridge wall).
+    // Seeded with the scanner's guesses; the user overrides via tap chips.
+    let aiChatClarify = {};
+
+    // Canonical wall <-> human label. Top is the back wall in this engine.
+    const WALL_LABELS = { top: 'Back', bottom: 'Front', left: 'Left', right: 'Right' };
+
+    // After a scan, ask up to 3 tap-to-answer questions that resolve the
+    // ambiguity a flat photo can't (shape, sink/window wall, fridge wall),
+    // then build with corrected wall assignments.
+    function presentAriaClarify(data) {
+      const room = data.rooms && data.rooms[0];
+      const cabs = (room && room.cabinets) || [];
+      const apps = (room && room.appliances) || [];
+      const ctops = (room && room.countertops) || [];
+      const lc = (s) => (s || '').toString().toLowerCase();
+
+      const hasSink = cabs.some(c => /sink/.test(lc(c.type))) || apps.some(a => /sink/.test(lc(a.type))) || ctops.some(ct => ct.hasSink);
+      const hasFridge = apps.some(a => /refriger|fridge/.test(lc(a.type))) || cabs.some(c => /fridge|refriger/.test(lc(c.type)));
+      const hasRange = apps.some(a => /range|stove|cooktop/.test(lc(a.type)));
+
+      // Seed defaults from the scan so "Build it" works even with no taps.
+      aiChatClarify = {
+        shape: room && room.layoutType ? room.layoutType : 'galley',
+        sinkWall: null,
+        fridgeWall: null
+      };
+
+      const dims = room && room.widthFt && room.depthFt ? `${room.widthFt}' × ${room.depthFt}'` : 'this kitchen';
+      const summary = `I see a ${dims} layout — ${cabs.length} cabinets and ${apps.length} appliances. A photo can't tell me depth, so two quick taps and I'll place everything on the right walls:`;
+
+      const chip = (key, value, label, selected) =>
+        `<button onclick="ariaClarifyAnswer('${key}','${value}',this)" data-clarify-group="${key}" style="background:${selected ? '#7C3AED' : 'transparent'};color:${selected ? '#fff' : 'var(--text,#ddd)'};border:1px solid ${selected ? '#7C3AED' : 'var(--border,#444)'};padding:5px 10px;border-radius:14px;cursor:pointer;font-size:12px;margin:0 4px 4px 0;">${label}</button>`;
+
+      const wallChips = (key) => Object.keys(WALL_LABELS)
+        .map(w => chip(key, w, WALL_LABELS[w], false)).join('');
+
+      let qHtml = '';
+      // Q1 — shape (always)
+      qHtml += `<div style="margin-top:10px;font-size:12px;color:var(--text-muted,#999);">Shape</div><div>`;
+      [['galley', 'Galley'], ['L-shape', 'L-shape'], ['U-shape', 'U-shape'], ['single-wall', 'Single wall']]
+        .forEach(([v, l]) => { qHtml += chip('shape', v, l, aiChatClarify.shape === v); });
+      qHtml += `</div>`;
+      // Q2 — sink/window wall
+      if (hasSink) {
+        qHtml += `<div style="margin-top:8px;font-size:12px;color:var(--text-muted,#999);">Sink &amp; window wall</div><div>${wallChips('sinkWall')}</div>`;
+      }
+      // Q3 — fridge wall
+      if (hasFridge) {
+        qHtml += `<div style="margin-top:8px;font-size:12px;color:var(--text-muted,#999);">Refrigerator</div><div>`;
+        if (hasRange) qHtml += chip('fridgeWall', 'same-as-range', 'Same wall as range', false);
+        qHtml += wallChips('fridgeWall') + `</div>`;
+      }
+
+      const buildBtns = `<div style="margin-top:12px;display:flex;gap:8px;">
+        <button onclick="confirmBuildAiChatLayout()" style="background:#10B981;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">✓ Build it</button>
+        <button onclick="aiChatPendingLayout=null;this.closest('.chat-message').innerHTML='Cancelled. Send another photo or describe what you want.';" style="background:transparent;color:var(--text-muted,#888);border:1px solid var(--border,#444);padding:6px 12px;border-radius:6px;cursor:pointer;">Cancel</button>
+      </div>`;
+
+      const msgs = document.getElementById('aiChatMessages');
+      if (msgs) {
+        const msg = document.createElement('div');
+        msg.className = 'chat-message assistant';
+        msg.innerHTML = `${summary}${qHtml}${buildBtns}`;
+        msgs.appendChild(msg);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+      aiChatHistory.push({ role: 'assistant', content: summary });
+    }
+
+    // Record a clarify answer + highlight the chosen chip within its group.
+    window.ariaClarifyAnswer = function(key, value, btn) {
+      aiChatClarify[key] = value;
+      const siblings = btn.parentElement ? btn.parentElement.querySelectorAll(`[data-clarify-group="${key}"]`) : [];
+      siblings.forEach(s => {
+        const on = s === btn;
+        s.style.background = on ? '#7C3AED' : 'transparent';
+        s.style.color = on ? '#fff' : 'var(--text,#ddd)';
+        s.style.borderColor = on ? '#7C3AED' : 'var(--border,#444)';
+      });
+    };
+
+    // Apply the user's clarify answers to the scanned layout's wall assignments
+    // BEFORE placement. The shape answer is authoritative; sink/fridge answers
+    // pin those items to the named wall.
+    function applyClarifyToLayout(data, clarify) {
+      const room = data.rooms && data.rooms[0];
+      if (!room || !clarify) return;
+      const cabs = room.cabinets || [];
+      const apps = room.appliances || [];
+      const ctops = room.countertops || [];
+      const all = [...cabs, ...apps, ...ctops];
+      const WALLS = ['top', 'bottom', 'left', 'right'];
+      const lc = (s) => (s || '').toString().toLowerCase();
+
+      let rangeWall = null;
+      apps.forEach(a => { if (/range|stove|cooktop/.test(lc(a.type)) && WALLS.includes(a.wall)) rangeWall = a.wall; });
+
+      if (clarify.sinkWall && WALLS.includes(clarify.sinkWall)) {
+        cabs.forEach(c => { if (/sink/.test(lc(c.type))) c.wall = clarify.sinkWall; });
+        apps.forEach(a => { if (/sink/.test(lc(a.type))) a.wall = clarify.sinkWall; });
+        ctops.forEach(ct => { if (ct.hasSink) ct.wall = clarify.sinkWall; });
+      }
+
+      if (clarify.fridgeWall) {
+        const target = clarify.fridgeWall === 'same-as-range' ? (rangeWall || 'top') : clarify.fridgeWall;
+        if (WALLS.includes(target)) {
+          apps.forEach(a => { if (/refriger|fridge/.test(lc(a.type))) a.wall = target; });
+          cabs.forEach(c => { if (/fridge|refriger/.test(lc(c.type))) c.wall = target; });
+        }
+      }
+
+      // Shape: the user's answer wins over the scanner's guess.
+      if (clarify.shape) room.layoutType = clarify.shape;
+      const used = {};
+      all.forEach(it => { if (WALLS.includes(it.wall)) used[it.wall] = (used[it.wall] || 0) + 1; });
+      const ranked = WALLS.slice().sort((a, b) => (used[b] || 0) - (used[a] || 0));
+      const OPP = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+
+      if (clarify.shape === 'single-wall') {
+        const main = ranked[0] || 'top';
+        all.forEach(it => { if (WALLS.includes(it.wall)) it.wall = main; });
+      } else if (clarify.shape === 'galley') {
+        // Two opposite runs. Keep the busier opposing pair; balance strays onto it.
+        const pair = ((used.top || 0) + (used.bottom || 0) >= (used.left || 0) + (used.right || 0))
+          ? ['top', 'bottom'] : ['left', 'right'];
+        all.forEach(it => {
+          if (!WALLS.includes(it.wall) || pair.includes(it.wall)) return;
+          const c0 = all.filter(x => x.wall === pair[0]).length;
+          const c1 = all.filter(x => x.wall === pair[1]).length;
+          it.wall = c0 <= c1 ? pair[0] : pair[1];
+        });
+      } else if (clarify.shape === 'L-shape') {
+        // Two adjacent runs. Fold anything on the wall opposite the primary
+        // onto the busier adjacent wall so the two runs meet at a corner.
+        const primary = ranked[0] || 'top';
+        const adj = (primary === 'top' || primary === 'bottom') ? ['left', 'right'] : ['top', 'bottom'];
+        const secondary = adj.sort((a, b) => (used[b] || 0) - (used[a] || 0))[0];
+        all.forEach(it => { if (it.wall === OPP[primary]) it.wall = secondary; });
+      }
+      // U-shape: trust the scan's 3-wall spread plus the sink/fridge pins.
+    }
+
     window.confirmBuildAiChatLayout = async function() {
       if (!aiChatPendingLayout) return;
       const data = aiChatPendingLayout;
       aiChatPendingLayout = null;
       try {
+        applyClarifyToLayout(data, aiChatClarify);
         const importResult = await processAIBlueprintResult(data, {
           clearExisting: false,
           updateRoomSize: true,
@@ -20048,7 +20248,7 @@
         if (typeof update3DScene === 'function') update3DScene();
         if (typeof calculateQuote === 'function') calculateQuote();
         saveUndoState();
-        addChatMessage('assistant', `Built it. Added ${importResult.cabinetsAdded || 0} cabinets, ${importResult.appliancesAdded || 0} appliances, ${importResult.countertopsAdded || 0} countertops. Tell me what to adjust.`);
+        addChatMessage('assistant', `Built it — ${importResult.cabinetsAdded || 0} cabinets, ${importResult.appliancesAdded || 0} appliances, ${importResult.countertopsAdded || 0} countertops. Now just tell me what to fix — e.g. "make the room 11 feet deep", "add a 36\" sink base", or "clear it and start over".`);
       } catch (e) {
         addChatMessage('assistant', `Couldn't build the layout: ${e.message}`);
       }
@@ -20139,23 +20339,12 @@
           hideTypingIndicator();
           aiChatPendingLayout = data;
 
-          // Build a friendly summary
-          const room = data.rooms?.[0];
-          const cabs = room?.cabinets?.length || 0;
-          const apps = room?.appliances?.length || 0;
-          const dims = room?.widthFt && room?.depthFt ? `${room.widthFt}' × ${room.depthFt}'` : 'kitchen';
-          const summary = `I see a ${dims} layout — ${cabs} cabinets and ${apps} appliances. Want me to build it on the canvas? You can keep chatting to adjust afterward.`;
-          // Render assistant message + confirm action
-          const msgs = document.getElementById('aiChatMessages');
-          const msg = document.createElement('div');
-          msg.className = 'chat-message assistant';
-          msg.innerHTML = `${summary}<div style="margin-top:8px; display:flex; gap:8px;">
-            <button onclick="confirmBuildAiChatLayout()" style="background:#10B981; color:white; border:0; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">✓ Build it</button>
-            <button onclick="aiChatPendingLayout=null; this.parentElement.parentElement.innerHTML='Cancelled. Send another photo or describe what you want.';" style="background:transparent; color:var(--text-muted, #888); border:1px solid var(--border, #444); padding:6px 12px; border-radius:6px; cursor:pointer;">Cancel</button>
-          </div>`;
-          msgs?.appendChild(msg);
-          if (msgs) msgs.scrollTop = msgs.scrollHeight;
-          aiChatHistory.push({ role: 'assistant', content: summary });
+          // A flat photo is depth-blind, so the scanner can't reliably tell an
+          // L-shape from a galley or which wall the sink/window is on. Rather
+          // than guess and render a jumble, Aria asks a couple of tap-to-answer
+          // questions and corrects wall assignments before building. (This is
+          // the conversational spine that Aria-voice + LiDAR plug into later.)
+          presentAriaClarify(data);
         } catch (e) {
           hideTypingIndicator();
           addChatMessage('assistant', `Image analysis failed: ${e.message}`);
