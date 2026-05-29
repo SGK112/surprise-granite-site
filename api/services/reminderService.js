@@ -8,8 +8,13 @@ const emailService = require('./emailService');
 const smsService = require('./smsService');
 const logger = require('../utils/logger');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Match automation-worker.js's env resolution so this service doesn't end up with
+// a null client when only the legacy SUPABASE_SERVICE_KEY name (or no URL) is set —
+// that mismatch was throwing "Cannot read properties of null (reading 'from')" on
+// every reminder cycle because schedulerService calls the per-type methods directly,
+// bypassing processAllReminders()'s null guard.
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
@@ -45,6 +50,7 @@ const reminderService = {
    */
   async processAppointmentReminders() {
     const sent = { email: 0, sms: 0, errors: 0 };
+    if (!supabase) { logger.warn('Reminder service: Supabase not configured (appointments)'); return sent; }
 
     try {
       const now = new Date();
@@ -224,6 +230,7 @@ const reminderService = {
    */
   async processLeadFollowUps() {
     const sent = { email: 0, errors: 0 };
+    if (!supabase) { logger.warn('Reminder service: Supabase not configured (lead follow-ups)'); return sent; }
 
     try {
       const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
@@ -285,6 +292,7 @@ const reminderService = {
    */
   async processPaymentReminders() {
     const sent = { email: 0, errors: 0 };
+    if (!supabase) { logger.warn('Reminder service: Supabase not configured (payments)'); return sent; }
 
     try {
       const now = new Date();

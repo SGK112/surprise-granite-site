@@ -62,7 +62,7 @@ async function processAutomation() {
       .select(`
         *,
         sequence:automation_sequences!sequence_id(id, name, steps, is_active),
-        lead:leads!lead_id(id, name, email, phone),
+        lead:leads!lead_id(id, name:full_name, email, phone),
         customer:customers!customer_id(id, name, email, phone)
       `)
       .eq('status', 'active')

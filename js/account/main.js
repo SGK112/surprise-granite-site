@@ -7845,12 +7845,19 @@
           let updateError = null;
           let updateData = null;
 
-          const { data: ownedData, error: ownedError } = await supabaseClient
-            .from('leads')
-            .update(leadData)
-            .eq('id', editingLeadId)
-            .eq('user_id', user.id)
-            .select();
+          // Race supabase-js (which has no fetch timeout) against a deadline so a
+          // stalled RLS/trigger can't pin the save — on timeout we fall through to
+          // the bounded API fallback below instead of hanging on "Saving...".
+          const raceTimeout = ms => new Promise(res => setTimeout(() => res({ data: null, error: { message: 'supabase update timed out' } }), ms));
+          const { data: ownedData, error: ownedError } = await Promise.race([
+            supabaseClient
+              .from('leads')
+              .update(leadData)
+              .eq('id', editingLeadId)
+              .eq('user_id', user.id)
+              .select(),
+            raceTimeout(10000)
+          ]);
 
           if (!ownedError && ownedData && ownedData.length > 0) {
             updateData = ownedData[0];
@@ -7937,12 +7944,60 @@
           leadData.form_name = 'manual-entry';
           console.log('[SaveLead] Inserting new lead id=' + newId);
 
-          const { error: insertError } = await supabaseClient
-            .from('leads')
-            .insert([leadData]);
+          // THE recurring "Saving..." hang lived here. supabase-js's fetch has NO
+          // request timeout, so when a server-side RLS policy / INSERT trigger
+          // stalls, `.insert()` never resolves — the await never returns, the
+          // finally{} never runs, and the button is pinned on "Saving..." forever.
+          // The public form (lead-service.js) never had this because it POSTs via
+          // a bounded fetchWithTimeout. We do the same here: a raw PostgREST write
+          // with an AbortController timeout, so the save ALWAYS resolves.
+          const token = await getAuthTokenAsync();
+          try {
+            const resp = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/leads`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`,
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify(leadData)
+            }, 12000);
 
-          data = insertError ? null : { ...leadData, id: newId };
-          error = insertError;
+            if (resp.ok) {
+              data = { ...leadData, id: newId };
+              error = null;
+            } else {
+              const txt = await resp.text().catch(() => '');
+              error = { message: `Insert failed (${resp.status})${txt ? ': ' + txt.slice(0, 200) : ''}` };
+              data = null;
+            }
+          } catch (e) {
+            // Timed-out / aborted. The insert may have actually committed server-side
+            // before a post-insert trigger stalled the RESPONSE — so verify by id
+            // (bounded) before declaring failure, to avoid both a false error AND a
+            // duplicate-on-retry. We own newId because we generated the UUID.
+            console.warn('[SaveLead] Insert write did not return cleanly, verifying by id:', e.message);
+            try {
+              const verify = await fetchWithTimeout(
+                `${SUPABASE_URL}/rest/v1/leads?id=eq.${newId}&select=id`,
+                { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}` } },
+                6000
+              );
+              const rows = verify.ok ? await verify.json().catch(() => []) : [];
+              if (Array.isArray(rows) && rows.length > 0) {
+                data = { ...leadData, id: newId };
+                error = null;
+                console.log('[SaveLead] Verified row committed despite slow response, id=' + newId);
+              } else {
+                data = null;
+                error = { message: 'Save timed out — the lead was not created. Please try again.' };
+              }
+            } catch (verifyErr) {
+              data = null;
+              error = { message: 'Save timed out — please try again. (' + (verifyErr.message || 'no response') + ')' };
+            }
+          }
           console.log('[SaveLead] Insert result:', error ? error.message : 'success, id=' + newId);
         }
 
