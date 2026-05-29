@@ -1527,7 +1527,10 @@
             auth: {
               storage: customStorage,
               autoRefreshToken: true,
-              persistSession: true
+              persistSession: true,
+              // Pass-through lock — see supabase-init.js: the default
+              // navigator.locks auto-refresh lock can deadlock every query.
+              lock: (_name, _acquireTimeout, fn) => fn()
             }
           });
           window._sgSupabaseClient = supabaseClient;
@@ -11372,8 +11375,20 @@
     // Get auth token from localStorage without calling getSession() (avoids deadlock with auto-refresh)
     function getAuthToken() {
       try {
-        const storageKey = `sb-ypeypgwsycxcagncgdur-auth-token`;
-        const raw = localStorage.getItem(storageKey);
+        // The shared client (supabase-init.js) stores the session under
+        // SG_CONFIG.SUPABASE_STORAGE_KEY ('sg-auth-token'); a locally-created
+        // fallback client uses supabase's default 'sb-<ref>-auth-token'. Reading
+        // only the latter meant this fast path ALWAYS missed and fell back to the
+        // (deadlock-prone) getSession(). Try every key the session might live under.
+        const candidateKeys = [
+          (window.SG_CONFIG && window.SG_CONFIG.SUPABASE_STORAGE_KEY) || 'sg-auth-token',
+          'sb-ypeypgwsycxcagncgdur-auth-token'
+        ];
+        let raw = null;
+        for (const k of candidateKeys) {
+          raw = localStorage.getItem(k);
+          if (raw) break;
+        }
         if (raw) {
           const parsed = JSON.parse(raw);
           const token = parsed?.access_token;

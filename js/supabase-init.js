@@ -34,6 +34,17 @@
 
   const { createClient } = window.supabase;
 
+  // ROOT-CAUSE FIX for the recurring CRM hangs ("Saving..." forever, "Loading
+  // timed out", any tab that silently never loads): supabase-js attaches the
+  // session token to EVERY request, and to do so it acquires a navigator.locks
+  // Web Lock (sb-<ref>-auth-token) shared with the auto-refresh timer. If that
+  // lock is ever held and not released — a crashed/closed tab, a stalled refresh,
+  // Safari's flaky LockManager — every subsequent .from()/.rpc()/.auth call waits
+  // on it forever. supabase-js@2.39.3 lets us swap the lock; a pass-through lock
+  // removes the cross-tab mutex (worst case: two tabs refresh redundantly, which
+  // is harmless) and eliminates the deadlock for all ~166 call sites at once.
+  const lockFree = (_name, _acquireTimeout, fn) => fn();
+
   // Simple storage wrapper to avoid lock issues
   const simpleStorage = {
     getItem: (key) => {
@@ -56,7 +67,8 @@
         storage: simpleStorage,
         storageKey: STORAGE_KEY,
         flowType: 'implicit',
-        debug: false
+        debug: false,
+        lock: lockFree
       }
     });
 
@@ -68,9 +80,12 @@
 
   } catch (e) {
     console.warn('Supabase init error, retrying without locks:', e.message);
-    // Fallback: Try with minimal options
+    // Fallback: minimal options, but keep the lock-free auth lock so this path
+    // can't reintroduce the deadlock we just removed above.
     try {
-      window._sgSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window._sgSupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { lock: lockFree }
+      });
     } catch (e2) {
       console.error('Supabase init failed completely:', e2);
     }
