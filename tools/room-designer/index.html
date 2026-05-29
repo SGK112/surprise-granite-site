@@ -7841,8 +7841,11 @@
           }))
         };
 
-        // Call AI endpoint
-        const response = await fetch('/api/ai/design-chat', {
+        // Call AI endpoint. MUST be absolute — the static host (www) does NOT
+        // proxy /api, so a relative URL returns an empty 200 and JSON.parse
+        // throws "Unexpected end of JSON input". Mirror room-scan's AI_API_BASE.
+        const designApiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+        const response = await fetch(`${designApiBase}/api/ai/design-chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

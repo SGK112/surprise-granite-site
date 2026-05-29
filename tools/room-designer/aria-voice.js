@@ -10,6 +10,8 @@
 (function () {
   'use strict';
 
+  // The static host (www) does NOT proxy /api, so API calls must be absolute.
+  function apiBase() { return (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com'; }
   function mode() { return window.ARIA_VOICE_MODE === 'realtime' ? 'realtime' : 'hybrid'; }
   function say(role, text) { if (text && typeof window.aiChatSay === 'function') window.aiChatSay(role, text); }
   function setChip(state) {
@@ -41,7 +43,7 @@
     say('user', text);
     let data;
     try {
-      const r = await fetch('/api/ai/design-chat', {
+      const r = await fetch(apiBase() + '/api/ai/design-chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history: [], roomState: window.getAiRoomState ? window.getAiRoomState() : {} })
       });
@@ -148,7 +150,7 @@
     setChip('connecting');
     let token, model;
     try {
-      const r = await fetch('/api/ai/realtime-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await fetch(apiBase() + '/api/ai/realtime-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       const j = await r.json();
       if (!r.ok || !j.client_secret) throw new Error(j.error || 'no session');
       token = j.client_secret.value; model = j.model;
