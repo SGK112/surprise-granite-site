@@ -3841,6 +3841,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 // 10mb general limit; AI routes with base64 images have route-level override
 app.use(express.json({ limit: '10mb' }));
 
+// Bridge routes are machine-to-machine (the @voicenow/bridge CLI sends no
+// browser Origin) with their own auth — pairing code for /pair, Bearer token
+// for poll/respond. Mount BEFORE the CSRF origin check so the CLI isn't 403'd.
+try {
+  app.use('/api/bridge', require('./routes/bridge'));
+} catch (err) {
+  logger.warn('Bridge API not available:', err.message);
+}
+
 // CSRF Protection - checks Origin/Referer for state-changing requests
 app.use(csrfOriginCheck());
 
@@ -4200,13 +4209,6 @@ app.post('/api/heic-to-jpeg',
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin/orders', ordersRouter);
-
-// ============ Bridge — pair a local Claude Code for the designer brain ============
-try {
-  app.use('/api/bridge', require('./routes/bridge'));
-} catch (err) {
-  logger.warn('Bridge API not available:', err.message);
-}
 
 // ============ ASPN — Arizona Stone Providers Network ============
 try {
