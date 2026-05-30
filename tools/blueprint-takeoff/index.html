@@ -2979,16 +2979,24 @@ flooring_lvp,5,3"></textarea>
         const page = await pdfDoc.getPage(i);
         const tc = await page.getTextContent();
         const text = tc.items.map(it => it.str).join(' ').replace(/\s+/g,' ').trim();
+        // layoutText preserves rows/columns from item positions — schedules
+        // (room# | name | SF) get scrambled by plain item-order join, which
+        // binds SF values to the wrong rooms. Used by the text-layer takeoff.
+        const layoutText = buildLayoutText(tc);
         const type = classifyPageText(text);
         const sheetNum = extractSheetNumber(text) || `P${i}`;
         const title = extractSheetTitle(text) || '(no title detected)';
         sheets.push({
-          pageNum: i, sheetNum, type, title, text,
+          pageNum: i, sheetNum, type, title, text, layoutText,
           selected: TAKEOFF_RELEVANT.has(type),
         });
         setParseProgress(i / pdfDoc.numPages, `Indexed ${i} of ${pdfDoc.numPages} pages`);
       }
       showSheetIndex();
+      // FREE, EXACT pass: read room/area schedules straight from the PDF text
+      // layer (no vision, no cost, no hallucination) and show them before
+      // extraction. Verified on First Watch: Dining 1437, Kitchen 1320, ...
+      extractTextLayerTakeoff();
       // Auto-save: project name = sanitized filename
       autoSave(prettifyProjectName(window.__lastSourceLabel || 'Untitled'));
     } catch (err) {
@@ -3005,6 +3013,63 @@ flooring_lvp,5,3"></textarea>
     $('parseError').textContent = msg;
     $('parseError').hidden = false;
     $('parseProgress').hidden = true;
+  }
+
+  // Rebuild on-sheet layout from PDF.js text-item positions: bucket items into
+  // rows by Y (PDF y-axis is bottom-up) and order columns by X. This keeps a
+  // schedule row "102 DINING 1437 SF" intact so the parser binds SF to the
+  // right room (plain item-order join scrambles it).
+  function buildLayoutText(tc) {
+    const items = (tc.items || []).filter(it => it.str && it.str.trim());
+    const rows = {};
+    for (const it of items) {
+      const x = it.transform[4], y = it.transform[5];
+      const key = Math.round(y / 4) * 4;           // ~4pt row buckets
+      (rows[key] = rows[key] || []).push({ x, s: it.str });
+    }
+    return Object.keys(rows).map(Number).sort((a, b) => b - a)
+      .map(y => rows[y].sort((a, b) => a.x - b.x).map(o => o.s).join('  '))
+      .join('\n');
+  }
+
+  // Read room/area schedules from the PDF text layer via /blueprint/parse-text.
+  // Deterministic + free; surfaces real SF before any vision call.
+  async function extractTextLayerTakeoff() {
+    try {
+      const fullText = (sheets || []).map(s => s.layoutText || s.text || '').join('\n');
+      if (!fullText.trim()) return;
+      const resp = await fetch(API_BASE + '/api/ai/blueprint/parse-text', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: fullText }),
+      });
+      if (!resp.ok) return;
+      window.__textTakeoff = await resp.json();
+      renderTextTakeoff(window.__textTakeoff);
+    } catch (_) { /* non-fatal — the vision pass still runs */ }
+  }
+
+  function renderTextTakeoff(t) {
+    if (!t || !Array.isArray(t.rooms) || !t.rooms.length) return;
+    const list = document.getElementById('sheetList');
+    if (!list) return;
+    let box = document.getElementById('textTakeoffBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'textTakeoffBox';
+      box.style.cssText = 'margin:12px 0;padding:14px 16px;border:1px solid rgba(34,197,94,.35);border-left:3px solid #22c55e;border-radius:8px;background:rgba(34,197,94,.07);font-size:13px';
+      list.parentNode.insertBefore(box, list);
+    }
+    const esc = s => String(s).replace(/[<>&]/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[c]));
+    const rows = t.rooms.map(r =>
+      `<tr><td style="padding:2px 12px 2px 0;color:var(--text-muted)">${esc(r.number||'')}</td>`+
+      `<td style="padding:2px 12px 2px 0">${esc(r.name)}</td>`+
+      `<td style="text-align:right;font-variant-numeric:tabular-nums">${(r.sqft||0).toLocaleString()} SF</td></tr>`
+    ).join('');
+    box.innerHTML =
+      `<div style="font-weight:700;color:#22c55e;margin-bottom:8px">📐 Read ${t.rooms.length} room${t.rooms.length>1?'s':''} straight from the plan text — no AI, exact</div>`+
+      `<table style="width:100%;border-collapse:collapse">${rows}</table>`+
+      `<div style="margin-top:8px;font-weight:600">Finished floor area: ${(t.finishedSqft||0).toLocaleString()} SF `+
+      `<span style="color:var(--text-muted);font-weight:400">(excludes patio/exterior)</span></div>`;
   }
 
   // ---- Step 2: sheet index UI ----
