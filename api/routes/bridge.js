@@ -11,10 +11,25 @@ const store = require('../services/bridgeStore');
 const json = express.json({ limit: '8mb' });
 const OWNER = process.env.BRIDGE_OWNER_ID || 'owner';
 
+// First-party SG pages may mint/disconnect pairing codes with NO admin key —
+// a browser sets the Origin header itself and the CORS allowlist stops other
+// sites from calling us, so a trusted Origin proves "this is our own page."
+// curl / CLI / server-to-server (no Origin, or a foreign one) still need the
+// admin key when BRIDGE_ADMIN_KEY is set. Net effect: 1-click pairing from the
+// SG pairing page, but randoms can't pair a bridge that serves everyone.
+const TRUSTED_ORIGINS = new Set([
+  'https://www.surprisegranite.com',
+  'https://surprisegranite.com',
+  'https://surprise-granite-site.onrender.com',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+]);
 function adminOk(req) {
   const need = process.env.BRIDGE_ADMIN_KEY;
   if (!need) return true; // unset = open (dev/testing)
-  return req.headers['x-bridge-admin-key'] === need;
+  const origin = req.headers.origin || '';
+  if (TRUSTED_ORIGINS.has(origin)) return true; // our own page in a browser
+  return req.headers['x-bridge-admin-key'] === need; // CLI/curl fallback
 }
 function bridgeAuth(req, res, next) {
   const r = store.authenticateBridge(req.headers['authorization']);
