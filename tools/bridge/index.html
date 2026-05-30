@@ -3,139 +3,268 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pair Local Bridge | Run AI on your Claude Code | Surprise Granite</title>
-  <meta name="description" content="One-click pair your local Claude Code with Surprise Granite's tools — run the blueprint takeoff reader and room designer on your own Claude subscription.">
+  <title>Pair Local Bridge · Run AI on your Claude Code | Surprise Granite</title>
+  <meta name="description" content="One-click pair your local Claude Code with Surprise Granite's AI tools — run the blueprint takeoff reader and room designer on your own Claude subscription.">
   <meta name="robots" content="noindex">
   <link rel="icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --sg-gold:#f9cb00;--sg-darker:#0f0f1a;--sg-green:#22c55e;--sg-amber:#f59e0b;--sg-orange:#f97316;
-      --text-primary:#fff;--text-secondary:rgba(255,255,255,.7);--text-muted:rgba(255,255,255,.5);
-      --border:rgba(255,255,255,.1);
+      --gold:#f9cb00; --orange:#f97316; --amber:#f59e0b; --green:#22c55e;
+      --bg:#0a0a12; --surface:#13131f; --surface2:#1a1a28;
+      --text:#fff; --text-2:rgba(255,255,255,.72); --text-3:rgba(255,255,255,.45);
+      --border:rgba(255,255,255,.09); --border-2:rgba(255,255,255,.14);
+      --mono:'JetBrains Mono','SF Mono',Menlo,monospace;
     }
     *{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-text-size-adjust:100%}
     body{
-      font-family:'Inter',system-ui,sans-serif;background:var(--sg-darker);color:var(--text-primary);
-      min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;
-      background-image:radial-gradient(circle at 20% 0%,rgba(249,203,0,.06),transparent 40%),radial-gradient(circle at 80% 100%,rgba(249,115,22,.05),transparent 40%);
+      font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+      min-height:100vh;line-height:1.5;overflow-x:hidden;
+      display:flex;flex-direction:column;align-items:center;padding:28px 18px 48px;position:relative;
     }
-    .wrap{width:100%;max-width:520px}
-    .logo{display:flex;justify-content:center;margin-bottom:24px}
-    .logo img{height:30px}
-    .card{
-      background:linear-gradient(135deg,rgba(249,115,22,.06),rgba(245,158,11,.04));
-      border:1px solid rgba(249,115,22,.3);border-radius:20px;padding:26px;
-    }
-    .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px}
-    .chef{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#f97316,#f59e0b);
-      display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;box-shadow:0 4px 12px rgba(249,115,22,.25)}
-    .head h1{font-size:17px;font-weight:700;font-family:'Space Grotesk',sans-serif}
-    .head p{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.55}
-    .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;vertical-align:middle;margin-left:8px}
-    .badge .dot{width:6px;height:6px;border-radius:999px}
-    .badge.connected{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
-    .badge.connected .dot{background:var(--sg-green);animation:pulse 1.6s infinite}
-    .badge.waiting{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
-    .badge.waiting .dot{background:var(--sg-amber)}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .label{font-size:12px;color:var(--text-secondary);font-weight:600;margin:0 0 8px}
-    .label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--sg-orange);color:#fff;align-items:center;justify-content:center;font-size:11px;margin-right:7px}
-    .cmd{position:relative;border-radius:13px;border:1px solid #2a2a3a;background:#1e1e2e;cursor:pointer;transition:.15s;margin-bottom:6px}
-    .cmd:hover{border-color:var(--sg-orange)}
-    .cmd .bar{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#16161e;border-bottom:1px solid rgba(255,255,255,.06);border-radius:13px 13px 0 0}
-    .dots{display:flex;gap:6px}.dots span{width:10px;height:10px;border-radius:999px}
-    .copybtn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;
-      background:linear-gradient(135deg,#f97316,#f59e0b);color:#fff;border:none;cursor:pointer;transition:.15s;font-family:inherit}
-    .copybtn:hover{filter:brightness(1.08)}
-    .copybtn.ok{background:rgba(34,197,94,.25);color:#86efac}
-    .cmd code{display:block;padding:15px 16px;font-family:'SF Mono',Menlo,monospace;font-size:14px;color:#cdd6f4;
-      white-space:nowrap;overflow-x:auto;user-select:all}
-    .cmd code .tok{color:#fab387;font-weight:700}
-    .hint{font-size:11px;color:var(--text-muted);margin:4px 0 18px}
-    .waiting-row{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--text-muted);margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
-    .spinner{width:14px;height:14px;border:2px solid rgba(249,115,22,.3);border-top-color:var(--sg-orange);border-radius:999px;animation:spin .7s linear infinite;flex-shrink:0}
+    /* ambient background */
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.5;pointer-events:none;z-index:0}
+    .orb.a{width:480px;height:480px;background:radial-gradient(circle,rgba(249,115,22,.28),transparent 70%);top:-160px;left:-120px;animation:float1 18s ease-in-out infinite}
+    .orb.b{width:520px;height:520px;background:radial-gradient(circle,rgba(249,203,0,.16),transparent 70%);bottom:-200px;right:-160px;animation:float2 22s ease-in-out infinite}
+    @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(60px,40px)}}
+    @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-50px,-40px)}}
+    .wrap{width:100%;max-width:540px;position:relative;z-index:1}
+
+    /* top bar */
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+    .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;letter-spacing:.2px;color:var(--text-2);text-decoration:none}
+    .brand img{height:24px}
+    .brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--amber));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#1a1a2e}
+    .pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.3px;border:1px solid var(--border-2);background:rgba(255,255,255,.04);transition:.3s}
+    .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--amber)}
+    .pill.waiting{color:#fcd34d}.pill.waiting .dot{background:var(--amber);box-shadow:0 0 0 0 rgba(245,158,11,.6);animation:ping 1.6s infinite}
+    .pill.connected{color:#86efac;border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.1)}
+    .pill.connected .dot{background:var(--green)}
+    @keyframes ping{0%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}70%{box-shadow:0 0 0 7px rgba(245,158,11,0)}100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}}
+
+    /* hero */
+    .hero{text-align:center;margin-bottom:24px}
+    .hero .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--orange);background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);padding:5px 11px;border-radius:999px;margin-bottom:16px}
+    .hero h1{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;line-height:1.12;letter-spacing:-.5px;margin-bottom:10px}
+    .hero h1 .grad{background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .hero p{font-size:14px;color:var(--text-2);max-width:420px;margin:0 auto}
+
+    /* connection diagram */
+    .diagram{display:flex;align-items:center;justify-content:center;gap:0;margin:26px auto 4px;max-width:380px}
+    .node{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;width:96px}
+    .node .icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;
+      background:var(--surface2);border:1px solid var(--border-2);transition:.4s;position:relative}
+    .node .lbl{font-size:11px;color:var(--text-3);font-weight:600;text-align:center;line-height:1.3}
+    .node.machine .icon{background:linear-gradient(135deg,#1f2937,#111827)}
+    .wire{flex:1;height:2px;position:relative;background:linear-gradient(90deg,var(--border-2),var(--border-2));border-radius:2px;overflow:hidden;min-width:50px}
+    .wire .flow{position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--orange),transparent);animation:flow 1.5s linear infinite}
+    @keyframes flow{to{left:110%}}
+    /* connected state of diagram */
+    .live .wire{background:linear-gradient(90deg,var(--green),var(--green))}
+    .live .wire .flow{display:none}
+    .live .node .icon{border-color:rgba(34,197,94,.5);box-shadow:0 0 24px rgba(34,197,94,.25)}
+    .live .node.cloud .icon{background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.08))}
+
+    /* card */
+    .card{background:linear-gradient(180deg,var(--surface),rgba(19,19,31,.6));border:1px solid var(--border);border-radius:22px;
+      padding:22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.6);backdrop-filter:blur(12px)}
+
+    /* command block */
+    .cmd-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+    .cmd-label .t{font-size:12px;font-weight:600;color:var(--text-2)}
+    .cmd-label .exp{font-size:10px;font-family:var(--mono);color:var(--text-3)}
+    .terminal{border-radius:14px;border:1px solid var(--border-2);background:#0d0d16;cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+    .terminal:hover{border-color:rgba(249,115,22,.5);box-shadow:0 0 0 3px rgba(249,115,22,.08)}
+    .terminal .bar{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    .traffic{display:flex;gap:6px}.traffic span{width:11px;height:11px;border-radius:50%}
+    .copybtn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:9px;font-size:12px;font-weight:700;font-family:inherit;
+      color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--amber));transition:.18s;box-shadow:0 3px 10px rgba(249,115,22,.3)}
+    .copybtn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .copybtn.ok{background:rgba(34,197,94,.2);color:#86efac;box-shadow:none}
+    .terminal .body{padding:16px;font-family:var(--mono);font-size:14px;display:flex;align-items:center;gap:9px;overflow-x:auto}
+    .terminal .prompt{color:var(--green);font-weight:700;user-select:none}
+    .terminal code{color:#e2e8f0;white-space:nowrap;user-select:all}
+    .terminal code .tok{color:var(--orange);font-weight:700}
+    .skeleton{display:inline-block;width:96px;height:14px;border-radius:4px;background:linear-gradient(90deg,#222 25%,#333 50%,#222 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;vertical-align:middle}
+    @keyframes shimmer{to{background-position:-200% 0}}
+
+    /* steps */
+    .steps{display:flex;gap:8px;margin-top:18px}
+    .step{flex:1;display:flex;flex-direction:column;gap:7px;padding:12px 11px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid var(--border);transition:.3s}
+    .step.active{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3)}
+    .step.done{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.25)}
+    .step .num{width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text-3);transition:.3s}
+    .step.active .num{background:linear-gradient(135deg,var(--orange),var(--amber));border-color:transparent;color:#fff}
+    .step.done .num{background:var(--green);border-color:transparent;color:#06240f}
+    .step .st{font-size:11.5px;font-weight:600;color:var(--text-2);line-height:1.35}
+    .step .sd{font-size:10.5px;color:var(--text-3);line-height:1.4}
+
+    .waiting-row{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--text-2);margin-top:18px;padding:12px 14px;border-radius:12px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18)}
+    .spinner{width:15px;height:15px;border:2px solid rgba(245,158,11,.25);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .connected-box{text-align:center;padding:8px 0}
-    .connected-box .big{font-size:40px;margin-bottom:8px}
-    .connected-box h2{font-size:16px;color:#86efac;margin-bottom:5px}
-    .connected-box p{font-size:12px;color:var(--text-muted);line-height:1.6}
-    .connected-box .host{font-family:'SF Mono',Menlo,monospace;color:var(--text-secondary)}
-    .link{display:inline-block;margin-top:14px;font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit}
-    .link:hover{color:var(--sg-gold)}
-    .err{margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5;font-size:12px;line-height:1.5}
-    .foot{margin-top:18px;text-align:center;font-size:12px}
-    .foot a{color:var(--text-muted);text-decoration:none}.foot a:hover{color:var(--sg-gold)}
-    .prereq{font-size:10px;color:var(--text-muted);margin-top:16px;text-align:center;line-height:1.6}
-    .prereq a{color:var(--text-secondary);text-decoration:underline}
+
+    .err{margin-top:14px;padding:11px 13px;border-radius:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);color:#fca5a5;font-size:12px;line-height:1.5}
+    .minor{margin-top:14px;text-align:center}
+    .minor button{background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit}
+    .minor button:hover{color:var(--gold)}
+
+    /* unlocks */
+    .unlocks{margin-top:20px}
+    .unlocks .h{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:11px;text-align:center}
+    .unlock-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .unlock{display:flex;align-items:center;gap:10px;padding:12px;border-radius:13px;background:var(--surface);border:1px solid var(--border);text-decoration:none;transition:.18s}
+    .unlock:hover{border-color:var(--border-2);transform:translateY(-2px)}
+    .unlock .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+    .unlock .ic.blue{background:rgba(59,130,246,.15);color:#93c5fd}
+    .unlock .ic.violet{background:rgba(139,92,246,.15);color:#c4b5fd}
+    .unlock .nm{font-size:12.5px;font-weight:600;color:var(--text)}
+    .unlock .ds{font-size:10.5px;color:var(--text-3)}
+
+    /* connected state */
+    .success{text-align:center;padding:6px 0}
+    .success .ring{width:84px;height:84px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+      background:radial-gradient(circle,rgba(34,197,94,.18),transparent 70%);position:relative}
+    .success .ring::before{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid rgba(34,197,94,.4);animation:pingRing 2s ease-out infinite}
+    @keyframes pingRing{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.3);opacity:0}}
+    .success .check{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#22c55e);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 24px rgba(34,197,94,.35)}
+    .success h2{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;margin-bottom:6px}
+    .success p{font-size:13px;color:var(--text-2);margin-bottom:18px}
+    .success .host{font-family:var(--mono);color:#86efac;font-weight:600}
+    .cta-row{display:flex;gap:10px;margin-bottom:6px}
+    .cta{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;transition:.18s}
+    .cta.primary{color:#1a1a2e;background:linear-gradient(135deg,var(--gold),var(--amber));box-shadow:0 4px 14px rgba(249,203,0,.25)}
+    .cta.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    .cta.secondary{color:var(--text-2);background:var(--surface2);border:1px solid var(--border-2)}
+    .cta.secondary:hover{border-color:var(--text-3);color:var(--text)}
+
+    .prereq{font-size:11px;color:var(--text-3);margin-top:20px;text-align:center;line-height:1.7}
+    .prereq code{font-family:var(--mono);color:var(--text-2);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:6px;font-size:11px}
+    .prereq a{color:var(--text-2);text-decoration:underline}
+    .foot{margin-top:22px;text-align:center;font-size:12px;color:var(--text-3)}
+    .foot a{color:var(--text-3);text-decoration:none}.foot a:hover{color:var(--gold)}
     .hidden{display:none!important}
+    @media(max-width:480px){
+      .hero h1{font-size:25px}
+      .steps{flex-direction:column}
+      .step{flex-direction:row;align-items:center;gap:10px}
+      .step .txt{display:flex;flex-direction:column}
+      .node{width:80px}.node .icon{width:52px;height:52px;font-size:22px}
+      .cta-row{flex-direction:column}
+    }
   </style>
 </head>
 <body>
+  <div class="orb a"></div><div class="orb b"></div>
+
   <div class="wrap">
-    <div class="logo"><img src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb26876fbb175_surprise-granite-logo.png" alt="Surprise Granite" onerror="this.style.display='none'"></div>
+    <div class="topbar">
+      <a class="brand" href="/">
+        <span class="mark">SG</span> Surprise Granite
+      </a>
+      <span id="badge" class="pill waiting"><span class="dot"></span>Waiting</span>
+    </div>
+
+    <div class="hero">
+      <span class="chip">🧑‍🍳 Local Bridge</span>
+      <h1>Run AI on <span class="grad">your</span> Claude</h1>
+      <p>Pair your local Claude Code and the blueprint takeoff reader &amp; room designer run on your own subscription — vision on dense schedule tables, zero API cost.</p>
+    </div>
+
+    <!-- live connection diagram -->
+    <div class="diagram" id="diagram">
+      <div class="node cloud"><div class="icon">☁️</div><div class="lbl">Surprise<br>Granite</div></div>
+      <div class="wire"><span class="flow"></span></div>
+      <div class="node machine"><div class="icon" id="machineIcon">💻</div><div class="lbl" id="machineLbl">Your<br>machine</div></div>
+    </div>
 
     <div class="card">
-      <div class="head">
-        <div class="chef">🧑‍🍳</div>
-        <div style="flex:1;min-width:0">
-          <h1>Pair your Claude<span id="badge" class="badge waiting"><span class="dot"></span>Waiting</span></h1>
-          <p>Run the blueprint takeoff reader &amp; room designer on <b style="color:var(--text-secondary)">your</b> Claude Code subscription — vision on dense schedule tables, zero API cost.</p>
-        </div>
-      </div>
-
       <!-- PAIR (default) -->
       <div id="statePair">
-        <p class="label"><span class="n">1</span>Copy this — paste it into your terminal:</p>
-        <div class="cmd" id="cmdBox" title="Click to copy">
-          <div class="bar">
-            <div class="dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div>
-            <button class="copybtn" id="copyBtn">⧉ Copy</button>
-          </div>
-          <code id="cmd">sg-bridge connect <span class="tok" id="codeInline">…</span></code>
+        <div class="cmd-label">
+          <span class="t">Paste this into your terminal</span>
+          <span class="exp" id="exp"></span>
         </div>
-        <p class="hint" id="hint">Generating your one-time code…</p>
+        <div class="terminal" id="cmdBox" title="Click anywhere to copy">
+          <div class="bar">
+            <div class="traffic"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+            <button class="copybtn" id="copyBtn">⧉ Copy command</button>
+          </div>
+          <div class="body">
+            <span class="prompt">$</span>
+            <code id="cmd">sg-bridge connect <span class="tok" id="codeInline"><span class="skeleton"></span></span></code>
+          </div>
+        </div>
+
+        <div class="steps" id="steps">
+          <div class="step active" id="step1"><div class="num">1</div><div class="txt"><div class="st">Copy</div><div class="sd">the command above</div></div></div>
+          <div class="step" id="step2"><div class="num">2</div><div class="txt"><div class="st">Run it</div><div class="sd">in your terminal</div></div></div>
+          <div class="step" id="step3"><div class="num">3</div><div class="txt"><div class="st">Paired</div><div class="sd">turns green here</div></div></div>
+        </div>
 
         <div class="waiting-row" id="waitRow">
-          <span class="spinner"></span> Waiting for your terminal to connect — this turns green automatically.
+          <span class="spinner"></span> <span id="hint">Generating your one-time code…</span>
         </div>
 
         <div id="err" class="err hidden"></div>
-
-        <div style="text-align:center"><button class="link" id="regenBtn">Code expired? Generate a new one</button></div>
-
-        <p class="prereq">Don't have it yet? Install once:&nbsp; <code style="font-family:monospace;color:var(--text-secondary)">npm i -g @surprise-granite/bridge</code><br>Requires <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js 18+</a> and <a href="https://claude.ai/download" target="_blank" rel="noreferrer">Claude Code</a> (Pro/Max). Keep the terminal open.</p>
+        <div class="minor"><button id="regenBtn">Code expired? Generate a fresh one</button></div>
       </div>
 
       <!-- CONNECTED -->
       <div id="stateConnected" class="hidden">
-        <div class="connected-box">
-          <div class="big">✅</div>
-          <h2>Paired and live</h2>
-          <p>Connected to <span class="host" id="host">your machine</span>.<br>Open a tool and tick <b style="color:var(--text-secondary)">“🔗 Read with my Claude.”</b></p>
-          <button class="link" id="disconnectBtn">Disconnect</button>
+        <div class="success">
+          <div class="ring"><div class="check">✓</div></div>
+          <h2>Paired &amp; live</h2>
+          <p>Connected to <span class="host" id="host">your machine</span> — AI tools now run on your Claude.</p>
+          <div class="cta-row">
+            <a class="cta primary" href="/tools/blueprint-takeoff/">📐 Blueprint Takeoff</a>
+            <a class="cta secondary" href="/tools/room-designer/">🛋 Room Designer</a>
+          </div>
+          <div class="minor"><button id="disconnectBtn">Disconnect this machine</button></div>
         </div>
       </div>
     </div>
 
-    <div class="foot">
-      <a href="/tools/blueprint-takeoff/">← Blueprint Takeoff</a> &nbsp;·&nbsp; <a href="/tools/room-designer/">Room Designer</a>
+    <!-- what it unlocks (shown while pairing) -->
+    <div class="unlocks" id="unlocks">
+      <div class="h">What pairing unlocks</div>
+      <div class="unlock-grid">
+        <a class="unlock" href="/tools/blueprint-takeoff/">
+          <div class="ic blue">📐</div>
+          <div><div class="nm">Blueprint Takeoff</div><div class="ds">Reads dense spec tables</div></div>
+        </a>
+        <a class="unlock" href="/tools/room-designer/">
+          <div class="ic violet">🛋</div>
+          <div><div class="nm">Room Designer</div><div class="ds">Aria vision &amp; chat</div></div>
+        </a>
+      </div>
     </div>
+
+    <p class="prereq">
+      Don't have it yet? Install once: <code>npm i -g @surprise-granite/bridge</code><br>
+      Requires <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js 18+</a> and <a href="https://claude.ai/download" target="_blank" rel="noreferrer">Claude Code</a> (Pro/Max). Keep the terminal open.
+    </p>
+
+    <div class="foot"><a href="/account">← Back to account</a></div>
   </div>
 
   <script>
   (function(){
     const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
     const $ = id => document.getElementById(id);
-    let pairing = null, loading = false, pollTimer = null;
+    let pairing = null, loading = false, pollTimer = null, copied = false;
 
     function copy(){
+      if(!pairing) return;
       const text = $('cmd').textContent.trim();
       navigator.clipboard.writeText(text).then(()=>{
+        copied = true;
         const b = $('copyBtn'); b.textContent = '✓ Copied'; b.classList.add('ok');
-        setTimeout(()=>{ b.textContent = '⧉ Copy'; b.classList.remove('ok'); }, 1600);
+        $('step1').classList.add('done'); $('step1').classList.remove('active');
+        $('step2').classList.add('active');
+        setTimeout(()=>{ b.textContent = '⧉ Copy command'; b.classList.remove('ok'); }, 1800);
       }).catch(()=>{});
     }
     $('copyBtn').addEventListener('click', e => { e.stopPropagation(); copy(); });
@@ -143,25 +272,53 @@
 
     function showErr(m){ if(!m){ $('err').classList.add('hidden'); return; } $('err').textContent = m; $('err').classList.remove('hidden'); }
 
+    function tickExpiry(){
+      if(!pairing){ $('exp').textContent=''; return; }
+      const mins = Math.max(0, Math.floor((pairing.expiresAt - Date.now())/60000));
+      const secs = Math.max(0, Math.floor((pairing.expiresAt - Date.now())/1000) % 60);
+      $('exp').textContent = mins>0 || secs>0 ? ('expires in ' + mins + ':' + String(secs).padStart(2,'0')) : 'expired';
+    }
+
     async function generate(){
       if(loading) return;
       loading = true; showErr(''); $('hint').textContent = 'Generating your one-time code…';
-      $('codeInline').textContent = '…';
+      $('codeInline').innerHTML = '<span class="skeleton"></span>';
       try{
-        const r = await fetch(API_BASE + '/api/bridge/pair-init', {
-          method:'POST', headers:{ 'Content-Type':'application/json' }, body:'{}'
-        });
+        const r = await fetch(API_BASE + '/api/bridge/pair-init', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:'{}' });
         if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ('HTTP '+r.status)); }
         const d = await r.json();
         pairing = { code: d.code, expiresAt: Date.now() + (d.expiresInSec||600)*1000 };
         $('codeInline').textContent = d.code;
-        const mins = Math.max(1, Math.round((d.expiresInSec||600)/60));
-        $('hint').textContent = 'Ready — code valid for ~' + mins + ' min. Click the box to copy.';
+        $('hint').textContent = 'Waiting for your terminal to connect…';
+        tickExpiry();
         restartPoll();
       }catch(e){
-        $('codeInline').textContent = '<error>';
-        showErr('Couldn’t generate a code: ' + (e.message||e) + '. Try the “generate a new one” link.');
+        $('codeInline').textContent = '—';
+        $('hint').textContent = 'Couldn’t reach the pairing service.';
+        showErr((e.message||e) + ' · Try “Generate a fresh one” below.');
       }finally{ loading = false; }
+    }
+
+    function setConnected(host){
+      $('statePair').classList.add('hidden');
+      $('unlocks').classList.add('hidden');
+      $('stateConnected').classList.remove('hidden');
+      $('host').textContent = host || 'your machine';
+      $('diagram').classList.add('live');
+      $('machineIcon').textContent = '🖥️';
+      $('machineLbl').innerHTML = (host || 'Your machine').split('.')[0];
+      const b = $('badge'); b.className = 'pill connected'; b.innerHTML = '<span class="dot"></span>Connected';
+      ['step1','step2','step3'].forEach(s=>{ $(s).classList.remove('active'); $(s).classList.add('done'); });
+    }
+    function setWaiting(){
+      $('stateConnected').classList.add('hidden');
+      $('statePair').classList.remove('hidden');
+      $('unlocks').classList.remove('hidden');
+      $('diagram').classList.remove('live');
+      $('machineIcon').textContent = '💻';
+      $('machineLbl').innerHTML = 'Your<br>machine';
+      $('step1').className = 'step active'; $('step2').className = 'step'; $('step3').className = 'step';
+      const b = $('badge'); b.className = 'pill waiting'; b.innerHTML = '<span class="dot"></span>Waiting';
     }
 
     async function fetchStatus(){
@@ -170,15 +327,10 @@
         if(!r.ok) return;
         const s = await r.json();
         if(s.connected){
-          $('statePair').classList.add('hidden');
-          $('stateConnected').classList.remove('hidden');
-          $('host').textContent = s.hostname || 'your machine';
-          const b = $('badge'); b.className = 'badge connected'; b.innerHTML = '<span class="dot"></span>Connected';
+          setConnected(s.hostname);
           if(pollTimer){ clearInterval(pollTimer); pollTimer = setInterval(fetchStatus, 5000); }
-        } else {
-          $('stateConnected').classList.add('hidden');
-          $('statePair').classList.remove('hidden');
-          const b = $('badge'); b.className = 'badge waiting'; b.innerHTML = '<span class="dot"></span>Waiting';
+        } else if(!$('stateConnected').classList.contains('hidden')){
+          setWaiting(); if(!pairing) generate();
         }
       }catch(_){}
     }
@@ -186,22 +338,19 @@
     async function disconnect(){
       try{
         const s = await (await fetch(API_BASE + '/api/bridge/status',{cache:'no-store'})).json();
-        await fetch(API_BASE + '/api/bridge/disconnect', {
-          method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ bridgeId: s.bridgeId })
-        });
+        await fetch(API_BASE + '/api/bridge/disconnect', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ bridgeId: s.bridgeId }) });
       }catch(_){}
-      pairing = null; await fetchStatus(); generate();
+      pairing = null; setWaiting(); generate();
     }
 
     function restartPoll(){ if(pollTimer) clearInterval(pollTimer); pollTimer = setInterval(fetchStatus, 2000); }
 
     $('regenBtn').addEventListener('click', generate);
     $('disconnectBtn').addEventListener('click', disconnect);
+    setInterval(tickExpiry, 1000);
 
-    // boot: check if already connected; if not, mint a code immediately (1-click)
-    fetchStatus().then(()=>{
-      if($('stateConnected').classList.contains('hidden')) generate();
-    });
+    // boot: if already connected show success, else mint a code immediately (1-click)
+    fetchStatus().then(()=>{ if($('stateConnected').classList.contains('hidden')) generate(); });
     restartPoll();
   })();
   </script>
