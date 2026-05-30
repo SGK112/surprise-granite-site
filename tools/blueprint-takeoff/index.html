@@ -3049,7 +3049,9 @@ flooring_lvp,5,3"></textarea>
   }
 
   function renderTextTakeoff(t) {
-    if (!t || !Array.isArray(t.rooms) || !t.rooms.length) return;
+    const rooms = (t && Array.isArray(t.rooms)) ? t.rooms : [];
+    const mats = (t && Array.isArray(t.materials)) ? t.materials : [];
+    if (!rooms.length && !mats.length) return;
     const list = document.getElementById('sheetList');
     if (!list) return;
     let box = document.getElementById('textTakeoffBox');
@@ -3060,16 +3062,31 @@ flooring_lvp,5,3"></textarea>
       list.parentNode.insertBefore(box, list);
     }
     const esc = s => String(s).replace(/[<>&]/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;' }[c]));
-    const rows = t.rooms.map(r =>
-      `<tr><td style="padding:2px 12px 2px 0;color:var(--text-muted)">${esc(r.number||'')}</td>`+
-      `<td style="padding:2px 12px 2px 0">${esc(r.name)}</td>`+
-      `<td style="text-align:right;font-variant-numeric:tabular-nums">${(r.sqft||0).toLocaleString()} SF</td></tr>`
-    ).join('');
-    box.innerHTML =
-      `<div style="font-weight:700;color:#22c55e;margin-bottom:8px">📐 Read ${t.rooms.length} room${t.rooms.length>1?'s':''} straight from the plan text — no AI, exact</div>`+
-      `<table style="width:100%;border-collapse:collapse">${rows}</table>`+
-      `<div style="margin-top:8px;font-weight:600">Finished floor area: ${(t.finishedSqft||0).toLocaleString()} SF `+
-      `<span style="color:var(--text-muted);font-weight:400">(excludes patio/exterior)</span></div>`;
+    let html = '';
+    if (rooms.length) {
+      const rows = rooms.map(r =>
+        `<tr><td style="padding:2px 12px 2px 0;color:var(--text-muted)">${esc(r.number||'')}</td>`+
+        `<td style="padding:2px 12px 2px 0">${esc(r.name)}</td>`+
+        `<td style="text-align:right;font-variant-numeric:tabular-nums">${(r.sqft||0).toLocaleString()} SF</td></tr>`
+      ).join('');
+      html +=
+        `<div style="font-weight:700;color:#22c55e;margin-bottom:8px">📐 Read ${rooms.length} room${rooms.length>1?'s':''} straight from the plan text — no AI, exact</div>`+
+        `<table style="width:100%;border-collapse:collapse">${rows}</table>`+
+        `<div style="margin-top:8px;font-weight:600">Finished floor area: ${(t.finishedSqft||0).toLocaleString()} SF `+
+        `<span style="color:var(--text-muted);font-weight:400">(excludes patio/exterior)</span></div>`;
+    }
+    if (mats.length) {
+      const mrows = mats.map(m =>
+        `<tr><td style="padding:2px 10px 2px 0;color:var(--text-muted)">${esc(m.code||'')}</td>`+
+        `<td style="padding:2px 10px 2px 0">${esc(m.spec||'')}</td>`+
+        `<td style="text-align:right;color:${m.byVendor?'#f59e0b':'var(--text-muted)'}">${m.byVendor?'by vendor':esc(m.category||'')}</td></tr>`
+      ).join('');
+      html +=
+        `<div style="font-weight:700;color:#22c55e;margin:12px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">🪵 ${mats.length} material spec${mats.length>1?'s':''} from the schedule</div>`+
+        `<table style="width:100%;border-collapse:collapse">${mrows}</table>`+
+        `<div style="margin-top:6px;color:var(--text-muted);font-style:italic">Material specs are exact from the schedule. Counter LF/SF aren't printed on plans — measure them or read the elevations.</div>`;
+    }
+    box.innerHTML = html;
   }
 
   // ---- Step 2: sheet index UI ----
