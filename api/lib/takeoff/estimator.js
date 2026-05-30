@@ -8,10 +8,12 @@
  * Output: structured estimate with line items, subtotals, margin range, and
  * source attribution (catalog hit vs. industry-average fallback).
  *
- * V1 uses industry-standard rates only. Catalog matching against the SG
- * stone-pricing.json comes in V2 — we'd ship a slim {category, brand, name,
- * price} snapshot inside api/lib/takeoff/ so this Node service doesn't have
- * to reach across to the static site's data files at request time.
+ * Pricing precedence (per line): vendor-catalog override (frontend-resolved)
+ * → user's "My Pricing" rate → SG stone catalog match (matchCatalog against
+ * stone-pricing.json, granite/quartz/quartzite/marble/porcelain ~950 items)
+ * → industry-average fallback. Stone IS catalog-priced today; flooring/tile/
+ * cabinets use industry averages unless a vendor override is supplied. Every
+ * line carries `source` so the UI shows what's real vs averaged.
  */
 
 // Material-specific waste % — what to over-order to handle cuts, breakage,

@@ -2960,7 +2960,7 @@ flooring_lvp,5,3"></textarea>
     window.__lastCoverInfo = null;
     window.__lastQuestions = null;
     window.__lastMeasurements = null;
-    window.__lastPerPage = null;
+    window.__lastPerPage = null;    window.__lastPerPagePdfHash = null;
 
     $('parseError').hidden = true;
     $('parseProgress').hidden = false;
@@ -3219,15 +3219,24 @@ flooring_lvp,5,3"></textarea>
     // project), keep them and only extract the missing ones. The page-hash
     // cache also catches re-runs, but per-page saves below mean even an
     // unrecoverable tab close leaves no work lost.
+    const RASTER_SCALE = 1.6;
+    const pdfHash = window.__currentPdfHash || 'no-pdf-hash';
+
+    // Resume prior per-page results ONLY when they came from the SAME PDF.
+    // priorByPage was keyed on pageNum alone, so loading a different PDF and
+    // re-extracting reused the previous project's page-N result — literally
+    // "re-bidding the first project". Gate the resume on the PDF hash; the
+    // page cache below is already pdfHash-scoped and stays safe.
     const priorPerPage = Array.isArray(window.__lastPerPage) ? window.__lastPerPage : [];
-    const priorByPage = new Map(priorPerPage.filter(p => p.ok && p.sheet).map(p => [p.sheet.pageNum, p]));
+    const samePdfAsPrior = window.__lastPerPagePdfHash && window.__lastPerPagePdfHash === pdfHash;
+    const priorByPage = new Map(
+      (samePdfAsPrior ? priorPerPage : []).filter(p => p.ok && p.sheet).map(p => [p.sheet.pageNum, p])
+    );
 
     const perPage = [];
     let done = 0;
     let cacheHits = 0;
     let resumed = 0;
-    const RASTER_SCALE = 1.6;
-    const pdfHash = window.__currentPdfHash || 'no-pdf-hash';
 
     // Warn the user if they try to navigate away mid-extraction
     extractionInProgress = true;
@@ -3259,7 +3268,7 @@ flooring_lvp,5,3"></textarea>
       }
       done++;
       // Checkpoint after every page so an interrupted run doesn't lose work
-      window.__lastPerPage = perPage;
+      window.__lastPerPage = perPage;      window.__lastPerPagePdfHash = pdfHash;
       autoSave();
 
       const noteParts = [];
@@ -3271,7 +3280,7 @@ flooring_lvp,5,3"></textarea>
 
     extractionInProgress = false;
     $('extractProgress').hidden = true;
-    window.__lastPerPage = perPage;
+    window.__lastPerPage = perPage;    window.__lastPerPagePdfHash = pdfHash;
     renderTotals(perPage);
     renderMaterials(perPage);
     renderQuestions(perPage);
@@ -5788,7 +5797,7 @@ ${pb.license || ''}`;
     window.__lastQuestions = null;
     window.__lastMissingFromAI = null;
     window.__lastMeasurements = null;
-    window.__lastPerPage = null;
+    window.__lastPerPage = null;    window.__lastPerPagePdfHash = null;
     window.__lastResults = null;
     window.__lastWorkOrders = null;
     window.__currentPdfHash = null;
