@@ -359,20 +359,32 @@ async function analyzeBlueprintViaBridge(imageUrl, userContext, projectType) {
     `"notes":[""]}\n` +
     `Return 0 / [] when something is not shown — never invent a number or a spec.`;
   const out = await bridge.dispatchToBridge(owner,
-    { prompt, model: process.env.ARIA_BRIDGE_MODEL || 'claude-opus-4-7' },
+    { prompt, model: process.env.ARIA_BRIDGE_MODEL || undefined },
     { timeoutMs: 180_000 });
-  const m = (out && out.text || '').match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('Claude returned no JSON');
+  const raw = (out && out.text || '').trim();
+  // Always log what Claude actually returned — "read everything, got zeros"
+  // is impossible to debug without the raw text. Truncated to keep logs sane.
+  logger.info('[bridge-blueprint] raw Claude output (%d chars): %s',
+    raw.length, raw.slice(0, 1200).replace(/\s+/g, ' '));
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('Claude returned no JSON. Raw: ' + raw.slice(0, 300));
   const p = JSON.parse(m[0]);
   const rooms = Array.isArray(p.rooms) ? p.rooms : [];
+  const materials = Array.isArray(p.materials_called_out) ? p.materials_called_out : [];
+  const notes = Array.isArray(p.notes) ? p.notes : [];
+  // If Claude came back with nothing usable, surface a snippet of its raw
+  // reply in notes so the UI shows WHY instead of a silent blank.
+  if (!rooms.length && !materials.length && !(+p.countertopSqft) && !(+p.flooringSqft) && !(+p.tileSqft)) {
+    notes.push('Claude returned no quantities. Raw reply: ' + raw.slice(0, 240));
+  }
   return {
     totalArea: rooms.reduce((s, r) => s + (+r.sqft || 0), 0),
     countertopSqft: +p.countertopSqft || 0,
     flooringSqft: +p.flooringSqft || 0,
     tileSqft: +p.tileSqft || 0,
     rooms,
-    materials_called_out: Array.isArray(p.materials_called_out) ? p.materials_called_out : [],
-    notes: Array.isArray(p.notes) ? p.notes : [],
+    materials_called_out: materials,
+    notes,
     confidence: 'bridge',
   };
 }

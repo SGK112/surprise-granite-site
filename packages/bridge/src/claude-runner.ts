@@ -62,11 +62,22 @@ export async function runClaudeOnce(opts: RunOpts): Promise<void> {
   const projectId = request.projectId || '_unscoped_'
   const workspaceDir = workspaceDirFor(projectId)
 
-  // 1a. Drop a CLAUDE.md so claude knows it's working on a Webstew
-  //     project and behaves like the in-app agent does (Edit over
-  //     Bash, /api/media for images, preserve scope, etc.). Re-written
-  //     every request so the file stays in sync with prompt evolutions.
-  writeClaudeMd(workspaceDir, request.target)
+  // 1a. Drop a CLAUDE.md ONLY for real project work (the request carries
+  //     a VFS or a target). It tells claude it's the website-builder Chef
+  //     (Edit over Bash, /api/media for images, preserve scope, etc.).
+  //     For a RAW prompt dispatch — no files, no target — the prompt is
+  //     self-contained (e.g. SG blueprint takeoff: "curl this image, read
+  //     it, return takeoff JSON"). Dropping the Chef CLAUDE.md there
+  //     HIJACKS the task: claude acts like a site editor and echoes empty
+  //     results instead of reading the sheet. So skip it, and clear any
+  //     stale copy left in the shared _unscoped_ workspace.
+  const hasProject =
+    (request.files && Object.keys(request.files).length > 0) || !!request.target
+  if (hasProject) {
+    writeClaudeMd(workspaceDir, request.target)
+  } else {
+    try { fs.rmSync(path.join(workspaceDir, 'CLAUDE.md'), { force: true }) } catch {}
+  }
   // 1b. Materialize the VFS to disk.
   writeVfs(workspaceDir, request.files || {})
   // 2. Snapshot for diffing after the run.
