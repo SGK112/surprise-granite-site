@@ -320,6 +320,63 @@ router.get('/video/status/:id', async (req, res) => {
 
 // ============ BLUEPRINT TAKEOFF ============
 
+// Upload a rasterized sheet (data URL) to Cloudinary and return a legible JPEG
+// URL (downscaled wide for dense schedules). Used to hand the image to a paired
+// Claude Code over the bridge without stuffing base64 through the dispatch.
+async function uploadBlueprintImage(dataUrl) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  if (!cloudName || !apiKey || !apiSecret) throw new Error('Cloudinary not configured');
+  const cloudinary = require('cloudinary').v2;
+  cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+  const buf = Buffer.from(String(dataUrl).replace(/^data:[^,]+,/, ''), 'base64');
+  const result = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'sg-blueprint-bridge', resource_type: 'image', tags: ['blueprint-bridge'], timeout: 60000 },
+      (err, out) => (err ? reject(err) : resolve(out))
+    );
+    stream.end(buf);
+  });
+  // f_jpg + width 2400 keeps dense schedule text legible for vision.
+  return result.secure_url.replace('/upload/', '/upload/f_jpg,w_2400,q_auto:good/');
+}
+
+// Read one sheet via the paired Claude Code (the bridge). Claude curls the
+// Cloudinary URL, reads the image with vision, and returns the takeoff JSON.
+async function analyzeBlueprintViaBridge(imageUrl, userContext, projectType) {
+  const bridge = require('../services/bridgeStore');
+  const owner = process.env.BRIDGE_OWNER_ID || 'owner';
+  const prompt =
+    `You are reading ONE sheet of a construction plan set to do a quantity takeoff.\n` +
+    `Download and READ this sheet image with your vision:\n  ${imageUrl}\n` +
+    `Run:  curl -sL "${imageUrl}" -o /tmp/sg_sheet.jpg   then read /tmp/sg_sheet.jpg\n\n` +
+    (userContext ? `Context: ${userContext}\n\n` : '') +
+    `Extract ONLY what is explicitly shown. Read any schedule TABLE row by row.\n` +
+    `Return ONLY this JSON object (no prose, no markdown):\n` +
+    `{"rooms":[{"name":"","sqft":0}],"countertopSqft":0,"flooringSqft":0,"tileSqft":0,` +
+    `"materials_called_out":[{"code":"","category":"quartz|granite|marble|tile|flooring|laminate|millwork","spec":""}],` +
+    `"notes":[""]}\n` +
+    `Return 0 / [] when something is not shown — never invent a number or a spec.`;
+  const out = await bridge.dispatchToBridge(owner,
+    { prompt, model: process.env.ARIA_BRIDGE_MODEL || 'claude-opus-4-7' },
+    { timeoutMs: 180_000 });
+  const m = (out && out.text || '').match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('Claude returned no JSON');
+  const p = JSON.parse(m[0]);
+  const rooms = Array.isArray(p.rooms) ? p.rooms : [];
+  return {
+    totalArea: rooms.reduce((s, r) => s + (+r.sqft || 0), 0),
+    countertopSqft: +p.countertopSqft || 0,
+    flooringSqft: +p.flooringSqft || 0,
+    tileSqft: +p.tileSqft || 0,
+    rooms,
+    materials_called_out: Array.isArray(p.materials_called_out) ? p.materials_called_out : [],
+    notes: Array.isArray(p.notes) ? p.notes : [],
+    confidence: 'bridge',
+  };
+}
+
 /**
  * Analyze blueprint using AI vision (GPT-4 Vision or Ollama)
  * POST /api/ai/blueprint
@@ -376,7 +433,26 @@ router.post('/blueprint', async (req, res) => {
       const hasOpenAI = !!effectiveKey;
       const hasOllama = useOllama;
 
-      if (blueprintData && (hasOpenAI || hasOllama)) {
+      const wantBridge = req.body.provider === 'bridge';
+      const bridgeStore = require('../services/bridgeStore');
+      const bridgeOwner = process.env.BRIDGE_OWNER_ID || 'owner';
+
+      if (wantBridge && blueprintData && bridgeStore.hasLiveBridge(bridgeOwner)) {
+        // Read this sheet on the user's PAIRED Claude Code (their subscription).
+        // Upload to Cloudinary, hand Claude the URL — it curls + reads the image
+        // with vision (better at dense schedule tables than text, no API cost).
+        try {
+          const url = await uploadBlueprintImage(blueprintData);
+          analysisResults = await analyzeBlueprintViaBridge(url, userContext, projectType);
+          analysisResults.mode = 'ai';
+          analysisResults.provider = 'bridge';
+        } catch (bridgeErr) {
+          logger.error('Bridge blueprint read failed:', bridgeErr.message);
+          return res.status(502).json({ error: 'Claude bridge read failed: ' + bridgeErr.message, mode: 'error' });
+        }
+      } else if (wantBridge && blueprintData) {
+        return res.status(503).json({ error: 'No paired Claude bridge connected — pair it first, or turn off "Read with my Claude".', mode: 'error' });
+      } else if (blueprintData && (hasOpenAI || hasOllama)) {
         const provider = hasOllama ? 'ollama' : 'openai';
         logger.info(`Analyzing blueprint with ${provider}${userKey ? ' (BYOK)' : ''}...`);
 
