@@ -5169,6 +5169,47 @@ flooring_lvp,5,3"></textarea>
     measure.measurements.filter(m => m.sheetNum === sheetNum).forEach(m => drawMeasurement(ctx, m, '#16a34a'));
     // In-progress
     if (measure.points.length) drawInProgress(ctx, measure.mode, measure.points);
+    // Live "rubber-band" preview to the cursor + running value
+    drawLivePreview(ctx);
+  }
+
+  // px -> ft helpers (single source of truth for the math)
+  function mLenFt(a, b) { return Math.hypot(b.x - a.x, b.y - a.y) / measure.pxPerFoot; }
+  function mPolyAreaFt(pts) {
+    let a2 = 0;
+    for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; a2 += p.x * q.y - q.x * p.y; }
+    return Math.abs(a2) / 2 / (measure.pxPerFoot * measure.pxPerFoot);
+  }
+
+  // Dashed preview from the last point to the cursor, with the live measurement
+  // so a bad scale is obvious BEFORE you commit (the 0.015 ft² problem).
+  function drawLivePreview(ctx) {
+    const pts = measure.points, cur = measure._cursor;
+    if (!cur || !pts.length || !measure.mode) return;
+    ctx.save();
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+    let label = '';
+    if (measure.mode === 'linear') {
+      const a = pts[0];
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(cur.x, cur.y); ctx.stroke();
+      if (measure.pxPerFoot) label = mLenFt(a, cur).toFixed(2) + ' lf';
+    } else if (measure.mode === 'polygon') {
+      const poly = [...pts, cur];
+      ctx.beginPath(); poly.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.closePath(); ctx.stroke();
+      if (measure.pxPerFoot) label = mPolyAreaFt(poly).toFixed(1) + ' sf';
+    } else if (measure.mode === 'calibrate' && pts.length === 1) {
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); ctx.lineTo(cur.x, cur.y); ctx.stroke();
+      label = Math.round(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y)) + ' px';
+    }
+    ctx.setLineDash([]);
+    if (label) {
+      ctx.font = 'bold 13px sans-serif';
+      const w = ctx.measureText(label).width + 14;
+      ctx.fillStyle = 'rgba(0,0,0,.82)'; ctx.fillRect(cur.x + 12, cur.y - 24, w, 19);
+      ctx.fillStyle = '#fbbf24'; ctx.fillText(label, cur.x + 18, cur.y - 10);
+      setMeasureStatus(`Scale ${measure.pxPerFoot ? measure.pxPerFoot.toFixed(1) + ' px/ft' : 'NOT SET'} · ${label}`);
+    }
+    ctx.restore();
   }
 
   function drawMeasurement(ctx, m, color) {
@@ -5252,6 +5293,18 @@ flooring_lvp,5,3"></textarea>
     autoSave();
   });
 
+  function canvasPt(e) {
+    const r = e.target.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (e.target.width / r.width), y: (e.clientY - r.top) * (e.target.height / r.height) };
+  }
+  $('measureCanvas').addEventListener('mousemove', e => {
+    if (!measure.mode || !measure.pageRendered || !measure.points.length) return;
+    measure._cursor = canvasPt(e);
+    drawOverlay();
+  });
+  $('measureCanvas').addEventListener('mouseleave', () => {
+    if (measure._cursor) { measure._cursor = null; drawOverlay(); }
+  });
   $('measureCanvas').addEventListener('click', e => {
     if (!measure.mode || !measure.pageRendered) return;
     const r = e.target.getBoundingClientRect();
@@ -5283,22 +5336,29 @@ flooring_lvp,5,3"></textarea>
     if (!measure.pxPerFoot) return;
     let value, unit;
     if (measure.mode === 'linear') {
-      const distPx = Math.hypot(measure.points[1].x - measure.points[0].x, measure.points[1].y - measure.points[0].y);
-      value = distPx / measure.pxPerFoot;
+      value = mLenFt(measure.points[0], measure.points[1]);
       unit = 'lf';
     } else if (measure.mode === 'polygon') {
-      // Shoelace formula in pixels, then convert to sf using (px/ft)^2
-      let area2 = 0;
-      const pts = measure.points;
-      for (let i = 0; i < pts.length; i++) {
-        const a = pts[i], b = pts[(i+1) % pts.length];
-        area2 += (a.x * b.y - b.x * a.y);
-      }
-      const areaPx = Math.abs(area2) / 2;
-      value = areaPx / (measure.pxPerFoot * measure.pxPerFoot);
+      value = mPolyAreaFt(measure.points);
       unit = 'sf';
     }
     if (!Number.isFinite(value) || value <= 0) return;
+
+    // Sanity guard: a real wall/room is never a fraction of a foot. Sub-unit
+    // values almost always mean the scale is miscalibrated (the 0.015 ft² bug).
+    const tiny = (unit === 'sf' && value < 1) || (unit === 'lf' && value < 0.5);
+    if (tiny) {
+      const recal = confirm(
+        `That measured ${value.toFixed(3)} ${unit} at ${measure.pxPerFoot.toFixed(1)} px/ft — almost certainly a bad scale.\n\n` +
+        `OK = re-calibrate (discard this)   ·   Cancel = keep it anyway`);
+      if (recal) {
+        measure.points = []; measure._cursor = null;
+        setMeasureMode('calibrate');
+        setMeasureStatus('Re-calibrate: click two points on a KNOWN dimension, then type the real distance in feet.');
+        drawOverlay();
+        return;
+      }
+    }
 
     const target = measure.mode === 'linear' ? 'countertop_lf' : 'flooring_sqft'; // default
     measure.measurements.push({
