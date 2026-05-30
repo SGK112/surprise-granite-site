@@ -459,7 +459,12 @@ async function callGPT4Vision(apiKey, systemPrompt, userPrompt, imageBase64) {
     body: JSON.stringify({
       model: CONFIG.openai.model,
       messages: [
-        { role: 'system', content: systemPrompt },
+        // response_format:json_object REQUIRES the word "json" in the messages
+        // and forces the model to emit a single parseable JSON object. Without
+        // it gpt-4o returned prose/markdown → parseJSONResponse threw "No valid
+        // JSON found" on EVERY page (which used to silently become the demo
+        // kitchen). This is what the working room-scan routes already do.
+        { role: 'system', content: systemPrompt + '\n\nRespond ONLY with a single valid JSON object — no prose, no markdown fences.' },
         {
           role: 'user',
           content: [
@@ -476,7 +481,8 @@ async function callGPT4Vision(apiKey, systemPrompt, userPrompt, imageBase64) {
       ],
       max_tokens: CONFIG.openai.maxTokens,
       temperature: 0,  // 0 for max determinism (cache+seed handles the rest)
-      seed: 42         // GPT-4o respects seed best-effort; helps reproducibility
+      seed: 42,        // GPT-4o respects seed best-effort; helps reproducibility
+      response_format: { type: 'json_object' }
     })
   });
 
