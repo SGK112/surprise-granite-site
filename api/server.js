@@ -2194,7 +2194,7 @@ const corsConfig = {
     callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-admin-key', 'x-verification-token', 'X-Admin-Key', 'X-Verification-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-admin-key', 'x-verification-token', 'X-Admin-Key', 'X-Verification-Token', 'X-Bridge-Admin-Key', 'x-bridge-admin-key', 'x-user-openai-key', 'x-openai-key'],
   credentials: true
 };
 

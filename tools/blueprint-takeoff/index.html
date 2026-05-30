@@ -654,6 +654,7 @@
         <label id="useBridgeWrap" title="Read the selected sheets on your paired Claude Code (your subscription) instead of OpenAI — better on dense schedule tables. Pair it first; slower per page, so use it on the schedule/spec sheets." style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin:auto 0;cursor:pointer">
           <input type="checkbox" id="useBridgeToggle"> 🔗 Read with my Claude (paired)
         </label>
+        <a id="bridgePairLink" href="/tools/bridge/" title="Pair your local Claude Code to read dense schedule tables on your own subscription" style="display:none;align-items:center;gap:5px;font-size:12px;color:var(--text-muted);margin:auto 0;text-decoration:none">🔗 Pair your Claude →</a>
         <span class="progress-label" id="estimateLabel" style="margin:auto 0;text-align:left"></span>
       </div>
     </section>
@@ -3199,12 +3200,13 @@ flooring_lvp,5,3"></textarea>
   // bridge (vision on dense schedule tables). Only shown when one is connected.
   $('useBridgeToggle')?.addEventListener('change', e => { window.__bpUseBridge = e.target.checked; });
   (async function revealBridgeToggle() {
+    const w = $('useBridgeWrap'), link = $('bridgePairLink');
     try {
       const r = await fetch(API_BASE + '/api/bridge/status');
-      if (r.ok && (await r.json()).connected) {
-        const w = $('useBridgeWrap'); if (w) w.style.display = 'inline-flex';
-      }
-    } catch (_) { /* bridge optional */ }
+      const connected = r.ok && (await r.json()).connected;
+      if (connected) { if (w) w.style.display = 'inline-flex'; if (link) link.style.display = 'none'; }
+      else { if (link) link.style.display = 'inline-flex'; }   // not paired → show "Pair your Claude →"
+    } catch (_) { if (link) link.style.display = 'inline-flex'; }
   })();
 
   // ---- Send for sign-off ---------------------------------------------------

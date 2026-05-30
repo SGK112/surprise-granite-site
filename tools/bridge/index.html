@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pair Local Bridge | Run AI on your Claude Code | Surprise Granite</title>
+  <meta name="description" content="Pair your local Claude Code with Surprise Granite's tools — run the blueprint takeoff reader and room designer on your own Claude subscription, no API cost.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --sg-gold:#f9cb00;--sg-dark:#1a1a2e;--sg-darker:#0f0f1a;--sg-surface:#16161f;
+      --sg-green:#22c55e;--sg-amber:#f59e0b;--sg-orange:#f97316;--sg-red:#ef4444;
+      --text-primary:#fff;--text-secondary:rgba(255,255,255,.7);--text-muted:rgba(255,255,255,.5);
+      --border:rgba(255,255,255,.1);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Inter',system-ui,sans-serif;background:var(--sg-darker);color:var(--text-primary);
+      min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;
+      background-image:radial-gradient(circle at 20% 0%,rgba(249,203,0,.06),transparent 40%),radial-gradient(circle at 80% 100%,rgba(249,115,22,.05),transparent 40%);
+    }
+    .wrap{width:100%;max-width:560px}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;justify-content:center}
+    .logo img{height:30px}
+    .card{
+      background:linear-gradient(135deg,rgba(249,115,22,.06),rgba(245,158,11,.04));
+      border:1px solid rgba(249,115,22,.3);border-radius:20px;padding:24px;
+    }
+    .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+    .chef{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#f97316,#f59e0b);
+      display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 4px 12px rgba(249,115,22,.25)}
+    .head h1{font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif}
+    .head p{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5}
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;vertical-align:middle;margin-left:8px}
+    .badge .dot{width:6px;height:6px;border-radius:999px}
+    .badge.connected{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+    .badge.connected .dot{background:var(--sg-green);animation:pulse 1.6s infinite}
+    .badge.offline{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+    .badge.offline .dot{background:var(--sg-amber)}
+    .badge.none{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .step{font-size:12px;color:var(--text-secondary);margin:16px 0 8px;font-weight:600}
+    .step b{color:var(--sg-gold)}
+    .codeblock{border-radius:12px;overflow:hidden;border:1px solid #2a2a3a;background:#1e1e2e}
+    .codeblock .bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#16161e;border-bottom:1px solid rgba(255,255,255,.06)}
+    .dots{display:flex;gap:6px}
+    .dots span{width:10px;height:10px;border-radius:999px}
+    .copybtn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;
+      background:rgba(255,255,255,.08);color:#a0a0b0;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+    .copybtn:hover{background:rgba(255,255,255,.14)}
+    .copybtn.ok{background:rgba(34,197,94,.2);color:#86efac}
+    .codeblock code{display:block;padding:14px 16px;font-family:'SF Mono',Menlo,monospace;font-size:13px;color:#cdd6f4;
+      white-space:nowrap;overflow-x:auto;user-select:all}
+    .codeblock code .tok{color:#fab387}
+    .token{margin-top:10px}
+    .token .bar code{color:#f38ba8;white-space:nowrap;font-size:15px;letter-spacing:1px;padding:0}
+    .token .bar{padding:10px 14px}
+    .waiting{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);margin-top:10px}
+    .spinner{width:13px;height:13px;border:2px solid rgba(249,115,22,.3);border-top-color:var(--sg-orange);border-radius:999px;animation:spin .7s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:11px;
+      font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;font-family:inherit;
+      background:linear-gradient(135deg,#f97316,#f59e0b);box-shadow:0 4px 12px rgba(249,115,22,.25);transition:.15s}
+    .btn:hover{filter:brightness(1.08)}
+    .btn:disabled{opacity:.5;cursor:default}
+    .btn.ghost{background:rgba(255,255,255,.05);border:1px solid var(--border);box-shadow:none;color:var(--text-secondary);width:auto;font-size:12px;padding:7px 14px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+    .stat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
+    .stat .l{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);font-weight:700;margin-bottom:3px}
+    .stat .v{font-size:12px;font-family:'SF Mono',Menlo,monospace;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .err{margin-bottom:12px;padding:10px 12px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5;font-size:12px;display:flex;gap:8px;line-height:1.5}
+    .keyrow{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+    .keyrow label{font-size:11px;color:var(--text-muted);display:block;margin-bottom:6px}
+    .keyrow input{width:100%;padding:9px 12px;border-radius:9px;background:#1e1e2e;border:1px solid #2a2a3a;color:#fff;font-size:13px;font-family:'SF Mono',Menlo,monospace}
+    .keyrow input:focus{outline:none;border-color:var(--sg-orange)}
+    .prereq{font-size:10px;color:var(--text-muted);margin-top:16px;line-height:1.6}
+    .prereq a{color:var(--text-secondary);text-decoration:underline}
+    .links{margin-top:18px;text-align:center;font-size:12px}
+    .links a{color:var(--text-muted);text-decoration:none}
+    .links a:hover{color:var(--sg-gold)}
+    .divider{display:flex;align-items:center;gap:10px;margin:16px 0}
+    .divider .l{flex:1;height:1px;background:var(--border)}
+    .divider span{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted)}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">
+      <img src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb26876fbb175_surprise-granite-logo.png" alt="Surprise Granite" onerror="this.style.display='none'">
+    </div>
+
+    <div class="card">
+      <div class="head">
+        <div class="chef">🧑‍🍳</div>
+        <div style="flex:1;min-width:0">
+          <h1>Local Bridge<span id="badge" class="badge none"><span class="dot"></span>Not connected</span></h1>
+          <p>Run the blueprint takeoff reader &amp; room designer on <b style="color:var(--text-secondary)">your</b> Claude Code subscription — vision on dense schedule tables, zero API cost.</p>
+        </div>
+      </div>
+
+      <div id="error" class="err hidden"><span>⚠</span><span id="errorMsg"></span></div>
+
+      <!-- CONNECTED -->
+      <div id="stateConnected" class="hidden">
+        <div class="grid">
+          <div class="stat"><div class="l">Machine</div><div class="v" id="statHost">—</div></div>
+          <div class="stat"><div class="l">Last seen</div><div class="v" id="statSeen">—</div></div>
+          <div class="stat"><div class="l">In flight</div><div class="v" id="statFlight">0</div></div>
+        </div>
+        <p style="font-size:12px;color:#86efac;margin-bottom:12px">✓ Paired and live. Open a tool and tick <b>“🔗 Read with my Claude”</b>.</p>
+        <button class="btn ghost" id="btnDisconnect">⏻ Disconnect</button>
+      </div>
+
+      <!-- OFFLINE (paired, not connected) -->
+      <div id="stateOffline" class="hidden">
+        <p style="font-size:12px;color:#fcd34d;font-weight:600;margin-bottom:8px">Bridge offline — run this to reconnect (no new code needed):</p>
+        <div class="codeblock">
+          <div class="bar"><div class="dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div>
+            <button class="copybtn" data-copy="resume">⧉ Copy</button></div>
+          <code id="resumeCmd">sg-bridge connect</code>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
+          <button class="btn ghost" id="btnNewCode">Generate new code instead</button>
+          <button class="btn ghost" id="btnForget" style="margin-left:auto">⏻ Forget</button>
+        </div>
+      </div>
+
+      <!-- UNPAIRED -->
+      <div id="stateUnpaired" class="hidden">
+        <div class="step"><b>1.</b> Install the bridge once (skip if you already have <code style="font-family:monospace">sg-bridge</code>):</div>
+        <div class="codeblock">
+          <div class="bar"><div class="dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div>
+            <button class="copybtn" data-copy="install">⧉ Copy</button></div>
+          <code id="installCmd">npm i -g @surprise-granite/bridge</code>
+        </div>
+
+        <div class="step"><b>2.</b> Connect with your one-time code:</div>
+        <div class="codeblock">
+          <div class="bar"><div class="dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div>
+            <button class="copybtn" data-copy="connect">⧉ Copy</button></div>
+          <code id="connectCmd">sg-bridge connect <span class="tok" id="codeInline">…</span></code>
+        </div>
+
+        <!-- code box -->
+        <div id="codeBox" class="token hidden">
+          <div class="codeblock">
+            <div class="bar">
+              <span style="font-size:10px;font-family:monospace;color:#6c7086" id="codeExpiry">code</span>
+              <div style="display:flex;gap:8px">
+                <button class="copybtn" id="btnRegen" style="padding:3px 8px;font-size:10px">↻ New</button>
+                <button class="copybtn" data-copy="code" style="padding:3px 8px;font-size:10px">⧉ Copy code</button>
+              </div>
+            </div>
+            <code id="codeValue">…</code>
+          </div>
+          <div class="waiting"><span class="spinner"></span> Waiting for connection — this turns green automatically.</div>
+        </div>
+
+        <div id="genWrap" style="margin-top:14px">
+          <button class="btn" id="btnGenerate">Generate pairing code</button>
+        </div>
+
+        <!-- admin key (only shown if pair-init is gated and we don't have it) -->
+        <div id="keyRow" class="keyrow hidden">
+          <label>This bridge is admin-gated. Paste the <code style="font-family:monospace">BRIDGE_ADMIN_KEY</code> once (stored only in this browser):</label>
+          <input id="adminKey" type="password" placeholder="BRIDGE_ADMIN_KEY" autocomplete="off">
+          <button class="btn" id="btnSaveKey" style="margin-top:10px">Save &amp; generate code</button>
+        </div>
+
+        <p class="prereq">Requires <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js 18+</a> and <a href="https://claude.ai/download" target="_blank" rel="noreferrer">Claude Code</a> (Pro/Max). Keep the terminal running.</p>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="/tools/blueprint-takeoff/">← Blueprint Takeoff</a> &nbsp;·&nbsp; <a href="/tools/room-designer/">Room Designer</a>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+    const LS_KEY = 'sgBridgeAdminKey';
+    const $ = id => document.getElementById(id);
+
+    let status = null;       // { connected, bridgeId, hostname, lastSeenAt, inFlightRequests }
+    let pairing = null;      // { code, expiresAt }
+    let loading = false;
+    let pollTimer = null;
+
+    const adminKey = () => { try { return localStorage.getItem(LS_KEY) || ''; } catch(_) { return ''; } };
+    const setAdminKey = v => { try { v ? localStorage.setItem(LS_KEY, v) : localStorage.removeItem(LS_KEY); } catch(_){} };
+    const adminHeaders = () => { const k = adminKey(); return k ? { 'X-Bridge-Admin-Key': k } : {}; };
+
+    function showError(msg){ if(!msg){ $('error').classList.add('hidden'); return; } $('errorMsg').textContent = msg; $('error').classList.remove('hidden'); }
+
+    function copy(text, btn){
+      navigator.clipboard.writeText(text).then(()=>{
+        const old = btn.textContent; btn.textContent = '✓ Copied'; btn.classList.add('ok');
+        setTimeout(()=>{ btn.textContent = old; btn.classList.remove('ok'); }, 1500);
+      }).catch(()=>{});
+    }
+
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-copy]'); if(!btn) return;
+      const map = { install: $('installCmd').textContent, connect: $('connectCmd').textContent,
+                    resume: $('resumeCmd').textContent, code: pairing ? pairing.code : '' };
+      copy(map[btn.dataset.copy] || '', btn);
+    });
+
+    async function fetchStatus(){
+      try{
+        const r = await fetch(API_BASE + '/api/bridge/status', { cache:'no-store' });
+        if(!r.ok) return;
+        status = await r.json();
+        if(status.connected && pairing) pairing = null;   // connected — drop the code
+        render();
+      }catch(_){}
+    }
+
+    async function generateCode(){
+      if(loading) return;
+      loading = true; pairing = null; showError(''); render();
+      try{
+        const r = await fetch(API_BASE + '/api/bridge/pair-init', {
+          method:'POST', headers: Object.assign({ 'Content-Type':'application/json' }, adminHeaders()), body:'{}'
+        });
+        if(r.status === 401){
+          // admin-gated and key missing/wrong — reveal the key field
+          $('keyRow').classList.remove('hidden');
+          $('genWrap').classList.add('hidden');
+          if(adminKey()) showError('That admin key was rejected. Re-enter it.');
+          loading = false; render(); return;
+        }
+        if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ('HTTP '+r.status)); }
+        const d = await r.json();
+        pairing = { code: d.code, expiresAt: Date.now() + (d.expiresInSec||600)*1000 };
+        $('keyRow').classList.add('hidden');
+      }catch(e){ showError(e.message || 'Failed to generate code'); }
+      finally{ loading = false; render(); restartPoll(); }
+    }
+
+    async function disconnect(){
+      showError('');
+      try{
+        await fetch(API_BASE + '/api/bridge/disconnect', {
+          method:'POST', headers: Object.assign({ 'Content-Type':'application/json' }, adminHeaders()),
+          body: JSON.stringify({ bridgeId: status && status.bridgeId })
+        });
+        status = { connected:false, inFlightRequests:0 }; pairing = null;
+      }catch(e){ showError(e.message || 'Failed to disconnect'); }
+      render();
+    }
+
+    function fmtSeen(iso){
+      if(!iso) return '—';
+      const s = Math.max(0, (Date.now() - new Date(iso).getTime())/1000);
+      if(s < 60) return Math.floor(s)+'s ago';
+      if(s < 3600) return Math.floor(s/60)+'m ago';
+      return Math.floor(s/3600)+'h ago';
+    }
+
+    function render(){
+      const connected = !!(status && status.connected);
+      const paired = !!(status && status.bridgeId);
+
+      // badge
+      const b = $('badge');
+      b.className = 'badge ' + (connected ? 'connected' : paired ? 'offline' : 'none');
+      b.innerHTML = '<span class="dot"></span>' + (connected ? 'Connected' : paired ? 'Offline' : 'Not connected');
+
+      $('stateConnected').classList.toggle('hidden', !connected);
+      $('stateOffline').classList.toggle('hidden', connected || !paired);
+      $('stateUnpaired').classList.toggle('hidden', connected || paired);
+
+      if(connected){
+        $('statHost').textContent = status.hostname || 'unknown';
+        $('statSeen').textContent = fmtSeen(status.lastSeenAt);
+        $('statFlight').textContent = String(status.inFlightRequests || 0);
+        return;
+      }
+      if(paired) return;
+
+      // unpaired
+      $('codeInline').textContent = pairing ? pairing.code : '<CODE>';
+      $('btnGenerate').textContent = loading ? 'Generating…' : 'Generate pairing code';
+      $('btnGenerate').disabled = loading;
+      if(pairing){
+        $('codeBox').classList.remove('hidden');
+        $('genWrap').classList.add('hidden');
+        $('codeValue').textContent = pairing.code;
+        const mins = Math.max(0, Math.floor((pairing.expiresAt - Date.now())/60000));
+        $('codeExpiry').textContent = 'code · expires in ' + mins + 'm';
+      } else {
+        $('codeBox').classList.add('hidden');
+        if($('keyRow').classList.contains('hidden')) $('genWrap').classList.remove('hidden');
+      }
+    }
+
+    function restartPoll(){
+      if(pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(fetchStatus, pairing ? 2000 : 5000);
+    }
+
+    // wire buttons
+    $('btnGenerate').addEventListener('click', generateCode);
+    $('btnRegen').addEventListener('click', generateCode);
+    $('btnNewCode').addEventListener('click', generateCode);
+    $('btnDisconnect').addEventListener('click', disconnect);
+    $('btnForget').addEventListener('click', disconnect);
+    $('btnSaveKey').addEventListener('click', () => {
+      const v = $('adminKey').value.trim();
+      if(!v){ showError('Enter the admin key.'); return; }
+      setAdminKey(v); $('keyRow').classList.add('hidden'); generateCode();
+    });
+    $('adminKey').addEventListener('keydown', e => { if(e.key === 'Enter') $('btnSaveKey').click(); });
+
+    // boot — render the unpaired flow immediately so the page is never blank
+    // even if the status call is slow or blocked; status updates it in place.
+    render();
+    fetchStatus().then(() => {
+      // auto-generate a code on first load when unpaired & we have (or don't need) a key
+      if(status && !status.connected && !status.bridgeId && !pairing) generateCode();
+    });
+    restartPoll();
+  })();
+  </script>
+</body>
+</html>
