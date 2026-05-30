@@ -372,6 +372,11 @@
             <span class="nav-item-text">Blueprint Takeoff</span>
             <span class="nav-badge" style="background:linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%);color:#fff;font-size:9px;font-weight:700;letter-spacing:.5px">AI</span>
           </a>
+          <a class="nav-item" href="/tools/bridge/" target="_blank" title="Pair your local Claude Code so the AI tools run on your subscription">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m9.656-1.328a4 4 0 000-5.656l-.001-.001a4 4 0 00-5.656 0l-1.5 1.5"/></svg>
+            <span class="nav-item-text">Local Bridge</span>
+            <span class="nav-badge" id="bridge-nav-badge" style="background:linear-gradient(135deg,#f97316 0%,#f59e0b 100%);color:#fff;font-size:9px;font-weight:700;letter-spacing:.5px">PAIR</span>
+          </a>
           <a class="nav-item" href="/tools/e-sign/" target="_blank">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             <span class="nav-item-text">E-Sign Documents</span>
@@ -8278,6 +8283,32 @@ document.addEventListener('DOMContentLoaded', function() {
     tab.classList.toggle('active', tab.dataset.page === currentPage);
   });
 });
+</script>
+
+<!-- Local Bridge nav badge — reflects live pairing status (ON / PAIR) -->
+<script>
+(function(){
+  var BRIDGE_API = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+  var badge = document.getElementById('bridge-nav-badge');
+  if (!badge) return;
+  function refresh(){
+    fetch(BRIDGE_API + '/api/bridge/status', { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(s){
+        if (s && s.connected) {
+          badge.textContent = 'ON';
+          badge.style.background = 'linear-gradient(135deg,#16a34a 0%,#22c55e 100%)';
+          badge.title = 'Paired with ' + (s.hostname || 'your machine');
+        } else {
+          badge.textContent = 'PAIR';
+          badge.style.background = 'linear-gradient(135deg,#f97316 0%,#f59e0b 100%)';
+        }
+      })
+      .catch(function(){ /* bridge optional — leave as PAIR */ });
+  }
+  refresh();
+  setInterval(refresh, 30000);
+})();
 </script>
 
 </body>
