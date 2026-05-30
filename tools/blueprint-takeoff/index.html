@@ -4218,7 +4218,7 @@ flooring_lvp,5,3"></textarea>
     }
 
     // Pages where vision extraction failed entirely
-    const failedPages = (window.__lastPerPage || []).filter(p => p?.result?.aiError);
+    const failedPages = (window.__lastPerPage || []).filter(p => p && (p.ok === false || p?.result?.aiError));
     if (failedPages.length) {
       issues.push({
         kind: 'extraction_failed',
@@ -4632,7 +4632,7 @@ flooring_lvp,5,3"></textarea>
     };
     const missingSpecs = (window.__lastMaterials || []).filter(tbdSpec);
     const aiMissing = window.__lastMissingFromAI || [];
-    const failedPages = (window.__lastPerPage || []).filter(p => p?.result?.aiError);
+    const failedPages = (window.__lastPerPage || []).filter(p => p && (p.ok === false || p?.result?.aiError));
     const fallbackLines = items.filter(li =>
       li.source && /industry avg/i.test(li.source) && li.bid_split !== 'labor' && li.category !== 'general_conditions'
     );

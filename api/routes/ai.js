@@ -396,19 +396,16 @@ router.post('/blueprint', async (req, res) => {
           analysisResults.provider = provider;
 
         } catch (aiError) {
-          logger.error('AI analysis error, falling back to demo:', aiError);
-          analysisResults = generateTakeoffAnalysis(projectType);
-          analysisResults.mode = 'demo';
-          analysisResults.aiError = aiError.message;
+          // NO silent demo fallback. Returning canned data as a normal 200
+          // (no `error` field) let the client ingest a hardcoded kitchen as if
+          // it were the real takeoff — that's the "making shit up" bug. Fail
+          // loudly so the page is marked failed instead of fabricated.
+          logger.error('AI analysis error (returning error, not demo):', aiError);
+          return res.status(502).json({ error: 'AI analysis failed: ' + (aiError.message || 'unknown error'), mode: 'error' });
         }
       } else {
-        logger.info('No AI configured, using demo analysis...');
-        analysisResults = generateTakeoffAnalysis(projectType);
-        analysisResults.mode = 'demo';
-
-        if (!hasOpenAI && !hasOllama) {
-          analysisResults.notice = 'Demo mode: Add OPENAI_API_KEY for real blueprint analysis';
-        }
+        // No key/provider — do NOT fabricate a sample takeoff. Tell the truth.
+        return res.status(503).json({ error: 'Blueprint AI is not configured on this server (no OpenAI key). No estimate produced.', mode: 'error' });
       }
     }
 
