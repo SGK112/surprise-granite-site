@@ -449,6 +449,28 @@ router.post('/blueprint/estimate', async (req, res) => {
 });
 
 /**
+ * POST /api/ai/blueprint/parse-text
+ * Deterministic, FREE takeoff straight from the PDF text layer (room/area
+ * schedule, etc.). Runs BEFORE vision — exact where the data is selectable
+ * text, no model, no hallucination. The client posts the concatenated text
+ * of the plan set; we return rooms[] + finished SF. Verified on the First
+ * Watch IFP set (Dining 1437, Kitchen 1320, ... all exact).
+ */
+router.post('/blueprint/parse-text', express.json({ limit: '12mb' }), (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'text (string) is required' });
+    }
+    const { extractTakeoffFromText } = require('../lib/takeoff/text-extract');
+    return res.json(extractTakeoffFromText(text));
+  } catch (err) {
+    logger.error('[Blueprint] parse-text error:', err.message);
+    return handleApiError(res, err, 'Blueprint text parse');
+  }
+});
+
+/**
  * Vendor price-sheet parser.
  * Takes a vendor catalog page (rasterized to base64 image) and returns a
  * structured list of products: brand, line, color/pattern, size, finish,
