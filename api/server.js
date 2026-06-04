@@ -3203,9 +3203,32 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         logger.info('Payment intent succeeded:', paymentIntent.id);
         logger.info('Amount:', paymentIntent.amount / 100);
 
+        // Line items live on the Stripe CHECKOUT SESSION, not the PaymentIntent.
+        // Look the session up so the notification emails can show WHAT was
+        // ordered (and recover the customer email) instead of just an amount.
+        let piLineItems = [];
+        let piSessionEmail = null;
+        try {
+          const piSessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent.id, expand: ['data.line_items'], limit: 1 });
+          const piSession = piSessions.data[0];
+          if (piSession) {
+            piSessionEmail = piSession.customer_details?.email || null;
+            piLineItems = (piSession.line_items?.data || [])
+              .filter(li => !/^(shipping|tax\b|tax\s|sales tax)/i.test(li.description || ''))
+              .map(li => ({ description: li.description, quantity: li.quantity, amount: (li.amount_total || 0) / 100 }));
+          }
+        } catch (liErr) { logger.warn('Could not load line items for PI email:', liErr.message); }
+        // Reusable HTML rows of ordered items (empty string if none found).
+        const piItemsHtml = piLineItems.length ? `
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
+    <p><strong>Items Ordered:</strong></p>
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      ${piLineItems.map(i => `<tr><td style="padding:4px 0;">${i.quantity} × ${i.description}</td><td style="padding:4px 0; text-align:right;">$${i.amount.toFixed(2)}</td></tr>`).join('')}
+    </table>` : '';
+
         // Send order confirmation if we have shipping/customer details
         const shipping = paymentIntent.shipping;
-        const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email;
+        const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email || piSessionEmail;
 
         if (receiptEmail) {
           try {
@@ -3446,6 +3469,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
     <p><strong>Email:</strong> ${receiptEmail || 'N/A'}</p>
     <p><strong>Amount:</strong> $${(paymentIntent.amount / 100).toFixed(2)}</p>
     <p><strong>Status:</strong> ${paymentIntent.status}</p>
+    ${piItemsHtml}
     ${shipping ? `
     <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
     <p><strong>Shipping Address:</strong></p>
