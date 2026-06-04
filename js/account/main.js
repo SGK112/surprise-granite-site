@@ -3818,7 +3818,7 @@
     }
 
     // Open a printable Vendor Purchase Order in a new window — drop-ship to the customer
-    function printVendorPO(orderId) {
+    async function printVendorPO(orderId) {
       const order = allOrders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return; }
 
@@ -3829,6 +3829,29 @@
       const poNumber = 'PO-' + (order.order_number || order.id || '').toString().replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
 
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+      // Resolve the real vendor(s) for this order from the catalog (by SKU),
+      // including their drop-ship email — instead of hardcoding one vendor.
+      // A single order can span multiple vendors (drop-ship), so list each.
+      let vendorHtml = '<strong>Vendor</strong><br><em>Confirm vendor before sending.</em>';
+      try {
+        const skus = [...new Set(items.map(it => it.product_sku || it.sku).filter(Boolean))];
+        if (skus.length) {
+          const { data: cat } = await supabaseClient.from('catalog_products').select('sku,brand,vendor_id').in('sku', skus);
+          const brandByVid = {}; const vids = [];
+          (cat || []).forEach(c => { if (c.vendor_id && !brandByVid[c.vendor_id]) { brandByVid[c.vendor_id] = c.brand; vids.push(c.vendor_id); } });
+          if (vids.length) {
+            let vc = [];
+            try { const res = await supabaseClient.from('vendor_config').select('vendor_id,vendor_name,dropship_email,vendor_url').in('vendor_id', vids); vc = res.data || []; } catch (e) {}
+            const vcMap = {}; vc.forEach(v => vcMap[v.vendor_id] = v);
+            vendorHtml = vids.map(vid => {
+              const v = vcMap[vid] || {};
+              const nm = v.vendor_name || brandByVid[vid] || vid;
+              return `<strong>${esc(nm)}</strong>${v.dropship_email ? '<br>' + esc(v.dropship_email) : ''}`;
+            }).join('<br><br>') + '<br><em>Please fulfill &amp; drop-ship to the customer below.</em>';
+          }
+        }
+      } catch (e) { /* keep placeholder */ }
 
       // Vendor PO intentionally OMITS pricing — vendors fulfill/drop-ship and
       // must not see our cost or retail. Items, SKUs, quantities, ship-to only.
@@ -3908,9 +3931,7 @@
       <div class="addr-box">
         <h3>Vendor</h3>
         <div class="body">
-          <strong>MSI Surfaces</strong><br>
-          <em>Please fulfill &amp; drop-ship to customer below.</em><br>
-          <span style="color:#888; font-size: 11px;">Update vendor details before sending.</span>
+          ${vendorHtml}
         </div>
       </div>
       <div class="addr-box">

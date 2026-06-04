@@ -773,6 +773,11 @@
         specs: p.specs || {},
         description: p.short_description,
         url: p.vendor_url,
+        // Give catalog products a variant id + availability so the card shows
+        // "Add to Cart" (sgAddToCart reads title/price/image off the card DOM).
+        // Without this they fell back to "Get a Quote".
+        variants: [{ id: p.slug || p.id }],
+        available: p.in_stock !== false,
         _source: 'catalog',
         _id: p.id,
         _vendor_id: p.vendor_id

@@ -628,6 +628,10 @@
         specs: p.specs || {},
         description: p.short_description,
         url: p.vendor_url,
+        // Variant id + availability so catalog products show "Add to Cart"
+        // instead of the "Get a Quote" fallback.
+        variants: [{ id: p.slug || p.id }],
+        available: p.in_stock !== false,
         _source: 'catalog',
         _id: p.id,
         _vendor_id: p.vendor_id
