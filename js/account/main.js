@@ -10262,12 +10262,20 @@
         // Mapped to the shape the table/stats/filters/forms already expect so
         // the rest of the admin is unchanged. catalog_products carries
         // vendor_cost + retail_price (real margins), images, and live stock.
-        const { data: rawCat, error } = await supabaseClient
-          .from('catalog_products')
-          .select('*')
-          .order('name');
-
-        if (error) throw error;
+        // Paginate past Supabase's 1000-row cap — the catalog has 3,000+ and a
+        // single .select() silently returns only the first 1000, so admin
+        // search would miss everything alphabetically after that.
+        let rawCat = [];
+        for (let pg = 0; pg < 50; pg++) {
+          const { data, error } = await supabaseClient
+            .from('catalog_products')
+            .select('*')
+            .order('name')
+            .range(pg * 1000, pg * 1000 + 999);
+          if (error) throw error;
+          rawCat = rawCat.concat(data || []);
+          if (!data || data.length < 1000) break;
+        }
 
         allProducts = (rawCat || []).map(c => ({
           id: c.id,
