@@ -10282,27 +10282,27 @@ app.get('/api/products', async (req, res) => {
     } = req.query;
 
     // Build query
+    // NOTE: the distributor_products table is flat — it has NO foreign-key
+    // relationships to distributor_product_slabs/_tiles/_flooring/_installation
+    // /distributors/distributor_locations, so embedding them made PostgREST
+    // 500 the whole request (PGRST200) — which is why the admin wouldn't load.
+    // The real columns are: name, sku, brand, collection, material_type,
+    // category, subcategory, color, unit_price, is_active, primary_image_url…
     let query = supabase
       .from('distributor_products')
-      .select(`
-        *,
-        distributor_product_slabs(*),
-        distributor_product_tiles(*),
-        distributor_product_flooring(*),
-        distributor_product_installation(*),
-        distributors(company_name, logo_url),
-        distributor_locations(name, city, state)
-      `, { count: 'exact' });
+      .select('*', { count: 'exact' });
 
-    // Apply filters
+    // Apply filters — mapped to the columns that actually exist.
     if (distributor_id) query = query.eq('distributor_id', distributor_id);
-    if (product_type) query = query.eq('product_type', product_type);
+    if (product_type) query = query.eq('category', product_type);
     if (material_type) query = query.ilike('material_type', `%${material_type}%`);
-    if (color_family) query = query.ilike('color_family', `%${color_family}%`);
-    if (status) query = query.eq('status', status);
-    if (is_public !== undefined) query = query.eq('is_public', is_public === 'true');
-    if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
-    if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+    if (color_family) query = query.ilike('color', `%${color_family}%`);
+    // status maps to the boolean is_active column (default 'active' shows live products)
+    if (status === 'active') query = query.eq('is_active', true);
+    else if (status === 'inactive' || status === 'archived') query = query.eq('is_active', false);
+    if (is_public !== undefined) query = query.eq('is_active', is_public === 'true');
+    if (min_price) query = query.gte('unit_price', parseFloat(min_price));
+    if (max_price) query = query.lte('unit_price', parseFloat(max_price));
 
     // Search across multiple fields
     if (search) {
@@ -10338,23 +10338,28 @@ app.get('/api/products/stats', async (req, res) => {
     const distributorId = await getDistributorId(req);
     if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
 
+    // Real columns only: category (not product_type), is_active (not status),
+    // unit_price (not wholesale_price). The table has no per-product stock
+    // (quantity/min_stock_level) — stock isn't tracked here — so out_of_stock
+    // / low_stock are reported as 0 rather than 500-ing on missing columns.
     const { data: products } = await supabase
       .from('distributor_products')
-      .select('product_type, status, quantity, wholesale_price, min_stock_level')
+      .select('category, is_active, unit_price')
       .eq('distributor_id', distributorId);
 
     const stats = {
       total_products: products?.length || 0,
-      active_products: products?.filter(p => p.status === 'active').length || 0,
-      out_of_stock: products?.filter(p => p.status === 'out_of_stock').length || 0,
-      low_stock: products?.filter(p => p.quantity <= p.min_stock_level && p.min_stock_level > 0).length || 0,
+      active_products: products?.filter(p => p.is_active).length || 0,
+      out_of_stock: 0,
+      low_stock: 0,
       by_type: {},
       total_value: 0
     };
 
     products?.forEach(p => {
-      stats.by_type[p.product_type] = (stats.by_type[p.product_type] || 0) + 1;
-      stats.total_value += (p.wholesale_price || 0) * (p.quantity || 0);
+      const type = p.category || 'uncategorized';
+      stats.by_type[type] = (stats.by_type[type] || 0) + 1;
+      stats.total_value += (p.unit_price || 0);
     });
 
     res.json(stats);
