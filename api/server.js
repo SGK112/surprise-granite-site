@@ -2692,6 +2692,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
               <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #SG-${safeOrderNum}</p>
               <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Thank you for your purchase!</p>
+              ${orderItems.length ? `<table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; text-align: left;">
+                <tr><td colspan="2" style="padding: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">What you ordered</td></tr>
+                ${orderItems.map(i => `<tr><td style="padding:8px 0; border-bottom:1px solid #eee; color:#1a1a2e; font-size:14px;">${i.quantity} × ${i.name}</td><td style="padding:8px 0; border-bottom:1px solid #eee; text-align:right; color:#1a1a2e; font-size:14px; white-space:nowrap;">$${(i.total || 0).toFixed(2)}</td></tr>`).join('')}
+              </table>` : ''}
               <div style="background: #f8f8f8; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e5e5;">
                 <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order Total</p>
                 <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${safeTotal}</p>
@@ -3310,6 +3314,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
                 <tr><td style="border-bottom: 1px solid #e5e7eb;"></td></tr>
               </table>
+
+              ${piLineItems.length ? `
+              <!-- Items Ordered -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr><td colspan="2" style="padding: 0 0 10px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">What you ordered</td></tr>
+                ${piLineItems.map(i => `<tr><td style="padding: 8px 0; border-bottom: 1px solid #f0f1f3; color: #1a2b3c; font-size: 14px;">${i.quantity} &times; ${i.description}</td><td style="padding: 8px 0; border-bottom: 1px solid #f0f1f3; text-align: right; color: #1a2b3c; font-size: 14px; white-space: nowrap;">$${i.amount.toFixed(2)}</td></tr>`).join('')}
+              </table>
+              ` : ''}
 
               <!-- Amount -->
               <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
