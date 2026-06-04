@@ -10257,15 +10257,40 @@
       const tableEl = document.getElementById('products-table-container');
 
       try {
-        // Load ALL products from shopify_products
-        const { data, error } = await supabaseClient
-          .from('shopify_products')
+        // UNIFIED CATALOG: read the SAME products the marketplace sells
+        // (catalog_products) instead of the stale shopify_products export.
+        // Mapped to the shape the table/stats/filters/forms already expect so
+        // the rest of the admin is unchanged. catalog_products carries
+        // vendor_cost + retail_price (real margins), images, and live stock.
+        const { data: rawCat, error } = await supabaseClient
+          .from('catalog_products')
           .select('*')
           .order('name');
 
         if (error) throw error;
 
-        allProducts = data || [];
+        allProducts = (rawCat || []).map(c => ({
+          id: c.id,
+          name: c.name,
+          sku: c.sku,
+          vendor: c.brand,
+          product_type: c.category,
+          category: c.category,
+          image_url: c.primary_image_url,
+          images: c.image_urls,
+          price: c.retail_price,
+          cost_price: c.vendor_cost,
+          inventory_quantity: c.stock_quantity,
+          status: c.active === false ? 'draft' : 'active',
+          is_available: c.in_stock,
+          description: c.short_description || c.description,
+          material_type: c.subcategory,
+          color: c.color_family,
+          supplier_sku: c.sku,
+          handle: c.slug,
+          _source: 'catalog_products',
+          _raw: c,
+        }));
         filteredProducts = [...allProducts];
         productsLoaded = true;
 
