@@ -90,7 +90,11 @@ function recordUsage(key, feature) {
 function aiRateLimiter(feature) {
   return (req, res, next) => {
     const key = getClientKey(req);
-    const plan = req.headers['x-user-plan'] || 'free';
+    // Derive the plan from the AUTHENTICATED user only. Trusting an
+    // `x-user-plan` header let anyone send `enterprise` (unlimited) and
+    // bypass every AI limit — a wallet-drain on our model spend. Unauth
+    // callers are always treated as the free tier.
+    const plan = req.user?.plan || req.user?.subscription_tier || 'free';
     const check = checkRateLimit(key, feature, plan);
 
     if (!check.allowed) {
