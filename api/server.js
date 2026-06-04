@@ -2348,6 +2348,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // have line items; defaults to true so a missing classification still
         // produces the standard order-confirmation email.
         let requiresShipment = true;
+        // Hoisted too — the post-DB customer-receipt email lists these items.
+        // Set inside the supabase block from the session line items; defaults
+        // to [] so the email simply omits the itemized list if unavailable.
+        let orderItems = [];
         if (supabase) {
           try {
             // Retrieve line items from Stripe session
@@ -2371,7 +2375,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             const productLineItems = lineItems.filter(
               item => !isTaxDesc(item.description) && !isShippingDesc(item.description)
             );
-            const orderItems = productLineItems.map(item => ({
+            orderItems = productLineItems.map(item => ({
               name: item.description || item.price?.product?.name || 'Product',
               quantity: item.quantity || 1,
               unit_price: (item.price?.unit_amount || item.amount_total) / 100,
