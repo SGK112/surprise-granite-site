@@ -10713,48 +10713,52 @@
       const tagsInput = document.getElementById('product-tags').value;
       const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-      const productData = {
-        name: document.getElementById('product-name').value,
+      const name = document.getElementById('product-name').value;
+      // Map the admin form → catalog_products columns (the live catalog the
+      // marketplace reads). vendor→brand, product_type→category, price→
+      // retail_price, cost→vendor_cost, stock→stock_quantity, status→active.
+      const catalogData = {
+        name,
         sku: document.getElementById('product-sku').value || null,
-        vendor: document.getElementById('product-vendor').value || null,
-        product_type: document.getElementById('product-type').value || null,
-        description: document.getElementById('product-description').value || null,
-        price: parseFloat(document.getElementById('product-price').value) || 0,
-        compare_at_price: parseFloat(document.getElementById('product-compare-price').value) || null,
-        cost_price: parseFloat(document.getElementById('product-cost').value) || null,
-        inventory_quantity: parseInt(document.getElementById('product-stock').value) || 0,
-        status: document.getElementById('product-status').value,
-        is_dropship: document.getElementById('product-dropship').checked,
-        supplier_name: document.getElementById('product-supplier').value || null,
-        image_url: document.getElementById('product-image-url').value || null,
+        brand: document.getElementById('product-vendor').value || null,
+        category: document.getElementById('product-type').value || null,
+        short_description: document.getElementById('product-description').value || null,
+        retail_price: parseFloat(document.getElementById('product-price').value) || 0,
+        vendor_cost: parseFloat(document.getElementById('product-cost').value) || null,
+        stock_quantity: parseInt(document.getElementById('product-stock').value) || 0,
+        in_stock: (parseInt(document.getElementById('product-stock').value) || 0) > 0,
+        active: document.getElementById('product-status').value === 'active',
+        primary_image_url: document.getElementById('product-image-url').value || null,
         tags: tags,
         updated_at: new Date().toISOString()
       };
 
       try {
+        // Client RLS blocks direct catalog_products writes, so go through the
+        // server (service-key) admin-catalog API, authenticated with the
+        // logged-in admin's Supabase JWT (verified server-side by adminAccess).
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        if (!token) throw new Error('Not signed in.');
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+        let resp;
         if (productId) {
-          // Update existing
-          const { error } = await supabaseClient
-            .from('shopify_products')
-            .update(productData)
-            .eq('id', productId);
-          if (error) throw error;
-          showToast('Product updated successfully', 'success');
+          resp = await fetch(SG_API_BASE + '/api/admin/catalog/products/' + encodeURIComponent(productId), {
+            method: 'PATCH', headers, body: JSON.stringify(catalogData)
+          });
         } else {
-          // Create new - generate handle from name
-          productData.handle = productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-          productData.created_at = new Date().toISOString();
-
-          const { error } = await supabaseClient
-            .from('shopify_products')
-            .insert([productData]);
-          if (error) throw error;
-          showToast('Product created successfully', 'success');
+          catalogData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          resp = await fetch(SG_API_BASE + '/api/admin/catalog/products', {
+            method: 'POST', headers, body: JSON.stringify(catalogData)
+          });
         }
+        const json = await resp.json().catch(() => ({}));
+        if (!resp.ok || json.error) throw new Error(json.error || ('HTTP ' + resp.status));
+        showToast(productId ? 'Product updated' : 'Product created', 'success');
 
         closeProductModal();
         productsLoaded = false;
-        await loadProducts();
+        await loadProducts({ force: true });
       } catch (err) {
         console.error('Save error:', err);
         showToast('Error saving product: ' + err.message, 'error');
@@ -10768,15 +10772,18 @@
       if (!confirm('Are you sure you want to delete this product?')) return;
 
       try {
-        const { error } = await supabaseClient
-          .from('shopify_products')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        if (!token) throw new Error('Not signed in.');
+        const resp = await fetch(SG_API_BASE + '/api/admin/catalog/products/' + encodeURIComponent(id), {
+          method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const json = await resp.json().catch(() => ({}));
+        if (!resp.ok || json.error) throw new Error(json.error || ('HTTP ' + resp.status));
 
-        showToast('Product deleted', 'success');
+        showToast('Product removed', 'success');  // soft-delete (active=false)
         productsLoaded = false;
-        await loadProducts();
+        await loadProducts({ force: true });
       } catch (err) {
         console.error('Delete error:', err);
         showToast('Error deleting product: ' + err.message, 'error');

@@ -20,6 +20,7 @@ const router = express.Router();
 const logger = require('../utils/logger');
 const { spawn } = require('child_process');
 const path = require('path');
+const { adminAccess } = require('../middleware/adminAuth');
 
 function checkAuth(req) {
   const adminKey = process.env.ADMIN_KEY || process.env.ASPN_ADMIN_KEY;
@@ -38,10 +39,13 @@ function s(v, max = 200) {
 }
 
 router.use((req, res, next) => {
+  // Service-to-server: X-Admin-Key / X-Aria-Service-Key (unchanged).
   const auth = checkAuth(req);
-  if (!auth.ok) return res.status(401).json({ error: 'Unauthorized' });
-  req.adminAuth = auth;
-  next();
+  if (auth.ok) { req.adminAuth = auth; return next(); }
+  // Browser admins: fall back to the logged-in Supabase admin JWT
+  // (adminAccess verifies sg_users.role). This is what lets /account/#products
+  // save edits to the live catalog without exposing the admin key client-side.
+  return adminAccess(req, res, next);
 });
 
 // GET vendors with product counts + last scrape
@@ -238,6 +242,26 @@ router.get('/products', async (req, res) => {
   }
 });
 
+// POST create product (admin-added, in-house catalog)
+router.post('/products', async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    if (!supabase) return res.status(503).json({ error: 'Database not available' });
+    const body = req.body || {};
+    if (!s(body.name, 300)) return res.status(400).json({ error: 'name required' });
+    const allowed = ['name','sku','brand','category','subcategory','retail_price','vendor_cost','stock_quantity','in_stock','active','short_description','description','primary_image_url','image_urls','color_family','finish','size','price_unit','tags','slug','vendor_id'];
+    const row = {};
+    for (const k of allowed) if (body[k] !== undefined) row[k] = body[k];
+    if (!row.slug) row.slug = String(body.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (row.active === undefined) row.active = true;
+    const { data, error } = await supabase.from('catalog_products').insert(row).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ success: true, product: data });
+  } catch (e) {
+    return res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 // PATCH product
 router.patch('/products/:id', async (req, res) => {
   try {
@@ -246,12 +270,13 @@ router.patch('/products/:id', async (req, res) => {
     const id = s(req.params?.id, 50);
     if (!id) return res.status(400).json({ error: 'id required' });
     const body = req.body || {};
-    const allowed = ['retail_price','vendor_cost','sample_eligible','sample_price','in_stock','active','short_description','tags','category','subcategory'];
+    const allowed = ['name','sku','brand','retail_price','vendor_cost','sample_eligible','sample_price','in_stock','stock_quantity','active','short_description','description','tags','category','subcategory','primary_image_url','image_urls','color_family','finish','size','price_unit'];
     const updates = {};
     for (const k of allowed) {
       if (body[k] !== undefined) updates[k] = body[k];
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No fields to update' });
+    updates.updated_at = new Date().toISOString();
     const { data, error } = await supabase
       .from('catalog_products')
       .update(updates)
