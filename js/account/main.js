@@ -3830,17 +3830,15 @@
 
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+      // Vendor PO intentionally OMITS pricing — vendors fulfill/drop-ship and
+      // must not see our cost or retail. Items, SKUs, quantities, ship-to only.
       const rowsHtml = items.map(it => {
         const name = it.title || it.name || it.product_name || 'Product';
         const sku = it.sku || it.product_sku || '';
         const qty = Number(it.quantity || 1);
-        const unit = Number(it.originalUnitPrice?.amount || it.unit_price || it.price || 0);
-        const lineTotal = Number(it.line_total || it.total || (unit * qty) || 0);
         return `<tr>
           <td>${esc(name)}${sku ? '<div class="sku">SKU: ' + esc(sku) + '</div>' : ''}</td>
           <td class="num">${qty}</td>
-          <td class="num">${unit ? '$' + unit.toFixed(2) : '—'}</td>
-          <td class="num">${lineTotal ? '$' + lineTotal.toFixed(2) : '—'}</td>
         </tr>`;
       }).join('');
 
@@ -3926,19 +3924,10 @@
         <tr>
           <th>Item</th>
           <th class="num">Qty</th>
-          <th class="num">Unit</th>
-          <th class="num">Line Total</th>
         </tr>
       </thead>
-      <tbody>${rowsHtml || '<tr><td colspan="4" style="text-align:center;color:#888;padding:24px;">No line items</td></tr>'}</tbody>
+      <tbody>${rowsHtml || '<tr><td colspan="2" style="text-align:center;color:#888;padding:24px;">No line items</td></tr>'}</tbody>
     </table>
-
-    <div class="totals">
-      <div class="row"><span>Subtotal</span><span>$${Number(order.subtotal || 0).toFixed(2)}</span></div>
-      <div class="row"><span>Shipping</span><span>$${Number(order.shipping_amount || 0).toFixed(2)}</span></div>
-      ${Number(order.tax_amount) > 0 ? `<div class="row"><span>Tax</span><span>$${Number(order.tax_amount).toFixed(2)}</span></div>` : ''}
-      <div class="row grand"><span>Order Total</span><span>$${Number(order.total || 0).toFixed(2)}</span></div>
-    </div>
 
     <div class="notes">
       <h3>Notes</h3>
