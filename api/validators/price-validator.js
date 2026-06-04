@@ -172,13 +172,33 @@ async function validateSingleItem(item, supabase) {
     try {
       let product = null;
 
-      // Look up in distributor_products
+      // CATALOG is the source of truth. The cart sends the product slug as
+      // item.id (catalog products) — also try SKU and exact name so static
+      // products that were ingested into the catalog are matched too.
+      const catCols = 'id, name, retail_price, active';
+      if (!product && item.id) {
+        const { data } = await supabase.from('catalog_products').select(catCols)
+          .eq('slug', item.id).eq('active', true).limit(1).maybeSingle();
+        if (data && data.retail_price != null) product = { ...data, source: 'catalog_products' };
+      }
+      if (!product && item.sku) {
+        const { data } = await supabase.from('catalog_products').select(catCols)
+          .eq('sku', item.sku).eq('active', true).limit(1).maybeSingle();
+        if (data && data.retail_price != null) product = { ...data, source: 'catalog_products' };
+      }
+      if (!product && item.name) {
+        const { data } = await supabase.from('catalog_products').select(catCols)
+          .eq('name', item.name).eq('active', true).limit(1).maybeSingle();
+        if (data && data.retail_price != null) product = { ...data, source: 'catalog_products' };
+      }
+
+      // Legacy fallback: distributor_products by id.
       if (!product && item.id) {
         const { data: distProduct } = await supabase
           .from('distributor_products')
           .select('id, name, retail_price, wholesale_price')
           .eq('id', item.id)
-          .single();
+          .maybeSingle();
 
         if (distProduct) {
           product = { ...distProduct, source: 'distributor_products' };
