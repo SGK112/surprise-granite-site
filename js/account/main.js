@@ -8675,25 +8675,26 @@
 
       showToast('Creating customer record...', 'info');
 
-      // ALWAYS create/find customer first - this ensures proper linkage
+      // Try to create/link a customer for proper linkage — but NEVER dead-end
+      // the button on failure. If it fails, still open the estimate (linked to
+      // the lead) and prefill from the lead, so "Create Estimate" always works.
       const customer = await findOrCreateCustomerFromLead(lead);
       if (!customer) {
-        showToast('Failed to create customer record', 'error');
-        return;
+        showToast("Couldn't auto-create the customer record — opening the estimate from the lead. (See console for the cause.)", 'warning');
       }
 
       // Update workflow state
       workflowState.currentLead = lead;
-      workflowState.currentCustomer = customer;
+      workflowState.currentCustomer = customer || null;
 
       // Navigate to estimates page
       showPage('estimates');
 
       // Small delay to ensure page is rendered
       setTimeout(async () => {
-        // Set modal state with proper customer linkage
+        // Set modal state with whatever linkage we have
         estimateModalState = {
-          customerId: customer.id,
+          customerId: customer ? customer.id : null,
           leadId: lead.id,
           editingEstimateId: null
         };
@@ -8701,8 +8702,20 @@
         // Open estimate modal (preserveState=true since we set estimateModalState above)
         openCreateEstimateModal(true);
 
-        // Pre-fill customer info
-        fillEstimateCustomerFields(customer);
+        // Pre-fill customer info — from the customer if we have one, else the lead
+        if (customer) {
+          fillEstimateCustomerFields(customer);
+        } else {
+          fillEstimateCustomerFields({
+            name: lead.full_name || lead.name || '',
+            email: lead.email || '',
+            phone: lead.phone || '',
+            address: (typeof lead.service_address === 'string' ? lead.service_address : lead.service_address?.street) || '',
+            city: lead.service_address?.city || '',
+            state: lead.service_address?.state || 'AZ',
+            zip: lead.service_address?.zip || ''
+          });
+        }
 
         // Pre-fill project info from lead
         const projectNameField = document.getElementById('estimate-project-name');
@@ -8716,7 +8729,7 @@
           .update({ status: 'quoted', updated_at: new Date().toISOString() })
           .eq('id', lead.id);
 
-        showToast(`Estimate linked to customer: ${customer.name}`);
+        showToast(customer ? `Estimate linked to customer: ${customer.name}` : 'Estimate started from lead');
       }, 150);
     }
 
