@@ -108,23 +108,28 @@ router.post('/quick-pay', async (req, res) => {
     // Customer sees two lines — "Service" and "Processing fee" — which satisfies
     // the card-network disclosure rule (Visa/MC require the surcharge be
     // itemized at checkout).
+    // Pass the card processing fee to the customer by GROSSING UP the single
+    // line amount so Surprise Granite nets `amount`. We deliberately do NOT add
+    // a separate "Processing fee" line item — that confused payers before; the
+    // customer sees ONE clean total, with the fee disclosed in the line name.
+    // Default ON; send pass_fee:false to charge the base only. (Card-only kept:
+    // ACH's Financial Connections verification SMS confused payers.)
+    const FEE_PCT = 0.029, FEE_FIXED_CENTS = 30;
+    const baseCents = Math.round(Number(amount));
+    const passFee = !(pass_fee === false || pass_fee === 0 || pass_fee === '0' || pass_fee === 'false');
+    const chargeCents = passFee
+      ? Math.round((baseCents + FEE_FIXED_CENTS) / (1 - FEE_PCT))
+      : baseCents;
+    const fee_cents = chargeCents - baseCents;
+
     const line_items = [{
       price_data: {
         currency: 'usd',
-        product_data: { name: memo || 'Payment to Surprise Granite' },
-        unit_amount: amount,
+        product_data: { name: (memo || 'Payment to Surprise Granite') + (passFee ? ' (incl. card processing fee)' : '') },
+        unit_amount: chargeCents,
       },
       quantity: 1,
     }];
-
-    // Fee pass-through disabled. Customers were getting charged a "Processing
-    // fee" line item that confused them. We absorb the Stripe fee on our side.
-    // ACH (us_bank_account) also disabled — its Financial Connections
-    // verification SMS goes to whatever phone is on file at the customer's
-    // bank, which is not always the customer's current number and confused
-    // payers (the SMS code was perceived as "from us" sent to the wrong
-    // person). Card-only is simple and unambiguous.
-    const fee_cents = 0;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -148,9 +153,9 @@ router.post('/quick-pay', async (req, res) => {
         // acceptance_id ties this checkout to a proposal_acceptances row so
         // the webhook can mark it paid. Set when source_kind === 'proposal_deposit'.
         acceptance_id: acceptance_id || '',
-        pass_fee: '0',
-        fee_cents: '0',
-        net_cents: String(amount)
+        pass_fee: passFee ? '1' : '0',
+        fee_cents: String(fee_cents),
+        net_cents: String(baseCents)
       }
     });
 
