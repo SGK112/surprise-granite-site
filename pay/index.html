@@ -274,6 +274,20 @@
           <input type="text" id="memo" name="memo" placeholder="e.g. Kitchen countertops deposit">
         </div>
 
+        <!-- Payment method -->
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div style="display:flex;gap:8px">
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:14px">
+              <input type="radio" name="method" value="card" checked style="accent-color:#3B82F6"> Card
+            </label>
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:14px">
+              <input type="radio" name="method" value="bank" style="accent-color:#3B82F6"> Bank transfer
+            </label>
+          </div>
+          <p style="margin:6px 0 0;font-size:12px;color:#6b7280">Bank transfer has a much lower fee (capped at $5).</p>
+        </div>
+
         <!-- Error message -->
         <div class="form-error" id="form-error"></div>
 
@@ -363,9 +377,18 @@
     // the backend quick-pay route.
     const leadId = params.get('lead_id') || '';
     const feeNote = document.getElementById('fee-note');
-    const FEE_PCT = 0.029, FEE_FIXED = 0.30;
-    function totalWithFee(base) {
-      return Math.round(((base + FEE_FIXED) / (1 - FEE_PCT)) * 100) / 100;
+    // Keep these in sync with the backend /quick-pay route.
+    const CARD_PCT = 0.029, CARD_FIXED = 0.30, ACH_PCT = 0.008, ACH_CAP = 5;
+    function selectedMethod() {
+      const r = document.querySelector('input[name="method"]:checked');
+      return r ? r.value : 'card';
+    }
+    function totalWithFee(base, method) {
+      if (method === 'bank') {
+        const fee = Math.min(Math.round((base / (1 - ACH_PCT) - base) * 100) / 100, ACH_CAP);
+        return Math.round((base + fee) * 100) / 100;
+      }
+      return Math.round(((base + CARD_FIXED) / (1 - CARD_PCT)) * 100) / 100;
     }
     function fmt(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
@@ -378,13 +401,15 @@
       banner.classList.add('visible');
     }
 
-    // Update button text when amount changes
+    // Update button text + fee note when amount or method changes
     function updateButtonText() {
       const val = parseFloat(amountInput.value);
+      const method = selectedMethod();
       if (val && val >= 1) {
-        const total = totalWithFee(val);
+        const total = totalWithFee(val, method);
+        const feeName = method === 'bank' ? 'bank transfer fee' : 'card processing fee';
         btnText.textContent = 'Pay $' + fmt(total);
-        if (feeNote) feeNote.textContent = `$${fmt(val)} payment + $${fmt(total - val)} card processing fee = $${fmt(total)}`;
+        if (feeNote) feeNote.textContent = `$${fmt(val)} payment + $${fmt(total - val)} ${feeName} = $${fmt(total)}`;
         amountError.classList.remove('visible');
       } else {
         btnText.textContent = 'Pay Now';
@@ -392,6 +417,7 @@
       }
     }
     amountInput.addEventListener('input', updateButtonText);
+    document.querySelectorAll('input[name="method"]').forEach(r => r.addEventListener('change', updateButtonText));
     updateButtonText();
 
     // Form submission
@@ -431,6 +457,7 @@
               email: (email || '').trim().toLowerCase(),
               invoice_ref: invoiceInput.value.trim() || undefined,
               memo: memoInput.value.trim() || undefined,
+              method: selectedMethod(),
               lead_id: leadId || undefined
             })
           });

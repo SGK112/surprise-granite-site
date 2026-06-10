@@ -73,7 +73,7 @@ function grossUpForFee(amount_cents) {
 
 router.post('/quick-pay', async (req, res) => {
   try {
-    const { amount, email, invoice_ref, memo, pass_fee, lead_id, acceptance_id, source_kind } = req.body;
+    const { amount, email, invoice_ref, memo, pass_fee, lead_id, acceptance_id, source_kind, method } = req.body;
 
     // Validate amount (must be at least $1 = 100 cents)
     if (!amount || amount < 100) {
@@ -103,36 +103,41 @@ router.post('/quick-pay', async (req, res) => {
     if (pass_fee) cancelParams.set('fee', '1');
     if (lead_id) cancelParams.set('lead_id', lead_id);
 
-    // If the merchant chose to pass Stripe's processing fee to the customer,
-    // add a second line item that grosses up the total so we net `amount`.
-    // Customer sees two lines — "Service" and "Processing fee" — which satisfies
-    // the card-network disclosure rule (Visa/MC require the surcharge be
-    // itemized at checkout).
-    // Pass the card processing fee to the customer by GROSSING UP the single
-    // line amount so Surprise Granite nets `amount`. We deliberately do NOT add
-    // a separate "Processing fee" line item — that confused payers before; the
-    // customer sees ONE clean total, with the fee disclosed in the line name.
-    // Default ON; send pass_fee:false to charge the base only. (Card-only kept:
-    // ACH's Financial Connections verification SMS confused payers.)
-    const FEE_PCT = 0.029, FEE_FIXED_CENTS = 30;
+    // Pass the processing fee to the customer by GROSSING UP the single line
+    // amount so Surprise Granite nets `amount` — ONE clean total, the fee
+    // disclosed in the line name (no confusing second "Processing fee" line).
+    // The fee depends on HOW they pay, and a Stripe session has one fixed total,
+    // so the customer picks the method on the /pay page BEFORE checkout:
+    //   • card → 2.9% + 30¢ gross-up
+    //   • bank (ACH) → 0.8% capped at $5 — far cheaper on big deposits
+    // Default ON; send pass_fee:false to charge the base only.
+    const CARD_PCT = 0.029, CARD_FIXED_CENTS = 30;
+    const ACH_PCT = 0.008, ACH_CAP_CENTS = 500;
     const baseCents = Math.round(Number(amount));
     const passFee = !(pass_fee === false || pass_fee === 0 || pass_fee === '0' || pass_fee === 'false');
-    const chargeCents = passFee
-      ? Math.round((baseCents + FEE_FIXED_CENTS) / (1 - FEE_PCT))
-      : baseCents;
-    const fee_cents = chargeCents - baseCents;
+    const isBank = method === 'bank' || method === 'ach' || method === 'us_bank_account';
+
+    let fee_cents = 0;
+    if (passFee) {
+      fee_cents = isBank
+        ? Math.min(Math.round(baseCents / (1 - ACH_PCT)) - baseCents, ACH_CAP_CENTS)
+        : Math.round((baseCents + CARD_FIXED_CENTS) / (1 - CARD_PCT)) - baseCents;
+    }
+    const chargeCents = baseCents + fee_cents;
+    const paymentMethodTypes = isBank ? ['us_bank_account'] : ['card'];
+    const feeLabel = isBank ? 'bank transfer fee' : 'card processing fee';
 
     const line_items = [{
       price_data: {
         currency: 'usd',
-        product_data: { name: (memo || 'Payment to Surprise Granite') + (passFee ? ' (incl. card processing fee)' : '') },
+        product_data: { name: (memo || 'Payment to Surprise Granite') + (passFee ? ` (incl. ${feeLabel})` : '') },
         unit_amount: chargeCents,
       },
       quantity: 1,
     }];
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: paymentMethodTypes,
       line_items,
       mode: 'payment',
       customer_email: email,
@@ -155,7 +160,8 @@ router.post('/quick-pay', async (req, res) => {
         acceptance_id: acceptance_id || '',
         pass_fee: passFee ? '1' : '0',
         fee_cents: String(fee_cents),
-        net_cents: String(baseCents)
+        net_cents: String(baseCents),
+        method: isBank ? 'ach' : 'card'
       }
     });
 
