@@ -283,6 +283,7 @@
           <span id="btn-text">Pay Now</span>
           <div class="spinner" id="btn-spinner"></div>
         </button>
+        <p id="fee-note" style="margin:8px 0 0;font-size:12px;color:#6b7280;text-align:center"></p>
 
         <!-- Accepted payment methods -->
         <div class="payment-methods">
@@ -355,11 +356,18 @@
     if (params.get('invoice')) invoiceInput.value = params.get('invoice');
     if (params.get('memo')) memoInput.value = params.get('memo');
 
-    // Fee pass-through has been retired — confused customers (the grossed-up
-    // total didn't match the invoice they expected) and the backend ignores
-    // pass_fee now. Lead linkage is still forwarded so the Stripe webhook
-    // can reconcile completed payments back to the lead.
+    // Card processing fee is passed to the customer: the backend grosses up
+    // the charge so Surprise Granite nets the full amount. Show the real total
+    // (and the fee) up front so the button matches what Stripe charges — that
+    // avoids the surprise that retired the old version. Keep FEE_* in sync with
+    // the backend quick-pay route.
     const leadId = params.get('lead_id') || '';
+    const feeNote = document.getElementById('fee-note');
+    const FEE_PCT = 0.029, FEE_FIXED = 0.30;
+    function totalWithFee(base) {
+      return Math.round(((base + FEE_FIXED) / (1 - FEE_PCT)) * 100) / 100;
+    }
+    function fmt(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
     // Show invoice banner if pre-filled from invoice
     if (params.get('amount') && params.get('invoice')) {
@@ -374,10 +382,13 @@
     function updateButtonText() {
       const val = parseFloat(amountInput.value);
       if (val && val >= 1) {
-        btnText.textContent = 'Pay $' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const total = totalWithFee(val);
+        btnText.textContent = 'Pay $' + fmt(total);
+        if (feeNote) feeNote.textContent = `$${fmt(val)} payment + $${fmt(total - val)} card processing fee = $${fmt(total)}`;
         amountError.classList.remove('visible');
       } else {
         btnText.textContent = 'Pay Now';
+        if (feeNote) feeNote.textContent = '';
       }
     }
     amountInput.addEventListener('input', updateButtonText);
