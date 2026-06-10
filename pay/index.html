@@ -11,22 +11,24 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --gold-primary: #f9cb00;
-      --gold-dark: #cca600;
-      --dark-deep: #0a0a12;
-      --dark-surface: #12121a;
-      --dark-elevated: #1e1e2d;
-      --dark-input: #16162266;
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255,255,255,0.75);
-      --text-muted: rgba(255,255,255,0.45);
-      --border-subtle: rgba(255,255,255,0.1);
-      --border-input: rgba(255,255,255,0.15);
-      --success: #22c55e;
-      --error: #ef4444;
+      --gold-dark: #e0b400;
+      /* Light theme — variable names kept; values flipped light */
+      --dark-deep: #eceef3;     /* page background */
+      --dark-surface: #ffffff;  /* card */
+      --dark-elevated: #ffffff; /* banner */
+      --dark-input: #f6f7f9;    /* inputs */
+      --text-primary: #181a21;
+      --text-secondary: #4b5563;
+      --text-muted: #98a0ad;
+      --border-subtle: #e6e8ed;
+      --border-input: #d6dae1;
+      --success: #16a34a;
+      --error: #dc2626;
     }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      background: var(--dark-deep);
+      background: linear-gradient(180deg, #f7f8fb 0%, #e9ebf1 100%);
+      background-attachment: fixed;
       min-height: 100vh;
       color: var(--text-primary);
       padding: 20px;
@@ -54,6 +56,7 @@
       padding: 20px;
       margin-bottom: 24px;
       text-align: center;
+      box-shadow: 0 2px 12px rgba(24,26,33,0.06);
     }
     .invoice-banner.visible { display: block; }
     .invoice-banner .invoice-ref {
@@ -65,7 +68,7 @@
     .invoice-banner .invoice-amount {
       font-size: 36px;
       font-weight: 800;
-      color: var(--gold-primary);
+      color: var(--text-primary);
       line-height: 1.1;
     }
 
@@ -75,7 +78,39 @@
       border: 1px solid var(--border-subtle);
       border-radius: 16px;
       overflow: hidden;
+      box-shadow: 0 8px 30px rgba(24,26,33,0.10);
     }
+
+    /* Payment method segmented control */
+    .method-toggle { display: flex; gap: 10px; }
+    .method-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 10px;
+      border: 1.5px solid var(--border-input);
+      border-radius: 11px;
+      background: var(--dark-input);
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+      user-select: none;
+    }
+    .method-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .method-option svg { width: 18px; height: 18px; opacity: .65; flex-shrink: 0; }
+    .method-option:hover { border-color: var(--gold-dark); }
+    .method-option.selected {
+      border-color: var(--gold-primary);
+      background: #fffbe6;
+      color: var(--text-primary);
+      box-shadow: 0 0 0 1.5px var(--gold-primary);
+    }
+    .method-option.selected svg { opacity: 1; }
+    .method-hint { margin: 8px 0 0; font-size: 12px; color: var(--text-muted); }
     .card-body { padding: 28px; }
 
     /* Form elements */
@@ -126,10 +161,10 @@
       display: none;
       margin-bottom: 16px;
       padding: 12px 16px;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.25);
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(220, 38, 38, 0.25);
       border-radius: 12px;
-      color: #fca5a5;
+      color: #b91c1c;
       font-size: 14px;
     }
     .form-error.visible { display: block; }
@@ -277,15 +312,19 @@
         <!-- Payment method -->
         <div class="form-group">
           <label>Payment Method</label>
-          <div style="display:flex;gap:8px">
-            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:14px">
-              <input type="radio" name="method" value="card" checked style="accent-color:#3B82F6"> Card
+          <div class="method-toggle">
+            <label class="method-option selected">
+              <input type="radio" name="method" value="card" checked>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              Card
             </label>
-            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:14px">
-              <input type="radio" name="method" value="bank" style="accent-color:#3B82F6"> Bank transfer
+            <label class="method-option">
+              <input type="radio" name="method" value="bank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="12" y1="14" x2="12" y2="17"/><line x1="16" y1="14" x2="16" y2="17"/></svg>
+              Bank transfer
             </label>
           </div>
-          <p style="margin:6px 0 0;font-size:12px;color:#6b7280">Bank transfer has a much lower fee (capped at $5).</p>
+          <p class="method-hint">Bank transfer has a much lower fee (capped at $5).</p>
         </div>
 
         <!-- Error message -->
@@ -416,8 +455,15 @@
         if (feeNote) feeNote.textContent = '';
       }
     }
+    function syncMethodUI() {
+      document.querySelectorAll('.method-option').forEach(opt => {
+        const input = opt.querySelector('input');
+        opt.classList.toggle('selected', !!(input && input.checked));
+      });
+    }
     amountInput.addEventListener('input', updateButtonText);
-    document.querySelectorAll('input[name="method"]').forEach(r => r.addEventListener('change', updateButtonText));
+    document.querySelectorAll('input[name="method"]').forEach(r => r.addEventListener('change', () => { syncMethodUI(); updateButtonText(); }));
+    syncMethodUI();
     updateButtonText();
 
     // Form submission
