@@ -200,7 +200,7 @@
             detectSessionInUrl: true,
             storageKey: STORAGE_KEY, // Use consistent storage key from config
             flowType: 'implicit',
-            lock: false
+            lock: (_n, _t, fn) => fn()
           }
         });
         if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;

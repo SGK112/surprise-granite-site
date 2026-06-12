@@ -3002,6 +3002,46 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       } catch (e) { console.log('Countertops lookup failed:', e); }
     }
 
+    // Live catalog API fallback — the static /data/{category}.json files are
+    // incomplete (e.g. the Kibi K2-SF33T workstation sink isn't in sinks.json),
+    // but the catalog service has every product by handle. Map its flat shape to
+    // the shape this page renders (notably a variants[0] for price + add-to-cart).
+    try {
+      const apiRes = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(handle));
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        const p = apiData.product || (Array.isArray(apiData.products) ? apiData.products[0] : null);
+        if (p) {
+          const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
+          const priceStr = (p.retail_price != null) ? String(p.retail_price) : '0';
+          return {
+            id: p.id || p.sku || p.slug || handle,
+            title: p.name,
+            handle: p.slug || handle,
+            vendor: p.brand || p.vendor_id || '',
+            brandDisplay: p.brand || p.vendor_id || '',
+            brandTier: 'premium',
+            productType: p.subcategory || p.category || category,
+            category: category,
+            description: p.short_description || '',
+            tags: p.tags || [],
+            available: p.in_stock !== false,
+            price: p.retail_price,
+            currency: 'USD',
+            images: imgs,
+            variants: [{
+              id: p.sku || p.id || p.slug || handle,
+              title: 'Default',
+              price: priceStr,
+              available: p.in_stock !== false,
+              sku: p.sku || null
+            }],
+            specs: {}
+          };
+        }
+      }
+    } catch (e) { console.log('catalog API lookup failed:', e); }
+
     return null;
   }
 
