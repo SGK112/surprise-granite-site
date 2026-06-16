@@ -593,6 +593,29 @@
     }, 100);
   }
 
+  // Pin the site-wide ".dinner-promo-strip" announcement bar above the fixed
+  // nav. The strip ships in normal flow as the first <body> child; once the
+  // fixed nav is injected it would otherwise sit flush under the header and
+  // slide behind it on scroll. We flag its presence (CSS pins strip → top,
+  // pushes nav below it) and publish the live height so the offsets stay exact
+  // across breakpoints / text-wrapping. No-op when no strip is on the page.
+  function anchorPromoStrip() {
+    try {
+      const strip = document.querySelector('.dinner-promo-strip');
+      if (!strip) return;
+      document.body.classList.add('has-promo-strip');
+      const publishHeight = () => {
+        const h = strip.offsetHeight || 0;
+        document.documentElement.style.setProperty('--promo-strip-height', h + 'px');
+      };
+      publishHeight();
+      // Re-measure after fonts settle and on resize (mobile text can wrap).
+      window.addEventListener('resize', publishHeight);
+      window.addEventListener('load', publishHeight);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(publishHeight);
+    } catch (e) { /* non-fatal */ }
+  }
+
   // Inject the floating "Full Course Remodel" promo CTA.
   // Floating bottom-left card, dismissible, persists dismissal in
   // localStorage so it doesn't haunt repeat visitors.
@@ -899,6 +922,12 @@
 
     // Insert navigation HTML
     document.body.insertAdjacentHTML('afterbegin', createNavHTML());
+
+    // Pin the site-wide dinner promo strip ABOVE the fixed nav (instead of
+    // letting it get tucked under the header). CSS does the positioning; we
+    // just flag its presence and publish its measured height so the nav and
+    // body padding offset by exactly the right amount at any breakpoint.
+    anchorPromoStrip();
 
     // Inject site-wide promo: "The Full Course Remodel" floating CTA.
     // Dismissed state persists in localStorage so a returning visitor isn't

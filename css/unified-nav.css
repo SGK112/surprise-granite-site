@@ -160,6 +160,33 @@ body.unified-nav-active {
 }
 
 /* ===========================================
+   DINNER PROMO STRIP — pinned above the fixed nav
+   The site-wide .dinner-promo-strip is the first <body> child (in normal
+   flow). Without this it gets tucked under the fixed nav and slides behind
+   it on scroll. When unified-nav.js detects it, it adds .has-promo-strip and
+   publishes --promo-strip-height; we pin the strip to the very top, push the
+   nav down by the strip height, and add that height to the body padding.
+   =========================================== */
+.dinner-promo-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001; /* above .unified-nav (10000) */
+}
+body.unified-nav-active.has-promo-strip {
+  padding-top: calc(var(--nav-height-desktop) + var(--promo-strip-height, 44px));
+}
+@media (max-width: 991px) {
+  body.unified-nav-active.has-promo-strip {
+    padding-top: calc(var(--nav-height-mobile) + var(--promo-strip-height, 44px));
+  }
+}
+body.has-promo-strip .unified-nav {
+  top: var(--promo-strip-height, 44px);
+}
+
+/* ===========================================
    UNIFIED NAVIGATION CONTAINER
    =========================================== */
 .unified-nav {
