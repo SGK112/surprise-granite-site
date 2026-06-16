@@ -21,8 +21,76 @@
     service: { label: 'Service', color: '#eab308' },
     vendor: { label: 'Vendor', color: '#22c55e' },
     category: { label: 'Category', color: '#06b6d4' },
-    page: { label: 'Page', color: '#64748b' }
+    page: { label: 'Page', color: '#64748b' },
+    // Live marketplace product categories (from /api/catalog)
+    sink: { label: 'Sink', color: '#14b8a6' },
+    sinks: { label: 'Sink', color: '#14b8a6' },
+    faucet: { label: 'Faucet', color: '#0ea5e9' },
+    faucets: { label: 'Faucet', color: '#0ea5e9' },
+    slab: { label: 'Slab', color: '#6366f1' },
+    slabs: { label: 'Slab', color: '#6366f1' },
+    tile: { label: 'Tile', color: '#16a34a' },
+    bathroom: { label: 'Bath', color: '#a855f7' },
+    'kitchen-accessories': { label: 'Kitchen', color: '#f59e0b' },
+    other: { label: 'Product', color: '#64748b' }
   };
+
+  // ─── Live marketplace catalog (sinks, faucets, tile, slabs, accessories) ──────
+  const CATALOG_API = 'https://surprise-granite-email-api.onrender.com/api/catalog';
+  const catalogCache = {};
+
+  function mapCatalogItem(p) {
+    return {
+      title: p.name || 'Untitled',
+      description: p.short_description || '',
+      url: '/marketplace/product/?handle=' + encodeURIComponent(p.slug || ''),
+      image: p.primary_image_url || (Array.isArray(p.image_urls) && p.image_urls[0]) || '',
+      type: (p.category || 'other').toLowerCase(),
+      vendor: p.brand || '',
+      material: p.subcategory || ''
+    };
+  }
+
+  async function fetchCatalog(query) {
+    const key = query.toLowerCase();
+    if (catalogCache[key]) return catalogCache[key];
+    try {
+      const r = await fetch(`${CATALOG_API}?search=${encodeURIComponent(query)}&limit=20&in_stock=false`);
+      if (!r.ok) return [];
+      const data = await r.json();
+      const items = ((data && data.products) || []).map(mapCatalogItem);
+      catalogCache[key] = items;
+      return items;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Filter the static index (countertops, flooring, blog, services, pages…)
+  function filterIndex(query) {
+    return searchIndex.filter(item => {
+      const searchText = [item.title, item.description, item.vendor, item.brand, item.color, item.material]
+        .filter(Boolean).join(' ').toLowerCase();
+      return searchText.includes(query);
+    });
+  }
+
+  // Merge static + live results, dedupe by url, title-starts-with first
+  function mergeResults(staticArr, liveArr, query) {
+    const seen = {};
+    const out = [];
+    staticArr.concat(liveArr).forEach(it => {
+      if (!it || !it.url || seen[it.url]) return;
+      seen[it.url] = 1;
+      out.push(it);
+    });
+    out.sort((a, b) => {
+      const aStarts = (a.title || '').toLowerCase().startsWith(query) ? 0 : 1;
+      const bStarts = (b.title || '').toLowerCase().startsWith(query) ? 0 : 1;
+      return aStarts - bStarts;
+    });
+    return out;
+  }
 
   // Initialize on DOM ready
   if (document.readyState === 'loading') {
@@ -60,6 +128,19 @@
     const resultsDiv = document.getElementById('site-search-results');
     if (!resultsDiv) return;
 
+    // The Webflow dropdown ships hidden (.nav-search_results { display:none })
+    // and the original focus interaction that revealed it is gone in the static
+    // export — so injected results land in an invisible box. Toggle it ourselves.
+    const wrapper = resultsDiv.closest('.nav-search_results-wrapper');
+    const showPanel = () => {
+      resultsDiv.style.display = 'block';
+      if (wrapper) wrapper.style.display = 'block';
+    };
+    const hidePanel = () => {
+      resultsDiv.style.display = '';
+      if (wrapper) wrapper.style.display = '';
+    };
+
     // Store original results HTML for restore
     const originalResultsHTML = resultsDiv.innerHTML;
 
@@ -69,14 +150,29 @@
       const query = navInput.value.trim().toLowerCase();
 
       if (!query) {
-        // Restore original Webflow content
+        // Restore original Webflow content and re-hide the panel
         resultsDiv.innerHTML = originalResultsHTML;
+        hidePanel();
         return;
       }
 
       debounceTimer = setTimeout(() => {
         renderNavbarResults(resultsDiv, query);
+        showPanel();
       }, 150);
+    });
+
+    // Re-open the panel on focus if a query is already typed
+    navInput.addEventListener('focus', () => {
+      if (navInput.value.trim()) showPanel();
+    });
+
+    // Close on Escape, and when clicking anywhere outside the search
+    navInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { hidePanel(); navInput.blur(); }
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target !== navInput && !resultsDiv.contains(e.target)) hidePanel();
     });
 
     // Also disable Finsweet filtering on this input so it doesn't conflict
@@ -84,31 +180,19 @@
   }
 
   function renderNavbarResults(container, query) {
-    let results = searchIndex.filter(item => {
-      const searchText = [
-        item.title,
-        item.description,
-        item.vendor,
-        item.brand,
-        item.color,
-        item.material
-      ].filter(Boolean).join(' ').toLowerCase();
-      return searchText.includes(query);
+    // Paint static matches immediately, then fold in live marketplace items
+    const staticResults = filterIndex(query);
+    paintNavbarResults(container, mergeResults(staticResults, [], query).slice(0, 30), query);
+
+    fetchCatalog(query).then(live => {
+      if (!live.length) return;
+      const input = document.getElementById('site-search-input');
+      if (input && input.value.trim().toLowerCase() !== query) return; // query moved on
+      paintNavbarResults(container, mergeResults(staticResults, live, query).slice(0, 30), query);
     });
+  }
 
-    // Sort: title-starts-with first
-    results.sort((a, b) => {
-      const aTitle = (a.title || '').toLowerCase();
-      const bTitle = (b.title || '').toLowerCase();
-      const aStarts = aTitle.startsWith(query);
-      const bStarts = bTitle.startsWith(query);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-      return 0;
-    });
-
-    results = results.slice(0, 30);
-
+  function paintNavbarResults(container, results, query) {
     if (results.length === 0) {
       container.innerHTML = `
         <div style="padding: 40px 20px; text-align: center; color: #6b7280;">
@@ -294,22 +378,19 @@
       return;
     }
 
-    let results = searchIndex.filter(item => {
-      const searchText = [
-        item.title, item.description, item.vendor, item.brand, item.color, item.material
-      ].filter(Boolean).join(' ').toLowerCase();
-      return searchText.includes(query);
-    });
+    // Paint static matches immediately, then fold in live marketplace items
+    const staticResults = filterIndex(query);
+    paintModalResults(container, mergeResults(staticResults, [], query).slice(0, 50), query);
 
-    results.sort((a, b) => {
-      const aStarts = (a.title || '').toLowerCase().startsWith(query);
-      const bStarts = (b.title || '').toLowerCase().startsWith(query);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-      return 0;
+    fetchCatalog(query).then(live => {
+      if (!live.length) return;
+      const input = document.getElementById('ssInput');
+      if (input && input.value.trim().toLowerCase() !== query) return; // query moved on
+      paintModalResults(container, mergeResults(staticResults, live, query).slice(0, 50), query);
     });
+  }
 
-    results = results.slice(0, 50);
+  function paintModalResults(container, results, query) {
     currentResults = results;
     selectedIndex = -1;
 

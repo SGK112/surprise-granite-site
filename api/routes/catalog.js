@@ -44,7 +44,12 @@ router.get('/', async (req, res) => {
     if (vendor) q = q.eq('vendor_id', vendor);
     if (sampleOnly) q = q.eq('sample_eligible', true);
     if (inStockOnly) q = q.eq('in_stock', true);
-    if (search) q = q.or(`name.ilike.%${search}%,brand.ilike.%${search}%,short_description.ilike.%${search}%`);
+    if (search) {
+      // Escape PostgREST or-filter delimiters so commas/parens can't break the query.
+      // Products carry no SKU, so we match the fields that actually exist.
+      const s = search.replace(/[(),*]/g, ' ').trim();
+      q = q.or(`name.ilike.%${s}%,brand.ilike.%${s}%,subcategory.ilike.%${s}%,short_description.ilike.%${s}%`);
+    }
 
     const { data, error, count } = await q;
     if (error) {

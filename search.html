@@ -90,7 +90,68 @@ a, button {
 
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
-</head><body><div><div><div>No matching results.</div></div></div><script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6456ce4476abb25581fbad0c" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.schunk.59c6248219f37ae8.js" type="text/javascript"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.schunk.55b1d870bd166d43.js" type="text/javascript"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.741b4ac7.a2dfb666f301e88a.js" type="text/javascript"></script><script>
+</head><body>
+<main id="sg-search-page" style="max-width:1200px;margin:0 auto;padding:32px 20px 80px;font-family:'Inter',system-ui,-apple-system,sans-serif;">
+  <form id="sg-search-form" role="search" style="display:flex;max-width:640px;margin:0 auto 10px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:1px solid #e2e8f0;">
+    <input id="sg-q" type="text" name="q" placeholder="Search slabs, sinks, faucets, tile, flooring..." autocomplete="off" style="flex:1;padding:15px 18px;border:none;font-size:16px;outline:none;color:#1a1a2e;">
+    <button type="submit" style="background:#1e3a5f;color:#fff;border:none;padding:0 26px;font-size:15px;font-weight:600;cursor:pointer;">Search</button>
+  </form>
+  <p id="sg-count" style="text-align:center;color:#64748b;font-size:14px;margin:0 0 28px;"></p>
+  <div id="sg-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;"></div>
+  <div id="sg-state" style="text-align:center;color:#64748b;padding:60px 20px;font-size:15px;"></div>
+</main>
+<script>
+(function(){
+  var API='https://surprise-granite-email-api.onrender.com/api/catalog';
+  var qs=new URLSearchParams(location.search);
+  var query=(qs.get('q')||qs.get('search')||'').trim();
+  var category=(qs.get('category')||'').trim();
+  var input=document.getElementById('sg-q');
+  var resultsEl=document.getElementById('sg-results');
+  var countEl=document.getElementById('sg-count');
+  var stateEl=document.getElementById('sg-state');
+  input.value=query;
+  document.getElementById('sg-search-form').addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=input.value.trim(), u=new URLSearchParams();
+    if(v) u.set('q',v);
+    if(category) u.set('category',category);
+    location.search=u.toString();
+  });
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function money(p,unit){ if(p==null||p==='')return''; var n=Number(p); if(isNaN(n))return''; return '$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+(unit&&unit!=='each'?(' / '+esc(unit)):''); }
+  function card(p){
+    var img=p.primary_image_url||(p.image_urls&&p.image_urls[0])||'/images/placeholder.svg';
+    var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||'');
+    var price=money(p.retail_price,p.price_unit);
+    var meta=[p.brand,p.category].filter(Boolean).join(' · ');
+    return '<a href="'+url+'" style="display:block;text-decoration:none;color:inherit;border:1px solid #e8edf2;border-radius:14px;overflow:hidden;background:#fff;transition:box-shadow .15s,transform .15s;" onmouseover="this.style.boxShadow=\'0 8px 24px rgba(0,0,0,.10)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.boxShadow=\'none\';this.style.transform=\'none\'">'
+      +'<div style="aspect-ratio:1/1;background:#f1f5f9;"><img src="'+esc(img)+'" alt="'+esc(p.name)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src=\'/images/placeholder.svg\'"></div>'
+      +'<div style="padding:14px 16px;">'
+      +'<div style="font-size:15px;font-weight:600;color:#1e293b;line-height:1.3;margin-bottom:4px;">'+esc(p.name||'Untitled')+'</div>'
+      +(meta?'<div style="font-size:12px;color:#94a3b8;text-transform:capitalize;">'+esc(meta)+'</div>':'')
+      +(price?'<div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-top:8px;">'+price+'</div>':'')
+      +'</div></a>';
+  }
+  function setState(msg){ stateEl.textContent=msg||''; stateEl.style.display=msg?'block':'none'; }
+  function run(){
+    if(!query){ countEl.textContent=''; setState('Type something above to search the marketplace.'); return; }
+    document.title='Search: '+query+' | Surprise Granite';
+    setState('Searching…'); resultsEl.innerHTML='';
+    var u=API+'?search='+encodeURIComponent(query)+'&limit=60&in_stock=false'+(category?('&category='+encodeURIComponent(category)):'');
+    fetch(u).then(function(r){return r.json();}).then(function(d){
+      var items=(d&&d.products)||[];
+      if(!items.length){ countEl.textContent=''; setState('No items found for “'+query+'”. Try a different term.'); return; }
+      setState('');
+      var total=(typeof d.total==='number')?d.total:items.length;
+      countEl.textContent=total+' result'+(total===1?'':'s')+' for “'+query+'”'+(items.length<total?(' (showing '+items.length+')'):'');
+      resultsEl.innerHTML=items.map(card).join('');
+    }).catch(function(){ countEl.textContent=''; setState('Search is temporarily unavailable. Please try again.'); });
+  }
+  run();
+})();
+</script>
+<script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6456ce4476abb25581fbad0c" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.schunk.59c6248219f37ae8.js" type="text/javascript"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.schunk.55b1d870bd166d43.js" type="text/javascript"></script><script src="/migrated/6456ce4476abb25581fbad0c/js/webflow.741b4ac7.a2dfb666f301e88a.js" type="text/javascript"></script><script>
     document.addEventListener('DOMContentLoaded', function() {
         const locationDisplayElement = document.querySelector('.user-location_layout.is-enabled [ma-dynamic-display="location"]');
         const disabledLocationElement = document.querySelector('.user-location_layout.is-disabled');
@@ -600,6 +661,6 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
-<script src="/js/site-search.js?v=3"></script>
+<script src="/js/site-search.js?v=5"></script>
 <script defer src="/js/remodely-hub.js?v=20260504e"></script>
 </body></html>
