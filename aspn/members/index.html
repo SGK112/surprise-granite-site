@@ -105,10 +105,17 @@
       'sealer-restorer':'Sealer / Restorer','distributor':'Distributor','other':'Other'
     };
 
-    // Slug from /aspn/members/<slug>/ — last non-empty path segment before any trailing slash
+    // Resolve the member slug. Supports ?slug=<slug> (host-independent — works
+    // without any wildcard rewrite) and the pretty path /aspn/members/<slug>/.
+    // The bare index (".../members/" or ".../members/index.html") has no real
+    // slug and must NOT be treated as a member named "members".
     function getSlug() {
+      const qs = new URLSearchParams(location.search).get('slug');
+      if (qs && qs.trim()) return qs.trim();
       const parts = location.pathname.split('/').filter(Boolean);
-      return parts[parts.length - 1] || '';
+      const last = parts[parts.length - 1] || '';
+      if (last === 'members' || last === 'index.html') return '';
+      return last;
     }
 
     function escapeHtml(s) {
@@ -185,7 +192,9 @@
     async function load() {
       const slug = getSlug();
       if (!slug) {
-        document.getElementById('profileContent').innerHTML = '<div class="aspn-dir-empty"><h3>Profile not found.</h3><p><a href="/aspn/directory/">Browse the directory</a></p></div>';
+        // No member specified — this is the bare /aspn/members/ index. Send
+        // visitors to the actual directory rather than a dead "not found".
+        location.replace('/aspn/directory/');
         return;
       }
       try {

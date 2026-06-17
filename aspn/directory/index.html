@@ -169,7 +169,7 @@
       const cat = CAT_LABELS[m.service_category] || m.service_category;
       const desc = m.short_description || 'Member of the Arizona Stone Providers Network.';
       const cityLine = m.city ? (m.city + (m.state ? ', ' + m.state : '')) : '';
-      return `<a href="/aspn/members/${m.slug}/" class="aspn-dir-card">
+      return `<a href="/aspn/members/?slug=${encodeURIComponent(m.slug)}" class="aspn-dir-card">
         ${badge}
         <div class="aspn-dir-card__cat">${cat}</div>
         <h3>${escapeHtml(m.business_name)}</h3>
