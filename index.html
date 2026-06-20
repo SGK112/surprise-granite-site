@@ -1874,6 +1874,16 @@ setInterval(displayOpeningStatus, 60000);
 
 <style>
 /* ===== HERO - CLEAN & SIMPLE ===== */
+/* Close the dark empty band between the fixed nav and the hero video.
+   A global Webflow .section_* rule adds 64px top padding; the hero already
+   clears the fixed nav via .main-wrapper's offset, so that padding just
+   exposes the dark page background as a gap. index.html is the ONLY page
+   that uses .section_home-hero-header, so this override is page-scoped and
+   cannot affect any other page. */
+.section_home-hero-header {
+  padding-top: 0 !important;
+}
+
 .sg-hero {
   position: relative;
   /* Hero sits BELOW the fixed nav (no margin-top trick). Tried full-
