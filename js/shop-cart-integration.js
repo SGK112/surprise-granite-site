@@ -672,22 +672,51 @@
     }
   }
 
-  // Update quantity from drawer
-  window.updateDrawerQty = async function(lineId, variant, qty) {
-    if (window.SgCart) {
-      await window.SgCart.updateQuantity(lineId, variant, qty);
-      renderCartDrawer();
-      updateFloatingCount();
-    }
+  // Drawer item actions — resolve the item from the live cart by INDEX so we
+  // always pass the matching id+variant. (Items are stored with a brand
+  // variant; the old code passed an empty variant, so nothing ever matched
+  // and items could not be removed or changed.)
+  function drawerItemAt(idx) {
+    if (!window.SgCart) return null;
+    var c = window.SgCart.getCart();
+    return c[idx] || null;
+  }
+  window.drawerRemove = function(idx) {
+    var it = drawerItemAt(idx);
+    if (!it) return;
+    window.SgCart.removeFromCart(it.id, it.variant || '');
+    renderCartDrawer();
+    updateFloatingCount();
   };
-
-  // Remove item from drawer
-  window.removeDrawerItem = async function(lineId, variant) {
-    if (window.SgCart) {
-      await window.SgCart.removeFromCart(lineId);
-      renderCartDrawer();
-      updateFloatingCount();
-    }
+  window.drawerInc = function(idx) {
+    var it = drawerItemAt(idx);
+    if (!it) return;
+    window.SgCart.updateQuantity(it.id, it.variant || '', (parseInt(it.quantity) || 1) + 1);
+    renderCartDrawer();
+    updateFloatingCount();
+  };
+  window.drawerDec = function(idx) {
+    var it = drawerItemAt(idx);
+    if (!it) return;
+    var q = (parseInt(it.quantity) || 1) - 1;
+    if (q <= 0) { window.SgCart.removeFromCart(it.id, it.variant || ''); }
+    else { window.SgCart.updateQuantity(it.id, it.variant || '', q); }
+    renderCartDrawer();
+    updateFloatingCount();
+  };
+  // Back-compat aliases (older markup may still reference these).
+  window.updateDrawerQty = function(lineId, variant, qty) {
+    if (!window.SgCart) return;
+    if (qty <= 0) window.SgCart.removeFromCart(lineId, variant || '');
+    else window.SgCart.updateQuantity(lineId, variant || '', qty);
+    renderCartDrawer();
+    updateFloatingCount();
+  };
+  window.removeDrawerItem = function(lineId, variant) {
+    if (!window.SgCart) return;
+    window.SgCart.removeFromCart(lineId, variant || '');
+    renderCartDrawer();
+    updateFloatingCount();
   };
 
   // Update the single cart indicator — the badge on the header nav cart link.
