@@ -298,84 +298,8 @@
         color: #1a2b3c;
       }
 
-      /* Floating Cart Button - Properly spaced from chat widget and favorites */
-      .floating-cart-btn {
-        position: fixed;
-        bottom: 100px;
-        right: 24px;
-        width: 56px;
-        height: 56px;
-        background: #1a2b3c;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-        z-index: 9997;
-        transition: all 0.3s ease;
-      }
-
-      .floating-cart-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-      }
-
-      .floating-cart-btn svg {
-        width: 28px;
-        height: 28px;
-        fill: #f9cb00;
-      }
-
-      .floating-cart-btn .cart-count {
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        min-width: 22px;
-        height: 22px;
-        padding: 0 6px;
-        background: #f9cb00;
-        color: #1a2b3c;
-        font-size: 11px;
-        font-weight: 700;
-        border-radius: 11px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-        border: 2px solid #fff;
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-      }
-
-      .floating-cart-btn .cart-count:empty {
-        display: none;
-      }
-
-      /* Mobile spacing for floating cart */
-      @media (max-width: 768px) {
-        .floating-cart-btn {
-          bottom: 100px;
-          right: 20px;
-          width: 52px;
-          height: 52px;
-        }
-
-        .floating-cart-btn svg {
-          width: 26px;
-          height: 26px;
-        }
-
-        .floating-cart-btn .cart-count {
-          min-width: 20px;
-          height: 20px;
-          padding: 0 5px;
-          font-size: 10px;
-          border-radius: 10px;
-          top: -3px;
-          right: -3px;
-        }
-      }
+      /* (Floating cart button removed — the single cart indicator is the
+         header nav cart link badge.) */
 
       /* Product card relative positioning */
       .product-card,
