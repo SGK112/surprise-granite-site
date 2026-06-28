@@ -395,6 +395,11 @@
     countTexts.forEach(el => {
       el.textContent = totals.itemCount;
     });
+
+    // Notify the header nav (and any other listeners) so the cart-icon badge
+    // updates in the same tab. The unified nav listens for 'cartUpdated' on
+    // window but SgCart never fired it, so its badge was always stuck hidden.
+    try { window.dispatchEvent(new Event('cartUpdated')); } catch (e) {}
   }
 
   /**

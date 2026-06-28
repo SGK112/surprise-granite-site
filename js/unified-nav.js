@@ -1176,7 +1176,9 @@
       const cartData = localStorage.getItem('sg_cart');
       if (cartData) {
         const cart = JSON.parse(cartData);
-        count = (cart?.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        // SgCart stores a bare array; tolerate a {items:[]} shape too.
+        const items = Array.isArray(cart) ? cart : (cart?.items || []);
+        count = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
       }
     } catch (e) {}
 
