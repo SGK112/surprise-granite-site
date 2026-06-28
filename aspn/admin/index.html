@@ -133,8 +133,11 @@
         }
         const pendingJ = await pendingRes.json();
         const approvedJ = await approvedRes.json();
-        const pending = pendingJ?.members || [];
-        const approved = approvedJ?.members || [];
+        // Tag status by SOURCE list — don't trust the per-member `approved`
+        // field. The public /members endpoint omits it, which otherwise makes
+        // every approved member render as "Pending" with a dead Approve button.
+        const pending = (pendingJ?.members || []).map(m => ({ ...m, approved: false }));
+        const approved = (approvedJ?.members || []).map(m => ({ ...m, approved: true, rejected: false }));
         if (!pending.length && !approved.length) {
           list.innerHTML = '<p style="text-align:center;color:var(--aspn-text-3);padding:40px;">No members yet.</p>';
           return;
