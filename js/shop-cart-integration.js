@@ -433,20 +433,8 @@
     `;
 
     document.body.insertAdjacentHTML('beforeend', drawerHTML);
-
-    // Skip the floating button on non-shop pages (e.g. /materials/*), which
-    // open the drawer on-demand but shouldn't carry a persistent cart button.
-    if (includeFloatingButton === false) return;
-
-    // Also add floating cart button
-    const floatingBtn = document.createElement('button');
-    floatingBtn.className = 'floating-cart-btn';
-    floatingBtn.onclick = () => window.openCartDrawer();
-    floatingBtn.innerHTML = `
-      <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-      <span class="cart-count" id="floatingCartCount"></span>
-    `;
-    document.body.appendChild(floatingBtn);
+    // No floating cart button — the single cart indicator lives on the header
+    // nav cart link (see updateFloatingCount, which updates that badge).
   }
 
   // Open cart drawer
@@ -569,6 +557,7 @@
 
       btn.textContent = 'Added!';
       btn.style.background = '#22c55e';
+      updateFloatingCount();
       if (window.openCartDrawer) window.openCartDrawer();
       setTimeout(function() {
         btn.textContent = 'Add to Cart';
@@ -607,23 +596,25 @@
     footerEl.style.display = 'block';
 
     // Use .id which is the Shopify line ID for update/remove operations
-    itemsContainer.innerHTML = cart.map(function(item) {
-      var safeId = (item.id || '').replace(/'/g, "\\'");
+    itemsContainer.innerHTML = cart.map(function(item, idx) {
       var imgSrc = (item.image && item.image.startsWith('http')) ? item.image : '/images/6243807090316203124aee66_placeholder-image.svg';
       var itemName = item.name || 'Product';
       var price = (typeof item.price === 'number') ? item.price.toFixed(2) : '0.00';
+      // Reference items by index, not id+variant. Items are stored WITH a
+      // variant (brand fallback), but the old code passed variant '' so
+      // remove/update never matched and nothing could be deleted.
       return '<div class="cart-drawer-item">' +
         '<img src="' + imgSrc + '" alt="' + itemName + '" class="cart-drawer-item-img" onerror="this.onerror=null;this.src=\'/images/6243807090316203124aee66_placeholder-image.svg\'">' +
         '<div class="cart-drawer-item-info">' +
           '<div class="cart-drawer-item-name">' + itemName + '</div>' +
           '<div class="cart-drawer-item-price">$' + price + '</div>' +
           '<div class="cart-drawer-item-qty">' +
-            '<button onclick="updateDrawerQty(\'' + safeId + '\', \'\', ' + (item.quantity - 1) + ')">-</button>' +
+            '<button onclick="drawerDec(' + idx + ')">-</button>' +
             '<span>' + item.quantity + '</span>' +
-            '<button onclick="updateDrawerQty(\'' + safeId + '\', \'\', ' + (item.quantity + 1) + ')">+</button>' +
+            '<button onclick="drawerInc(' + idx + ')">+</button>' +
           '</div>' +
         '</div>' +
-        '<button class="cart-drawer-item-remove" onclick="removeDrawerItem(\'' + safeId + '\', \'\')">' +
+        '<button class="cart-drawer-item-remove" onclick="drawerRemove(' + idx + ')">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
         '</button>' +
       '</div>';
@@ -699,13 +690,18 @@
     }
   };
 
-  // Update floating cart count
+  // Update the single cart indicator — the badge on the header nav cart link.
+  // (Formerly updated a separate floating button; consolidated to one cart.)
   function updateFloatingCount() {
-    const countEl = document.getElementById('floatingCartCount');
-    if (countEl && window.SgCart) {
-      const totals = window.SgCart.getCartTotals();
-      countEl.textContent = totals.itemCount > 0 ? totals.itemCount : '';
-    }
+    if (!window.SgCart) return;
+    const count = window.SgCart.getCartTotals().itemCount || 0;
+    const display = count > 0 ? (count > 99 ? '99+' : String(count)) : '';
+    ['unifiedNavCartBadge', 'unifiedNavCartBadgeDesktop'].forEach(function(id) {
+      const b = document.getElementById(id);
+      if (!b) return;
+      b.textContent = display;
+      b.style.display = count > 0 ? 'flex' : 'none';
+    });
   }
 
   // Add quick-add buttons to product cards
