@@ -166,18 +166,26 @@
 
     async function setStatus(id, body) {
       const key = keyInput.value.trim();
+      if (!key) { msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Admin key required (top of page).</div>'; msg.scrollIntoView({behavior:'smooth', block:'center'}); return; }
       try {
         const r = await fetch(API_BASE + '/api/aspn/members/' + encodeURIComponent(id) + '/approve', {
           method: 'POST',
           headers: {'Content-Type':'application/json', 'X-Admin-Key': key},
           body: JSON.stringify(body)
         });
-        const j = await r.json();
-        if (!r.ok || !j.success) throw new Error(j.error || 'Update failed');
+        const j = await r.json().catch(() => ({}));
+        // The API returns errors either as a plain string (route handlers) or a
+        // structured object {message, code} (middleware). Unwrap both.
+        if (!r.ok || j.success === false) {
+          const detail = (j.error && (j.error.message || j.error)) || ('HTTP ' + r.status);
+          throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        }
         msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--ok">Updated.</div>';
+        msg.scrollIntoView({behavior:'smooth', block:'center'});
         loadMembers();
       } catch (e) {
-        msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Update failed: ' + e.message + '</div>';
+        msg.innerHTML = '<div class="aspn-form__msg aspn-form__msg--err">Update failed: ' + escapeHtml(e.message) + '</div>';
+        msg.scrollIntoView({behavior:'smooth', block:'center'});
       }
     }
     window.setStatus = setStatus;

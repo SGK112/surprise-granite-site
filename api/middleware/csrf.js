@@ -243,6 +243,17 @@ function csrfOriginCheck(allowedOrigins = []) {
       return next();
     }
 
+    // Allow header-key-authenticated admin/API requests. These carry an
+    // explicit secret header that a cross-site attacker cannot forge (custom
+    // headers force a CORS preflight the server only grants to allowed
+    // origins), so CSRF origin checking adds nothing and only breaks
+    // legitimate cross-origin admin tooling. The route itself validates the key.
+    if (req.headers['x-admin-key'] ||
+        req.headers['x-bridge-admin-key'] ||
+        req.headers['x-api-key']) {
+      return next();
+    }
+
     logger.warn('[CSRF] Origin check failed', {
       path: req.path,
       origin,
