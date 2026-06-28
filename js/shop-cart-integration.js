@@ -402,7 +402,7 @@
   }
 
   // Create cart drawer
-  function createCartDrawer() {
+  function createCartDrawer(includeFloatingButton) {
     if (document.getElementById('cartDrawer')) return;
 
     const drawerHTML = `
@@ -434,6 +434,10 @@
 
     document.body.insertAdjacentHTML('beforeend', drawerHTML);
 
+    // Skip the floating button on non-shop pages (e.g. /materials/*), which
+    // open the drawer on-demand but shouldn't carry a persistent cart button.
+    if (includeFloatingButton === false) return;
+
     // Also add floating cart button
     const floatingBtn = document.createElement('button');
     floatingBtn.className = 'floating-cart-btn';
@@ -447,8 +451,16 @@
 
   // Open cart drawer
   window.openCartDrawer = function() {
-    document.getElementById('cartDrawerOverlay').classList.add('open');
-    document.getElementById('cartDrawer').classList.add('open');
+    // The drawer is only pre-built on whitelisted shop pages. On other pages
+    // (e.g. /materials/flooring/) it won't exist, so build it on demand —
+    // otherwise this threw a null error AFTER the item was added, surfacing as
+    // an "Error" button even though the add succeeded.
+    if (!document.getElementById('cartDrawer')) createCartDrawer(false);
+    var overlay = document.getElementById('cartDrawerOverlay');
+    var drawer = document.getElementById('cartDrawer');
+    if (!overlay || !drawer) return;
+    overlay.classList.add('open');
+    drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
     renderCartDrawer();
   };
