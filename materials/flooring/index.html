@@ -625,9 +625,13 @@
         const retailPrice = tierPrices.guest ?? calculatePrice(basePrice, 'guest');
         const showSavings = currentTier !== 'guest' && retailPrice - userPrice > 0.10;
 
-        // Link to flooring detail page; catalog products go straight to estimate (no detail page yet)
+        // Both sources get a real detail page. Static items have rich
+        // pre-rendered pages at /flooring/<slug>/. Catalog-only items use the
+        // shared product page, which resolves them via its /api/catalog/<handle>
+        // fallback and shows the "Calculate Your Project" / estimate CTA — no
+        // more dead-ending into a bare lead form.
         const url = product._source === 'catalog'
-          ? `/get-a-free-estimate?service=flooring-install&material=${encodeURIComponent(type)}&product=${encodeURIComponent(product.name || '')}`
+          ? `/marketplace/product/?handle=${encodeURIComponent(slug)}&category=flooring`
           : `/flooring/${slug}/`;
 
         const installUrl = `/get-a-free-estimate?service=flooring-install&material=${encodeURIComponent(type)}&product=${encodeURIComponent(product.name || '')}`;

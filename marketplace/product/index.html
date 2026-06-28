@@ -3241,7 +3241,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       }
 
       // --- Add to Cart for purchasable products ---
-      const purchasableCategories = ['sinks', 'faucets', 'bathroom', 'bath-fixtures', 'kitchen-accessories', 'other', 'tile', 'flooring'];
+      // Flooring is intentionally excluded: it's priced per sq ft, so its detail
+      // page leads into the "Calculate Your Project" / estimate flow rather than a
+      // unit add-to-cart (the catalog feed has no per-unit price — retail_price is
+      // often null, which would otherwise render a $0.00 Add to Cart).
+      const purchasableCategories = ['sinks', 'faucets', 'bathroom', 'bath-fixtures', 'kitchen-accessories', 'other', 'tile'];
       const isPurchasable = purchasableCategories.includes(category)
         && product.variants && product.variants.length > 0
         && product.variants[0] && product.variants[0].id;
