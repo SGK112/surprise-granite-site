@@ -192,7 +192,7 @@
       const checkoutBtn = document.getElementById('checkoutBtn');
       const shareQuote = document.getElementById('shareQuote');
 
-      function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+      function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
       function fmt(n) { return '$' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
       function renderCart() {
@@ -225,26 +225,28 @@
         cartSummary.style.display = 'block';
         if (shareQuote) shareQuote.style.display = 'block';
 
-        cartItems.innerHTML = cart.map(function(item) {
-          var safeId = esc(item.id);
-          var safeVariant = esc(item.variant);
+        cartItems.innerHTML = cart.map(function(item, idx) {
           var price = parseFloat(item.price) || 0;
           var qty = parseInt(item.quantity) || 1;
+          // Buttons reference the item by its cart INDEX (a plain number),
+          // never by interpolating id/variant strings into a JS string — that
+          // broke whenever a value held a quote (e.g. a 24" size), leaving the
+          // Remove button inert. Index is looked up against the live cart on click.
           return '<div class="cart-item">' +
             '<div class="cart-item-image"><img src="' + esc(item.image || '/images/placeholder-card.svg') + '" alt="' + esc(item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\'/images/placeholder-card.svg\'"></div>' +
             '<div class="cart-item-details">' +
               '<h3 class="cart-item-name">' + esc(item.name) + '</h3>' +
-              (item.variant ? '<p class="cart-item-variant">' + safeVariant + '</p>' : '') +
+              (item.variant ? '<p class="cart-item-variant">' + esc(item.variant) + '</p>' : '') +
               '<p class="cart-item-price">' + fmt(price) + ' each</p>' +
             '</div>' +
             '<div class="cart-item-actions">' +
               '<div class="cart-item-total">' + fmt(price * qty) + '</div>' +
               '<div class="quantity-selector">' +
-                '<button class="quantity-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty - 1) + ')"' + (qty <= 1 ? ' disabled' : '') + '>−</button>' +
+                '<button class="quantity-btn" onclick="cartDec(' + idx + ')"' + (qty <= 1 ? ' disabled' : '') + '>−</button>' +
                 '<span class="quantity-value">' + qty + '</span>' +
-                '<button class="quantity-btn" onclick="updateQty(\'' + safeId + '\',\'' + safeVariant + '\',' + (qty + 1) + ')">+</button>' +
+                '<button class="quantity-btn" onclick="cartInc(' + idx + ')">+</button>' +
               '</div>' +
-              '<button class="remove-item" onclick="removeItem(\'' + safeId + '\',\'' + safeVariant + '\')">' +
+              '<button class="remove-item" onclick="cartRemove(' + idx + ')">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
                 'Remove' +
               '</button>' +
@@ -258,16 +260,31 @@
         document.getElementById('cartTotal').textContent = fmt(totals.total);
       }
 
-      window.updateQty = function(id, variant, newQty) {
-        if (!window.SgCart) return;
-        if (newQty <= 0) { window.SgCart.removeFromCart(id, variant); }
-        else { window.SgCart.updateQuantity(id, variant, newQty); }
+      // Index-based handlers — resolve the item from the live cart at click
+      // time so id/variant never need to be embedded in markup.
+      function itemAt(idx) {
+        if (!window.SgCart) return null;
+        var c = window.SgCart.getCart();
+        return c[idx] || null;
+      }
+      window.cartRemove = function(idx) {
+        var it = itemAt(idx);
+        if (!it) return;
+        window.SgCart.removeFromCart(it.id, it.variant || '');
         renderCart();
       };
-
-      window.removeItem = function(id, variant) {
-        if (!window.SgCart) return;
-        window.SgCart.removeFromCart(id, variant);
+      window.cartInc = function(idx) {
+        var it = itemAt(idx);
+        if (!it) return;
+        window.SgCart.updateQuantity(it.id, it.variant || '', (parseInt(it.quantity) || 1) + 1);
+        renderCart();
+      };
+      window.cartDec = function(idx) {
+        var it = itemAt(idx);
+        if (!it) return;
+        var q = (parseInt(it.quantity) || 1) - 1;
+        if (q <= 0) { window.SgCart.removeFromCart(it.id, it.variant || ''); }
+        else { window.SgCart.updateQuantity(it.id, it.variant || '', q); }
         renderCart();
       };
 

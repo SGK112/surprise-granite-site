@@ -380,8 +380,12 @@
         const price = product.price ? parseFloat(product.price) : 0;
         const brand = product.brandDisplay || product.vendor || '';
         const url = `/marketplace/product/?handle=${product.handle}&category=kitchen-accessories`;
-        const variantId = product.variants?.[0]?.id || '';
-        const isAvailable = product.available !== false && !!variantId;
+        // These items are sold by the cart via id+price (no Shopify variant
+        // required), and isCardReady already guarantees price > 0 — so gate the
+        // buy button on price, not on a variant id that the static feed lacks.
+        // Without this every accessory fell back to "Get a Quote" and nothing sold.
+        const variantId = product.variants?.[0]?.id || product.handle || product.id || '';
+        const isAvailable = product.available !== false && price > 0;
         return `
           <a href="${url}" class="product-card" data-title="${product.title.toLowerCase()}" data-type="${(product.productType || '').toLowerCase()}" data-variant-id="${variantId}">
             <div class="product-image">
