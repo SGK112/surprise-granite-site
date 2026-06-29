@@ -6940,6 +6940,7 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
     // Save to Supabase (server-side backup — client also saves directly).
     // 10-minute dedup window matches the other paths so a parallel submit
     // from the direct Supabase client doesn't get duplicated here.
+    let dbInsertFailed = false;
     if (supabase) {
       try {
         const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -6971,6 +6972,11 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
             }
           }]);
           if (insertError) {
+            // Don't silently drop the lead: flag it so the admin email below
+            // (sent regardless) tells staff to enter it manually, and CRM sync
+            // still fires. The row is missing from the dashboard, but the lead
+            // is never lost without anyone knowing.
+            dbInsertFailed = true;
             logger.error('Supabase lead insert error:', insertError.message);
           } else {
             logger.info('Lead saved to Supabase (server-side)');
@@ -7005,7 +7011,7 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
 
     // Send notification to admin
     const adminEmail = {
-      subject: emailSubject,
+      subject: dbInsertFailed ? `⚠️ DB SAVE FAILED — enter manually: ${emailSubject}` : emailSubject,
       html: `
 <!DOCTYPE html>
 <html>
