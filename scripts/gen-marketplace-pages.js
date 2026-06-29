@@ -168,7 +168,7 @@ function page(p) {
   </script>
   <script src="/js/pricing-config.js"></script>
   <script src="/js/sg-auth.js?v=20260205b"></script>
-  <script src="/js/cart.js?v=20260628b"></script>
+  <script src="/js/cart.js?v=20260629a"></script>
   <script src="/js/shop-cart-integration.js?v=20260628e"></script>
 </body>
 </html>`;

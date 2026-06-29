@@ -90,13 +90,18 @@
     const taxRate = TAX_RATES[selectedState] || 0;
     const tax = subtotal * taxRate;
 
-    // Shipping must mirror the server's SHIPPING_TIERS (price-validator.js),
-    // which is what's actually charged: <$100 → $15, $100–$500 → $25, free
-    // over $500. The UI previously charged $49 up to $1000.
-    let shipping = 0;
-    if (subtotal > 0 && subtotal < 500) {
-      shipping = subtotal < 100 ? 15 : 25;
-    }
+    // Shipping mirrors the server's PER-VENDOR logic (price-validator.js): each
+    // vendor drop-ships and bills freight per shipment, so charge the tier
+    // (<$100 → $15, $100–$500 → $25, free > $500) per vendor and sum. Group by
+    // the item's vendor/brand — the key the server falls back to.
+    const tierFor = sub => (sub > 0 && sub < 500) ? (sub < 100 ? 15 : 25) : 0;
+    const vendorSubtotals = {};
+    cart.forEach(item => {
+      const key = (item.vendor || item.vendorId || item.variant || item.brand || 'default')
+        .toString().toLowerCase().trim() || 'default';
+      vendorSubtotals[key] = (vendorSubtotals[key] || 0) + (item.price * item.quantity);
+    });
+    const shipping = Object.values(vendorSubtotals).reduce((sum, sub) => sum + tierFor(sub), 0);
 
     // Check for promo with error handling
     let discount = 0;

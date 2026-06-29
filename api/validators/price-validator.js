@@ -96,7 +96,9 @@ async function validateCartPrices(items, supabase, shippingState) {
     !['Tax', 'Shipping', 'Tax (AZ 8.1%)'].some(n => item.name?.includes(n))
   );
 
-  // Validate each product item
+  // Validate each product item, bucketing line totals by vendor so shipping
+  // can be charged per vendor (each vendor drop-ships + bills freight separately).
+  const vendorSubtotals = {};
   for (const item of productItems) {
     const validation = await validateSingleItem(item, supabase);
 
@@ -116,11 +118,30 @@ async function validateCartPrices(items, supabase, shippingState) {
     };
 
     result.validatedItems.push(validatedItem);
-    result.calculatedTotals.subtotal += validatedItem.validatedPrice * (item.quantity || 1);
+    const lineTotal = validatedItem.validatedPrice * (item.quantity || 1);
+    result.calculatedTotals.subtotal += lineTotal;
+
+    // Group by vendor (matched catalog vendor_id; else the item's brand/variant; else one bucket)
+    const vKey = validation.vendorId
+      || (item.vendor_id || item.vendor || item.variant || item.brand || '').toString().toLowerCase().trim()
+      || 'default';
+    vendorSubtotals[vKey] = (vendorSubtotals[vKey] || 0) + lineTotal;
   }
 
-  // Calculate server-side totals (never trust client for these)
-  result.calculatedTotals.shipping = calculateShipping(result.calculatedTotals.subtotal);
+  // Calculate server-side totals (never trust client for these).
+  // Per-vendor shipping: charge the shipping tier PER vendor and sum. A flat
+  // cart-wide fee lost money on multi-vendor orders — e.g. samples from 3
+  // vendors = 3 separate shipments (3x ~$10 freight) but only one $15 charge.
+  const shippingByVendor = {};
+  let shippingTotal = 0;
+  for (const vKey of Object.keys(vendorSubtotals)) {
+    const s = calculateShipping(vendorSubtotals[vKey]);
+    shippingByVendor[vKey] = s;
+    shippingTotal += s;
+  }
+  result.calculatedTotals.shipping = shippingTotal;
+  result.calculatedTotals.shippingByVendor = shippingByVendor;
+  result.calculatedTotals.vendorCount = Object.keys(vendorSubtotals).length;
   result.calculatedTotals.tax = calculateTax(result.calculatedTotals.subtotal, shippingState);
   result.calculatedTotals.taxState = (shippingState || '').toUpperCase() || 'NONE';
   result.calculatedTotals.taxRate = STATE_TAX_RATES[(shippingState || '').toUpperCase()] || 0;
@@ -143,6 +164,7 @@ async function validateSingleItem(item, supabase) {
   const result = {
     validatedPrice: null,
     priceSource: null,
+    vendorId: null,
     error: null,
     warning: null
   };
@@ -170,7 +192,7 @@ async function validateSingleItem(item, supabase) {
       // CATALOG is the source of truth. The cart sends the product slug as
       // item.id (catalog products) — also try SKU and exact name so static
       // products that were ingested into the catalog are matched too.
-      const catCols = 'id, name, retail_price, active';
+      const catCols = 'id, name, retail_price, active, vendor_id';
       if (!product && item.id) {
         const { data } = await supabase.from('catalog_products').select(catCols)
           .eq('slug', item.id).eq('active', true).limit(1).maybeSingle();
@@ -201,6 +223,9 @@ async function validateSingleItem(item, supabase) {
       }
 
       if (product && product.retail_price) {
+        // Capture the vendor so shipping can be charged per-vendor (each vendor
+        // drop-ships separately and bills freight per shipment).
+        result.vendorId = product.vendor_id || null;
         const dbPriceCents = Math.round(product.retail_price * 100);
         const clientPriceCents = item.price;
 

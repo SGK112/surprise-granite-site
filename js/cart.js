@@ -355,14 +355,19 @@
 
     const totalSavings = guestTotal - subtotal;
 
-    // Shipping must mirror the server's SHIPPING_TIERS (price-validator.js),
-    // which is what's actually charged: <$100 → $15, $100–$500 → $25, free
-    // over $500. The UI previously charged $49 up to $1000, so the displayed
-    // total didn't match the Stripe total.
-    let shipping = 0;
-    if (subtotal > 0 && subtotal < 500) {
-      shipping = subtotal < 100 ? 15 : 25;
-    }
+    // Shipping mirrors the server's PER-VENDOR logic (price-validator.js): each
+    // vendor drop-ships separately and bills freight per shipment, so charge the
+    // tier (<$100 → $15, $100–$500 → $25, free > $500) PER vendor and sum.
+    // Group by the item's vendor/brand — the same key the server falls back to —
+    // so a multi-vendor cart shows the real (higher) shipping, not a flat fee.
+    const tierFor = sub => (sub > 0 && sub < 500) ? (sub < 100 ? 15 : 25) : 0;
+    const vendorSubtotals = {};
+    cart.forEach(item => {
+      const key = (item.vendor || item.vendorId || item.variant || item.brand || 'default')
+        .toString().toLowerCase().trim() || 'default';
+      vendorSubtotals[key] = (vendorSubtotals[key] || 0) + (item.price * item.quantity);
+    });
+    const shipping = Object.values(vendorSubtotals).reduce((sum, sub) => sum + tierFor(sub), 0);
 
     return {
       subtotal,
