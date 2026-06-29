@@ -355,10 +355,13 @@
 
     const totalSavings = guestTotal - subtotal;
 
-    // Shipping: free over $1000, tiered below
+    // Shipping must mirror the server's SHIPPING_TIERS (price-validator.js),
+    // which is what's actually charged: <$100 → $15, $100–$500 → $25, free
+    // over $500. The UI previously charged $49 up to $1000, so the displayed
+    // total didn't match the Stripe total.
     let shipping = 0;
-    if (subtotal > 0 && subtotal < 1000) {
-      shipping = subtotal < 100 ? 15 : subtotal < 500 ? 25 : 49;
+    if (subtotal > 0 && subtotal < 500) {
+      shipping = subtotal < 100 ? 15 : 25;
     }
 
     return {

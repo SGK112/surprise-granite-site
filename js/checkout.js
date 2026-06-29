@@ -90,10 +90,12 @@
     const taxRate = TAX_RATES[selectedState] || 0;
     const tax = subtotal * taxRate;
 
-    // Shipping logic
+    // Shipping must mirror the server's SHIPPING_TIERS (price-validator.js),
+    // which is what's actually charged: <$100 → $15, $100–$500 → $25, free
+    // over $500. The UI previously charged $49 up to $1000.
     let shipping = 0;
-    if (subtotal > 0 && subtotal < 1000) {
-      shipping = subtotal < 100 ? 15 : subtotal < 500 ? 25 : 49;
+    if (subtotal > 0 && subtotal < 500) {
+      shipping = subtotal < 100 ? 15 : 25;
     }
 
     // Check for promo with error handling
