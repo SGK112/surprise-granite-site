@@ -3080,9 +3080,17 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       document.getElementById('page-title').textContent = `${title} | ${material} Countertops | Surprise Granite`;
       document.getElementById('meta-description').content = description;
 
+      // Canonical URL. Slab products live at the clean /countertops/<slug>/
+      // URL (which is also their sitemap URL), so canonical to that and let it
+      // absorb the ?handle= param URL. Non-slab products only exist at the
+      // param URL, so canonical to that (normalized to the www host).
+      const canonicalUrl = (category === 'slabs' && handle)
+        ? `https://www.surprisegranite.com/countertops/${handle}/`
+        : `https://www.surprisegranite.com${window.location.pathname}${window.location.search}`;
+      document.getElementById('canonical-url')?.setAttribute('href', canonicalUrl);
+
       // Update OG tags
-      const pageUrl = window.location.href;
-      document.getElementById('og-url')?.setAttribute('content', pageUrl);
+      document.getElementById('og-url')?.setAttribute('content', canonicalUrl);
       document.getElementById('og-title')?.setAttribute('content', `${title} | ${material} Countertops`);
       document.getElementById('og-description')?.setAttribute('content', description);
       if (product.images && product.images[0]) {
