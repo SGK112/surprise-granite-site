@@ -695,9 +695,25 @@
         });
         var existing = await existingResp.json();
 
+        // Canonical Supabase lead shape — reused for the insert body and the
+        // CRM sync so VoiceNow gets exactly what we stored.
+        var sgLeadPayload = {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          project_type: formData.projectType,
+          message: formData.message,
+          source: 'website',
+          form_name: 'estimate-form-folder',
+          page_url: window.location.href,
+          raw_data: formData
+        };
+
         if (existing && existing.length > 0) {
           // Update existing lead — merge new form data
-          await fetch(supabaseUrl + '/rest/v1/leads?id=eq.' + existing[0].id, {
+          var updateResp = await fetch(supabaseUrl + '/rest/v1/leads?id=eq.' + existing[0].id, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
@@ -716,30 +732,30 @@
               raw_data: formData
             })
           });
+          if (!updateResp.ok) throw new Error('Lead update failed: HTTP ' + updateResp.status);
         } else {
           // Submit new lead to Supabase (powers /account page leads tab)
-          await fetch(supabaseUrl + '/rest/v1/leads', {
+          var insertResp = await fetch(supabaseUrl + '/rest/v1/leads', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'apikey': supabaseKey,
               'Prefer': 'return=minimal'
             },
-            body: JSON.stringify({
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              full_name: formData.name,
-              email: formData.email,
-              phone: formData.phone,
-              project_type: formData.projectType,
-              message: formData.message,
-              source: 'website',
-              form_name: 'estimate-form-folder',
-              page_url: window.location.href,
-              raw_data: formData
-            })
+            body: JSON.stringify(sgLeadPayload)
           });
+          if (!insertResp.ok) throw new Error('Lead insert failed: HTTP ' + insertResp.status);
         }
+
+        // Notify staff + sync to CRM so the lead actually reaches someone
+        // (mirrors contact-us.html). Best-effort — never blocks the success UI.
+        try {
+          if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
+          if (window.SG_notifyNewLead) SG_notifyNewLead({
+            name: formData.name, email: formData.email, phone: formData.phone,
+            form_name: 'estimate-form-folder', project_type: formData.projectType, message: formData.message
+          });
+        } catch (notifyErr) { console.warn('Lead notify failed:', notifyErr); }
 
         // Show success
         form.style.display = 'none';
@@ -753,14 +769,20 @@
       } catch (error) {
         console.error('Submission error:', error);
 
-        // Still show success - we captured the lead locally
-        form.style.display = 'none';
-        successMessage.classList.add('show');
+        // Keep a local backup, but do NOT pretend it succeeded — show the
+        // error so the customer can retry or call us instead of assuming we
+        // received a submission that never landed.
+        try {
+          const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
+          leads.push(formData);
+          localStorage.setItem('sg_leads', JSON.stringify(leads));
+        } catch (_) { /* ignore storage errors */ }
 
-        // Store locally as backup
-        const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
-        leads.push(formData);
-        localStorage.setItem('sg_leads', JSON.stringify(leads));
+        errorMessage.innerHTML = 'Sorry — we couldn\'t submit your request. Please try again, or call us at <a href="tel:+16028333189">(602) 833-3189</a>.';
+        errorMessage.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Get My Free Estimate';
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
 
@@ -1329,4 +1351,6 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <!-- Remodely Tools Hub -->
 <script defer src="/js/remodely-hub.js?v=20260504e"></script>
 <script src="/js/instant-quote.js"></script>
+<!-- Staff/CRM notification helper — defines SG_notifyNewLead + SG_syncLeadToCRM -->
+<script src="/js/lead-notify.js"></script>
 </body></html>

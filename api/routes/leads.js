@@ -248,6 +248,14 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
 
       if (error) {
         logger.apiError(error, { context: 'Lead insert' });
+        // The insert failed and there is no other durable store on this path
+        // (the CRM push below only runs after a successful insert). Returning
+        // success here silently drops the customer's submission. Surface a 500
+        // so the client retries / shows its error UI and we don't lose leads.
+        return res.status(500).json({
+          success: false,
+          error: 'Could not save your submission. Please try again or call us at (602) 833-3189.'
+        });
       } else {
         savedLead = lead;
 
