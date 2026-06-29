@@ -3080,12 +3080,18 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       document.getElementById('page-title').textContent = `${title} | ${material} Countertops | Surprise Granite`;
       document.getElementById('meta-description').content = description;
 
-      // Canonical URL. Slab products are canonically the clean
-      // /countertops/<slug>/ URL (their sitemap URL); consolidate this ?handle=
-      // param URL into it. Non-slab products only exist at the param URL.
-      const canonicalUrl = (category === 'slabs' && handle)
-        ? `https://www.surprisegranite.com/countertops/${handle}/`
-        : `https://www.surprisegranite.com${window.location.pathname}${window.location.search}`;
+      // Canonical URL. Slabs canonical to the clean /countertops/<slug>/ URL.
+      // Priced sinks have a generated clean page at /marketplace/sinks/<handle>/
+      // (see scripts/gen-marketplace-pages.js) — consolidate the ?handle= param
+      // URL into it. Everything else only exists at the param URL.
+      let canonicalUrl;
+      if (category === 'slabs' && handle) {
+        canonicalUrl = `https://www.surprisegranite.com/countertops/${handle}/`;
+      } else if (category === 'sinks' && handle && Number(product.price) > 0) {
+        canonicalUrl = `https://www.surprisegranite.com/marketplace/sinks/${handle}/`;
+      } else {
+        canonicalUrl = `https://www.surprisegranite.com${window.location.pathname}${window.location.search}`;
+      }
       document.getElementById('canonical-url')?.setAttribute('href', canonicalUrl);
 
       // Update OG tags
