@@ -160,13 +160,6 @@ async function validateSingleItem(item, supabase) {
     return result;
   }
 
-  // Skip validation for items under $0.50 (samples, free items)
-  if (item.price < 50) {
-    result.validatedPrice = item.price;
-    result.priceSource = 'client_trusted_low_value';
-    return result;
-  }
-
   // Try to find product in database
   if (supabase) {
     try {
@@ -246,6 +239,17 @@ async function validateSingleItem(item, supabase) {
 
   if (item.price > MAX_ITEM_PRICE) {
     result.error = `Item "${item.name}" exceeds maximum allowed price`;
+    return result;
+  }
+
+  // Low-value bypass (samples / genuinely free items) — only AFTER the DB
+  // lookup confirmed no catalog/distributor product matched. Doing this up
+  // front let an attacker POST a real product at 1-49¢ to skip validation
+  // entirely and check out for pennies. Here, any item that matched a DB
+  // product with a real price already returned above with the server price.
+  if (item.price < 50) {
+    result.validatedPrice = item.price;
+    result.priceSource = 'client_trusted_low_value';
     return result;
   }
 
