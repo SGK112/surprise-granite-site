@@ -1703,11 +1703,10 @@
         // 2b. Notify admin of new signup (include claim info if claiming)
         const claimNote = formData._partnerSlug ? `\n\n⚡ CLAIMED LISTING: /stone-yards/${formData._partnerSlug}/` : '';
         try {
-          fetch('https://www.surprisegranite.com/api/email/notify', {
+          fetch('https://www.surprisegranite.com/api/email/notify-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: 'joshb@surprisegranite.com',
               subject: (formData._partnerSlug ? '⚡ Listing Claimed: ' : 'New Distributor Signup: ') + formData.company_name,
               message: `New distributor "${formData.company_name}" has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state}${claimNote}\n\nReview and verify at: https://www.surprisegranite.com/distributor/dashboard/`,
               type: 'admin_notification'

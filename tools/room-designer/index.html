@@ -59805,9 +59805,14 @@
         const emailHTML = buildInvitationEmailHTML(
           recipient.name, shareUrl, projectName, permissionLevel, branding
         );
+        // /api/email/notify now requires a valid session (it was an open
+        // relay). Sharing a design requires being signed in, so attach the
+        // user's access token.
+        const session = await window.SgAuth?.getSession?.();
+        const authToken = session?.access_token || SUPABASE_ANON_KEY;
         const response = await fetch('https://surprise-granite-email-api.onrender.com/api/email/notify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
           body: JSON.stringify({
             to: recipient.email,
             subject: `${branding.companyName} shared a design with you: ${projectName}`,

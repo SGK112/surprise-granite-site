@@ -11,6 +11,7 @@ const logger = require('../utils/logger');
 const { handleApiError, sanitizeString } = require('../utils/security');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validateBody, validateParams } = require('../middleware/validator');
+const { authenticateJWT } = require('../lib/auth/middleware');
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
 const { createProjectService } = require('../services/projectService');
@@ -894,6 +895,7 @@ router.get('/flow/:type/:id', asyncHandler(async (req, res) => {
  * POST /api/workflow/notify
  */
 router.post('/notify',
+  authenticateJWT,
   validateBody(schemas.notify),
   asyncHandler(async (req, res) => {
   const { type, action, entity, recipient, new_status } = req.body;

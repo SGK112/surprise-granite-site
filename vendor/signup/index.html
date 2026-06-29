@@ -1513,11 +1513,10 @@
 
         // 2b. Notify admin of new vendor signup
         try {
-          fetch('https://www.surprisegranite.com/api/email/notify', {
+          fetch('https://www.surprisegranite.com/api/email/notify-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: 'joshb@surprisegranite.com',
               subject: 'New Vendor Signup: ' + formData.business_name,
               message: `New vendor "${formData.business_name}" (${formData.business_type}) has signed up.\n\nContact: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nLocation: ${formData.city}, ${formData.state} ${formData.zip_code}\n\nReview and verify at: https://www.surprisegranite.com/vendor/dashboard/`,
               type: 'admin_notification'

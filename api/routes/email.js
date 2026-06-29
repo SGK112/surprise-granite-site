@@ -12,7 +12,13 @@ const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
 const { handleApiError, isValidEmail, sanitizeString } = require('../utils/security');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { authenticateJWT } = require('../lib/auth/middleware');
+const { emailRateLimiter } = require('../middleware/rateLimiter');
 const emailService = require('../services/emailService');
+
+// Admin recipient for internal notifications (signup alerts, etc.). Never
+// taken from the client — the public notify-admin endpoint always sends here.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com';
 
 // Email configuration
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
@@ -104,8 +110,13 @@ router.post('/test', asyncHandler(async (req, res) => {
 /**
  * Send notification email
  * POST /api/email/notify
+ *
+ * Authenticated + rate-limited. This endpoint can send to an arbitrary
+ * recipient and (for staff tooling) raw HTML, so it must NOT be open — an
+ * unauthenticated version was an open relay / phishing vector. Public flows
+ * that only need to alert our own admin use POST /notify-admin below.
  */
-router.post('/notify', asyncHandler(async (req, res) => {
+router.post('/notify', authenticateJWT, asyncHandler(async (req, res) => {
   const { to, subject, message, type = 'info', rawHtml = false } = req.body;
 
   if (!to || !isValidEmail(to)) {
@@ -157,10 +168,54 @@ router.post('/notify', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Notify our own admin of an internal event (e.g. a new vendor/distributor
+ * signup). PUBLIC but safe: the recipient is ALWAYS the configured admin
+ * (client `to` is ignored), the body is plain text rendered through the
+ * standard template (no rawHtml), and it is rate-limited. This is not a
+ * relay — it can only email Surprise Granite's own inbox.
+ * POST /api/email/notify-admin
+ */
+router.post('/notify-admin', emailRateLimiter, asyncHandler(async (req, res) => {
+  const { subject, message, type = 'admin_notification' } = req.body;
+
+  if (!subject || !message) {
+    return res.status(400).json({ error: 'Subject and message are required' });
+  }
+
+  if (!SMTP_USER || !smtpVerified) {
+    return res.status(503).json({ error: 'Email service unavailable' });
+  }
+
+  const colors = { info: '#3b82f6', success: '#22c55e', warning: '#f59e0b', error: '#ef4444', admin_notification: '#1a1a2e' };
+  const html = emailService.wrapEmailTemplate(`
+    <h2 style="color: ${colors[type] || colors.admin_notification}; margin-bottom: 20px;">${sanitizeString(subject, 200)}</h2>
+    <div style="color: #333; line-height: 1.6;">
+      ${sanitizeString(message, 4000).replace(/\n/g, '<br>')}
+    </div>
+  `);
+
+  try {
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${FROM_EMAIL}>`,
+      to: ADMIN_EMAIL,
+      subject: sanitizeString(subject, 200),
+      html
+    });
+    res.json({ success: true, message: 'Admin notified' });
+  } catch (err) {
+    logger.apiError(err, { context: 'Admin notification failed' });
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+}));
+
+/**
  * Send professional email to lead/customer
  * POST /api/email/send
+ *
+ * Authenticated + rate-limited — sends from info@surprisegranite.com to an
+ * arbitrary recipient, so it must require a valid staff session.
  */
-router.post('/send', asyncHandler(async (req, res) => {
+router.post('/send', authenticateJWT, asyncHandler(async (req, res) => {
   const { to, subject, body, lead_id, customer_id } = req.body;
 
   if (!to || !isValidEmail(to)) {

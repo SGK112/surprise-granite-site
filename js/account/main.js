@@ -5065,9 +5065,8 @@
       }
 
       try {
-        const response = await fetchWithTimeout(API_BASE + '/api/workflow/notify', {
+        const response = await apiCall('/api/workflow/notify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type,          // 'estimate', 'invoice', 'job', 'appointment'
             action,        // 'sent', 'approved', 'status_change', 'reminder', 'paid'
@@ -6597,9 +6596,8 @@
       btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Sending...';
 
       try {
-        const response = await fetchWithTimeout(API_BASE + '/api/email/send', {
+        const response = await apiCall('/api/email/send', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: leadEmail,
             subject: subject,
@@ -22548,11 +22546,10 @@
         let delivered = false;
         let deliveryError = null;
         try {
-          const res = await fetchWithTimeout(SG_API_BASE + '/api/email/send', {
+          const res = await apiCall('/api/email/send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: project.customer_email, subject, body, customer_id: project.customer_id || null })
-          }, 15000);
+          });
           const json = await res.json();
           if (res.ok && json.success) delivered = true;
           else deliveryError = json.error || ('HTTP ' + res.status);
