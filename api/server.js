@@ -2487,6 +2487,17 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               .single();
 
             if (orderErr) {
+              // Postgres unique_violation (23505) on stripe_session_id means a
+              // concurrent/duplicate webhook delivery already inserted this
+              // order between our existence check above and this insert. That's
+              // a SUCCESS for idempotency — treat it like the duplicate branch
+              // so Stripe's at-least-once retries don't loop on a 500. (Requires
+              // the UNIQUE(orders.stripe_session_id) index — see migration
+              // 20260628000001_orders_unique_stripe_session.sql.)
+              if (orderErr.code === '23505') {
+                logger.info('Duplicate order race for session:', session.id, '- already created by a concurrent delivery, skipping');
+                break;
+              }
               logger.error('CRITICAL: Error creating order record:', orderErr.message);
               // Don't swallow — throw so the outer catch returns 500 to Stripe.
               throw new Error('Order creation failed: ' + orderErr.message);
