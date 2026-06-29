@@ -3022,7 +3022,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             brandDisplay: p.brand || p.vendor_id || '',
             brandTier: 'premium',
             productType: p.subcategory || p.category || category,
-            category: category,
+            // Keep the product's OWN catalog category (e.g. 'sink'), not the
+            // URL default — search links omit &category, so trusting the URL
+            // here left searched sinks/faucets stuck on 'slabs' = non-purchasable.
+            category: p.category || category,
             description: p.short_description || '',
             tags: p.tags || [],
             available: p.in_stock !== false,
@@ -3049,6 +3052,18 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       if (!product) {
         document.getElementById('loading-overlay').innerHTML = '<div style="text-align:center;padding:40px;"><h2>Product Not Found</h2><p>Could not find product: ' + handle + '</p><a href="/marketplace/' + category + '/" style="color:#f9cb00;">Browse all ' + category + '</a></div>';
         return;
+      }
+
+      // Trust the resolved product's OWN category for purchasability/labels.
+      // Search links omit &category (default 'slabs'), which made searched
+      // sinks/faucets render as non-purchasable. Catalog categories are
+      // singular; map them to the plural keys purchasableCategories uses. Only
+      // override for known purchasable types so the slab/countertop flow (which
+      // relies on category === 'slabs') is never disturbed.
+      if (product.category) {
+        const SG_CAT_MAP = { sink: 'sinks', faucet: 'faucets', tile: 'tile', bathroom: 'bathroom', 'bath-fixtures': 'bath-fixtures', 'kitchen-accessories': 'kitchen-accessories', other: 'other' };
+        const mapped = SG_CAT_MAP[String(product.category).toLowerCase().trim()];
+        if (mapped) category = mapped;
       }
 
       // Store for lightbox
@@ -3241,11 +3256,13 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       }
 
       // --- Add to Cart for purchasable products ---
-      // Flooring is intentionally excluded: it's priced per sq ft, so its detail
-      // page leads into the "Calculate Your Project" / estimate flow rather than a
-      // unit add-to-cart (the catalog feed has no per-unit price — retail_price is
-      // often null, which would otherwise render a $0.00 Add to Cart).
-      const purchasableCategories = ['sinks', 'faucets', 'bathroom', 'bath-fixtures', 'kitchen-accessories', 'other', 'tile'];
+      // Flooring AND tile are intentionally excluded: both are priced per sq ft,
+      // so their detail pages lead into the "Calculate Your Project" / estimate
+      // flow rather than a unit add-to-cart (the catalog feed has no per-unit
+      // price — retail_price is null, which would otherwise render a $0.00 Add to
+      // Cart). This matters more now that searched tiles resolve to category
+      // 'tile' instead of defaulting to the non-purchasable 'slabs'.
+      const purchasableCategories = ['sinks', 'faucets', 'bathroom', 'bath-fixtures', 'kitchen-accessories', 'other'];
       const isPurchasable = purchasableCategories.includes(category)
         && product.variants && product.variants.length > 0
         && product.variants[0] && product.variants[0].id;
