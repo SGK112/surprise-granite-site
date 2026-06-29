@@ -3106,14 +3106,22 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         "image": product.images || [],
         "brand": { "@type": "Brand", "name": brand },
         "category": `${material} Countertops`,
-        "material": material,
-        "offers": {
+        "material": material
+      };
+      // Only emit an Offer when there's a real price (sinks/faucets/etc.). Slabs
+      // are quote-based with no fixed price; an Offer without "price" is invalid
+      // structured data (Google flags "missing field price in offers").
+      const sdPrice = parseFloat(product.price);
+      if (!isNaN(sdPrice) && sdPrice > 0) {
+        structuredData.offers = {
           "@type": "Offer",
+          "price": sdPrice.toFixed(2),
           "priceCurrency": "USD",
           "availability": "https://schema.org/InStock",
+          "url": canonicalUrl,
           "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" }
-        }
-      };
+        };
+      }
       document.getElementById('structured-data').textContent = JSON.stringify(structuredData);
 
       // Update main image
