@@ -823,8 +823,9 @@
         return fetch(url, Object.assign({}, opts || {}, { signal: c.signal }))
           .finally(() => clearTimeout(t));
       };
+      let _srDelivered = false;
       try {
-        await _srFwt('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
+        const _r = await _srFwt('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -842,13 +843,14 @@
             source: 'service-request-form'
           })
         }, 20000);
+        if (_r && _r.ok) _srDelivered = true;
       } catch (error) {
         console.log('API error:', error);
       }
 
       // Submit to Supabase — lowercase email so server-side dedup matches.
       try {
-        await _srFwt('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        const _r = await _srFwt('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -873,8 +875,18 @@
             raw_data: formData
           })
         }, 15000);
+        if (_r && _r.ok) _srDelivered = true;
       } catch (error) {
         console.log('Supabase error:', error);
+      }
+
+      // Only show success if at least one sink accepted the lead. Otherwise the
+      // request never landed — tell the customer instead of faking success.
+      if (!_srDelivered) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Try Again';
+        alert("Sorry — we couldn't submit your request. Please try again, or call us at (602) 833-3189.");
+        return;
       }
 
       // Show success

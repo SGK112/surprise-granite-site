@@ -614,8 +614,12 @@
         const rawImg = product.images?.[0] || '';
         const img = fixImageUrl(rawImg);
         const brand = product.brandDisplay || product.vendor || '';
+        // Catalog tiles → product detail page (shows the estimate/Calculate CTA
+        // since tile is excluded from purchasableCategories, not a $0 cart). The
+        // "View Details" label now matches where the card actually goes. Static
+        // tiles keep their dedicated product page.
         const url = product._source === 'catalog'
-          ? `/get-a-free-estimate?service=tile-install&material=tile&product=${encodeURIComponent(product.title)}`
+          ? `/marketplace/product/?handle=${encodeURIComponent(product.handle || product.slug || '')}&category=tile`
           : `/marketplace/tile/product.html?handle=${product.handle}`;
 
         // Calculate dynamic pricing

@@ -1712,11 +1712,16 @@ END:VCALENDAR`;
           }
         };
 
+        // Track whether any durable sink accepted the booking. If none do, we
+        // must NOT show the success screen.
+        let _baDelivered = false;
+
         // Submit to Supabase leads table
         const sb = getSupabase();
         if (sb) {
           const { error } = await sb.from('leads').insert([leadData]);
           if (error) console.log('Supabase insert error:', error);
+          else _baDelivered = true;
         }
 
         // Helper: fetch with abort timeout so a slow API never freezes the form.
@@ -1729,7 +1734,7 @@ END:VCALENDAR`;
 
         // Also submit to /api/leads endpoint
         try {
-          await _fwt('https://surprise-granite-email-api.onrender.com/api/leads', {
+          const _r = await _fwt('https://surprise-granite-email-api.onrender.com/api/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1744,6 +1749,7 @@ END:VCALENDAR`;
               appointment_time: selectedTime
             })
           }, 20000);
+          if (_r && _r.ok) _baDelivered = true;
         } catch (e) {
           console.log('API submit error:', e);
         }
@@ -1808,6 +1814,15 @@ END:VCALENDAR`;
 
         document.getElementById('googleCalLink').href = googleLink;
         document.getElementById('icsCalLink').href = icsLink;
+
+        // Only confirm if the booking actually reached a durable sink.
+        if (!_baDelivered) {
+          alert("Sorry — we couldn't save your appointment. Please try again, or call us at (602) 833-3189.");
+          submitBtn.disabled = false;
+          submitText.style.display = 'inline';
+          submitSpinner.style.display = 'none';
+          return;
+        }
 
         showSuccess();
 

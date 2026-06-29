@@ -1601,10 +1601,11 @@ setInterval(displayOpeningStatus, 60000);
                     page_url: window.location.href,
                     raw_data: formData
                 };
+                let _cuDelivered = false;
                 try {
                     const _ctrl = new AbortController();
                     const _tid = setTimeout(() => _ctrl.abort(), 15000);
-                    await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                    const _r = await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
                         method: 'POST',
                         signal: _ctrl.signal,
                         headers: {
@@ -1615,10 +1616,17 @@ setInterval(displayOpeningStatus, 60000);
                         body: JSON.stringify(sgLeadPayload)
                     });
                     clearTimeout(_tid);
+                    if (_r && _r.ok) _cuDelivered = true;
                     if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
                     if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'contact-form', project_type: formData.inquiry, message: formData.message });
                 } catch (err) {
                     console.log('Supabase error:', err);
+                }
+
+                // Don't fake success if the message never saved.
+                if (!_cuDelivered) {
+                    alert("Sorry — we couldn't send your message. Please try again, or call us at (602) 833-3189.");
+                    return;
                 }
 
                 // Show success
