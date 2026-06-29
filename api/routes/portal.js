@@ -219,16 +219,18 @@ router.post('/estimates', portalAccessLimiter, asyncHandler(async (req, res) => 
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const { token_id, customer_id, lead_id } = req.body;
+  const { token_id } = req.body;
 
   if (!token_id) {
     return res.status(400).json({ error: 'Token ID required' });
   }
 
-  // Verify token is valid
+  // Verify token is valid. IDOR fix: read the IDs BOUND to this token and
+  // query by those — never trust client-supplied customer_id/lead_id, which
+  // would let any token holder read another customer's financials.
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions')
+    .select('permissions, customer_id, lead_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
@@ -241,15 +243,15 @@ router.post('/estimates', portalAccessLimiter, asyncHandler(async (req, res) => 
     return res.status(403).json({ error: 'No permission to view estimates' });
   }
 
-  // Get estimates for the customer
+  // Get estimates for the customer/lead the token is bound to
   let query = supabase.from('estimates').select('*');
 
-  if (customer_id) {
-    query = query.eq('customer_id', customer_id);
-  } else if (lead_id) {
-    query = query.eq('lead_id', lead_id);
+  if (tokenRecord.customer_id) {
+    query = query.eq('customer_id', tokenRecord.customer_id);
+  } else if (tokenRecord.lead_id) {
+    query = query.eq('lead_id', tokenRecord.lead_id);
   } else {
-    return res.status(400).json({ error: 'Customer or lead ID required' });
+    return res.status(400).json({ error: 'Token is not associated with a customer or lead' });
   }
 
   const { data: estimates, error } = await query.order('created_at', { ascending: false });
@@ -271,16 +273,16 @@ router.post('/invoices', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const { token_id, customer_id } = req.body;
+  const { token_id } = req.body;
 
-  if (!token_id || !customer_id) {
-    return res.status(400).json({ error: 'Token ID and customer ID required' });
+  if (!token_id) {
+    return res.status(400).json({ error: 'Token ID required' });
   }
 
-  // Verify token
+  // Verify token and use ITS bound customer_id (IDOR fix — never the client's)
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions')
+    .select('permissions, customer_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
@@ -289,10 +291,14 @@ router.post('/invoices', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'No permission to view invoices' });
   }
 
+  if (!tokenRecord.customer_id) {
+    return res.status(400).json({ error: 'Token is not associated with a customer' });
+  }
+
   const { data: invoices, error } = await supabase
     .from('invoices')
     .select('*')
-    .eq('customer_id', customer_id)
+    .eq('customer_id', tokenRecord.customer_id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -312,16 +318,16 @@ router.post('/appointments', portalAccessLimiter, asyncHandler(async (req, res) 
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const { token_id, customer_id, lead_id } = req.body;
+  const { token_id } = req.body;
 
   if (!token_id) {
     return res.status(400).json({ error: 'Token ID required' });
   }
 
-  // Verify token
+  // Verify token and use ITS bound IDs (IDOR fix — never the client's)
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions')
+    .select('permissions, customer_id, lead_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
@@ -329,6 +335,9 @@ router.post('/appointments', portalAccessLimiter, asyncHandler(async (req, res) 
   if (!tokenRecord?.permissions?.view_appointments) {
     return res.status(403).json({ error: 'No permission to view appointments' });
   }
+
+  const customer_id = tokenRecord.customer_id;
+  const lead_id = tokenRecord.lead_id;
 
   // Get appointments - check both leads and customers tables
   let appointments = [];
@@ -389,16 +398,16 @@ router.post('/photos', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const { token_id, lead_id, customer_id, photo_url, caption } = req.body;
+  const { token_id, photo_url, caption } = req.body;
 
   if (!token_id) {
     return res.status(400).json({ error: 'Token ID required' });
   }
 
-  // Verify token
+  // Verify token and use ITS bound IDs (IDOR fix — never the client's)
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions, owner_id')
+    .select('permissions, owner_id, customer_id, lead_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
@@ -406,6 +415,8 @@ router.post('/photos', portalAccessLimiter, asyncHandler(async (req, res) => {
   if (!tokenRecord?.permissions?.upload_photos) {
     return res.status(403).json({ error: 'No permission to upload photos' });
   }
+
+  const lead_id = tokenRecord.lead_id;
 
   if (!photo_url) {
     return res.status(400).json({ error: 'Photo URL required' });
@@ -468,16 +479,16 @@ router.post('/messages', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const { token_id, message, lead_id, customer_id } = req.body;
+  const { token_id, message } = req.body;
 
   if (!token_id || !message) {
     return res.status(400).json({ error: 'Token ID and message required' });
   }
 
-  // Verify token
+  // Verify token and use ITS bound IDs (IDOR fix — never the client's)
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions, owner_id, email')
+    .select('permissions, owner_id, email, customer_id, lead_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
@@ -485,6 +496,9 @@ router.post('/messages', portalAccessLimiter, asyncHandler(async (req, res) => {
   if (!tokenRecord?.permissions?.send_messages) {
     return res.status(403).json({ error: 'No permission to send messages' });
   }
+
+  const lead_id = tokenRecord.lead_id;
+  const customer_id = tokenRecord.customer_id;
 
   // Get customer/lead name
   let senderName = 'Portal User';
@@ -578,13 +592,27 @@ router.post('/estimates/:id/approve', portalAccessLimiter, asyncHandler(async (r
   // Verify token
   const { data: tokenRecord } = await supabase
     .from('portal_tokens')
-    .select('permissions, owner_id')
+    .select('permissions, owner_id, customer_id, lead_id')
     .eq('id', token_id)
     .eq('is_active', true)
     .single();
 
   if (!tokenRecord?.permissions?.approve_estimates) {
     return res.status(403).json({ error: 'No permission to approve estimates' });
+  }
+
+  // IDOR fix: confirm the estimate actually belongs to THIS token before
+  // approving. Previously any token holder could approve any estimate by id.
+  const { data: target } = await supabase
+    .from('estimates')
+    .select('id, customer_id, lead_id')
+    .eq('id', id)
+    .single();
+
+  const ownsByCustomer = tokenRecord.customer_id && target?.customer_id === tokenRecord.customer_id;
+  const ownsByLead = tokenRecord.lead_id && target?.lead_id === tokenRecord.lead_id;
+  if (!target || (!ownsByCustomer && !ownsByLead)) {
+    return res.status(403).json({ error: 'This estimate is not associated with your portal' });
   }
 
   // Update estimate status
