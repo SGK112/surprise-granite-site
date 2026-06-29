@@ -175,7 +175,14 @@ router.get('/members', async (req, res) => {
 
     if (category && SERVICE_CATEGORIES.includes(category)) q = q.eq('service_category', category);
     if (city) q = q.ilike('city', `%${city}%`);
-    if (search) q = q.or(`business_name.ilike.%${search}%,short_description.ilike.%${search}%`);
+    if (search) {
+      // Strip PostgREST .or() metacharacters so a crafted search value can't
+      // break out of the ilike filter and inject extra conditions. Commas
+      // separate conditions and parens group them; %/* are LIKE/PostgREST
+      // wildcards and backslash escapes — none belong in a literal search term.
+      const safeSearch = search.replace(/[(),*%\\]/g, ' ').trim();
+      if (safeSearch) q = q.or(`business_name.ilike.%${safeSearch}%,short_description.ilike.%${safeSearch}%`);
+    }
 
     const { data, error, count } = await q;
     if (error) {

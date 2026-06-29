@@ -2566,46 +2566,22 @@ router.get('/projects/:projectId/customer-view', asyncHandler(async (req, res) =
   }
 
   const { projectId } = req.params;
-  const { token, email } = req.query;
+  const { token } = req.query;
 
-  if (!token && !email) {
-    return res.status(400).json({ error: 'Portal token or email required' });
+  // Require the portal token — it is the secret that authorizes access. The
+  // previous ?email= path granted a full project view to anyone who knew a
+  // customer's email address (not a credential), so it was removed.
+  if (!token) {
+    return res.status(400).json({ error: 'Portal token required' });
   }
 
-  // Find project and verify access
-  let project;
-  if (token) {
-    const { data } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectId)
-      .eq('portal_token', token)
-      .eq('portal_enabled', true)
-      .single();
-    project = data;
-  }
-
-  if (!project && email) {
-    // Verify email is a customer collaborator
-    const { data: collab } = await supabase
-      .from('project_collaborators')
-      .select('id, can_view_files, can_view_schedule, can_view_handoff')
-      .eq('project_id', projectId)
-      .eq('email', email.toLowerCase())
-      .eq('role', 'customer')
-      .eq('invitation_status', 'accepted')
-      .single();
-
-    if (collab) {
-      const { data } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
-      project = data;
-      project._permissions = collab;
-    }
-  }
+  const { data: project } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', projectId)
+    .eq('portal_token', token)
+    .eq('portal_enabled', true)
+    .single();
 
   if (!project) {
     return res.status(404).json({ error: 'Project not found or access denied' });
