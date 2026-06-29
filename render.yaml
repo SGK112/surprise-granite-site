@@ -98,19 +98,6 @@ services:
       - type: rewrite
         source: /aspn/members/*
         destination: /aspn/members/index.html
-      # Countertop slab product pages — the renderer at
-      # /marketplace/product/index.html reads the slug from the path
-      # (/countertops/<slug>/) and renders the slab + sets a self-canonical.
-      # The per-slug folders have no file (they were "Loading..." redirect
-      # stubs, now removed), so without these rewrites they'd 404. Serving the
-      # renderer at the clean URL makes the sitemap's countertop URLs real,
-      # indexable pages instead of empty redirect shells.
-      - type: rewrite
-        source: /countertops/*/
-        destination: /marketplace/product/index.html
-      - type: rewrite
-        source: /countertops/*
-        destination: /marketplace/product/index.html
       # Company pages
       - type: rewrite
         source: /company/about-us
