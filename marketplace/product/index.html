@@ -3087,8 +3087,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       let canonicalUrl;
       if (category === 'slabs' && handle) {
         canonicalUrl = `https://www.surprisegranite.com/countertops/${handle}/`;
-      } else if (category === 'sinks' && handle && Number(product.price) > 0) {
-        canonicalUrl = `https://www.surprisegranite.com/marketplace/sinks/${handle}/`;
+      } else if ((category === 'sinks' || category === 'faucets') && handle && Number(product.price) > 0) {
+        // 1:1 categories with a generated clean page at /marketplace/<cat>/<handle>/
+        canonicalUrl = `https://www.surprisegranite.com/marketplace/${category}/${handle}/`;
       } else {
         canonicalUrl = `https://www.surprisegranite.com${window.location.pathname}${window.location.search}`;
       }

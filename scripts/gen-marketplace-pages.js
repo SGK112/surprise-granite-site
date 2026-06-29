@@ -23,8 +23,16 @@ const ROOT = path.resolve(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
 const API = 'https://surprise-granite-email-api.onrender.com';
 const CAT = (process.argv[2] || 'sink').toLowerCase();
-const PLURAL = { sink: 'sinks', faucet: 'faucets', fixture: 'fixtures', accessory: 'accessories' }[CAT] || (CAT + 's');
-const OUTDIR = path.join(ROOT, 'marketplace', PLURAL);
+// Map a catalog category to its clean-URL dir (an EXISTING listing page so the
+// breadcrumb / "browse all" links resolve) + display labels.
+const CFG = {
+  sink:      { dir: 'sinks',               sing: 'Sink',             plural: 'Sinks' },
+  faucet:    { dir: 'faucets',             sing: 'Faucet',           plural: 'Faucets' },
+  fixture:   { dir: 'bathroom',            sing: 'Bathroom Fixture', plural: 'Bathroom Fixtures' },
+  accessory: { dir: 'kitchen-accessories', sing: 'Kitchen Accessory', plural: 'Kitchen Accessories' },
+}[CAT] || { dir: CAT + 's', sing: CAT, plural: CAT + 's' };
+const DIR = CFG.dir, PLURAL = CFG.plural, SING = CFG.sing;
+const OUTDIR = path.join(ROOT, 'marketplace', DIR);
 
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const jsonAttr = o => JSON.stringify(o).replace(/</g, '\\u003c');
@@ -44,7 +52,7 @@ function fetchAll() {
 
 function page(p) {
   const handle = p.slug || p.id;
-  const url = `${SITE}/marketplace/${PLURAL}/${handle}/`;
+  const url = `${SITE}/marketplace/${DIR}/${handle}/`;
   const name = p.name || 'Product';
   const brand = p.brand || p.vendor_id || '';
   const price = Number(p.retail_price);
@@ -57,7 +65,7 @@ function page(p) {
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product', name, description: desc, image: imgs,
     sku: p.sku || handle, brand: { '@type': 'Brand', name: brand || 'Surprise Granite' },
-    category: `${catLabel}s`, url,
+    category: `${PLURAL}`, url,
     offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD',
       availability: 'https://schema.org/InStock', url,
       seller: { '@type': 'Organization', name: 'Surprise Granite' } }
@@ -66,11 +74,11 @@ function page(p) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
       { '@type': 'ListItem', position: 2, name: 'Marketplace', item: SITE + '/marketplace/' },
-      { '@type': 'ListItem', position: 3, name: `${catLabel}s`, item: `${SITE}/marketplace/${PLURAL}/` },
+      { '@type': 'ListItem', position: 3, name: `${PLURAL}`, item: `${SITE}/marketplace/${DIR}/` },
       { '@type': 'ListItem', position: 4, name }
     ]
   };
-  const cartObj = { id: p.sku || handle, name, price, image: img, variant: brand, category: PLURAL, href: url };
+  const cartObj = { id: p.sku || handle, name, price, image: img, variant: brand, category: DIR, href: url };
   const thumbs = imgs.slice(0, 5).map((u, i) =>
     `<img class="pdp-thumb${i === 0 ? ' active' : ''}" src="${esc(u)}" alt="${esc(name)} view ${i + 1}" loading="lazy" onclick="document.getElementById('pdpMain').src=this.src" onerror="this.remove()"/>`).join('');
   const specs = [['Brand', brand], ['SKU', p.sku || handle], ['Type', p.subcategory || `${catLabel}`]]
@@ -133,7 +141,7 @@ function page(p) {
   </style>
 </head>
 <body>
-  <nav class="breadcrumb-nav" aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/marketplace/">Marketplace</a> / <a href="/marketplace/${PLURAL}/">${catLabel}s</a> / ${esc(name)}</nav>
+  <nav class="breadcrumb-nav" aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/marketplace/">Marketplace</a> / <a href="/marketplace/${DIR}/">${PLURAL}</a> / ${esc(name)}</nav>
   <main class="pdp">
     <div class="pdp-gallery">
       <img id="pdpMain" class="pdp-main" src="${esc(img)}" alt="${esc(name)}" onerror="this.onerror=null;this.src='/images/placeholder.svg'"/>
@@ -147,11 +155,11 @@ function page(p) {
       <button class="add-to-cart-btn" onclick="sgAdd(this)">Add to Cart</button>
       <div class="pdp-desc">${esc(desc)}</div>
       <ul class="pdp-specs">${specs}</ul>
-      <a class="pdp-back" href="/marketplace/${PLURAL}/">← Browse all ${PLURAL}</a>
+      <a class="pdp-back" href="/marketplace/${DIR}/">← Browse all ${PLURAL}</a>
     </div>
   </main>
   <footer class="footer"><div class="footer-inner">
-    <div class="footer-links"><a href="/">Home</a><a href="/marketplace/">Marketplace</a><a href="/marketplace/${PLURAL}/">${catLabel}s</a><a href="/cart/">Cart</a><a href="/contact-us/">Contact</a></div>
+    <div class="footer-links"><a href="/">Home</a><a href="/marketplace/">Marketplace</a><a href="/marketplace/${DIR}/">${PLURAL}</a><a href="/cart/">Cart</a><a href="/contact-us/">Contact</a></div>
     <div class="footer-copyright">&copy; 2026 Surprise Granite. All rights reserved.</div>
   </div></footer>
   <script>
@@ -179,7 +187,7 @@ for (const p of all) {
   const dir = path.join(OUTDIR, handle);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), page(p));
-  urls.push(`${SITE}/marketplace/${PLURAL}/${handle}/`);
+  urls.push(`${SITE}/marketplace/${DIR}/${handle}/`);
   made++;
 }
 console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNoPrice}`);
@@ -188,5 +196,5 @@ console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNo
 const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
   urls.map(u => `<url>\n<loc>${u}</loc>\n<changefreq>weekly</changefreq>\n<priority>0.6</priority>\n</url>`).join('\n') +
   `\n</urlset>\n`;
-fs.writeFileSync(path.join(ROOT, `sitemap-${PLURAL}.xml`), sm);
-console.log(`wrote sitemap-${PLURAL}.xml (${urls.length} urls)`);
+fs.writeFileSync(path.join(ROOT, `sitemap-${DIR}.xml`), sm);
+console.log(`wrote sitemap-${DIR}.xml (${urls.length} urls)`);

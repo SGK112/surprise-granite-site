@@ -751,7 +751,7 @@
         const type = product.productType || 'Faucet';
         const brand = product.vendor || '';
         const specs = product.specs || {};
-        const productUrl = `/marketplace/product/?handle=${encodeURIComponent(product.handle || '')}&category=faucets`;
+        const productUrl = product._source === 'catalog' ? `/marketplace/faucets/${encodeURIComponent(product.handle || '')}/` : `/marketplace/product/?handle=${encodeURIComponent(product.handle || '')}&category=faucets`;
 
         // Build mini specs string
         const specParts = [];
