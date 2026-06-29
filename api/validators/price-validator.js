@@ -81,7 +81,8 @@ async function validateCartPrices(items, supabase, shippingState) {
       total: 0
     },
     errors: [],
-    warnings: []
+    warnings: [],
+    unmatchedItems: []
   };
 
   if (!items || items.length === 0) {
@@ -102,6 +103,7 @@ async function validateCartPrices(items, supabase, shippingState) {
     if (validation.error) {
       result.errors.push(validation.error);
       result.valid = false;
+      if (validation.unmatched) result.unmatchedItems.push(validation.unmatched);
     } else if (validation.warning) {
       result.warnings.push(validation.warning);
     }
@@ -253,11 +255,20 @@ async function validateSingleItem(item, supabase) {
     return result;
   }
 
-  // Accept client price with warning for products not in DB
-  result.validatedPrice = item.price;
-  result.priceSource = 'client_unverified';
-  result.warning = `Price for "${item.name}" could not be verified against database`;
-
+  // No server reference price for a non-trivial item — REJECT rather than
+  // trust the client's price. Trusting it was a price-tampering hole: an
+  // attacker could check out a real product at any price by sending an id/sku/
+  // name that matches nothing. Every genuinely-sellable item resolves in the
+  // catalog (verified: sinks/faucets/accessories/fixtures all have prices), so
+  // an unmatched item is either tampering or a product missing from the
+  // catalog. Mark it so the caller can alert staff to add the real product.
+  result.error = `We couldn't verify the price for "${item.name}". Please contact us at (602) 833-3189 to complete your order.`;
+  result.unmatched = {
+    id: item.id || null,
+    sku: item.sku || null,
+    name: item.name,
+    clientPrice: item.price
+  };
   return result;
 }
 

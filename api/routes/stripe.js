@@ -195,6 +195,26 @@ router.post('/checkout', async (req, res) => {
 
     if (!validation.valid) {
       logger.warn('Cart validation failed', { errors: validation.errors });
+      // #2a: items rejected for having NO server price are either tampering or
+      // a real product missing from the catalog. Alert staff so a genuinely
+      // missing product can be added and the sale recovered. Best-effort —
+      // must never block the 400 response.
+      if (validation.unmatchedItems?.length) {
+        try {
+          const emailService = require('../services/emailService');
+          const rows = validation.unmatchedItems.map(u =>
+            `<li><strong>${u.name}</strong> — id: ${u.id || '—'}, sku: ${u.sku || '—'}, client price: $${(((u.clientPrice) || 0) / 100).toFixed(2)}</li>`
+          ).join('');
+          emailService.sendAdminNotification(
+            '⚠️ Checkout blocked — unverifiable item price',
+            `<p>A checkout was rejected because these items had no matching server price (possible price tampering, or a product missing from the catalog):</p>
+             <ul>${rows}</ul>
+             <p>Customer email: ${customer_email || 'n/a'}. If a product is genuinely missing, add it to the catalog so it can be purchased.</p>`
+          ).catch(err => logger.warn('Unmatched-item admin alert failed', { error: err.message }));
+        } catch (e) {
+          logger.warn('Unmatched-item admin alert threw', { error: e.message });
+        }
+      }
       return res.status(400).json({
         error: 'Invalid cart items',
         details: validation.errors
@@ -224,11 +244,16 @@ router.post('/checkout', async (req, res) => {
     let promoResult = null;
     if (promo_code) {
       const { validatePromoCode } = require('./promotions');
+      // validatePromoCode works in DOLLARS (its `fixed` path treats
+      // promo.value as dollars, and the public /validate endpoint is fed
+      // client dollars). calculatedTotals are in CENTS — convert, or a
+      // `percent` promo returns a cents-scaled discount that the
+      // dollars-based ratio math below clamps to 100% off (free cart).
       promoResult = await validatePromoCode({
         supabase,
         code: promo_code,
-        subtotal: validation.calculatedTotals.subtotal,
-        shippingAmount: validation.calculatedTotals.shipping,
+        subtotal: validation.calculatedTotals.subtotal / 100,
+        shippingAmount: validation.calculatedTotals.shipping / 100,
         customerEmail: customer_email
       });
       if (!promoResult.valid) {
