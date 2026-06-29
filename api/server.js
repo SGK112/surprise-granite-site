@@ -4193,7 +4193,7 @@ app.use('/api/jobs', jobsRouter);
 app.use('/api/auth', authRouter);
 
 // ============ PRICING MANAGEMENT ROUTES ============
-app.use('/api/pricing', pricingRouter);
+app.use('/api/pricing', authenticateJWT, pricingRouter);
 
 // ============ SCRAPER MANAGEMENT ROUTES ============
 app.use('/api/scrapers', scrapersRouter);
@@ -8985,7 +8985,7 @@ app.get('/api/distributor/inventory', authenticateJWT, async (req, res) => {
       .select('*, distributor_locations(location_name, city, state)')
       .eq('distributor_id', distributorId)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
     if (status) query = query.eq('status', status);
     if (material_type) query = query.eq('material_type', material_type);
@@ -10019,7 +10019,7 @@ app.get('/api/distributor/inquiries', authenticateJWT, async (req, res) => {
       `, { count: 'exact' })
       .eq('distributor_id', profile.id)
       .order('created_at', { ascending: false })
-      .range(offset, offset + parseInt(limit) - 1);
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -12309,7 +12309,7 @@ app.get('/api/projects', authenticateJWT, async (req, res) => {
       .select('*')
       .eq('user_id', user_id)
       .order('updated_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
     if (status && status !== 'all') {
       query = query.eq('status', status);

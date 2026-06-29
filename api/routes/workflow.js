@@ -22,7 +22,7 @@ const { createProjectService } = require('../services/projectService');
 
 const schemas = {
   leadToCustomer: Joi.object({
-    user_id: Joi.string().uuid().required(),
+    user_id: Joi.string().uuid().optional(), // ignored — owner is the authenticated user
     additional_data: Joi.object({
       city: Joi.string().max(100).trim(),
       state: Joi.string().max(50).trim().default('AZ')
@@ -30,7 +30,7 @@ const schemas = {
   }),
 
   leadToProject: Joi.object({
-    user_id: Joi.string().uuid().required(),
+    user_id: Joi.string().uuid().optional(), // ignored — owner is the authenticated user
     create_customer: Joi.boolean().default(true),
     additional_data: Joi.object({
       city: Joi.string().max(100).trim(),
@@ -39,19 +39,19 @@ const schemas = {
   }),
 
   invoiceToProject: Joi.object({
-    user_id: Joi.string().uuid().required(),
+    user_id: Joi.string().uuid().optional(), // ignored — owner is the authenticated user
     scheduled_date: Joi.date().iso(),
     notes: Joi.string().max(2000).trim().allow('')
   }),
 
   estimateToInvoice: Joi.object({
-    user_id: Joi.string().uuid().required(),
+    user_id: Joi.string().uuid().optional(), // ignored — owner is the authenticated user
     due_days: Joi.number().integer().min(1).max(365).default(30),
     notes: Joi.string().max(2000).trim().allow('')
   }),
 
   invoiceToJob: Joi.object({
-    user_id: Joi.string().uuid().required(),
+    user_id: Joi.string().uuid().optional(), // ignored — owner is the authenticated user
     scheduled_date: Joi.date().iso(),
     notes: Joi.string().max(2000).trim().allow('')
   }),
@@ -86,6 +86,7 @@ const schemas = {
  * Creates a customer record from lead data and maintains bidirectional linkage
  */
 router.post('/lead-to-customer/:leadId',
+  authenticateJWT,
   validateBody(schemas.leadToCustomer),
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
@@ -94,7 +95,10 @@ router.post('/lead-to-customer/:leadId',
   }
 
   const { leadId } = req.params;
-  const { user_id, additional_data } = req.body;
+  // Owner comes from the authenticated session, never the client body — these
+  // are state-changing conversions and were previously unauthenticated.
+  const user_id = req.user.id;
+  const { additional_data } = req.body;
 
   // Fetch the lead
   const { data: lead, error: leadError } = await supabase
@@ -201,6 +205,7 @@ router.post('/lead-to-customer/:leadId',
  * Creates a project with status='lead' and optionally a customer record
  */
 router.post('/lead-to-project/:leadId',
+  authenticateJWT,
   validateBody(schemas.leadToProject),
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
@@ -210,7 +215,8 @@ router.post('/lead-to-project/:leadId',
 
   const projectService = createProjectService(supabase);
   const { leadId } = req.params;
-  const { user_id, create_customer, additional_data } = req.body;
+  const user_id = req.user.id;
+  const { create_customer, additional_data } = req.body;
 
   // Create project from lead using the service
   const result = await projectService.createFromLead(leadId, user_id);
@@ -315,6 +321,7 @@ router.post('/lead-to-project/:leadId',
  * Creates an invoice from an approved estimate, maintaining linkage
  */
 router.post('/estimate-to-invoice/:estimateId',
+  authenticateJWT,
   validateBody(schemas.estimateToInvoice),
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
@@ -323,7 +330,8 @@ router.post('/estimate-to-invoice/:estimateId',
   }
 
   const { estimateId } = req.params;
-  const { user_id, due_days, notes } = req.body;
+  const user_id = req.user.id;
+  const { due_days, notes } = req.body;
 
   // Fetch the estimate with related data
   const { data: estimate, error: estimateError } = await supabase
@@ -441,6 +449,7 @@ router.post('/estimate-to-invoice/:estimateId',
  * Useful for deposit-paid or verbal approval scenarios
  */
 router.post('/estimate-to-project/:estimateId',
+  authenticateJWT,
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
@@ -448,11 +457,8 @@ router.post('/estimate-to-project/:estimateId',
   }
 
   const { estimateId } = req.params;
-  const { user_id, status = 'approved', notes, scheduled_date } = req.body;
-
-  if (!user_id) {
-    return res.status(400).json({ error: 'user_id is required' });
-  }
+  const user_id = req.user.id;
+  const { status = 'approved', notes, scheduled_date } = req.body;
 
   // Fetch the estimate
   const { data: estimate, error: estimateError } = await supabase
@@ -585,6 +591,7 @@ router.post('/estimate-to-project/:estimateId',
  * Creates or updates a project when invoice is paid
  */
 router.post('/invoice-to-project/:invoiceId',
+  authenticateJWT,
   validateBody(schemas.invoiceToProject),
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
@@ -594,7 +601,8 @@ router.post('/invoice-to-project/:invoiceId',
 
   const projectService = createProjectService(supabase);
   const { invoiceId } = req.params;
-  const { user_id, scheduled_date, notes } = req.body;
+  const user_id = req.user.id;
+  const { scheduled_date, notes } = req.body;
 
   // Use the project service to handle the conversion
   const result = await projectService.convertFromInvoice(invoiceId, user_id, {
@@ -662,6 +670,7 @@ router.post('/invoice-to-project/:invoiceId',
  * This now creates a project instead of a job
  */
 router.post('/invoice-to-job/:invoiceId',
+  authenticateJWT,
   validateBody(schemas.invoiceToJob),
   asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
@@ -671,7 +680,8 @@ router.post('/invoice-to-job/:invoiceId',
 
   const projectService = createProjectService(supabase);
   const { invoiceId } = req.params;
-  const { user_id, scheduled_date, notes } = req.body;
+  const user_id = req.user.id;
+  const { scheduled_date, notes } = req.body;
 
   // Use the unified project approach
   const result = await projectService.convertFromInvoice(invoiceId, user_id, {

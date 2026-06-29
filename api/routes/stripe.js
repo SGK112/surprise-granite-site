@@ -293,6 +293,25 @@ router.post('/checkout', async (req, res) => {
             const discounted = Math.max(0, unitDollars * (1 - ratio));
             li.price_data.unit_amount = Math.round(discounted * 100);
           }
+
+          // Recompute tax on the DISCOUNTED product subtotal. The validator's
+          // tax line was built on the pre-discount subtotal, so leaving it
+          // overcharges the customer for tax on money they didn't pay.
+          const taxIdx = lineItems.findIndex(li => /^Tax\s*\(/i.test(li?.price_data?.product_data?.name || ''));
+          if (taxIdx !== -1) {
+            const newSubtotalCents = productLines.reduce(
+              (sum, li) => sum + li.price_data.unit_amount * li.quantity, 0
+            );
+            const taxRate = validation.calculatedTotals.taxRate || 0;
+            const newTaxCents = Math.round(newSubtotalCents * taxRate);
+            if (newTaxCents > 0) {
+              lineItems[taxIdx].price_data.unit_amount = newTaxCents;
+            } else {
+              // 100%-off (or no taxable amount left) — drop the now-$0 tax line
+              // so Stripe doesn't reject a zero-amount line item.
+              lineItems.splice(taxIdx, 1);
+            }
+          }
         }
       }
     }

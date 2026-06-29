@@ -343,21 +343,24 @@ router.post('/appointments', portalAccessLimiter, asyncHandler(async (req, res) 
   let appointments = [];
 
   if (lead_id) {
-    // Check if lead has appointment data
+    // Lead creation stores appointment details inside raw_data (the
+    // appointment_* top-level columns are never populated), so read them from
+    // there — otherwise booked consultations never appear in the portal.
     const { data: lead } = await supabase
       .from('leads')
-      .select('appointment_date, appointment_time, appointment_status, project_address')
+      .select('raw_data')
       .eq('id', lead_id)
       .single();
 
-    if (lead?.appointment_date) {
+    const rd = lead?.raw_data || {};
+    if (rd.appointment_date) {
       appointments.push({
         id: lead_id,
-        date: lead.appointment_date,
-        time: lead.appointment_time,
-        status: lead.appointment_status || 'scheduled',
+        date: rd.appointment_date,
+        time: rd.appointment_time,
+        status: rd.appointment_status || 'scheduled',
         type: 'Consultation',
-        address: lead.project_address
+        address: rd.project_address
       });
     }
   }
@@ -422,29 +425,34 @@ router.post('/photos', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Photo URL required' });
   }
 
-  // Store photo reference (assuming photos are uploaded to Supabase storage first)
-  const photoData = {
-    url: photo_url,
-    caption: sanitizeString(caption, 500),
-    uploaded_via: 'portal',
-    uploaded_at: new Date().toISOString()
-  };
-
-  // Add to lead or customer record
+  // Append the uploaded photo URL to the lead's image_urls array. The previous
+  // code wrote a non-existent leads.photos column (silently no-op), so portal
+  // uploads never actually attached to the lead. The caption is preserved in
+  // the portal_activity log below.
   if (lead_id) {
-    const { data: lead } = await supabase
+    const { data: lead, error: readErr } = await supabase
       .from('leads')
-      .select('photos')
+      .select('image_urls')
       .eq('id', lead_id)
       .single();
 
-    const photos = lead?.photos || [];
-    photos.push(photoData);
+    if (readErr) {
+      logger.error('Portal photo: failed to read lead image_urls', { error: readErr.message, lead_id });
+      return res.status(500).json({ error: 'Could not save photo' });
+    }
 
-    await supabase
+    const image_urls = Array.isArray(lead?.image_urls) ? lead.image_urls : [];
+    image_urls.push(photo_url);
+
+    const { error: updateErr } = await supabase
       .from('leads')
-      .update({ photos })
+      .update({ image_urls })
       .eq('id', lead_id);
+
+    if (updateErr) {
+      logger.error('Portal photo: failed to append image_url', { error: updateErr.message, lead_id });
+      return res.status(500).json({ error: 'Could not save photo' });
+    }
   }
 
   // Log activity
