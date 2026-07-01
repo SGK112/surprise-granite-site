@@ -3170,6 +3170,18 @@
         const session = await supabaseClient.auth.getSession();
         const token = session?.data?.session?.access_token;
 
+        // Bound BOTH sources so one slow/hung query can't blank the whole tab.
+        // The raw shopify_orders query previously had no timeout — a stalled
+        // Supabase/RLS response would hang past the 15s page budget and the tab
+        // showed nothing. Cap it, give it an abort timeout, and fall back to []
+        // so native store orders always render even if Shopify lags.
+        const shopifyQuery = supabaseClient
+          .from('shopify_orders')
+          .select('*')
+          .order('shopify_created_at', { ascending: false })
+          .limit(250)
+          .abortSignal(AbortSignal.timeout(8000));
+
         const [storeRes, shopifyRes] = await Promise.all([
           fetchWithTimeout(API_BASE + '/api/admin/orders?source=store', {
             headers: { 'Authorization': 'Bearer ' + token }
@@ -3177,7 +3189,10 @@
             console.warn('[Orders] Store orders fetch failed:', err.message);
             return { orders: [] };
           }),
-          supabaseClient.from('shopify_orders').select('*').order('shopify_created_at', { ascending: false }).limit(1000)
+          Promise.resolve(shopifyQuery).catch(err => {
+            console.warn('[Orders] Shopify orders query failed/timed out:', err?.message);
+            return { data: [] };
+          })
         ]);
 
         const storeOrders = (storeRes.orders || []);
@@ -10286,16 +10301,34 @@
         // Paginate past Supabase's 1000-row cap — the catalog has 3,000+ and a
         // single .select() silently returns only the first 1000, so admin
         // search would miss everything alphabetically after that.
+        // Fetch page 0 first (tells us if there's more), then pull the
+        // remaining pages IN PARALLEL. Previously these ran sequentially with
+        // no timeout — 3-4 back-to-back 1000-row select('*') round trips blew
+        // past the 15s page budget and the tab rendered empty. Each page now
+        // has an 12s abort timeout and tolerates its own failure (partial data
+        // beats a blank screen).
+        const PAGE = 1000, MAX_PAGES = 8, PAGE_TIMEOUT = 12000;
+        const fetchCatalogPage = (pg) => supabaseClient
+          .from('catalog_products')
+          .select('*')
+          .order('name')
+          .range(pg * PAGE, pg * PAGE + (PAGE - 1))
+          .abortSignal(AbortSignal.timeout(PAGE_TIMEOUT))
+          .then(({ data, error }) => { if (error) throw error; return data || []; });
+
         let rawCat = [];
-        for (let pg = 0; pg < 50; pg++) {
-          const { data, error } = await supabaseClient
-            .from('catalog_products')
-            .select('*')
-            .order('name')
-            .range(pg * 1000, pg * 1000 + 999);
-          if (error) throw error;
-          rawCat = rawCat.concat(data || []);
-          if (!data || data.length < 1000) break;
+        const firstPage = await fetchCatalogPage(0);
+        rawCat = firstPage.slice();
+        if (firstPage.length === PAGE) {
+          const restPages = await Promise.all(
+            Array.from({ length: MAX_PAGES - 1 }, (_, i) => i + 1).map(pg =>
+              fetchCatalogPage(pg).catch(err => {
+                console.warn('[Products] catalog page', pg, 'failed/timed out:', err?.message);
+                return [];
+              })
+            )
+          );
+          for (const pageRows of restPages) rawCat = rawCat.concat(pageRows);
         }
 
         allProducts = (rawCat || []).map(c => ({
