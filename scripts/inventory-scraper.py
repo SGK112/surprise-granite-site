@@ -55,13 +55,18 @@ except ImportError:
     print("  pip install requests beautifulsoup4 lxml")
     sys.exit(1)
 
-# Configure logging
+# Configure logging — write the logfile next to this script. launchd runs with
+# CWD=/, so the bare relative path 'inventory-scraper.log' resolved to the
+# read-only filesystem root and crashed the job on startup every run. Anchor to
+# the script directory (and ensure it exists) so the cron can actually log.
+_LOG_DIR = Path(__file__).resolve().parent / 'scraper-output'
+_LOG_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('inventory-scraper.log')
+        logging.FileHandler(str(_LOG_DIR / 'inventory-scraper.log'))
     ]
 )
 logger = logging.getLogger(__name__)
