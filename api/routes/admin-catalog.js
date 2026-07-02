@@ -223,12 +223,12 @@ router.get('/products', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     if (!supabase) return res.status(503).json({ error: 'Database not available' });
-    const limit = Math.min(parseInt(req.query?.limit) || 50, 250);
+    const limit = Math.min(parseInt(req.query?.limit) || 50, 1000);
     const offset = Math.max(parseInt(req.query?.offset) || 0, 0);
     let q = supabase
       .from('catalog_products')
-      .select('id, vendor_id, sku, slug, name, brand, category, retail_price, vendor_cost, sample_eligible, sample_price, in_stock, active, last_scraped_at, vendor_url, primary_image_url', { count: 'exact' })
-      .order('last_scraped_at', { ascending: false })
+      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, retail_price, vendor_cost, sample_eligible, sample_price, stock_quantity, in_stock, active, last_scraped_at, vendor_url, primary_image_url, image_urls, short_description, description, color_family, finish, size, price_unit, tags', { count: 'exact' })
+      .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
     const vendor = s(req.query?.vendor, 50);
     const category = s(req.query?.category, 50);

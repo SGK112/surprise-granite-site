@@ -10301,28 +10301,35 @@
         // Paginate past Supabase's 1000-row cap — the catalog has 3,000+ and a
         // single .select() silently returns only the first 1000, so admin
         // search would miss everything alphabetically after that.
-        // Fetch page 0 first (tells us if there's more), then pull the
-        // remaining pages IN PARALLEL. Previously these ran sequentially with
-        // no timeout — 3-4 back-to-back 1000-row select('*') round trips blew
-        // past the 15s page budget and the tab rendered empty. Each page now
-        // has an 12s abort timeout and tolerates its own failure (partial data
-        // beats a blank screen).
-        const PAGE = 1000, MAX_PAGES = 8, PAGE_TIMEOUT = 12000;
-        const fetchCatalogPage = (pg) => supabaseClient
-          .from('catalog_products')
-          .select('*')
-          .order('name')
-          .range(pg * PAGE, pg * PAGE + (PAGE - 1))
-          .abortSignal(AbortSignal.timeout(PAGE_TIMEOUT))
-          .then(({ data, error }) => { if (error) throw error; return data || []; });
+        // Read the catalog through the SERVER admin API (service key), NOT a
+        // direct client Supabase query. catalog_products RLS grants SELECT to
+        // the anon/public role (so the marketplace renders) but NOT to the
+        // authenticated role — so a logged-in admin's direct query returned 0
+        // rows and the tab showed "No Products Yet" despite 3,900+ products
+        // existing. The server route bypasses RLS. Fetch page 0 to learn the
+        // total, then pull the remaining pages in parallel; each call is
+        // bounded by fetchWithTimeout so a slow page can't hang the tab.
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        if (!token) throw new Error('Not signed in.');
+        const PAGE = 1000, MAX_PAGES = 12, PAGE_TIMEOUT = 12000;
+        const catalogPageUrl = (pg) =>
+          SG_API_BASE + '/api/admin/catalog/products?limit=' + PAGE + '&offset=' + (pg * PAGE);
+        const getCatalogPage = (pg) =>
+          fetchWithTimeout(catalogPageUrl(pg), { headers: { 'Authorization': 'Bearer ' + token } }, PAGE_TIMEOUT)
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(j => j.products || []);
 
         let rawCat = [];
-        const firstPage = await fetchCatalogPage(0);
-        rawCat = firstPage.slice();
-        if (firstPage.length === PAGE) {
+        const firstResp = await fetchWithTimeout(catalogPageUrl(0), { headers: { 'Authorization': 'Bearer ' + token } }, PAGE_TIMEOUT)
+          .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+        rawCat = (firstResp.products || []).slice();
+        const totalCatalog = firstResp.total || rawCat.length;
+        const pagesNeeded = Math.min(MAX_PAGES, Math.ceil(totalCatalog / PAGE));
+        if (pagesNeeded > 1) {
           const restPages = await Promise.all(
-            Array.from({ length: MAX_PAGES - 1 }, (_, i) => i + 1).map(pg =>
-              fetchCatalogPage(pg).catch(err => {
+            Array.from({ length: pagesNeeded - 1 }, (_, i) => i + 1).map(pg =>
+              getCatalogPage(pg).catch(err => {
                 console.warn('[Products] catalog page', pg, 'failed/timed out:', err?.message);
                 return [];
               })
