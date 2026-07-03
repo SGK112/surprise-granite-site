@@ -309,4 +309,23 @@ router.delete('/products/:id', async (req, res) => {
   }
 });
 
+// POST /api/admin/catalog/sync-pricing?mode=fill|refresh&dryRun=true
+// Auto-prices catalog_products from live vendor sources (VendorInventory dealer
+// pulls + emailed LineItemLibrary sheets) at retail = cost x 1.30 (tile x 1.50).
+// This is the Aria-/cron-callable pricing engine — no terminal required.
+// Requires MONGODB_URI (VoiceNow CRM Mongo) on this service.
+router.post('/sync-pricing', async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    if (!supabase) return res.status(503).json({ error: 'Database not available' });
+    const { syncPricing } = require('../services/pricingSync');
+    const mode = req.query?.mode === 'refresh' ? 'refresh' : 'fill';
+    const dryRun = req.query?.dryRun === 'true' || req.query?.dryRun === '1';
+    const result = await syncPricing(supabase, { mode, dryRun });
+    return res.json({ success: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ error: e.message || 'Internal error' });
+  }
+});
+
 module.exports = router;
