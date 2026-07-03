@@ -37,6 +37,9 @@ const VENDOR_ALIAS = {
   'architectural-surfaces': 'arcsurfaces',
   'architectural-surfaces-asg': 'arcsurfaces',
   'asg': 'arcsurfaces',
+  'msi-surfaces': 'msi',
+  'sensa': 'cosentino',
+  'sensa-by-cosentino': 'cosentino',
 };
 
 function imagesOf(p) {
@@ -106,10 +109,31 @@ function mapFlooring(p) {
   };
 }
 
+// countertops.json = the color BROWSE set. Most overlap the sellable slabs
+// already imported; the net-new colors come in as sample-sellable slab rows so
+// the countertop pages have full parity from the catalog.
+function mapCountertop(p) {
+  return {
+    category: 'slab', subcategory: p.type || 'Slab',
+    sku: p.sku || p.slug, slug: p.slug,
+    name: p.name, brand: p.brand,
+    description: p.description || null,
+    retail_price: DEFAULT_SAMPLE_PRICE, price_unit: 'each',
+    sample_eligible: true, sample_price: DEFAULT_SAMPLE_PRICE,
+    color_family: p.primaryColor || null,
+    in_stock: true,
+    tags: [], specs: { collection: p.collection, style: p.style, accentColor: p.accentColor, _source: 'countertops.json' },
+    _vendorRaw: p.brand || p.vendor,
+    _images: [p.primaryImage, p.secondaryImage, ...(Array.isArray(p.images) ? p.images : [])]
+      .map((x) => (typeof x === 'string' ? x : (x && (x.url || x.src)))).filter(Boolean),
+  };
+}
+
 const DATASETS = {
   slabs: { file: 'slabs.json', map: mapSlab },
   tile: { file: 'tile.json', map: mapTile },
   flooring: { file: 'flooring.json', map: mapFlooring },
+  countertops: { file: 'countertops.json', map: mapCountertop },
 };
 
 async function loadCatalogKeys() {

@@ -46,19 +46,68 @@
     search: ''
   };
 
+  const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+
+  // Pull all slabs for this material from the marketplace catalog, mapping the
+  // flat catalog row to the shape the rest of this file expects.
+  async function loadFromCatalog() {
+    const out = [];
+    const matQ = PAGE_CATEGORY ? `&material=${encodeURIComponent(PAGE_CATEGORY)}` : '';
+    for (let offset = 0; offset < 6000; offset += 250) {
+      let json;
+      try {
+        const res = await fetch(`${API_BASE}/api/catalog?category=slab${matQ}&limit=250&offset=${offset}`);
+        if (!res.ok) break;
+        json = await res.json();
+      } catch { break; }
+      const rows = (json && json.products) || [];
+      for (const p of rows) out.push(mapCatalogRow(p));
+      if (rows.length < 250) break;
+    }
+    return out;
+  }
+
+  function mapCatalogRow(p) {
+    const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
+    return {
+      name: p.name,
+      slug: p.slug || p.sku,
+      brand: p.brand || p.vendor_id,
+      type: p.subcategory || 'Slab',
+      style: (p.tags && p.tags.find && p.tags.find(t => /style/i.test(t))) || '',
+      primaryColor: p.color_family || '',
+      accentColor: '',
+      primaryImage: imgs[0] || '',
+      secondaryImage: imgs[1] || '',
+      views: 0,
+      samplePrice: p.sample_price, price: p.retail_price,
+    };
+  }
+
+  function deriveFilters(items) {
+    const uniq = (key) => [...new Set(items.map(i => i[key]).filter(Boolean))].sort();
+    return { brands: uniq('brand'), types: uniq('type'), styles: uniq('style'), colors: uniq('primaryColor'), accents: uniq('accentColor') };
+  }
+
   // Initialize
   async function init() {
     console.log('Countertop Filter System initializing...');
 
     try {
-      const response = await fetch(CONFIG.jsonPath);
-      if (!response.ok) throw new Error('Failed to load JSON');
+      // SOURCE OF TRUTH = the marketplace catalog (Supabase catalog_products),
+      // not the static /data/countertops.json. Slabs live under category 'slab'
+      // with subcategory = material (Quartz/Granite/...). Falls back to the JSON
+      // only if the API is unreachable.
+      allCountertops = await loadFromCatalog();
+      if (!allCountertops.length) {
+        console.warn('Catalog returned 0 slabs — falling back to static JSON');
+        const r = await fetch(CONFIG.jsonPath);
+        const data = await r.json();
+        allCountertops = (data.countertops || []).filter(c => !PAGE_CATEGORY || c.type === PAGE_CATEGORY);
+      }
+      filters = deriveFilters(allCountertops);
 
-      const data = await response.json();
-      allCountertops = data.countertops;
-      filters = data.filters;
-
-      console.log(`Loaded ${allCountertops.length} countertops`);
+      console.log(`Loaded ${allCountertops.length} slabs from catalog`);
       console.log('Filters:', filters);
 
       // Build filter UI
@@ -381,7 +430,8 @@
     div.setAttribute('role', 'listitem');
 
     const brandDisplay = formatDisplayName(item.brand);
-    const productUrl = `/countertops/${item.slug}`;
+    // Catalog-driven detail page (resolves any slug via /api/catalog/:slug).
+    const productUrl = `/marketplace/product/?handle=${encodeURIComponent(item.slug)}&category=slabs`;
 
     div.innerHTML = `
       <div class="product-thumb_item">

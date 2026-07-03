@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
     const offset = Math.max(parseInt(req.query?.offset) || 0, 0);
     const category = sanitize(req.query?.category, 50);
     const vendor = sanitize(req.query?.vendor, 50);
+    const material = sanitize(req.query?.material || req.query?.subcategory, 50); // e.g. Quartz/Granite on slab pages
     const search = sanitize(req.query?.search, 100);
     const sampleOnly = req.query?.sample_only === 'true' || req.query?.sample_only === '1';
     const inStockOnly = req.query?.in_stock !== 'false';
@@ -41,6 +42,7 @@ router.get('/', async (req, res) => {
       .range(offset, offset + limit - 1);
 
     if (category) q = q.eq('category', category);
+    if (material) q = q.ilike('subcategory', material); // case-insensitive material match
     if (vendor) q = q.eq('vendor_id', vendor);
     if (sampleOnly) q = q.eq('sample_eligible', true);
     if (inStockOnly) q = q.eq('in_stock', true);

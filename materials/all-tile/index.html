@@ -693,26 +693,28 @@
       const grid = document.getElementById('products-grid');
       try {
         const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
-        const [staticRes, liveRes] = await Promise.allSettled([
-          fetch('/data/tile.json?v=' + Date.now()),
-          fetch(API_BASE + '/api/catalog?category=tile&limit=2000')
-        ]);
-
-        let staticProducts = [];
-        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
-          staticProducts = await staticRes.value.json();
-        }
-
-        let liveProducts = [];
-        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
-          const json = await liveRes.value.json();
-          if (json.success && Array.isArray(json.products)) {
-            liveProducts = json.products.map(mapCatalogToPageShape);
+        // Marketplace catalog = SOURCE OF TRUTH. Paginate past the 250/page API
+        // cap so ALL tiles load; the static JSON is only a resilience fallback.
+        async function loadCatalog() {
+          const all = [];
+          for (let off = 0; off < 8000; off += 250) {
+            let json;
+            try { const r = await fetch(`${API_BASE}/api/catalog?category=tile&limit=250&offset=${off}`); if (!r.ok) break; json = await r.json(); }
+            catch { break; }
+            const rows = (json && json.products) || [];
+            all.push(...rows);
+            if (rows.length < 250) break;
           }
+          return all;
         }
-
+        const [catalogRows, staticRes] = await Promise.all([
+          loadCatalog(),
+          fetch('/data/tile.json?v=' + Date.now()).then(r => (r.ok ? r.json() : [])).catch(() => [])
+        ]);
+        const liveProducts = catalogRows.map(mapCatalogToPageShape);
+        const staticProducts = Array.isArray(staticRes) ? staticRes : [];
         let products = [...liveProducts, ...staticProducts];
-        console.log(`Tile: ${liveProducts.length} live + ${staticProducts.length} static = ${products.length} total`);
+        console.log(`Tile: ${liveProducts.length} catalog + ${staticProducts.length} static (fallback)`);
 
         // Drop products whose only image is a dead Webflow CDN URL
         // (Monterrey Tile etc. — the API still returns these, but we
