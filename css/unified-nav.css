@@ -182,8 +182,13 @@ body.unified-nav-active.has-promo-strip {
     padding-top: calc(var(--nav-height-mobile) + var(--promo-strip-height, 44px));
   }
 }
+/* Must include the #unifiedNav id: the nav's own reset ".unified-nav, #unifiedNav
+   { top:0 }" carries id-level specificity (1,0,0) and beat this offset (0,2,1),
+   so the nav rendered at top:0 UNDER the fixed strip and the logo got clipped.
+   Matching the id here (+ !important as belt-and-suspenders) makes the offset win. */
+body.has-promo-strip #unifiedNav,
 body.has-promo-strip .unified-nav {
-  top: var(--promo-strip-height, 44px);
+  top: var(--promo-strip-height, 44px) !important;
 }
 
 /* ===========================================
