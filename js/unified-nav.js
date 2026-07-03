@@ -607,6 +607,12 @@
       const publishHeight = () => {
         const h = strip.offsetHeight || 0;
         document.documentElement.style.setProperty('--promo-strip-height', h + 'px');
+        // Pin the body's top padding to the EXACT measured header height
+        // (strip + fixed nav). The --nav-height-* vars are fixed estimates
+        // (140px); the injected nav actually wraps to 2–3 rows and can be
+        // taller, which clipped the first content (breadcrumb) under it.
+        const nav = document.querySelector('#unifiedNav, .unified-nav');
+        if (nav && nav.offsetHeight) document.body.style.paddingTop = (h + nav.offsetHeight) + 'px';
       };
       publishHeight();
       // Re-measure after fonts settle and on resize (mobile text can wrap).
@@ -755,6 +761,16 @@
     // Same error-page suppression as insertPromoCallout — the pill is the
     // dismissed-state cousin and shouldn't haunt the 404 either.
     if (document.body && document.body.classList.contains('page-404')) return;
+    // Ensure the pill's CSS is present. When we arrive here via the "already
+    // dismissed" early-return in insertPromoCallout, that function returns
+    // BEFORE it injects its <style> block — so without this the pill rendered
+    // as an unstyled default button stuck at the bottom-left of the page.
+    if (!document.getElementById('sg-promo-reopen-styles')) {
+      const s = document.createElement('style');
+      s.id = 'sg-promo-reopen-styles';
+      s.textContent = ".sg-promo-reopen{position:fixed;right:16px;bottom:156px;z-index:9998;display:inline-flex;align-items:center;gap:8px;background:#1a1a2e;color:#f9cb00;border:1px solid rgba(249,203,0,.5);padding:9px 14px 9px 12px;border-radius:999px;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:background .2s,transform .15s;}.sg-promo-reopen:hover{background:#2d2d44;transform:translateY(-1px);}.sg-promo-reopen__icon{font-size:14px;line-height:1;}@media (max-width:768px){.sg-promo-reopen{display:none!important;}}";
+      document.head.appendChild(s);
+    }
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'sg-promo-reopen';
