@@ -3427,77 +3427,56 @@
       const end = start + ordersPageSize;
       const pageOrders = filteredOrders.slice(start, end);
 
-      listEl.innerHTML = pageOrders.map(order => {
+      const orderRows = pageOrders.map(order => {
         const isStore = order._source === 'store';
         const orderDate = (order.created_at || order.shopify_created_at)
-          ? new Date(order.created_at || order.shopify_created_at).toLocaleDateString('en-US', {
-              year: 'numeric', month: 'short', day: 'numeric'
-            })
-          : 'N/A';
-
-        const orderStatus = isStore ? (order.status || 'pending').toLowerCase() : (order.financial_status || 'pending').toLowerCase();
+          ? new Date(order.created_at || order.shopify_created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+          : '—';
         const fulfillmentStatus = isStore
           ? (['shipped','delivered'].includes(order.status) ? order.status : 'unfulfilled').toLowerCase()
           : (order.fulfillment_status || 'unfulfilled').toLowerCase();
-        const payStatus = isStore ? (order.payment_status || 'unpaid').toLowerCase() : (order.financial_status || 'pending').toLowerCase();
-
-        // Parse line items — store orders use 'items', shopify uses 'line_items'
+        const payStatus = isStore ? (order.payment_status || order.status || 'unpaid').toLowerCase() : (order.financial_status || 'pending').toLowerCase();
         const lineItems = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+        const itemCount = lineItems.reduce((n, i) => n + (i.quantity || 1), 0) || lineItems.length;
         const hasTracking = !!order.tracking_number;
-
+        const customer = order.customer_name || order.customer_email || 'Guest';
         return `
-          <div class="order-card" onclick="showOrderDetail('${order.id}')" style="cursor: pointer;">
-            <div class="order-header">
-              <div class="order-info">
-                <div class="order-number">Order #${escapeHtml(String(order.order_number || order.id))}
-                  ${isStore ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(249,203,0,0.15);color:var(--gold-primary);margin-left:6px;">STORE</span>' : ''}
-                  ${hasTracking ? ' <span style="font-size:12px;" title="Tracking: ' + escapeHtml(order.tracking_number) + '">📦</span>' : ''}
-                </div>
-                <div class="order-date">${orderDate}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(order.customer_name || order.customer_email || 'Guest')}</div>
-              </div>
-              <div class="order-status">
-                <span class="status-badge ${payStatus}">${escapeHtml(payStatus)}</span>
-                <span class="status-badge ${fulfillmentStatus}">${escapeHtml(fulfillmentStatus)}</span>
-              </div>
-            </div>
-
-            <div class="order-items">
-              ${lineItems.slice(0, 2).map(item => `
-                <div class="order-item">
-                  <div class="order-item-image">
-                    ${item.image?.url
-                      ? `<img src="${escapeHtml(item.image.url)}" alt="${escapeHtml(item.title || item.name || item.product_name)}" loading="lazy">`
-                      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width:100%;height:100%;padding:15px;color:var(--text-muted)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
-                    }
-                  </div>
-                  <div class="order-item-details">
-                    <div class="order-item-name">${escapeHtml(item.title || item.name || item.product_name || 'Product')}</div>
-                    <div class="order-item-meta">Qty: ${item.quantity || 1}</div>
-                  </div>
-                  <div class="order-item-price">$${((item.originalUnitPrice?.amount || item.unit_price || item.price || item.total || item.line_total || 0) * (item.quantity || 1)).toFixed(2)}</div>
-                </div>
-              `).join('')}
-              ${lineItems.length > 2 ? `
-                <div class="order-item-meta" style="padding: 8px 0; color: var(--text-muted);">
-                  + ${lineItems.length - 2} more item${lineItems.length - 2 > 1 ? 's' : ''}
-                </div>
-              ` : ''}
-            </div>
-
-            <div class="order-footer" style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div class="order-total-label">Total</div>
-                <div class="order-total">$${parseFloat(order.total || 0).toFixed(2)}</div>
-              </div>
-              <button class="btn-modern secondary small" onclick="event.stopPropagation(); createProjectFromOrder('${order.id}')" title="Create Project" style="font-size: 11px; padding: 4px 10px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                Project
-              </button>
-            </div>
-          </div>
-        `;
+          <tr onclick="showOrderDetail('${order.id}')" style="cursor:pointer; border-top:1px solid var(--border-subtle);" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
+            <td style="padding:10px 12px; white-space:nowrap; font-weight:600;">#${escapeHtml(String(order.order_number || order.id))}
+              ${isStore ? '<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(249,203,0,0.15);color:var(--gold-primary);margin-left:6px;">STORE</span>' : '<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:var(--dark-elevated);color:var(--text-muted);margin-left:6px;">SHOPIFY</span>'}
+              ${hasTracking ? ' <span title="Tracking: ' + escapeHtml(order.tracking_number) + '">📦</span>' : ''}
+            </td>
+            <td style="padding:10px 12px; color:var(--text-muted); white-space:nowrap;">${orderDate}</td>
+            <td style="padding:10px 12px; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(customer)}</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--text-muted);">${itemCount}</td>
+            <td style="padding:10px 12px; white-space:nowrap; font-weight:600;">$${parseFloat(order.total || 0).toFixed(2)}</td>
+            <td style="padding:10px 12px;"><span class="status-badge ${payStatus}">${escapeHtml(payStatus)}</span></td>
+            <td style="padding:10px 12px;"><span class="status-badge ${fulfillmentStatus}">${escapeHtml(fulfillmentStatus)}</span></td>
+            <td style="padding:10px 12px; text-align:right; white-space:nowrap;" onclick="event.stopPropagation();">
+              <button class="btn-modern secondary small" onclick="showOrderDetail('${order.id}')" title="Manage: ship, invoice, status" style="font-size:11px; padding:4px 10px;">Manage</button>
+              <button class="btn-modern secondary small" onclick="createProjectFromOrder('${order.id}')" title="Create project" style="font-size:11px; padding:4px 8px;">Project</button>
+            </td>
+          </tr>`;
       }).join('');
+
+      listEl.innerHTML = `
+        <div style="overflow-x:auto; background:var(--dark-elevated); border:1px solid var(--border-subtle); border-radius:12px;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:760px;">
+            <thead>
+              <tr style="text-align:left; color:var(--text-muted); font-size:10px; text-transform:uppercase; letter-spacing:0.05em;">
+                <th style="padding:10px 12px;">Order</th>
+                <th style="padding:10px 12px;">Date</th>
+                <th style="padding:10px 12px;">Customer</th>
+                <th style="padding:10px 12px; text-align:center;">Items</th>
+                <th style="padding:10px 12px;">Total</th>
+                <th style="padding:10px 12px;">Payment</th>
+                <th style="padding:10px 12px;">Fulfillment</th>
+                <th style="padding:10px 12px; text-align:right;">Manage</th>
+              </tr>
+            </thead>
+            <tbody>${orderRows}</tbody>
+          </table>
+        </div>`;
 
       // Update pagination
       const totalPages = Math.ceil(filteredOrders.length / ordersPageSize);
