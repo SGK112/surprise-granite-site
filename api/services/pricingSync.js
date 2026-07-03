@@ -55,7 +55,7 @@ async function loadSources() {
   try {
     const db = client.db(MONGO_DB);
     const vi = await db.collection('vendorinventories')
-      .find({}, { projection: { _id: 0, sku: 1, dealerCost: 1, shopifyPrice: 1, availableQty: 1 } }).toArray();
+      .find({}, { projection: { _id: 0, sku: 1, dealerCost: 1, shopifyPrice: 1, availableQty: 1, imageUrl: 1, imageUrls: 1, description: 1 } }).toArray();
     const lil = await db.collection('lineitemlibraries')
       .find({}, { projection: { _id: 0, name: 1, cost: 1, vendor: 1 } }).toArray();
     return { vi, lil };
@@ -76,14 +76,20 @@ async function runPool(items, worker, concurrency = 12) {
   return done;
 }
 
-async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0 } = {}) {
+const DEAD_IMG = /website-files\.com/i; // killed Webflow CDN — treat as no image
+
+async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0, content = true } = {}) {
   if (!supabase) throw new Error('supabase client required');
   const { vi, lil } = await loadSources();
 
+  // Index ALL vendor-inventory rows (not just priced ones) so a row that carries
+  // an image/description but no cost can still backfill content. When two rows
+  // share a key, a PRICED row wins over a content-only one.
+  const richer = (a, b) => (Number(b?.dealerCost) > 0 && !(Number(a?.dealerCost) > 0));
   const viBySku = new Map();
   for (const r of vi) {
-    const k = norm(r.sku);
-    if (k && Number(r.dealerCost) > 0) viBySku.set(k, r);
+    const k = norm(r.sku); if (!k) continue;
+    if (!viBySku.has(k) || richer(viBySku.get(k), r)) viBySku.set(k, r);
   }
   const lilByVendorName = new Map();
   for (const r of lil) {
@@ -93,8 +99,7 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0 
   // internal slug like "ruvati-5763" but whose name ends with the real SKU).
   const viByTok = new Map();
   for (const r of vi) {
-    if (!(Number(r.dealerCost) > 0)) continue;
-    for (const t of skuTokens(r.sku)) if (!viByTok.has(t)) viByTok.set(t, r);
+    for (const t of skuTokens(r.sku)) if (!viByTok.has(t) || richer(viByTok.get(t), r)) viByTok.set(t, r);
   }
   const lilByVendorTok = new Map(); // vendorNorm|token -> cost (vendor-scoped)
   for (const r of lil) {
@@ -109,7 +114,7 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0 
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('catalog_products')
-      .select('id,name,sku,category,vendor_id,retail_price')
+      .select('id,name,sku,category,vendor_id,retail_price,primary_image_url,image_urls,short_description,description')
       .order('id')
       .range(from, from + PAGE - 1);
     if (error) throw new Error('catalog read failed: ' + error.message);
@@ -121,52 +126,79 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0 
     catalogTotal: products.length,
     sourcesLoaded: { vendorInventory: viBySku.size, emailSheetNames: lilByVendorName.size },
     fromVendorInventory: 0, fromEmailSheet: 0,
-    skippedAlreadyPriced: 0, skippedNoSource: 0,
+    imagesFilled: 0, descriptionsFilled: 0,
+    skippedNoSource: 0,
   };
   const patches = [];
   for (const p of products) {
-    if (mode === 'fill' && Number(p.retail_price) > 0) { report.skippedAlreadyPriced++; continue; }
-    let cost = null, retail = null, qty = null, source = null;
-    const viRow = viBySku.get(norm(p.sku));
-    if (viRow) {
-      cost = Number(viRow.dealerCost) || null;
-      qty = (viRow.availableQty != null) ? Number(viRow.availableQty) : null;
-      retail = cost > 0 ? round2(cost * markupFor(p.category))
-        : (Number(viRow.shopifyPrice) > 0 ? Number(viRow.shopifyPrice) : null);
-      source = 'vendor_inventory';
-    } else {
-      const c = lilByVendorName.get(norm(p.vendor_id) + '|' + norm(p.name));
-      if (Number(c) > 0) { cost = Number(c); retail = round2(cost * markupFor(p.category)); source = 'email_sheet'; }
-    }
-    // Fallback: match by SKU token when neither exact path hit (recovers rows
-    // whose stored sku is an internal slug). VendorInventory first, then the
-    // vendor-scoped email sheet.
-    if (!(retail > 0)) {
+    // Resolve the vendor-inventory match (exact SKU, then token) and any email-
+    // sheet cost ONCE — both price and content draw from it.
+    let viRow = viBySku.get(norm(p.sku)) || null;
+    let lilCost = viRow ? null : lilByVendorName.get(norm(p.vendor_id) + '|' + norm(p.name));
+    if (!viRow && !(Number(lilCost) > 0)) {
       const tok = productToken(p);
       if (tok) {
-        const viTok = viByTok.get(tok);
-        if (viTok && Number(viTok.dealerCost) > 0) {
-          cost = Number(viTok.dealerCost);
-          qty = (viTok.availableQty != null) ? Number(viTok.availableQty) : null;
-          retail = round2(cost * markupFor(p.category));
-          source = 'vendor_inventory';
-        } else {
-          const c = lilByVendorTok.get(norm(p.vendor_id) + '|' + tok);
-          if (Number(c) > 0) { cost = Number(c); retail = round2(cost * markupFor(p.category)); source = 'email_sheet'; }
-        }
+        const vt = viByTok.get(tok);
+        const ltok = lilByVendorTok.get(norm(p.vendor_id) + '|' + tok);
+        if (vt && Number(vt.dealerCost) > 0) viRow = vt;   // priced VI wins
+        else if (Number(ltok) > 0) lilCost = ltok;         // else email-sheet cost
+        else if (vt) viRow = vt;                           // else content-only VI (image/copy)
       }
     }
-    if (!(retail > 0)) { report.skippedNoSource++; continue; }
-    const fields = { retail_price: retail, updated_at: new Date().toISOString() };
-    if (cost > 0) fields.vendor_cost = cost;
-    if (qty != null) { fields.stock_quantity = qty; fields.in_stock = qty > 0; }
+
+    const fields = {};
+
+    // ── PRICE / STOCK ── (fill: only unpriced; refresh: everything a source covers)
+    const doPrice = mode === 'refresh' || !(Number(p.retail_price) > 0);
+    let priceSource = null;
+    if (doPrice) {
+      let cost = null, retail = null, qty = null;
+      if (viRow) {
+        cost = Number(viRow.dealerCost) || null;
+        qty = (viRow.availableQty != null) ? Number(viRow.availableQty) : null;
+        retail = cost > 0 ? round2(cost * markupFor(p.category))
+          : (Number(viRow.shopifyPrice) > 0 ? Number(viRow.shopifyPrice) : null);
+        if (retail > 0) priceSource = 'vendor_inventory';
+      } else if (Number(lilCost) > 0) {
+        cost = Number(lilCost); retail = round2(cost * markupFor(p.category)); priceSource = 'email_sheet';
+      }
+      if (retail > 0) {
+        fields.retail_price = retail;
+        if (cost > 0) fields.vendor_cost = cost;
+        if (qty != null) { fields.stock_quantity = qty; fields.in_stock = qty > 0; }
+      }
+    }
+
+    // ── CONTENT (image + copy) ── runs even for already-priced rows, so a
+    // priced product with a dead/blank image still gets fixed. Fill-only:
+    // never overwrite a good existing image or description.
+    if (content && viRow) {
+      const cur = p.primary_image_url || '';
+      if ((!cur || DEAD_IMG.test(cur)) && viRow.imageUrl) {
+        fields.primary_image_url = viRow.imageUrl;
+        if (Array.isArray(viRow.imageUrls) && viRow.imageUrls.length) fields.image_urls = viRow.imageUrls;
+        report.imagesFilled++;
+      }
+      if (!p.short_description && viRow.description) {
+        fields.short_description = String(viRow.description).slice(0, 500);
+        if (!p.description) fields.description = String(viRow.description);
+        report.descriptionsFilled++;
+      }
+    }
+
+    if (Object.keys(fields).length === 0) {
+      if (doPrice && !viRow && !(Number(lilCost) > 0)) report.skippedNoSource++;
+      continue;
+    }
+    if (priceSource === 'vendor_inventory') report.fromVendorInventory++;
+    else if (priceSource === 'email_sheet') report.fromEmailSheet++;
+    fields.updated_at = new Date().toISOString();
     patches.push({ id: p.id, fields });
-    if (source === 'vendor_inventory') report.fromVendorInventory++; else report.fromEmailSheet++;
     if (limit && patches.length >= limit) break;
   }
 
   report.matched = patches.length;
-  report.sample = patches.slice(0, 5).map((x) => ({ id: x.id, retail: x.fields.retail_price, cost: x.fields.vendor_cost }));
+  report.sample = patches.slice(0, 5).map((x) => ({ id: x.id, retail: x.fields.retail_price, img: x.fields.primary_image_url ? 'filled' : undefined }));
 
   if (!dryRun && patches.length) {
     let failed = 0;
@@ -178,6 +210,7 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0 
     report.failed = failed;
   } else {
     report.updated = 0;
+    report.failed = 0;
   }
   return { mode, dryRun, ...report };
 }

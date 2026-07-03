@@ -321,7 +321,8 @@ router.post('/sync-pricing', async (req, res) => {
     const { syncPricing } = require('../services/pricingSync');
     const mode = req.query?.mode === 'refresh' ? 'refresh' : 'fill';
     const dryRun = req.query?.dryRun === 'true' || req.query?.dryRun === '1';
-    const result = await syncPricing(supabase, { mode, dryRun });
+    const content = !(req.query?.content === 'false' || req.query?.content === '0'); // image/copy fill on by default
+    const result = await syncPricing(supabase, { mode, dryRun, content });
     return res.json({ success: true, ...result });
   } catch (e) {
     return res.status(500).json({ error: e.message || 'Internal error' });
