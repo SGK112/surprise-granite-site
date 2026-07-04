@@ -9,6 +9,7 @@
 
 const COUNTERTOP_PRICING = {
   wastePct: 0.20,                 // +20% material for waste (slabs sold whole)
+  materialMarkupX: 2.0,           // sell price = vendor cost/sqft x this (override per quote)
   fabricationPerSqft: 35.00,      // fabrication STARTS at $35/sqft
   installPerSqft: 20.00,          // install $20/sqft (priced + sold by sqft)
   demoPerSqft: { none: 0, light: 5, standard: 10, heavy: 20 }, // tear-out tiers
@@ -82,4 +83,40 @@ function quoteCountertop(o = {}) {
   };
 }
 
-module.exports = { quoteCountertop, COUNTERTOP_PRICING };
+/**
+ * Resolve a color name to its vendor cost per sqft from the master price list
+ * (catalog_products carries the cost library's $/sqft via the nightly join and
+ * the sample-pricer; specs.sqft_price marks a deterministic price-book match).
+ * Returns { name, vendor, costPerSqft, productId, source } or null.
+ */
+async function resolveColorCost(supabase, colorName) {
+  const q = String(colorName || '').trim();
+  if (!q || !supabase) return null;
+  const { data, error } = await supabase
+    .from('catalog_products')
+    .select('id,name,vendor_id,vendor_cost,specs')
+    .eq('category', 'slab').eq('active', true)
+    .ilike('name', `%${q.replace(/[%_]/g, '')}%`)
+    .limit(12);
+  if (error || !data || !data.length) return null;
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const scored = data.map((p) => {
+    const sqftPrice = Number(p.specs?.sqft_price) || 0;
+    const cost = sqftPrice || Number(p.vendor_cost) || 0;
+    let score = 0;
+    if (norm(p.name) === norm(q)) score += 4;                    // exact color
+    else if (norm(p.name).startsWith(norm(q))) score += 2;       // prefix (finish variants)
+    if (sqftPrice > 0) score += 2;                               // price-book verified
+    else if (cost > 0) score += 1;
+    return { p, cost, score };
+  }).filter((x) => x.cost > 0).sort((a, b) => b.score - a.score || a.cost - b.cost);
+  if (!scored.length) return null;
+  const best = scored[0];
+  return {
+    name: best.p.name, vendor: best.p.vendor_id, productId: best.p.id,
+    costPerSqft: round2(best.cost),
+    source: best.p.specs?.sqft_price ? 'price-book' : 'master-list join',
+  };
+}
+
+module.exports = { quoteCountertop, resolveColorCost, COUNTERTOP_PRICING };
