@@ -616,6 +616,19 @@
     } catch (e) { /* non-fatal */ }
   }
 
+  // Set the root (html) background to the footer's own color, so a short page
+  // never shows a light sliver below the dark footer (body-bg canvas propagation).
+  function matchRootToFooter() {
+    try {
+      const footer = document.querySelector('footer, .footer');
+      if (!footer) return;
+      const bg = getComputedStyle(footer).backgroundColor;
+      if (bg && !/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/i.test(bg)) {
+        document.documentElement.style.background = bg;
+      }
+    } catch (e) { /* non-fatal */ }
+  }
+
   function anchorPromoStrip() {
     try {
       const strip = document.querySelector('.dinner-promo-strip');
@@ -968,6 +981,15 @@
     // A couple of delayed passes catch late layout (web fonts, async logo SVG).
     setTimeout(syncNavOffset, 300);
     setTimeout(syncNavOffset, 1200);
+
+    // Kill the light "sliver" that shows below the footer when a page's content
+    // is shorter than the viewport: the body's (often white) background
+    // propagates to the canvas, peeking below the dark footer. Match the ROOT
+    // background to the footer's own color so any gap is invisible — works on
+    // every template regardless of its footer shade.
+    matchRootToFooter();
+    window.addEventListener('load', matchRootToFooter);
+    setTimeout(matchRootToFooter, 400);
 
     // Inject site-wide promo: "The Full Course Remodel" floating CTA.
     // Dismissed state persists in localStorage so a returning visitor isn't
