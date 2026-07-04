@@ -114,7 +114,7 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('catalog_products')
-      .select('id,name,sku,category,vendor_id,retail_price,primary_image_url,image_urls,short_description,description')
+      .select('id,name,sku,category,vendor_id,retail_price,vendor_cost,specs,primary_image_url,image_urls,short_description,description')
       .order('id')
       .range(from, from + PAGE - 1);
     if (error) throw new Error('catalog read failed: ' + error.message);
@@ -127,6 +127,7 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
     sourcesLoaded: { vendorInventory: viBySku.size, emailSheetNames: lilByVendorName.size },
     fromVendorInventory: 0, fromEmailSheet: 0,
     imagesFilled: 0, descriptionsFilled: 0,
+    costFilled: 0, costRejectedNegMargin: 0,
     skippedNoSource: 0,
   };
   const patches = [];
@@ -183,6 +184,28 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
         fields.short_description = String(viRow.description).slice(0, 500);
         if (!p.description) fields.description = String(viRow.description);
         report.descriptionsFilled++;
+      }
+    }
+
+    // ── COST + MARGIN (master price list) ── backfill vendor_cost on rows that
+    // lack it, from whatever cost source matched (VendorInventory SKU cost, or
+    // an emailed-sheet cost). GUARDRAIL — the sample-vs-slab safety net: only
+    // accept a cost that yields a POSITIVE margin (cost < retail). This makes a
+    // full-slab cost ($220) physically unable to attach to a sample product
+    // ($12.99 retail); it's rejected rather than producing a nonsense margin.
+    // fields.vendor_cost set by the price path above already satisfies this
+    // (retail = cost x markup), so we only backfill rows that don't have cost.
+    if (!(Number(p.vendor_cost) > 0) && fields.vendor_cost == null) {
+      const cost = viRow ? Number(viRow.dealerCost) : Number(lilCost);
+      const retail = (fields.retail_price != null) ? fields.retail_price : Number(p.retail_price);
+      if (cost > 0) {
+        if (retail > 0 && cost >= retail) {
+          report.costRejectedNegMargin++; // would be a negative/zero margin — almost always a wrong-granularity match
+        } else {
+          fields.vendor_cost = cost;
+          if (retail > 0) fields.specs = { ...(p.specs || {}), margin_pct: round2((retail - cost) / retail * 100), markup_x: round2(retail / cost) };
+          report.costFilled++;
+        }
       }
     }
 

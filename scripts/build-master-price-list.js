@@ -58,6 +58,10 @@ const round2 = (n) => Math.round(n * 100) / 100;
     if (Number(p.vendor_cost) > 0) { report.hadCost++; continue; }
     const cost = costOf(p);
     if (!cost) { report.stillNoCost++; continue; }
+    // GUARDRAIL (sample-vs-slab safety net): never accept a cost that yields a
+    // negative/zero margin — a full-slab cost ($220/$1000) can't attach to a
+    // sample product ($12.99). Reject rather than record a nonsense margin.
+    if (Number(p.retail_price) > 0 && cost >= Number(p.retail_price)) { report.rejectedNegMargin = (report.rejectedNegMargin || 0) + 1; continue; }
     const fields = { vendor_cost: cost, updated_at: new Date().toISOString() };
     if (Number(p.retail_price) > 0) {
       const margin = round2((p.retail_price - cost) / p.retail_price * 100);
