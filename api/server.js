@@ -4277,6 +4277,12 @@ try {
   logger.warn('Catalog API not available:', err.message);
 }
 
+try {
+  app.use('/api/quote', require('./routes/quote'));
+} catch (err) {
+  logger.warn('Quote API not available:', err.message);
+}
+
 // ============ Drop-ship sample orders ============
 try {
   const dropshipRouter = require('./routes/dropship');
