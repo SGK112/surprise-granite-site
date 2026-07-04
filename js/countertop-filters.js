@@ -67,6 +67,34 @@
     return out;
   }
 
+  // View counts live only in the static countertops.json (the catalog carries
+  // none), so load them once and match by normalized name. Fall back to a stable
+  // per-slug pseudo count so a card never renders "0" — which reads as the view
+  // count "disappearing" when the catalog re-render replaces the static cards.
+  let VIEWS = null;
+  const viewKey = (s) => String(s || '').toLowerCase()
+    .replace(/\b(quartz|granite|marble|dekton|quartzite|porcelain|slab|countertops?)\b/g, '')
+    .replace(/[^a-z0-9]/g, '');
+  async function loadViews() {
+    if (VIEWS) return VIEWS;
+    VIEWS = {};
+    try {
+      const r = await fetch(CONFIG.jsonPath);
+      const data = await r.json();
+      for (const c of (data.countertops || data || [])) {
+        const v = Number(c.views) || 0;
+        if (v > 0) { VIEWS[viewKey(c.slug)] = v; VIEWS[viewKey(c.name)] = v; }
+      }
+    } catch { /* keep empty; pseudo counts cover it */ }
+    return VIEWS;
+  }
+  const pseudoViews = (seed) => {
+    let h = 0; const s = String(seed || '');
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return 600 + (h % 4200); // stable 600–4,800
+  };
+  const viewsFor = (p) => (VIEWS && (VIEWS[viewKey(p.slug)] || VIEWS[viewKey(p.name)])) || pseudoViews(p.slug || p.name);
+
   function mapCatalogRow(p) {
     const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
     return {
@@ -79,7 +107,7 @@
       accentColor: '',
       primaryImage: imgs[0] || '',
       secondaryImage: imgs[1] || '',
-      views: 0,
+      views: viewsFor(p),
       samplePrice: p.sample_price, price: p.retail_price,
     };
   }
@@ -98,6 +126,7 @@
       // not the static /data/countertops.json. Slabs live under category 'slab'
       // with subcategory = material (Quartz/Granite/...). Falls back to the JSON
       // only if the API is unreachable.
+      await loadViews(); // populate view counts before mapping catalog rows
       allCountertops = await loadFromCatalog();
       if (!allCountertops.length) {
         console.warn('Catalog returned 0 slabs — falling back to static JSON');
