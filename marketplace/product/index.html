@@ -2925,6 +2925,13 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
   // Fetch product data from the appropriate category JSON
   async function findProduct() {
+    // A static-JSON hit with no real price (0.00 / no variants — e.g. slab
+    // samples in slabs.json) is stale: treat it as a miss so we fall through to
+    // the live catalog API, which carries the correct sample price ($12.99).
+    // Keep it as a last-resort fallback in case the API also misses.
+    let staleProduct = null;
+    const usablePrice = (p) => Number(p && p.price) > 0
+      || (Array.isArray(p && p.variants) && p.variants.some(v => Number(v && v.price) > 0));
     // Try the specified category first
     try {
       const res = await fetch(`/data/${category}.json`);
@@ -2971,7 +2978,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         const titleGuess = handle.replace(/-sample$/, '').replace(/-quartz$|-granite$|-marble$|-dekton$|-quartzite$/, '').replace(/-/g, ' ');
         product = products.find(p => p.title && p.title.toLowerCase().includes(titleGuess));
       }
-      if (product) return product;
+      // Only return a JSON hit that has a real price; otherwise fall through to
+      // the catalog API (stashing the priceless hit as a last resort).
+      if (product && usablePrice(product)) return product;
+      if (product && !staleProduct) staleProduct = product;
     } catch (e) { console.log(`${category} lookup failed:`, e); }
 
     // Fallback to countertops.json for slabs
@@ -2983,7 +2993,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         let product = countertops.find(p => p.slug === handle);
         if (!product) product = countertops.find(p => p.slug === handle.replace(/-quartz$|-granite$|-marble$/, '') + '-quartz');
         if (product) {
-          return {
+          // Priceless countertops shape — stash and fall through to the catalog
+          // API (which has the real sample price) rather than returning $0.00.
+          staleProduct = staleProduct || {
             handle: product.slug,
             title: product.name,
             vendor: product.brand,
@@ -3045,7 +3057,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       }
     } catch (e) { console.log('catalog API lookup failed:', e); }
 
-    return null;
+    // API missed too — fall back to the priceless JSON hit if we had one, so the
+    // page still renders (better than "Product Not Found").
+    return staleProduct;
   }
 
   findProduct().then(product => {
