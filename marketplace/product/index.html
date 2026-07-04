@@ -3038,7 +3038,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             // URL default — search links omit &category, so trusting the URL
             // here left searched sinks/faucets stuck on 'slabs' = non-purchasable.
             category: p.category || category,
-            description: p.short_description || '',
+            // prefer whichever description column actually has content — most
+            // slabs have `description` filled and `short_description` empty,
+            // which used to leave the Description tab on generic filler text
+            description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0] || '',
             tags: p.tags || [],
             available: p.in_stock !== false,
             price: p.retail_price,
