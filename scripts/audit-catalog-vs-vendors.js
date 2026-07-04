@@ -112,6 +112,28 @@ const CONFIG = {
     const matched = [], gone = [];
     for (const r of mine) (matchIn(idx, r.name) ? matched : gone).push(r);
 
+    // arcsurfaces' sitemap also misses color pages — union with the current
+    // ASG PentalQuartz price book, then URL-probe the remainder (a
+    // /final-editions/ page still counts as orderable).
+    if (vendor === 'pentalquartz' && gone.length) {
+      const pq = await lil.find({ userId, vendor: 'Architectural Surfaces (ASG)', unit: 'sqft' }).project({ name: 1 }).toArray();
+      for (const n of pq) { const s = slugify(n.name); if (s && !idx.has(s)) idx.set(s, 'pricebook:' + n.name); }
+      const rescue = [];
+      for (const r of [...gone]) {
+        if (matchIn(idx, r.name)) { rescue.push(r); continue; }
+        const s = slugify(r.name);
+        for (const u of [`https://arcsurfaces.com/quartz/pentalquartz/${s}/`, `https://arcsurfaces.com/final-editions/pentalquartz/${s}/`]) {
+          try {
+            const html = await get(u);
+            if (!/page not found|couldn't find/i.test(html)) { idx.set(s, u); rescue.push(r); break; }
+          } catch { /* 404 */ }
+          await new Promise((x) => setTimeout(x, 250));
+        }
+      }
+      for (const r of rescue) { gone.splice(gone.indexOf(r), 1); matched.push(r); }
+      console.log(`   pentalquartz book+probe rescued ${rescue.length}`);
+    }
+
     // MSI's sitemap is partial (Screaming Frog export) — before declaring a
     // color discontinued, probe its constructed URL and check for the site's
     // soft-404 marker. A live page rescues the color into `matched`.
