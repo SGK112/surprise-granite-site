@@ -599,6 +599,23 @@
   // slide behind it on scroll. We flag its presence (CSS pins strip → top,
   // pushes nav below it) and publish the live height so the offsets stay exact
   // across breakpoints / text-wrapping. No-op when no strip is on the page.
+  // Set the body's top padding to the fixed header's real bottom edge. Uses the
+  // nav's actual positioned geometry (getBoundingClientRect includes any promo-
+  // strip offset + row wrapping + font metrics), so content clears it exactly —
+  // unlike the static --nav-height estimate, which was too short and clipped the
+  // breadcrumb under the nav. Idempotent + safe to call repeatedly.
+  function syncNavOffset() {
+    try {
+      const nav = document.querySelector('#unifiedNav, .unified-nav');
+      if (!nav) return;
+      let bottom = nav.getBoundingClientRect().bottom + (window.scrollY || 0);
+      const strip = document.querySelector('.dinner-promo-strip');
+      if (strip) bottom = Math.max(bottom, strip.getBoundingClientRect().bottom + (window.scrollY || 0));
+      bottom = Math.ceil(bottom);
+      if (bottom > 0 && bottom < 400) document.body.style.paddingTop = bottom + 'px';
+    } catch (e) { /* non-fatal */ }
+  }
+
   function anchorPromoStrip() {
     try {
       const strip = document.querySelector('.dinner-promo-strip');
@@ -607,12 +624,7 @@
       const publishHeight = () => {
         const h = strip.offsetHeight || 0;
         document.documentElement.style.setProperty('--promo-strip-height', h + 'px');
-        // Pin the body's top padding to the EXACT measured header height
-        // (strip + fixed nav). The --nav-height-* vars are fixed estimates
-        // (140px); the injected nav actually wraps to 2–3 rows and can be
-        // taller, which clipped the first content (breadcrumb) under it.
-        const nav = document.querySelector('#unifiedNav, .unified-nav');
-        if (nav && nav.offsetHeight) document.body.style.paddingTop = (h + nav.offsetHeight) + 'px';
+        syncNavOffset(); // body padding is owned by syncNavOffset (measured geometry)
       };
       publishHeight();
       // Re-measure after fonts settle and on resize (mobile text can wrap).
@@ -944,6 +956,18 @@
     // just flag its presence and publish its measured height so the nav and
     // body padding offset by exactly the right amount at any breakpoint.
     anchorPromoStrip();
+
+    // Pin the body's top padding to the fixed header's ACTUAL bottom edge, so
+    // content never clips under it. Runs regardless of the promo strip and uses
+    // the real rendered geometry (not the estimated --nav-height var, which is
+    // shorter than the 3-row nav on some pages — that's what clipped breadcrumbs).
+    syncNavOffset();
+    window.addEventListener('resize', syncNavOffset);
+    window.addEventListener('load', syncNavOffset);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncNavOffset);
+    // A couple of delayed passes catch late layout (web fonts, async logo SVG).
+    setTimeout(syncNavOffset, 300);
+    setTimeout(syncNavOffset, 1200);
 
     // Inject site-wide promo: "The Full Course Remodel" floating CTA.
     // Dismissed state persists in localStorage so a returning visitor isn't
