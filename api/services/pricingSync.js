@@ -30,6 +30,18 @@ const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const round2 = (n) => Math.round(n * 100) / 100;
 const markupFor = (category) => (/tile/i.test(category || '') ? MARKUP_TILE : MARKUP_STD);
 
+// Some vendors don't publish a per-SKU cost — their dealer COST is a fixed
+// multiplier off the LIST/MSRP price (which we carry as retail). Alfi Trade
+// (rep-confirmed 2026): ALFI + EAGO = list x0.405 (50/10/10); Whitehaus = x0.50.
+// Returns the derived cost, or null if the vendor has no list-discount model.
+function listDiscountCost(p) {
+  if (p.vendor_id === 'alfi-trade' && Number(p.retail_price) > 0) {
+    const mult = /whitehaus/i.test(p.name || '') ? 0.50 : 0.405;
+    return { cost: round2(Number(p.retail_price) * mult), basis: `MSRP x ${mult}` };
+  }
+  return null;
+}
+
 // SKU-shaped tokens: >=5 chars, alphanumeric, containing BOTH a letter and a
 // digit (e.g. RVB6719WH, RVG1388BK). Plain words ("MIDNIGHT"), short color/size
 // codes ("3X9", "DM07"), and decimals ("853.03") are excluded — this keeps the
@@ -196,14 +208,19 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
     // fields.vendor_cost set by the price path above already satisfies this
     // (retail = cost x markup), so we only backfill rows that don't have cost.
     if (!(Number(p.vendor_cost) > 0) && fields.vendor_cost == null) {
-      const cost = viRow ? Number(viRow.dealerCost) : Number(lilCost);
+      let cost = viRow ? Number(viRow.dealerCost) : Number(lilCost);
+      let costBasis = null;
+      if (!(cost > 0)) { const ld = listDiscountCost(p); if (ld) { cost = ld.cost; costBasis = ld.basis; } } // e.g. Alfi = list x multiplier
       const retail = (fields.retail_price != null) ? fields.retail_price : Number(p.retail_price);
       if (cost > 0) {
         if (retail > 0 && cost >= retail) {
           report.costRejectedNegMargin++; // would be a negative/zero margin — almost always a wrong-granularity match
         } else {
           fields.vendor_cost = cost;
-          if (retail > 0) fields.specs = { ...(p.specs || {}), margin_pct: round2((retail - cost) / retail * 100), markup_x: round2(retail / cost) };
+          if (retail > 0) {
+            fields.specs = { ...(p.specs || {}), margin_pct: round2((retail - cost) / retail * 100), markup_x: round2(retail / cost) };
+            if (costBasis) fields.specs.cost_basis = costBasis;
+          }
           report.costFilled++;
         }
       }
