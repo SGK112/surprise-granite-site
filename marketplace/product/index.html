@@ -3146,7 +3146,15 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" }
         };
       }
-      document.getElementById('structured-data').textContent = JSON.stringify(structuredData);
+      // Google requires one of offers/review/aggregateRating on Product schema.
+      // A priceless (quote-based) item must NOT claim Product type at all —
+      // emitting it bare is what spiked GSC 'critical Product snippet issues'
+      // (+1,000%) after the vendor-color imports.
+      if (structuredData.offers) {
+        document.getElementById('structured-data').textContent = JSON.stringify(structuredData);
+      } else {
+        document.getElementById('structured-data')?.remove();
+      }
 
       // Update main image
       const mainImg = document.getElementById('mainImage');
