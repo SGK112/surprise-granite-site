@@ -329,6 +329,16 @@ const PORT = process.env.PORT || 3001;
 // Make supabase available to routes via app.get('supabase')
 app.set('supabase', supabase);
 
+// Hourly vendor-stock propagation (vendorinventories → catalog_products).
+// The store must never sell what the vendor portal says is qty-0 — see
+// api/services/stockSync.js for the incident that earned this.
+try {
+  const { startStockSync } = require('./services/stockSync');
+  startStockSync(supabase, console);
+} catch (e) {
+  console.warn('stockSync not started:', e.message);
+}
+
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 app.set('stripe', stripe);
