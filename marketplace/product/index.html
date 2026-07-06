@@ -2906,6 +2906,19 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     }
   }
 
+  // Pretty marketplace paths: /marketplace/sinks/<handle>/ etc. The sinks
+  // grid has linked catalog products this way since day one, but nothing
+  // served the path — every catalog sink/faucet detail link 404'd
+  // (owner report 2026-07-06). _redirects now rewrites these here; parse
+  // the handle + category out of the path.
+  if (!handle) {
+    const mp = path.match(/\/marketplace\/(sinks|faucets|bathroom|kitchen-accessories|tile|flooring|slabs|remnants)\/([^\/]+)\/?$/);
+    if (mp && mp[2] && mp[2] !== 'index.html') {
+      category = mp[1];
+      handle = decodeURIComponent(mp[2]).replace(/\/$/, '');
+    }
+  }
+
   if (!handle) {
     document.getElementById('loading-overlay').innerHTML = '<div style="text-align:center;padding:40px;"><h2>Product Not Found</h2><p>No product handle specified.</p><a href="/marketplace/' + category + '/" style="color:#f9cb00;">Browse all ' + category + '</a></div>';
     return;
