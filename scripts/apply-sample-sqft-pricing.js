@@ -20,15 +20,20 @@ const { MongoClient } = require('mongodb');
 
 const supa = createClient('https://ypeypgwsycxcagncgdur.supabase.co', process.env.SUPABASE_SERVICE_KEY);
 
+// Site vendor → library vendors to search, IN ORDER (brand's own list first,
+// then the local distributors that carry the brand — Aracruz's 2026 list is
+// where most Silestone/Caesarstone per-sqft pricing actually lives).
 const VENDOR_MAP = {
-  'msi': 'MSI',
-  'cosentino': 'Cosentino',
-  'silestone': 'Cosentino',
-  'arizona-tile': 'Arizona Tile',
-  'bolder-image-stone': 'Bolder Image Stone',
-  'pentalquartz': 'Architectural Surfaces (ASG)', // PQ book = PentalQuartz
-  'hanstone': 'ESI',
-  'daltile': 'Daltile',
+  'msi': ['MSI'],
+  'cosentino': ['Cosentino', 'Aracruz Granite'],
+  'silestone': ['Cosentino', 'Aracruz Granite'],
+  'caesarstone': ['Aracruz Granite', 'Cactus Stone & Tile'],
+  'arizona-tile': ['Arizona Tile'],
+  'bolder-image-stone': ['Bolder Image Stone'],
+  'pentalquartz': ['Architectural Surfaces (ASG)'], // PQ book = PentalQuartz
+  'hanstone': ['ESI'],
+  'daltile': ['Daltile'],
+  'classic-surfaces': ['Classic Surfaces', 'Architectural Surfaces (ASG)'],
 };
 
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -41,6 +46,9 @@ const baseName = (s) => String(s || '')
   .replace(/\b(polished|honed|leathered|leather|caressed|brushed|matte|lava|dual|suede|satin|1st choice|finish|slabs?)\b/gi, ' ')
   // material / line words that appear on one side only ("Specchio White Quartz"
   // in the catalog vs "Specchio White 2cm" in the price book)
+  // brand prefixes: the distributor lists say "Silestone Stellar Snow 3cm" /
+  // "Caesarstone Airy Conc. 2cm" while the site color is just the base name
+  .replace(/\b(silestone|caesarstone|acarastone|rough)\b/gi, ' ')
   .replace(/\b(quartzite|quartz|granite|marble|porcelain|dekton|soapstone|travertine|dolomite|scalea|sensa by cosentino|sensa)\b/gi, ' ')
   .trim();
 const thickOf = (s) => (/\b3\s*cm\b/i.test(s) ? '3cm' : /\b1\.6\s*cm\b/i.test(s) ? '1.6cm' : /\b2\s*cm\b/i.test(s) ? '2cm' : '');
@@ -59,14 +67,35 @@ const thickOf = (s) => (/\b3\s*cm\b/i.test(s) ? '3cm' : /\b1\.6\s*cm\b/i.test(s)
     if (!index.has(key)) index.set(key, []);
     index.get(key).push({ thick: thickOf(r.name), cost: Number(r.cost) });
   }
-  const priceFor = (libVendor, productName) => {
-    const cands = index.get(libVendor + '|' + norm(baseName(productName)));
-    if (!cands || !cands.length) return null;
+  const pickThickness = (cands) => {
     for (const want of ['3cm', '2cm', '', '1.6cm']) {
       const hit = cands.filter((c) => c.thick === want);
       if (hit.length) return Math.min(...hit.map((c) => c.cost));
     }
     return Math.min(...cands.map((c) => c.cost));
+  };
+  const priceFor = (libVendors, productName) => {
+    const base = norm(baseName(productName));
+    if (!base || base.length < 4) return null;
+    for (const libVendor of libVendors) {
+      const exact = index.get(libVendor + '|' + base);
+      if (exact && exact.length) return pickThickness(exact);
+    }
+    // Unique-prefix fallback — the books abbreviate ("Airy Conc." vs the
+    // site's "Airy Concrete"). Only accept when exactly ONE library color
+    // for that vendor matches by prefix (either direction).
+    for (const libVendor of libVendors) {
+      const pref = libVendor + '|';
+      const hits = [];
+      for (const [key, cands] of index) {
+        if (!key.startsWith(pref)) continue;
+        const kbase = key.slice(pref.length);
+        if (kbase.length < 4) continue;
+        if (kbase.startsWith(base) || base.startsWith(kbase)) hits.push(cands);
+      }
+      if (hits.length === 1) return pickThickness(hits[0]);
+    }
+    return null;
   };
 
   let products = [];
