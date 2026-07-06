@@ -1453,9 +1453,12 @@
       <div class="product-info">
         <div class="brand-row">
           <span class="brand-name" id="brand-name">Loading...</span>
-          <span class="stock-status in-stock">
+          <!-- Was a HARDCODED "Available" — every product, forever, no matter
+               the truth (owner caught it on a qty-0 Ruvati item, 2026-07-06).
+               Now populated from product.in_stock by the render JS. -->
+          <span class="stock-status" id="stock-status" style="display:none">
             <span class="stock-dot"></span>
-            Available
+            <span id="stock-status-text"></span>
           </span>
         </div>
 
@@ -3344,6 +3347,19 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           cartHtml += '<span class="stock-dot"></span> ' + (isAvailable ? 'In Stock' : 'Out of Stock');
           cartHtml += '</div>';
           cartHtml += '</div>';
+
+          // Header pill mirrors the SAME truth (it was a hardcoded
+          // "Available" for every product until 2026-07-06).
+          (function () {
+            var pill = document.getElementById('stock-status');
+            var pillText = document.getElementById('stock-status-text');
+            if (pill && pillText) {
+              pill.style.display = '';
+              pill.classList.toggle('in-stock', !!isAvailable);
+              pill.classList.toggle('out-of-stock', !isAvailable);
+              pillText.textContent = isAvailable ? 'Available' : 'Out of Stock';
+            }
+          })();
 
           // Variant selector (if multiple)
           if (hasMultipleVariants) {
