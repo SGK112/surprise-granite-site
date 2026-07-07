@@ -101,6 +101,7 @@
         { label: 'All Countertops', href: '/materials/all-countertops' },
         { label: 'Compare Materials (Quartz vs Granite vs…)', href: '/compare/' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
+        { label: 'Quartzite', href: '/materials/countertops/quartzite-countertops/' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
@@ -207,6 +208,7 @@
       // install relocated to services per owner direction (2026-05-02).
       { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' },
       { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Quartzite Countertops', desc: 'Natural stone, harder than granite', href: '/materials/countertops/quartzite-countertops/', img: 'https://arcsurfaces.com/wp-content/uploads/ns-featured-02-1024x572.jpeg' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
