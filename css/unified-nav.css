@@ -176,6 +176,25 @@ body.unified-nav-active {
   /* homepage uses viewport-fit=cover: without this the strip renders under
      the iPhone notch/status bar and looks like a broken sliver */
   padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+  /* WebKit + viewport-fit=cover: fixed top elements don't paint until the
+     first scroll forces a repaint ("black band on landing"). Promoting the
+     strip to its own compositor layer makes it paint immediately. */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* amber shim behind the status-bar zone so the notch area is never black,
+   even before the strip's first paint */
+body.unified-nav-active.has-promo-strip::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(env(safe-area-inset-top, 0px) + 4px);
+  background: #f59e0b;
+  z-index: 10002;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  pointer-events: none;
 }
 body.unified-nav-active.has-promo-strip {
   padding-top: calc(var(--nav-height-desktop) + var(--promo-strip-height, 44px));
