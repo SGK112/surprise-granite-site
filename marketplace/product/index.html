@@ -3070,7 +3070,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
               available: p.in_stock !== false,
               sku: p.sku || null
             }],
-            specs: {}
+            size: p.size || null,
+            finish: p.finish || null,
+            specs: p.specs || {}
           };
         }
       }
@@ -3241,20 +3243,56 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         colorsSection.innerHTML = colorsHtml;
       }
 
-      // Update specs grid
-      const specsGrid = document.getElementById('specs-grid');
-      let specsHtml = '';
-      specsHtml += `<div class="spec-item"><span class="spec-label">Material</span><span class="spec-value">${material}</span></div>`;
-      if (product.style) {
-        specsHtml += `<div class="spec-item"><span class="spec-label">Style</span><span class="spec-value">${product.style}</span></div>`;
+      // Update specs grid — real dimensions/finish from vendor data when we
+      // have them; the old hardcoded "2cm, 3cm / Polished" lied for
+      // leathered/jumbo/porcelain slabs (owner: show the dimensions from the
+      // price lists, 2026-07-06).
+      function renderSlabSpecs(prod) {
+        const specsGrid = document.getElementById('specs-grid');
+        const sp = prod.specs || {};
+        let specsHtml = '';
+        specsHtml += `<div class="spec-item"><span class="spec-label">Material</span><span class="spec-value">${material}</span></div>`;
+        if (prod.style) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Style</span><span class="spec-value">${prod.style}</span></div>`;
+        }
+        if (prod.originCountry && prod.originFlag) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Origin</span><span class="spec-value">${prod.originFlag} ${prod.originCountry}</span></div>`;
+        }
+        if (sp.slab_size) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Slab Size</span><span class="spec-value">${sp.slab_size}"</span></div>`;
+        } else if (prod.size) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Size</span><span class="spec-value">${prod.size}</span></div>`;
+        }
+        if (sp.slab_sqft) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Sqft / Slab</span><span class="spec-value">~${sp.slab_sqft} sq ft</span></div>`;
+        }
+        specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">${sp.thickness || sp.slab_thickness || '2cm, 3cm (typ.)'}</span></div>`;
+        specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">${sp.finish || prod.finish || 'Polished (typ.)'}</span></div>`;
+        specsGrid.innerHTML = specsHtml;
       }
-      // Add origin with flag
-      if (product.originCountry && product.originFlag) {
-        specsHtml += `<div class="spec-item"><span class="spec-label">Origin</span><span class="spec-value">${product.originFlag} ${product.originCountry}</span></div>`;
+      renderSlabSpecs(product);
+      // Static slabs.json hits carry empty specs — enrich from the live
+      // catalog (which the dimensions backfill populated) and re-render.
+      if (!(product.specs && product.specs.slab_size) && category === 'slabs') {
+        (async () => {
+          const h = product.handle || handle;
+          // catalog slugs are inconsistent about the -sample suffix — try both
+          const tries = [h, h.endsWith('-sample') ? h.replace(/-sample$/, '') : h + '-sample'];
+          for (const slug of tries) {
+            try {
+              const r = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(slug));
+              if (!r.ok) continue;
+              const d = await r.json();
+              const p = d && (d.product || (Array.isArray(d.products) ? d.products[0] : null));
+              if (!p || (!p.specs && !p.size)) continue;
+              product.specs = Object.assign({}, p.specs, product.specs);
+              if (!product.size && p.size) product.size = p.size;
+              renderSlabSpecs(product);
+              return;
+            } catch (e) { /* try next */ }
+          }
+        })();
       }
-      specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">2cm, 3cm</span></div>`;
-      specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">Polished</span></div>`;
-      specsGrid.innerHTML = specsHtml;
 
       // Update description tab
       const descHeading = document.getElementById('desc-heading');
