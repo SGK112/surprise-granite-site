@@ -122,6 +122,15 @@
   async function init() {
     console.log('Countertop Filter System initializing...');
 
+    // CLS guard: the grid gets fully replaced once the catalog loads. Locking
+    // its height (baked-card height, or ~1.2 viewports when it ships empty)
+    // keeps everything below it from jumping — GSC flagged 0.4+ mobile CLS on
+    // these pages (2026-07-07). Released after the first real render settles.
+    const clsGrid = document.querySelector(CONFIG.gridSelector);
+    if (clsGrid) {
+      clsGrid.style.minHeight = Math.max(clsGrid.offsetHeight, window.innerHeight * 1.2) + 'px';
+    }
+
     try {
       // SOURCE OF TRUTH = the marketplace catalog (Supabase catalog_products),
       // not the static /data/countertops.json. Slabs live under category 'slab'
@@ -137,6 +146,7 @@
       }
       filters = deriveFilters(allCountertops);
 
+      if (clsGrid) setTimeout(() => { clsGrid.style.minHeight = ''; }, 800);
       console.log(`Loaded ${allCountertops.length} slabs from catalog`);
       console.log('Filters:', filters);
 
