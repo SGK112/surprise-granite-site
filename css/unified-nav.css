@@ -148,14 +148,39 @@ body.unified-nav-active [class*="navbar-"]:not(.unified-nav *) {
 
 /* ===========================================
    BODY PADDING FOR FIXED NAV
+   Reserved at FIRST PAINT (not just after JS adds .unified-nav-active):
+   waiting for JS pushed the whole page down 137px after load — a 0.14 CLS
+   on every page (GSC mobile CLS issue, 2026-07-07). :has() covers the
+   promo-strip variant; browsers without :has() fall back to the old timing.
    =========================================== */
+body {
+  padding-top: var(--nav-height-desktop);
+}
+body:has(> .dinner-promo-strip) {
+  padding-top: calc(var(--nav-height-desktop) + var(--promo-strip-height, 49px) + env(safe-area-inset-top, 0px));
+}
+@media (max-width: 991px) {
+  body {
+    padding-top: var(--nav-height-mobile);
+  }
+  body:has(> .dinner-promo-strip) {
+    padding-top: calc(var(--nav-height-mobile) + var(--promo-strip-height, 49px) + env(safe-area-inset-top, 0px));
+  }
+}
 body.unified-nav-active {
   padding-top: var(--nav-height-desktop); /* 100px */
 }
-
+body.unified-nav-active.has-promo-strip,
+body.unified-nav-active:has(> .dinner-promo-strip) {
+  padding-top: calc(var(--nav-height-desktop) + var(--promo-strip-height, 49px) + env(safe-area-inset-top, 0px));
+}
 @media (max-width: 991px) {
   body.unified-nav-active {
     padding-top: var(--nav-height-mobile); /* 64px */
+  }
+  body.unified-nav-active.has-promo-strip,
+  body.unified-nav-active:has(> .dinner-promo-strip) {
+    padding-top: calc(var(--nav-height-mobile) + var(--promo-strip-height, 49px) + env(safe-area-inset-top, 0px));
   }
 }
 
