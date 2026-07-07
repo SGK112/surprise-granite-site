@@ -1343,7 +1343,7 @@
   <link rel="stylesheet" href="/css/mobile-optimizations.css"/>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260703a">
-<script defer src="/js/unified-nav.js?v=20260706a"></script>
+<script defer src="/js/unified-nav.js?v=20260707a"></script>
 
 
   <!-- Dynamic Product Loading -->
@@ -3338,11 +3338,15 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       //      (Use this for specific tile SKUs without samples.)
       const sampleBtn = document.getElementById('btn-order-sample');
       const tags = Array.isArray(product.tags) ? product.tags.map(t => String(t).toLowerCase()) : [];
-      const isGranite = /granite/i.test(material || '')
-        || /granite/i.test(product.productType || '')
-        || /granite/i.test(product.type || '')
+      // Samples are only offered on engineered surfaces (quartz, porcelain,
+      // Dekton). Natural stone is never sampled — every lot is unique, so we
+      // send buyers to the stone yard instead (owner rule, 2026-07-06).
+      const NATURAL_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
+      const isGranite = NATURAL_RX.test(material || '')
+        || NATURAL_RX.test(product.productType || '')
+        || NATURAL_RX.test(product.type || '')
         || /\bgranite\b/i.test(title || '')
-        || tags.some(t => /granite/.test(t));
+        || tags.some(t => NATURAL_RX.test(t));
       // premium quartz — samples and pricing pulled site-wide (2026-04-22).
       const isCambria = false;
       const sampleBlockedByFlag = product.no_sample === true
@@ -3359,7 +3363,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             window.SgCart.addToCart({
               id: product.handle || product.id,
               name: title + ' (Sample)',
-              price: parseFloat(product.variants?.[0]?.price) || 0,
+              price: parseFloat(product.variants?.[0]?.price) || parseFloat(product.sample_price) || 12.99,
               image: (product.images && product.images[0]) || '',
               quantity: 1,
               variant: 'Sample',

@@ -14,7 +14,7 @@
 
   <!-- Unified Navigation -->
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260703a"/>
-  <script defer src="/js/unified-nav.js?v=20260706a"></script>
+  <script defer src="/js/unified-nav.js?v=20260707a"></script>
   <script src="/js/radianz-unavailable.js"></script>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
 <style>
@@ -216,7 +216,7 @@
         </button>
       </form>
       <div class="mkt-hero-links">
-        <a href="/marketplace/slabs/">Browse all slabs <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        <a href="/materials/all-countertops">Browse all slabs <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         <a href="/marketplace/sinks/">Sinks &amp; faucets <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
         <a href="/tools/countertop-calculator/">Countertop calculator <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
       </div>
@@ -242,7 +242,7 @@
         <span class="sub">Everything ships or is ready for will-call</span>
       </div>
       <div class="cat-grid">
-        <a class="cat-card" href="/marketplace/slabs/">
+        <a class="cat-card" href="/materials/all-countertops">
           <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
           <h3>Stone Slabs</h3><div class="n" data-count="slab">Quartz to quartzite</div>
         </a>
@@ -277,7 +277,7 @@
     <section class="mkt" aria-labelledby="h-mat">
       <div class="mkt-head">
         <h2 id="h-mat">Slabs by Material</h2>
-        <a class="more" href="/marketplace/slabs/">View all slabs →</a>
+        <a class="more" href="/materials/all-countertops">View all slabs →</a>
       </div>
       <div class="mat-grid">
         <a class="mat-card" href="/materials/countertops/quartz-countertops/">
@@ -296,11 +296,11 @@
           <img loading="lazy" src="/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg" alt="Marble slabs"/>
           <div class="ovl"><b>Marble</b><span data-mat="Marble">Natural stone</span></div>
         </a>
-        <a class="mat-card" href="/marketplace/slabs/">
+        <a class="mat-card" href="/materials/countertops/porcelain-countertops/">
           <img loading="lazy" src="/migrated/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif" alt="Porcelain slabs"/>
           <div class="ovl"><b>Porcelain</b><span data-mat="Porcelain">Sintered surface</span></div>
         </a>
-        <a class="mat-card" href="/marketplace/slabs/">
+        <a class="mat-card" href="/materials/countertops/dekton-countertops/">
           <img loading="lazy" src="/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg" alt="Dekton slabs"/>
           <div class="ovl"><b>Dekton</b><span data-mat="Dekton">Ultracompact</span></div>
         </a>
@@ -311,7 +311,7 @@
     <section class="mkt" aria-labelledby="h-fresh">
       <div class="mkt-head">
         <h2 id="h-fresh">Fresh on the Racks</h2>
-        <a class="more" href="/marketplace/slabs/">Browse inventory →</a>
+        <a class="more" href="/materials/all-countertops">Browse inventory →</a>
       </div>
       <div class="rail" id="fresh-rail" aria-live="polite">
         <!-- live product cards injected here -->
@@ -363,7 +363,7 @@
 <footer class="footer">
   <div class="footer-links">
     <a href="/">Home</a>
-    <a href="/marketplace/slabs/">Slabs</a>
+    <a href="/materials/all-countertops">Slabs</a>
     <a href="/marketplace/tile/">Tile</a>
     <a href="/marketplace/sinks/">Sinks</a>
     <a href="/marketplace/faucets/">Faucets</a>
@@ -431,7 +431,9 @@
     if (!out.length) { document.getElementById('h-fresh').closest('section').style.display = 'none'; return; }
     rail.innerHTML = out.slice(0, 12).map(function (p) {
       var img = p.primary_image_url || (p.image_urls && p.image_urls[0]) || '';
-      var price = p.sample_price != null ? Number(p.sample_price) : null;
+      // $12.99 is the default sample price, NOT a per-sqft material price —
+      // never advertise it as one (owner rule).
+      var price = p.sample_price != null && Number(p.sample_price) !== 12.99 ? Number(p.sample_price) : null;
       return '<a class="p-card" href="/marketplace/product/?handle=' + encodeURIComponent(p.slug) + '&category=slabs">' +
         '<div class="im"><img loading="lazy" src="' + img + '" alt="' + (p.name || '') + ' slab"/></div>' +
         '<div class="bd"><b>' + (p.name || '') + '</b>' +
@@ -441,12 +443,15 @@
     }).join('');
   });
 
-  // ---- stone yards with live counts + a real slab thumbnail each
+  // ---- stone yards with live counts. Thumbnails are SELF-HOSTED under
+  // /images/vendors/yards/ — vendor CDNs (scene7, webflow, wix, wp) hotlink-
+  // block browsers intermittently, so never hotlink here.
   var YARD_VENDOR = {
     'msi': 'msi', 'arizona-tile': 'arizona-tile', 'cactus-stone': 'cactus-stone',
     'cosentino': 'cosentino', 'daltile': 'daltile', 'bolder-image-stone': 'bolder-image-stone',
     'aracruz': 'caesarstone', 'classic-surfaces': 'classic-surfaces',
     'architectural-surfaces': 'arcsurfaces', 'monterrey-tile': 'monterrey-tile', 'sun-stone': 'sun-stone',
+    'gila': 'gila', 'the-yard-az': 'the-yard-az',
   };
   fetch('/data/stone-yards.json').then(function (r) { return r.json(); }).then(function (yards) {
     var grid = document.getElementById('yard-grid');
@@ -455,18 +460,15 @@
     return Promise.all(withSlabs.map(function (y) {
       return fetch(API + '/api/catalog?category=slab&vendor=' + YARD_VENDOR[y.slug] + '&limit=1')
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (j) {
-          var p = j && j.products && j.products[0];
-          return { y: y, n: j && j.total, img: p && (p.primary_image_url || (p.image_urls && p.image_urls[0])) };
-        })
-        .catch(function () { return { y: y, n: null, img: null }; });
+        .then(function (j) { return { y: y, n: j && j.total }; })
+        .catch(function () { return { y: y, n: null }; });
     })).then(function (cards) {
       grid.innerHTML = cards
         .filter(function (c) { return c.n; })
         .sort(function (a, b) { return (b.n || 0) - (a.n || 0); })
         .map(function (c) {
           return '<a class="yard-card" href="/stone-yards/' + c.y.slug + '/">' +
-            '<div class="th">' + (c.img ? '<img loading="lazy" src="' + c.img + '" alt="' + c.y.name + ' slab"/>' : '') + '</div>' +
+            '<div class="th"><img loading="lazy" src="/images/vendors/yards/' + c.y.slug + '.jpg" alt="' + c.y.name + ' slab" onerror="this.style.display=\'none\'"/></div>' +
             '<div><b>' + c.y.name + '</b><span>' + fmt(c.n) + ' slab colors</span></div></a>';
         }).join('');
     });

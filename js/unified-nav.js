@@ -104,6 +104,8 @@
         { label: 'Quartzite', href: '/materials/countertops/quartzite-countertops/' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
+        { label: 'Porcelain', href: '/materials/countertops/porcelain-countertops/' },
+        { label: 'Dekton', href: '/materials/countertops/dekton-countertops/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
         { label: 'LVP Flooring', href: '/materials/flooring' }
       ]
@@ -211,6 +213,8 @@
       { name: 'Quartzite Countertops', desc: 'Natural stone, harder than granite', href: '/materials/countertops/quartzite-countertops/', img: 'https://arcsurfaces.com/wp-content/uploads/ns-featured-02-1024x572.jpeg' },
       { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
       { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
+      { name: 'Porcelain Countertops', desc: 'Sintered slabs, indoor/outdoor', href: '/materials/countertops/porcelain-countertops/', img: '/migrated/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
+      { name: 'Dekton Countertops', desc: 'Ultracompact by Cosentino', href: '/materials/countertops/dekton-countertops/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
       { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' }
     ],

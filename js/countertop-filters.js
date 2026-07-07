@@ -22,6 +22,7 @@
     if (path.includes('granite-countertops')) return 'Granite';
     if (path.includes('marble-countertops')) return 'Marble';
     if (path.includes('porcelain-countertops')) return 'Porcelain';
+    if (path.includes('dekton-countertops')) return 'Dekton';
     if (path.includes('quartz-countertops')) return 'Quartz';
     if (path.includes('quartzite-countertops')) return 'Quartzite';
     return null;
