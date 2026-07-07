@@ -3269,6 +3269,20 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">${sp.thickness || sp.slab_thickness || '2cm, 3cm (typ.)'}</span></div>`;
         specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">${sp.finish || prod.finish || 'Polished (typ.)'}</span></div>`;
         specsGrid.innerHTML = specsHtml;
+        // Printed quartz: the pattern is HD-printed on the surface, not
+        // through-body — buyers must know before picking an edge profile.
+        const oldNote = document.getElementById('printed-quartz-note');
+        if (oldNote) oldNote.remove();
+        if (sp.printed_quartz) {
+          const note = document.createElement('div');
+          note.id = 'printed-quartz-note';
+          note.style.cssText = 'margin:14px 0;padding:14px 16px;background:#fdf6ec;border:1px solid #e8d5b5;border-radius:10px;font-size:14px;line-height:1.55;color:#4a3a22;';
+          note.innerHTML = '<strong style="display:block;margin-bottom:4px;">✨ Printed Quartz — what to know</strong>' +
+            'The veining on this slab is applied with high-definition 3D printing on the surface — it does not run through the body of the stone. ' +
+            'Cut edges reveal the slab’s white quartz core, so we recommend a <strong>mitered or waterfall edge</strong> (wraps the pattern so the design stays continuous) ' +
+            'or a <strong>euro-style edge</strong> that shows the clean white edge as a deliberate accent. Ask us — we fabricate these every week.';
+          specsGrid.parentNode.insertBefore(note, specsGrid.nextSibling);
+        }
       }
       renderSlabSpecs(product);
       // Static slabs.json hits carry empty specs — enrich from the live
