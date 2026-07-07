@@ -98,6 +98,53 @@ services:
       - type: rewrite
         source: /aspn/members/*
         destination: /aspn/members/index.html
+      # Quartzite is NOT quartz — dedicated natural-stone landing page
+      - type: redirect
+        source: /countertops/quartzite-countertops
+        destination: /materials/countertops/quartzite-countertops/
+      - type: redirect
+        source: /countertops/quartzite-countertops/
+        destination: /materials/countertops/quartzite-countertops/
+      # Pretty product URLs -> param-less product renderer. NOTE: Render does
+      # NOT read the _redirects file (render.yaml routes only) — these rules
+      # lived there dead. The explicit /<cat>/ self-rewrites come first so
+      # category listing pages keep serving their own index.
+      - type: rewrite
+        source: /marketplace/sinks/
+        destination: /marketplace/sinks/index.html
+      - type: rewrite
+        source: /marketplace/sinks/*
+        destination: /marketplace/product/index.html
+      - type: rewrite
+        source: /marketplace/faucets/
+        destination: /marketplace/faucets/index.html
+      - type: rewrite
+        source: /marketplace/faucets/*
+        destination: /marketplace/product/index.html
+      - type: rewrite
+        source: /marketplace/bathroom/
+        destination: /marketplace/bathroom/index.html
+      - type: rewrite
+        source: /marketplace/bathroom/*
+        destination: /marketplace/product/index.html
+      - type: rewrite
+        source: /marketplace/kitchen-accessories/
+        destination: /marketplace/kitchen-accessories/index.html
+      - type: rewrite
+        source: /marketplace/kitchen-accessories/*
+        destination: /marketplace/product/index.html
+      - type: rewrite
+        source: /marketplace/tile/
+        destination: /marketplace/tile/index.html
+      - type: rewrite
+        source: /marketplace/tile/*
+        destination: /marketplace/product/index.html
+      - type: rewrite
+        source: /marketplace/flooring/
+        destination: /marketplace/flooring/index.html
+      - type: rewrite
+        source: /marketplace/flooring/*
+        destination: /marketplace/product/index.html
       # Company pages
       - type: rewrite
         source: /company/about-us

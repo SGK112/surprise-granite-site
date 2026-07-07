@@ -32,7 +32,7 @@ const VENDOR_MAP = {
   'daltile': ['Daltile'],
   'classic-surfaces': ['Classic Surfaces', 'Architectural Surfaces (ASG)'],
   'cactus-stone': ['Cactus Stone & Tile'],
-  'monterrey-tile': ['Monterrey Tile Company'],
+  'monterrey-tile': ['Monterrey Tile'],
   'lx-hausys': ['LX Hausys', 'Monterrey Tile Company'],
 };
 
