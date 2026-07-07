@@ -80,7 +80,7 @@
   // ASPN's public member directory at /aspn/directory/).
   const MENU_ITEMS = [
     { label: 'Materials', href: '/materials/all-countertops', hasMenu: true, menuType: 'materials' },
-    { label: 'Online Store', href: '/marketplace/', hasMenu: true, isMarketplace: true },
+    { label: 'Online Store', href: '/marketplace/', hasMenu: true, isMarketplace: true, menuType: 'marketplace' },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Tools', href: '/tools/' },
     { label: 'ASPN', href: '/aspn/', isAspn: true },
@@ -277,7 +277,10 @@
   // Create navigation links with mega menus
   function createNavLinks() {
     return MENU_ITEMS.map(item => {
-      const category = item.label.toLowerCase();
+      // menuType decouples the PRODUCTS key from the display label
+      // (label 'Online Store' ≠ key 'marketplace' — renaming the label
+      // silently killed the dropdown once already).
+      const category = item.menuType || item.label.toLowerCase();
       const megaMenu = item.hasMenu && PRODUCTS[category] ? createMegaMenu(category, item.label, item.href) : '';
       const arrow = item.hasMenu ? '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>' : '';
       let linkClass = '';
