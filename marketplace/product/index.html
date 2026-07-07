@@ -1343,7 +1343,7 @@
   <link rel="stylesheet" href="/css/mobile-optimizations.css"/>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260703a">
-<script defer src="/js/unified-nav.js?v=20260708a"></script>
+<script defer src="/js/unified-nav.js?v=20260708b"></script>
 
 
   <!-- Dynamic Product Loading -->
@@ -2840,7 +2840,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
-<script src="/js/cart.js?v=20260629a"></script>
+<script src="/js/cart.js?v=20260707a"></script>
 <script src="/js/shop-cart-integration.js?v=20260628e"></script>
 <script src="/js/site-search.js?v=5"></script>
 <script src="/js/related-products.js"></script>
@@ -3578,10 +3578,17 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           specsHtml2 += '<div class="spec-item"><span class="spec-label">Brand</span><span class="spec-value">' + (product.brandDisplay || product.vendor || 'N/A') + '</span></div>';
           specsHtml2 += '<div class="spec-item"><span class="spec-label">Type</span><span class="spec-value">' + (product.productType || category) + '</span></div>';
           if (product.specs && typeof product.specs === 'object') {
+            // Customer-facing specs ONLY. Never render internal bookkeeping
+            // (costs, margins, scrape dates, sync ids) — owner rule 2026-07-07.
+            var SPEC_DENY = /^_|(_at|_id)$|cost|margin|markup|wholesale|dealer|profit|source|scraped|synced|crawled|imported|published|shopify|odoo|handle|alfi_stock|ruvati|yard_|sample_pricing|no_pricing|brand_?tier|msrp|sqft_price|each_price|discontinued|slab_count/i;
+            var SPEC_LABELS = { material: 'Material', thickness: 'Thickness', finish: 'Finish', slab_size: 'Slab Size', slab_sqft: 'Sqft / Slab', piece_size: 'Piece Size', piece_sqft: 'Sqft', sf_per_box: 'Sqft / Box', wear_layer: 'Wear Layer', collection: 'Collection', product_line: 'Product Line', available_sizes: 'Available Sizes', printed_quartz: 'Printed Quartz', closeout: 'Closeout' };
             Object.keys(product.specs).forEach(function(key) {
-              if (product.specs[key]) {
-                specsHtml2 += '<div class="spec-item"><span class="spec-label">' + key + '</span><span class="spec-value">' + product.specs[key] + '</span></div>';
-              }
+              var val = product.specs[key];
+              if (!val || SPEC_DENY.test(key)) return;
+              if (typeof val === 'object') return;
+              if (val === true) val = 'Yes';
+              var label = SPEC_LABELS[key] || key.replace(/_/g, ' ').replace(/\b[a-z]/g, function(c) { return c.toUpperCase(); });
+              specsHtml2 += '<div class="spec-item"><span class="spec-label">' + label + '</span><span class="spec-value">' + val + '</span></div>';
             });
           }
           if (product.originCountry && product.originFlag) {

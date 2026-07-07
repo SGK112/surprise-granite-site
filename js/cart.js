@@ -109,26 +109,21 @@
       i.id === item.id && i.variant === item.variant
     );
 
-    // Calculate price using pricing service if available
+    // Tier pricing derives from the RETAIL price (retail = guest tier).
+    // Items no longer carry wholesale cost — that's internal data and it
+    // never belongs in the browser (owner rule 2026-07-07).
     let finalPrice = item.price;
-    let wholesaleCost = item.wholesaleCost || item.cost || null;
-
-    // Try to get tier-based pricing
-    if (window.SG_PRICING && wholesaleCost) {
-      const pricing = window.SG_PRICING.calculatePrice({ wholesaleCost });
-      finalPrice = pricing.yourPrice;
-    } else if (window.SG_PRICING && item.price && !wholesaleCost) {
-      // Estimate wholesale from retail (guest) price: retail = wholesale * 1.55
-      wholesaleCost = item.price / 1.55;
-      const pricing = window.SG_PRICING.calculatePrice({ wholesaleCost });
+    let basePrice = item.price || (item.wholesaleCost ? item.wholesaleCost * 1.55 : null);
+    if (window.SG_PRICING && basePrice) {
+      const pricing = window.SG_PRICING.calculatePrice({ wholesaleCost: basePrice / 1.55 });
       finalPrice = pricing.yourPrice;
     }
+    const wholesaleCost = null; // never persisted
 
     if (existingIndex > -1) {
       cart[existingIndex].quantity += item.quantity || 1;
       // Update price if it changed
-      if (wholesaleCost) {
-        cart[existingIndex].wholesaleCost = wholesaleCost;
+      if (finalPrice) {
         cart[existingIndex].price = finalPrice;
         cart[existingIndex].pricingTier = currentPricingTier;
       }
@@ -137,7 +132,6 @@
         id: item.id,
         name: item.name,
         price: finalPrice,
-        wholesaleCost: wholesaleCost,
         originalPrice: item.price, // Store original price for reference
         pricingTier: currentPricingTier,
         image: item.image,

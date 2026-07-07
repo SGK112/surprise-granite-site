@@ -120,6 +120,20 @@ router.get('/:slug', async (req, res) => {
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: 'Product not found' });
+
+    // This is a PUBLIC endpoint: never ship costs, margins, sync bookkeeping,
+    // or scraper provenance (owner rule 2026-07-07 — "no inside information").
+    delete data.vendor_cost;
+    delete data.default_markup_pct;
+    delete data.last_scraped_at;
+    delete data.first_scraped_at;
+    delete data.last_changed_at;
+    if (data.specs && typeof data.specs === 'object') {
+      const DENY = /^_|(_at|_id)$|cost|margin|markup|wholesale|dealer|profit|source|scraped|synced|crawled|imported|published|shopify|odoo|handle|alfi_stock|ruvati_(sku|qty)|yard_(product|location)|sample_pricing|no_pricing|brand_?tier|msrp/i;
+      for (const k of Object.keys(data.specs)) {
+        if (DENY.test(k)) delete data.specs[k];
+      }
+    }
     return res.json({ success: true, product: data });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });

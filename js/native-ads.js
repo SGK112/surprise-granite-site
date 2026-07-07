@@ -22,6 +22,27 @@
 
   var API = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
 
+  // One promo layer at a time: if a modal (quiz / pro signup) is up when we
+  // would fire, skip this pageview entirely.
+  function modalOpen() {
+    return !!document.querySelector('.qp-overlay, #sgProPopup, .sg-popup-card');
+  }
+  // Stack above any fixed bottom bar (sticky call bar, cookie banner...).
+  function bottomOffset() {
+    var off = 16;
+    document.querySelectorAll('body > *').forEach(function (el) {
+      if (el.id === 'sg-house-ad') return;
+      var cs = getComputedStyle(el);
+      if (cs.position === 'fixed' && el.offsetHeight > 30 && el.offsetHeight < 160) {
+        var r = el.getBoundingClientRect();
+        if (r.bottom > window.innerHeight - 8 && r.width > window.innerWidth * 0.5) {
+          off = Math.max(off, Math.round(window.innerHeight - r.top) + 10);
+        }
+      }
+    });
+    return off;
+  }
+
   // context → which store categories to promote
   var CATS = ['sink', 'faucet', 'accessory', 'fixture'];
   var HEAD = 'From our Online Store';
@@ -58,7 +79,7 @@
     el.setAttribute('aria-label', 'Suggested product from our online store');
     el.innerHTML =
       '<style>' +
-      '#sg-house-ad{position:fixed;left:16px;bottom:16px;z-index:9990;width:290px;max-width:calc(100vw - 32px);' +
+      '#sg-house-ad{position:fixed;left:16px;bottom:' + bottomOffset() + 'px;z-index:9990;width:290px;max-width:calc(100vw - 32px);' +
       'background:#fff;border:1px solid #e3e6ea;border-radius:14px;box-shadow:0 8px 32px -8px rgba(20,28,38,.28);' +
       'font-family:Inter,-apple-system,sans-serif;overflow:hidden;opacity:0;transform:translateY(14px);' +
       'transition:opacity .4s ease,transform .4s ease}' +
@@ -74,7 +95,10 @@
       '#sg-house-ad .sg-ad-name{font-size:13.5px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
       '#sg-house-ad .sg-ad-price{margin-top:4px;font-size:14px;font-weight:800;color:#16a34a}' +
       '#sg-house-ad .sg-ad-cta{font-size:12px;font-weight:700;color:#1f3140;margin-top:2px}' +
-      '@media (max-width:600px){#sg-house-ad{width:calc(100vw - 24px);left:12px;bottom:12px}}' +
+      '@media (max-width:600px){#sg-house-ad{width:calc(100vw - 24px);left:12px}' +
+      '#sg-house-ad img{width:52px;height:52px}#sg-house-ad a{padding:9px 11px;gap:10px}' +
+      '#sg-house-ad .sg-ad-lead{display:none}#sg-house-ad .sg-ad-name{-webkit-line-clamp:1;font-size:13px}' +
+      '#sg-house-ad .sg-ad-price{margin-top:2px;font-size:13px}#sg-house-ad .sg-ad-cta{display:none}}' +
       '@media print{#sg-house-ad{display:none}}' +
       '</style>' +
       '<div class="sg-ad-tag"><span>' + HEAD + '</span>' +
@@ -97,6 +121,7 @@
   }
 
   function start() {
+    if (modalOpen()) return; // popup on screen — sit this page out
     var offset = seed % 40;
     fetch(API + '/api/catalog?category=' + cat + '&limit=24&offset=' + offset)
       .then(function (r) { return r.ok ? r.json() : null; })

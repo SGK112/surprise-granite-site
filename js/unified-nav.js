@@ -621,9 +621,13 @@
     try {
       const nav = document.querySelector('#unifiedNav, .unified-nav');
       if (!nav) return;
-      let bottom = nav.getBoundingClientRect().bottom + (window.scrollY || 0);
+      // Nav + strip are position:fixed → their rects are already viewport
+      // coordinates. Adding scrollY here inflated body padding by the scroll
+      // distance whenever iOS Safari re-fired resize mid-scroll (URL bar
+      // collapse) — the "huge white gap above every detail page" bug.
+      let bottom = nav.getBoundingClientRect().bottom;
       const strip = document.querySelector('.dinner-promo-strip');
-      if (strip) bottom = Math.max(bottom, strip.getBoundingClientRect().bottom + (window.scrollY || 0));
+      if (strip) bottom = Math.max(bottom, strip.getBoundingClientRect().bottom);
       bottom = Math.ceil(bottom);
       if (bottom > 0 && bottom < 400) document.body.style.paddingTop = bottom + 'px';
     } catch (e) { /* non-fatal */ }
@@ -1488,7 +1492,7 @@
   // Site-wide house ads for the Online Store (native-ads.js decides context,
   // frequency, and dismissal). Daily cache-bust so ad logic ships same-day.
   var _ads = document.createElement('script');
-  _ads.src = '/js/native-ads.js?v=' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  _ads.src = '/js/native-ads.js?v=' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + 'b';
   _ads.defer = true;
   document.head.appendChild(_ads);
 })();

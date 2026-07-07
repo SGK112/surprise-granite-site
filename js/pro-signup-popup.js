@@ -11,6 +11,8 @@
 
   function shouldShow() {
     if (window.location.pathname.includes('/account')) return false;
+    // never stack on another popup — defer to a later pageview instead
+    if (document.querySelector('.qp-overlay, #sg-house-ad')) return false;
     const last = localStorage.getItem(STORAGE_KEY);
     return !last || (Date.now() - parseInt(last, 10)) > COOLDOWN;
   }
