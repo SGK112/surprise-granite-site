@@ -1583,7 +1583,7 @@ setInterval(displayOpeningStatus, 60000);
          11MB MP4 doesn't block LCP. Source is attached after window.load by the
          inline script below. Poster (117KB) is preloaded via <link> in <head>
          and acts as the LCP element. -->
-    <video class="sg-hero__video sg-hero__video--active" id="heroVideoMain" muted loop playsinline preload="none" poster="/images/hero-josh-poster.jpg" data-src="/videos/hero-josh-intro-720.mp4?v=20260428"></video>
+    <video class="sg-hero__video sg-hero__video--active" id="heroVideoMain" muted loop playsinline preload="none" poster="/images/hero-josh-poster-hd.jpg" data-src="/videos/hero-josh-intro-720-enhanced.mp4?v=20260707" data-src-hd="/videos/hero-josh-intro-1080-enhanced.mp4?v=20260707"></video>
     <script>
       // Defer hero video load until after the LCP / window load. Poster image
       // stays visible during the gap. Wrapped in try so a failure here never
@@ -1594,7 +1594,10 @@ setInterval(displayOpeningStatus, 60000);
             var v = document.getElementById('heroVideoMain');
             if (!v || v.querySelector('source')) return;
             var s = document.createElement('source');
-            s.src = v.getAttribute('data-src');
+            // 1080 for large screens on decent connections, 720 otherwise
+            var conn = navigator.connection || {};
+            var wantHd = window.innerWidth >= 900 && !conn.saveData && !/(^|-)2g/.test(conn.effectiveType || '');
+            s.src = (wantHd && v.getAttribute('data-src-hd')) || v.getAttribute('data-src');
             s.type = 'video/mp4';
             v.appendChild(s);
             v.load();
