@@ -31,14 +31,22 @@ const VENDORS = {
     brand: 'Monterrey Tile', libVendors: ['Monterrey Tile'],
     url: 'https://www.monterreytile.com/', city: 'Mesa', source: 'monterreytile-scrape', slugSuffix: 'monterrey',
   },
+  'bolder-image-stone': {
+    brand: 'Bolder Image Stone', libVendors: ['Bolder Image Stone'],
+    url: 'https://bolderimagestone.com/', city: 'Phoenix', source: 'bolderimagestone-scrape', slugSuffix: 'bolder',
+  },
+  'arcsurfaces': {
+    brand: 'Architectural Surfaces', libVendors: ['Architectural Surfaces (ASG)'],
+    url: 'https://arcsurfaces.com/', city: 'Tempe', source: 'arcsurfaces-scrape', slugSuffix: 'asg',
+  },
 };
 
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const baseName = (s) => String(s || '')
   .replace(/\([^)]*\)/g, ' ')
   .replace(/\b\d+(?:\.\d+)?\s*cm\b/gi, ' ')
-  .replace(/\b(polished|honed|leathered|leather|brushed|matte|satin|suede|caressed|slabs?)\b/gi, ' ')
-  .replace(/\b(quartzite|quartz|granite|marble|porcelain|dolomite|onyx|limestone|travertine|slate|viatera|dekton)\b/gi, ' ')
+  .replace(/\b(polished|honed|leathered|leather|brushed|matte|satin|suede|caressed|slabs?|1st choice|finish|3d)\b/gi, ' ')
+  .replace(/\b(quartzite|quartz|granite|marble|porcelain|dolomite|onyx|limestone|travertine|slate|soapstone|viatera|dekton)\b/gi, ' ')
   .trim();
 
 // "quartz (LX Viatera)" -> {material: 'Quartz', line: 'LX Viatera'}
@@ -94,7 +102,13 @@ const materialOf = (m) => {
     if (slugs.has(slug)) slug = slug + '-2';
     if (slugs.has(slug)) continue;
     slugs.add(slug); skus.add(sku); vendorBases.add(b);
-    const sqft = priceByBase.get(b) || null;
+    let sqft = priceByBase.get(b) || null;
+    if (!sqft && b.length >= 4) {
+      // unique-prefix fallback (book rows carry grade/finish suffixes)
+      const hits = [...priceByBase.keys()].filter((k) => k.length >= 4 && (k.startsWith(b) || b.startsWith(k)));
+      if (hits.length && hits.every((h) => priceByBase.get(h) === priceByBase.get(hits[0]))) sqft = priceByBase.get(hits[0]);
+      else if (hits.length) sqft = Math.min(...hits.map((h) => priceByBase.get(h)));
+    }
     if (sqft) report.priced++;
     report.byMaterial[material || '?'] = (report.byMaterial[material || '?'] || 0) + 1;
     const thick = Array.isArray(c.thickness) ? c.thickness.join(', ') : (c.thickness || null);
