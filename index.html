@@ -1634,16 +1634,26 @@ setInterval(displayOpeningStatus, 60000);
       <div class="sg-hero__scene sg-hero__scene--intro" data-scene="intro">
         <h2 class="sg-hero__headline-simple">Meet Joshua</h2>
         <p class="sg-hero__sub-simple">Owner of Surprise Granite — straight talk on stone, cabinets &amp; remodels.</p>
+        <div class="sg-hero__cta-row" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
         <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
           Get Free Estimate
         </button>
+        <a href="/marketplace/" class="sg-hero__cta-simple sg-hero__cta-shop" style="background:transparent;border:2px solid rgba(255,255,255,.55);color:#fff;text-decoration:none;display:inline-flex;align-items:center;">
+          Shop the Online Store
+        </a>
+        </div>
       </div>
       <div class="sg-hero__scene sg-hero__scene--main" data-scene="main">
         <h2 class="sg-hero__headline-simple">Making Interiors Great Again</h2>
         <p class="sg-hero__sub-simple">Counters · Cabinets · Flooring · Tile · Owner-operated · AZ ROC #341113</p>
+        <div class="sg-hero__cta-row" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
         <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
           Get Free Estimate
         </button>
+        <a href="/marketplace/" class="sg-hero__cta-simple sg-hero__cta-shop" style="background:transparent;border:2px solid rgba(255,255,255,.55);color:#fff;text-decoration:none;display:inline-flex;align-items:center;">
+          Shop the Online Store
+        </a>
+        </div>
       </div>
     </div>
 
@@ -3650,6 +3660,80 @@ form.addEventListener('submit', async (e) => {
 <style>.dinner-promo-strip:hover{background:linear-gradient(135deg,#d97706 0%,#b45309 100%) !important;}</style>
 
 <!-- Services Grid - Show What We Do -->
+
+<!-- Online Store — live dropship storefront strip (owner goal: store > contracting) -->
+<section class="hp-store" aria-labelledby="hp-store-h">
+<style>
+.hp-store{background:#16222e;padding:52px 20px;color:#fff}
+.hp-store-inner{max-width:1240px;margin:0 auto}
+.hp-store-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.hp-store-head h2{font-size:clamp(22px,3.2vw,30px);font-weight:800;letter-spacing:-.01em;margin:0}
+.hp-store-head .hp-eyebrow{display:block;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#f9cb00;margin-bottom:6px}
+.hp-store-head a{color:#f9cb00;font-weight:700;font-size:14.5px;text-decoration:none;white-space:nowrap}
+.hp-store-head a:hover{text-decoration:underline}
+.hp-store-sub{color:#b9c4cf;font-size:15px;max-width:62ch;margin:0 0 20px}
+.hp-store-rail{display:grid;grid-auto-flow:column;grid-auto-columns:200px;gap:12px;overflow-x:auto;padding:4px 2px 14px;scroll-snap-type:x mandatory}
+.hp-store-rail::-webkit-scrollbar{height:8px}
+.hp-store-rail::-webkit-scrollbar-thumb{background:#33475a;border-radius:4px}
+.hp-p{background:#fff;border-radius:12px;overflow:hidden;scroll-snap-align:start;color:#17202a;text-decoration:none;display:block;transition:transform .15s}
+.hp-p:hover{transform:translateY(-2px)}
+.hp-p .im{aspect-ratio:1/1;background:#eef0f3;overflow:hidden}
+.hp-p img{width:100%;height:100%;object-fit:cover;display:block}
+.hp-p .bd{padding:10px 12px 12px}
+.hp-p .bd b{display:block;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hp-p .bd .pr{margin-top:5px;font-size:14px;font-weight:800;color:#16a34a;font-variant-numeric:tabular-nums}
+.hp-cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.hp-cat{border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:700;color:#e6ecf1;text-decoration:none}
+.hp-cat:hover{border-color:#f9cb00;color:#f9cb00}
+.hp-cat span{color:#8fa1b3;font-weight:600;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.hp-p{transition:none}}
+</style>
+  <div class="hp-store-inner">
+    <div class="hp-store-head">
+      <h2 id="hp-store-h"><span class="hp-eyebrow">Ships to your door</span>Shop the Online Store</h2>
+      <a href="/marketplace/">Shop everything &rarr;</a>
+    </div>
+    <p class="hp-store-sub">Sinks, faucets, kitchen &amp; bath accessories, and countertop samples — real inventory, honest pricing, delivered anywhere in the U.S.</p>
+    <div class="hp-store-rail" id="hp-store-rail"></div>
+    <div class="hp-cats" id="hp-store-cats">
+      <a class="hp-cat" href="/marketplace/sinks/">Sinks <span data-hp-count="sink"></span></a>
+      <a class="hp-cat" href="/marketplace/faucets/">Faucets <span data-hp-count="faucet"></span></a>
+      <a class="hp-cat" href="/marketplace/bathroom/">Bathroom <span data-hp-count="fixture"></span></a>
+      <a class="hp-cat" href="/marketplace/kitchen-accessories/">Kitchen <span data-hp-count="accessory"></span></a>
+      <a class="hp-cat" href="/marketplace/samples/">Countertop Samples</a>
+      <a class="hp-cat" href="/marketplace/remnants/">Remnants</a>
+    </div>
+  </div>
+<script>
+(function(){
+  var API=(window.SG_CONFIG&&window.SG_CONFIG.API_BASE)||'https://surprise-granite-email-api.onrender.com';
+  var seed=new Date().getDate()+new Date().getHours();
+  var rail=document.getElementById('hp-store-rail');
+  var cats=['sink','faucet','accessory','fixture'];
+  Promise.all(cats.map(function(c,i){
+    var off=((seed*7+i*11)%30);
+    return fetch(API+'/api/catalog?category='+c+'&limit=3&offset='+off)
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(j){
+        var n=j&&j.total; var el=document.querySelector('[data-hp-count="'+c+'"]');
+        if(el&&n)el.textContent='('+n.toLocaleString()+')';
+        return ((j&&j.products)||[]).filter(function(p){return p.in_stock!==false&&Number(p.retail_price)>0&&(p.primary_image_url||(p.image_urls&&p.image_urls[0]))});
+      }).catch(function(){return[]});
+  })).then(function(groups){
+    var out=[];for(var i=0;i<3;i++)groups.forEach(function(g){if(g[i])out.push(g[i]);});
+    if(!out.length){document.querySelector('.hp-store').style.display='none';return;}
+    var catSlug={sink:'sinks',faucet:'faucets',accessory:'kitchen-accessories',fixture:'bathroom'};
+    rail.innerHTML=out.slice(0,10).map(function(p){
+      var img=p.primary_image_url||(p.image_urls&&p.image_urls[0]);
+      return '<a class="hp-p" href="/marketplace/product/?handle='+encodeURIComponent(p.slug)+'&category='+(catSlug[p.category]||'sinks')+'&utm_source=home-store-rail">'+
+        '<div class="im"><img loading="lazy" src="'+img+'" alt="'+(p.name||'')+'"/></div>'+
+        '<div class="bd"><b>'+(p.name||'')+'</b><div class="pr">$'+Number(p.retail_price).toLocaleString('en-US',{minimumFractionDigits:2})+'</div></div></a>';
+    }).join('');
+  });
+})();
+</script>
+</section>
+
 <section class="services-showcase">
   <div class="services-inner">
     <div class="services-header">
@@ -3800,13 +3884,13 @@ form.addEventListener('submit', async (e) => {
     <div class="marketplace-highlight-header">
       <span class="marketplace-eyebrow">Shop Online 24/7</span>
       <h2>Arizona's Premier Stone Marketplace</h2>
-      <p>Browse thousands of slabs, sinks, tile, and flooring options online. Get instant pricing and request installation quotes.</p>
+      <p>2,400+ slab colors with live vendor pricing, 500+ in-stock remnants, plus sinks, faucets, and accessories that ship to your door. Everything priced honestly, updated hourly.</p>
     </div>
     <div class="marketplace-cards">
-      <a href="/marketplace/slabs/" class="marketplace-card marketplace-card-featured">
+      <a href="/materials/all-countertops" class="marketplace-card marketplace-card-featured">
         <div class="marketplace-card-img">
           <img src="/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif" alt="Stone Slabs" loading="lazy">
-          <span class="marketplace-badge">From $35/sqft</span>
+          <span class="marketplace-badge">2,400+ colors · live pricing</span>
         </div>
         <div class="marketplace-card-content">
           <h3>Stone Slabs</h3>
@@ -4754,7 +4838,7 @@ form.addEventListener('submit', async (e) => {
     <div class="shop-gallery-container">
       <!-- Hero Image -->
       <div class="shop-gallery-hero">
-        <a href="/marketplace/slabs/" id="shopHeroLink" class="shop-gallery-hero-link">
+        <a href="/materials/all-countertops" id="shopHeroLink" class="shop-gallery-hero-link">
           <img loading="lazy" decoding="async" src="/images/hero-kitchen-poster.jpg" alt="Countertops" id="shopHeroImg" class="shop-gallery-hero-img">
           <div class="shop-gallery-hero-overlay">
             <span class="shop-gallery-hero-badge" id="shopHeroBadge">Most Popular</span>
@@ -4772,7 +4856,7 @@ form.addEventListener('submit', async (e) => {
       <div class="shop-gallery-thumbs">
         <button class="shop-gallery-thumb active" data-index="0"
           data-img="/images/hero-kitchen-poster.jpg"
-          data-href="/marketplace/slabs/"
+          data-href="/materials/all-countertops"
           data-title="Countertops"
           data-desc="Granite, Quartz, Marble & Quartzite"
           data-badge="Most Popular">
@@ -4807,6 +4891,15 @@ form.addEventListener('submit', async (e) => {
           <span>Tile</span>
         </button>
         <button class="shop-gallery-thumb" data-index="4"
+          data-img="/migrated/6456ce4476abb2d4f9fbad10/65e35674ca52a50bf9476731_modern-kitchen-sink_large.avif"
+          data-href="/marketplace/"
+          data-title="Online Store"
+          data-desc="Sinks, Faucets & Accessories — Shipped"
+          data-badge="Shop 24/7">
+          <img loading="lazy" decoding="async" src="/migrated/6456ce4476abb2d4f9fbad10/65e35674ca52a50bf9476731_modern-kitchen-sink_large.avif" alt="Online Store">
+          <span>Online Store</span>
+        </button>
+        <button class="shop-gallery-thumb" data-index="5"
           data-img="/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb2aab6fbb41a_msi-surfaces-surprise-granite-alpine-quartz-thumbnail-1.avif"
           data-href="/shop-swipe/"
           data-title="Swipe & Discover"
@@ -6726,7 +6819,7 @@ form.addEventListener('submit', async (e) => {
 
 <!-- LEGACY SECTIONS BELOW - TO BE REMOVED -->
 <div style="display:none;">
-<section class="section_trust-slider"><div class="container-large"><div data-delay="4000" data-animation="slide" class="trust-slider_slider w-slider" data-autoplay="true" data-easing="ease" data-hide-arrows="false" data-disable-swipe="false" data-autoplay-limit="0" data-nav-spacing="3" data-duration="500" data-infinite="true"><div class="w-slider-mask"><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.375 -1.375 48 48" height="48" width="48"><g><g><path d="m29.6953125 22.1725 -4.3741666666666665 -4.3741666666666665a2.4321875 2.4321875 0 0 0 -3.7708333333333335 0c-2.0362500000000003 2.0362500000000003 2.6207291666666666 9.823020833333334 0.5844791666666667 11.840416666666668a2.5264583333333337 2.5264583333333337 0 0 1 -3.7708333333333335 0L14.140625 25.2834375" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m26.584375 19.0615625 2.3379166666666666 -2.3379166666666666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m14.913645833333334 30.73229166666667 2.3379166666666666 -2.3379166666666666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></g><path d="M31.675000000000004 10.275520833333333a2.715 2.715 0 1 0 5.43 0 2.715 2.715 0 1 0 -5.43 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M40.91354166666667 1.4140625h-17.666354166666665a2.960104166666667 2.960104166666667 0 0 0 -2.130520833333333 0.9238541666666666l-18.854166666666668 20.117395833333333a2.8846875 2.8846875 0 0 0 0.20739583333333333 4.1667708333333335l18.854166666666668 16.497395833333336a2.9223958333333337 2.9223958333333337 0 0 0 4.053645833333333 -0.20739583333333333l17.666354166666665 -18.854166666666668a2.8658333333333337 2.8658333333333337 0 0 0 0.791875 -1.9796875000000003V4.3176041666666665A2.903541666666667 2.903541666666667 0 0 0 40.91354166666667 1.4140625Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></g></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Price Match Promise</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">We&#x27;ll match any competitor&#x27;s quote</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg viewBox="-1.5 -1.5 48 48" xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M15.46875 32.34375h-11.25a2.8125 2.8125 0 0 1 -2.8125 -2.8125v-22.5a2.8125 2.8125 0 0 1 2.8125 -2.8125h25.3125a2.8125 2.8125 0 0 1 2.8125 2.8125v8.4375" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m1.40625 12.65625 30.9375 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m9.84375 7.03125 0 -5.625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m23.90625 7.03125 0 -5.625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="M21.09375 32.34375a11.25 11.25 0 1 0 22.5 0 11.25 11.25 0 1 0 -22.5 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m37.316250000000004 32.34375 -4.9725 0 0 -4.970625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Fast Installation</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">Most projects completed in 1-2 weeks</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg viewBox="-1.375 -1.375 48 48" xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M9.063197916666669 24.589604166666668 1.4140625 33.9375l7.0703125 1.4140625 2.828125 8.484375 7.436083333333333 -11.798937500000001" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M36.18680208333334 24.589604166666668 43.8359375 33.9375l-7.0703125 1.4140625 -2.828125 8.484375 -7.436083333333333 -11.798937500000001" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M7.0703125 16.96875a15.5546875 15.5546875 0 1 0 31.109375 0 15.5546875 15.5546875 0 1 0 -31.109375 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m23.62615625 8.092208333333334 2.353 4.634354166666667h4.010281249999999a1.0973125 1.0973125 0 0 1 0.7899895833333334 1.8854166666666667l-3.68221875 3.616229166666667 2.0400208333333336 4.685260416666667a1.1105104166666666 1.1105104166666666 0 0 1 -1.5818645833333334 1.3895520833333335L22.625 21.52957291666667 17.694635416666667 24.303020833333335a1.1105104166666666 1.1105104166666666 0 0 1 -1.5818645833333334 -1.3895520833333335l2.0400208333333336 -4.685260416666667 -3.68221875 -3.6237708333333334a1.0973125 1.0973125 0 0 1 0.7899895833333334 -1.8854166666666667h4.010281249999999l2.354885416666667 -4.626812500000001a1.13125 1.13125 0 0 1 2.0004270833333333 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Premium Materials</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">Top brands like premium quartz &amp; MSI</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.5 -1.5 48 48" height="48" width="48"><defs></defs><title>conversation-chat-text</title>
+<section class="section_trust-slider"><div class="container-large"><div data-delay="4000" data-animation="slide" class="trust-slider_slider w-slider" data-autoplay="true" data-easing="ease" data-hide-arrows="false" data-disable-swipe="false" data-autoplay-limit="0" data-nav-spacing="3" data-duration="500" data-infinite="true"><div class="w-slider-mask"><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.375 -1.375 48 48" height="48" width="48"><g><g><path d="m29.6953125 22.1725 -4.3741666666666665 -4.3741666666666665a2.4321875 2.4321875 0 0 0 -3.7708333333333335 0c-2.0362500000000003 2.0362500000000003 2.6207291666666666 9.823020833333334 0.5844791666666667 11.840416666666668a2.5264583333333337 2.5264583333333337 0 0 1 -3.7708333333333335 0L14.140625 25.2834375" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m26.584375 19.0615625 2.3379166666666666 -2.3379166666666666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m14.913645833333334 30.73229166666667 2.3379166666666666 -2.3379166666666666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></g><path d="M31.675000000000004 10.275520833333333a2.715 2.715 0 1 0 5.43 0 2.715 2.715 0 1 0 -5.43 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M40.91354166666667 1.4140625h-17.666354166666665a2.960104166666667 2.960104166666667 0 0 0 -2.130520833333333 0.9238541666666666l-18.854166666666668 20.117395833333333a2.8846875 2.8846875 0 0 0 0.20739583333333333 4.1667708333333335l18.854166666666668 16.497395833333336a2.9223958333333337 2.9223958333333337 0 0 0 4.053645833333333 -0.20739583333333333l17.666354166666665 -18.854166666666668a2.8658333333333337 2.8658333333333337 0 0 0 0.791875 -1.9796875000000003V4.3176041666666665A2.903541666666667 2.903541666666667 0 0 0 40.91354166666667 1.4140625Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></g></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Price Match Promise</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">We&#x27;ll match any competitor&#x27;s quote</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg viewBox="-1.5 -1.5 48 48" xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M15.46875 32.34375h-11.25a2.8125 2.8125 0 0 1 -2.8125 -2.8125v-22.5a2.8125 2.8125 0 0 1 2.8125 -2.8125h25.3125a2.8125 2.8125 0 0 1 2.8125 2.8125v8.4375" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m1.40625 12.65625 30.9375 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m9.84375 7.03125 0 -5.625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m23.90625 7.03125 0 -5.625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="M21.09375 32.34375a11.25 11.25 0 1 0 22.5 0 11.25 11.25 0 1 0 -22.5 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m37.316250000000004 32.34375 -4.9725 0 0 -4.970625" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Fast Installation</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">Most projects completed in 1-2 weeks</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg viewBox="-1.375 -1.375 48 48" xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M9.063197916666669 24.589604166666668 1.4140625 33.9375l7.0703125 1.4140625 2.828125 8.484375 7.436083333333333 -11.798937500000001" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M36.18680208333334 24.589604166666668 43.8359375 33.9375l-7.0703125 1.4140625 -2.828125 8.484375 -7.436083333333333 -11.798937500000001" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="M7.0703125 16.96875a15.5546875 15.5546875 0 1 0 31.109375 0 15.5546875 15.5546875 0 1 0 -31.109375 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path><path d="m23.62615625 8.092208333333334 2.353 4.634354166666667h4.010281249999999a1.0973125 1.0973125 0 0 1 0.7899895833333334 1.8854166666666667l-3.68221875 3.616229166666667 2.0400208333333336 4.685260416666667a1.1105104166666666 1.1105104166666666 0 0 1 -1.5818645833333334 1.3895520833333335L22.625 21.52957291666667 17.694635416666667 24.303020833333335a1.1105104166666666 1.1105104166666666 0 0 1 -1.5818645833333334 -1.3895520833333335l2.0400208333333336 -4.685260416666667 -3.68221875 -3.6237708333333334a1.0973125 1.0973125 0 0 1 0.7899895833333334 -1.8854166666666667h4.010281249999999l2.354885416666667 -4.626812500000001a1.13125 1.13125 0 0 1 2.0004270833333333 0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.75"></path></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Premium Materials</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">Top brands like MSI &amp; Silestone</p></div></div></div><div class="trust-slider_slide-pane w-slide"><div class="trust-slider_item"><div class="trust-slider_item-icon-wrapper"><div class="icon-embed-medium text-color-yellow w-embed"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.5 -1.5 48 48" height="48" width="48"><defs></defs><title>conversation-chat-text</title>
   <link rel="canonical" href="https://www.surprisegranite.com/"/><path d="m15.46875 33.75 -5.625 4.21875v-8.4375h-5.625a2.8125 2.8125 0 0 1 -2.8125 -2.8125v-22.5a2.8125 2.8125 0 0 1 2.8125 -2.8125h30.9375a2.8125 2.8125 0 0 1 2.8125 2.8125v8.4375" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m9.84375 9.84375 19.6875 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m9.84375 18.28125 5.625 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m43.59375 35.15625 -5.625 0 0 8.4375 -8.4375 -8.4375 -8.4375 0 0 -16.875 22.5 0 0 16.875z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m37.96875 23.90625 -11.25 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="m37.96875 29.53125 -11.25 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg></div></div><div class="trust-slider_item-text-wrapper"><h3 class="text-size-regular">Expert Support</h3><div class="spacer-xxsmall"></div><p class="text-size-small text-style-muted">Design consultation included with every project</p></div></div></div></div><div class="trust-slider_arrow w-slider-arrow-left"><div class="w-icon-slider-left"></div></div><div class="trust-slider_arrow w-slider-arrow-right"><div class="w-icon-slider-right"></div></div><div class="hidden w-slider-nav"></div></div></div></section><section class="section_layout227"><div class="padding-global padding-section-small is-bottom-0"><div class="w-embed w-script"><style>
   * { box-sizing: border-box; }
   
