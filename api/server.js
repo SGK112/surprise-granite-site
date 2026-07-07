@@ -339,6 +339,15 @@ try {
   console.warn('stockSync not started:', e.message);
 }
 
+// Hourly mirror of The Yard's live inventory (open API, theYardSync.js) —
+// remnants churn daily; without this the store advertises pieces that sold.
+try {
+  const { startTheYardSync } = require('./services/theYardSync');
+  startTheYardSync(supabase, console);
+} catch (e) {
+  console.warn('theYardSync not started:', e.message);
+}
+
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 app.set('stripe', stripe);
