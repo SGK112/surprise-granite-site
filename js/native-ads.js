@@ -65,7 +65,8 @@
       '#sg-house-ad.sg-ad-in{opacity:1;transform:none}' +
       '#sg-house-ad .sg-ad-tag{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;' +
       'font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a94a0;background:#f7f8fa;border-bottom:1px solid #eef0f3}' +
-      '#sg-house-ad .sg-ad-x{border:0;background:none;cursor:pointer;font-size:16px;line-height:1;color:#9aa4af;padding:2px 4px}' +
+      '#sg-house-ad .sg-ad-x{border:0;background:none;cursor:pointer;font-size:18px;line-height:1;color:#9aa4af;' +
+      'min-width:40px;min-height:40px;margin:-12px -12px -12px 0;display:flex;align-items:center;justify-content:center}' +
       '#sg-house-ad .sg-ad-x:hover{color:#333}' +
       '#sg-house-ad a{display:flex;gap:12px;padding:12px;text-decoration:none;color:#17202a;align-items:center}' +
       '#sg-house-ad img{width:74px;height:74px;object-fit:cover;border-radius:10px;background:#f0f2f4;flex:none}' +
