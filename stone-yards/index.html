@@ -1112,7 +1112,10 @@
       { slug: 'classic-surfaces', name: 'Classic Surfaces', address: '4645 W McDowell Rd, Phoenix, AZ', phone: '(219) 213-4239', lat: 33.4650, lng: -112.1378, website: 'https://www.classic-surfaces.com/', tag: 'Warehouse Location' },
       { slug: 'architectural-surfaces', name: 'Architectural Surfaces', address: '9175 E Pima Center Pkwy, Scottsdale, AZ', phone: '(480) 210-3570', lat: 33.6114, lng: -111.8867, website: 'https://arcsurfaces.com/', tag: 'Appointment Required' },
       { slug: 'esi', name: 'ESI - Edgebanding Services', address: '150 S. Kyrene Rd #9, Chandler, AZ', phone: '(480) 829-8900', lat: 33.3062, lng: -111.9418, website: 'https://edgebanding-services.com/locations/chandler-az/', tag: 'Hanstone Quartz Distributor' },
-      { slug: 'gila', name: 'Gila Cabinet & Stone Center', address: '4615 W McDowell Rd #103, Phoenix, AZ', phone: '(602) 888-6666', lat: 33.4636535, lng: -112.1587029, website: 'https://www.gilacs.com', tag: 'Granite - Quartz - Marble - Cabinets' }
+      { slug: 'gila', name: 'Gila Cabinet & Stone Center', address: '4615 W McDowell Rd #103, Phoenix, AZ', phone: '(602) 888-6666', lat: 33.4636535, lng: -112.1587029, website: 'https://www.gilacs.com', tag: 'Granite - Quartz - Marble - Cabinets' },
+      { slug: 'monterrey-tile', name: 'Monterrey Tile', address: '615 S Dobson Rd, Mesa, AZ', phone: '(480) 968-4405', lat: 33.3944, lng: -111.8768, website: 'https://www.monterreytile.com/', tag: 'Granite - Quartzite - Quartz - Porcelain' },
+      { slug: 'sun-stone', name: 'Sun Stone', address: '3232 W Virginia Ave, Phoenix, AZ', phone: '(602) 353-1618', lat: 33.4669, lng: -112.1284, website: 'https://www.sunstonesurfaces.com/', tag: 'Quartz - Printed Quartz Slabs' },
+      { slug: 'the-yard-az', name: 'The Yard: Stone Slabs & Remnants', address: '21846 N 21st Ave, Phoenix, AZ', phone: '(602) 363-9273', lat: 33.6846, lng: -112.1054, website: 'https://theyardaz.com/', tag: 'Open to the Public - Live Inventory' }
     ];
 
     async function fetchDistributorsFromSupabase() {
@@ -1128,7 +1131,7 @@
 
         const { data, error } = await sb
           .from('distributor_profiles')
-          .select('company_name, company_type, material_types, website, distributor_locations(address, city, state, zip_code, phone, latitude, longitude, location_name)')
+          .select('company_name, company_type, material_types, website, distributor_locations(address_line1, city, state, zip_code, phone, latitude, longitude, location_name)')
           .eq('is_active', true)
           .eq('verification_status', 'verified')
           .eq('is_stone_yard_partner', true);
@@ -1155,7 +1158,7 @@
           }
           locations.forEach(loc => {
             if (!loc.latitude || !loc.longitude) return;
-            const addressParts = [loc.address, loc.city, loc.state, loc.zip_code].filter(Boolean);
+            const addressParts = [loc.address_line1, loc.city, loc.state, loc.zip_code].filter(Boolean);
             const tag = Array.isArray(d.material_types) ? d.material_types.join(' - ') : (d.company_type || 'Stone Yard');
             const displayName = loc.location_name || d.company_name;
             partners.push({
@@ -1413,7 +1416,7 @@
     <!-- Browse Online CTA -->
     <div class="browse-online-bar">
       <span>Can't visit in person?</span>
-      <a href="/marketplace/slabs/" class="browse-online-btn primary">
+      <a href="/materials/all-countertops" class="browse-online-btn primary">
         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
         Browse Slabs Online
       </a>
