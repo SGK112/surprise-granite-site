@@ -241,8 +241,8 @@
       { name: 'Sinks', desc: 'Kitchen & bathroom sinks', href: '/marketplace/sinks/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/Undermountsink18G50-50-3118.jpg' },
       { name: 'Faucets', desc: 'Kitchen & bath faucets', href: '/marketplace/faucets/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/KKF2015BG-1-1.jpg' },
       { name: 'Bathroom', desc: 'Vanities, hardware, accessories', href: '/marketplace/bathroom/', img: '/migrated/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
-      { name: 'Kitchen Accessories', desc: 'Soap dispensers, drains, disposals', href: '/marketplace/kitchen-accessories/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb2aab6fbb41a_msi-surfaces-surprise-granite-alpine-quartz-thumbnail-1.avif' },
-      { name: 'Countertop Samples', desc: 'Engineered stone, shipped to you', href: '/marketplace/samples/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' }
+      { name: 'Kitchen Accessories', desc: 'Soap dispensers, drains, disposals', href: '/marketplace/kitchen-accessories/', img: '/images/nav/kitchen-accessories.jpg' },
+      { name: 'Countertop Samples', desc: 'Engineered stone, shipped to you', href: '/marketplace/samples/', img: '/images/nav/samples.jpg' }
     ]
   };
 
