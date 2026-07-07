@@ -173,6 +173,9 @@ body.unified-nav-active {
   left: 0;
   right: 0;
   z-index: 10001; /* above .unified-nav (10000) */
+  /* homepage uses viewport-fit=cover: without this the strip renders under
+     the iPhone notch/status bar and looks like a broken sliver */
+  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
 }
 body.unified-nav-active.has-promo-strip {
   padding-top: calc(var(--nav-height-desktop) + var(--promo-strip-height, 44px));

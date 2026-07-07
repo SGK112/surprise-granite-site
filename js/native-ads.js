@@ -95,7 +95,7 @@
       '#sg-house-ad .sg-ad-name{font-size:13.5px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
       '#sg-house-ad .sg-ad-price{margin-top:4px;font-size:14px;font-weight:800;color:#16a34a}' +
       '#sg-house-ad .sg-ad-cta{font-size:12px;font-weight:700;color:#1f3140;margin-top:2px}' +
-      '@media (max-width:600px){#sg-house-ad{width:calc(100vw - 24px);left:12px}' +
+      '@media (max-width:600px){#sg-house-ad{width:calc(100vw - 92px);left:12px}' +
       '#sg-house-ad img{width:52px;height:52px}#sg-house-ad a{padding:9px 11px;gap:10px}' +
       '#sg-house-ad .sg-ad-lead{display:none}#sg-house-ad .sg-ad-name{-webkit-line-clamp:1;font-size:13px}' +
       '#sg-house-ad .sg-ad-price{margin-top:2px;font-size:13px}#sg-house-ad .sg-ad-cta{display:none}}' +
