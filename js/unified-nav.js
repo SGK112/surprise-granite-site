@@ -80,7 +80,7 @@
   // ASPN's public member directory at /aspn/directory/).
   const MENU_ITEMS = [
     { label: 'Materials', href: '/materials/all-countertops', hasMenu: true, menuType: 'materials' },
-    { label: 'Marketplace', href: '/marketplace/', hasMenu: true, isMarketplace: true },
+    { label: 'Online Store', href: '/marketplace/', hasMenu: true, isMarketplace: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Tools', href: '/tools/' },
     { label: 'ASPN', href: '/aspn/', isAspn: true },
@@ -107,21 +107,23 @@
         { label: 'Porcelain', href: '/materials/countertops/porcelain-countertops/' },
         { label: 'Dekton', href: '/materials/countertops/dekton-countertops/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
-        { label: 'LVP Flooring', href: '/materials/flooring' }
+        { label: 'LVP Flooring', href: '/materials/flooring' },
+        { label: 'Remnants', href: '/marketplace/remnants/' }
       ]
     },
     {
-      label: 'Marketplace',
+      // Online Store = dropship commerce ONLY (owner split, 2026-07-07).
+      // Fabrication materials (slabs/tile/flooring/remnants) live under Materials.
+      label: 'Online Store',
       icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>',
       isHighlighted: true,
       items: [
-        // Slabs / Tile / Flooring moved to /materials/ — those marketplace
-        // URLs redirect there now.
+        { label: 'Shop All', href: '/marketplace/' },
         { label: 'Sinks', href: '/marketplace/sinks/' },
         { label: 'Faucets', href: '/marketplace/faucets/' },
         { label: 'Bathroom', href: '/marketplace/bathroom/' },
         { label: 'Kitchen Accessories', href: '/marketplace/kitchen-accessories/' },
-        { label: 'Remnants', href: '/marketplace/remnants/' }
+        { label: 'Countertop Samples', href: '/marketplace/samples/' }
       ]
     },
     {
@@ -216,7 +218,8 @@
       { name: 'Porcelain Countertops', desc: 'Sintered slabs, indoor/outdoor', href: '/materials/countertops/porcelain-countertops/', img: '/migrated/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
       { name: 'Dekton Countertops', desc: 'Ultracompact by Cosentino', href: '/materials/countertops/dekton-countertops/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
-      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' }
+      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
+      { name: 'Remnants', desc: 'One-off pieces, live inventory', href: '/marketplace/remnants/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
     ],
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
@@ -233,12 +236,13 @@
       { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ],
     marketplace: [
-      { name: 'Browse Slabs', desc: 'Granite, quartz, marble', href: '/marketplace/slabs/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/marketplace/tile/', img: '/migrated/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
-      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/marketplace/flooring/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
+      // Online Store mega menu — dropship products + samples only.
+      { name: 'Shop All Products', desc: 'The whole online store', href: '/marketplace/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Sinks', desc: 'Kitchen & bathroom sinks', href: '/marketplace/sinks/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/Undermountsink18G50-50-3118.jpg' },
       { name: 'Faucets', desc: 'Kitchen & bath faucets', href: '/marketplace/faucets/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/KKF2015BG-1-1.jpg' },
-      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
+      { name: 'Bathroom', desc: 'Vanities, hardware, accessories', href: '/marketplace/bathroom/', img: '/migrated/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
+      { name: 'Kitchen Accessories', desc: 'Soap dispensers, drains, disposals', href: '/marketplace/kitchen-accessories/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb2aab6fbb41a_msi-surfaces-surprise-granite-alpine-quartz-thumbnail-1.avif' },
+      { name: 'Countertop Samples', desc: 'Engineered stone, shipped to you', href: '/marketplace/samples/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' }
     ]
   };
 
@@ -1477,4 +1481,11 @@
     _cs.defer = true;
     document.head.appendChild(_cs);
   }
+
+  // Site-wide house ads for the Online Store (native-ads.js decides context,
+  // frequency, and dismissal). Daily cache-bust so ad logic ships same-day.
+  var _ads = document.createElement('script');
+  _ads.src = '/js/native-ads.js?v=' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  _ads.defer = true;
+  document.head.appendChild(_ads);
 })();
