@@ -5,11 +5,21 @@
  * price manipulation attacks from the client side.
  */
 
+const path = require('path');
+
 const logger = require('../utils/logger');
 
 // Maximum allowed variance for price validation (0.01 = 1%)
 // This accounts for minor rounding differences
 const MAX_PRICE_VARIANCE = 0.01;
+
+// Flat sample fee, in cents. A sample is a fixed-size chip, so it costs the
+// same whatever the slab costs — never the material's per-sqft retail_price.
+const SAMPLE_PRICE_CENTS = 1299;
+
+// Natural stone is never sampled: every lot is unique, so buyers are sent to
+// the stone yard instead (owner rule, 2026-07-06).
+const NATURAL_STONE_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
 
 // Tax rates by state (combined state + avg local)
 const STATE_TAX_RATES = {
@@ -154,6 +164,93 @@ async function validateCartPrices(items, supabase, shippingState) {
 }
 
 /**
+ * Colors we publish a page for but have no catalog_products row for — 379 of
+ * the 434 sampleable colors as of 2026-07. Their samples still have to sell,
+ * so the static dataset backs the allowlist alongside the catalog.
+ *
+ * @returns {{bySlug: Map, byName: Map}} Sampleable countertops, keyed both ways
+ */
+let sampleableCache = null;
+function sampleableCountertops() {
+  if (sampleableCache) return sampleableCache;
+
+  const bySlug = new Map();
+  const byName = new Map();
+  try {
+    const { countertops } = require(path.join(__dirname, '../../data/countertops.json'));
+    for (const product of countertops || []) {
+      if (NATURAL_STONE_RX.test(product.type || '')) continue;
+      if (product.slug) bySlug.set(product.slug.toLowerCase(), product);
+      if (product.name) byName.set(product.name.toLowerCase(), product);
+    }
+  } catch (err) {
+    logger.warn('Sampleable countertop list unavailable', { error: err.message });
+  }
+
+  sampleableCache = { bySlug, byName };
+  return sampleableCache;
+}
+
+/**
+ * A sample line item, by any of the shapes the three add-to-cart paths emit:
+ * "Kensho (Sample)" (marketplace), "Kensho - Sample" (countertop pages),
+ * or an explicit variant/category tag.
+ */
+function isSampleItem(item) {
+  const variant = String(item.variant || '').trim().toLowerCase();
+  const category = String(item.category || '').trim().toLowerCase();
+  if (variant === 'sample' || category === 'samples') return true;
+  return /\(\s*sample\s*\)$|[-–]\s*sample$/i.test(String(item.name || '').trim());
+}
+
+/** "Kensho (Sample)" -> "Kensho", so the name can be matched against a product. */
+function baseProductName(name) {
+  return String(name || '')
+    .trim()
+    .replace(/\(\s*sample\s*\)$/i, '')
+    .replace(/[-–]\s*sample$/i, '')
+    .trim();
+}
+
+/**
+ * Confirm we actually sample this product. Identity must resolve; the price
+ * never comes from the client.
+ *
+ * @returns {?{vendorId: ?string, source: string}} null when we don't sample it
+ */
+async function resolveSampleableProduct(item, supabase) {
+  const base = baseProductName(item.name);
+
+  // The catalog is authoritative and carries vendor_id, which the caller needs
+  // to charge shipping per vendor (each vendor drop-ships separately).
+  if (supabase) {
+    const lookups = [['slug', item.id], ['slug', item.handle], ['sku', item.sku], ['name', base]];
+    for (const [column, value] of lookups) {
+      if (!value) continue;
+      try {
+        const { data } = await supabase
+          .from('catalog_products')
+          .select('vendor_id, sample_eligible')
+          .eq(column, value).eq('active', true).limit(1).maybeSingle();
+        if (data && data.sample_eligible) {
+          return { vendorId: data.vendor_id || null, source: 'catalog_sample' };
+        }
+      } catch (err) {
+        logger.debug('Sample catalog lookup failed', { column, error: err.message });
+      }
+    }
+  }
+
+  const { bySlug, byName } = sampleableCountertops();
+  const match = (item.id && bySlug.get(String(item.id).toLowerCase()))
+    || (item.handle && bySlug.get(String(item.handle).toLowerCase()))
+    || (base && byName.get(base.toLowerCase()));
+  if (match) return { vendorId: match.brand || null, source: 'static_countertops' };
+
+  return null;
+}
+
+/**
  * Validate a single cart item
  *
  * @param {object} item - Cart item
@@ -181,6 +278,31 @@ async function validateSingleItem(item, supabase) {
 
   if (item.price < 0) {
     result.error = `Item "${item.name}" has invalid negative price`;
+    return result;
+  }
+
+  // Samples are priced by us, at a flat fee, for any color we actually sample.
+  // This must run before the catalog lookup below: most sampleable colors have
+  // no catalog row at all (their checkout used to 400), and the ones that do
+  // carry a per-sqft retail_price that would bill a 4x4 chip as a slab.
+  // The client's price is ignored, so a tampered sample line just pays full
+  // sample price — identity still has to resolve to something we sample.
+  if (isSampleItem(item)) {
+    const sampleable = await resolveSampleableProduct(item, supabase);
+    if (sampleable) {
+      result.validatedPrice = SAMPLE_PRICE_CENTS;
+      result.priceSource = sampleable.source;
+      result.vendorId = sampleable.vendorId;
+      return result;
+    }
+
+    result.error = `We couldn't verify the price for "${item.name}". Please contact us at (602) 833-3189 to complete your order.`;
+    result.unmatched = {
+      id: item.id || null,
+      sku: item.sku || null,
+      name: item.name,
+      clientPrice: item.price
+    };
     return result;
   }
 
@@ -364,6 +486,8 @@ module.exports = {
   buildStripeLineItems,
   calculateShipping,
   calculateTax,
+  isSampleItem,
   STATE_TAX_RATES,
-  SHIPPING_TIERS
+  SHIPPING_TIERS,
+  SAMPLE_PRICE_CENTS
 };

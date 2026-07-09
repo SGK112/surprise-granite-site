@@ -106,12 +106,14 @@
 
   function card(p) {
     var img = p.primary_image_url || (p.image_urls && p.image_urls[0]) || '';
-    var sp = p.sample_price != null ? Number(p.sample_price) : null;
+    // Every sample is the same flat fee. The catalog's sample_price column still
+    // holds the per-sqft material price on most rows, so quoting it here
+    // advertised a price we don't charge.
     return '<a class="s-card" href="/marketplace/product/?handle=' + encodeURIComponent(p.slug) + '&category=slabs">' +
       '<div class="im"><img loading="lazy" src="' + img + '" alt="' + (p.name || '') + ' sample"/></div>' +
       '<div class="bd"><b>' + (p.name || '') + '</b>' +
       '<div class="m">' + (p.subcategory || '') + ' · ' + (p.brand || '') + '</div>' +
-      (sp ? '<div class="pr">Sample $' + sp.toFixed(2) + '</div>' : '<div class="pr">Sample available</div>') +
+      '<div class="pr">Sample $12.99</div>' +
       '</div></a>';
   }
 

@@ -7,8 +7,21 @@
   'use strict';
 
   // Sample product data
-  const SAMPLE_PRICE = 25.00;
+  const SAMPLE_PRICE = 12.99;
   const SAMPLE_IMAGE = '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif';
+
+  // Natural stone is never sampled — every lot is unique (owner rule).
+  const NATURAL_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate/i;
+
+  // Only one page describes exactly one stone: /countertops/<slug>/. On material
+  // hubs and listings the <h1> is a category ("Quartz Countertops"), which this
+  // script used to add to the cart as a stone. The slug is also what the server
+  // matches the sample against, so without it a sample cannot check out.
+  function stoneSlug() {
+    const m = window.location.pathname.match(/^\/countertops\/([^/]+)\/?$/);
+    if (!m || m[1] === 'index.html') return null;
+    return NATURAL_RX.test(m[1]) ? null : m[1];
+  }
 
   // Convert Order Sample links to direct cart add
   function convertSampleLinks() {
@@ -37,13 +50,10 @@
           return;
         }
 
-        const sampleName = `${stoneName} - Sample`;
-        const sampleId = sampleName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
         // Add to cart
         window.SgCart.addToCart({
-          id: sampleId,
-          name: sampleName,
+          id: stoneSlug(),
+          name: `${stoneName} - Sample`,
           price: SAMPLE_PRICE,
           image: imageUrl,
           quantity: 1,
@@ -72,13 +82,6 @@
 
   // Add sample order panel to countertop pages
   function addSamplePanel() {
-    // Only add on countertop detail pages
-    if (!window.location.pathname.includes('/countertops/') ||
-        window.location.pathname === '/countertops/' ||
-        window.location.pathname === '/countertops/index.html') {
-      return;
-    }
-
     // Check if panel already exists
     if (document.querySelector('.sg-sample-panel')) return;
 
@@ -122,12 +125,9 @@
         return;
       }
 
-      const sampleName = `${stoneName} - Sample`;
-      const sampleId = sampleName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
       window.SgCart.addToCart({
-        id: sampleId,
-        name: sampleName,
+        id: stoneSlug(),
+        name: `${stoneName} - Sample`,
         price: SAMPLE_PRICE,
         image: imageUrl,
         quantity: 1,
@@ -249,6 +249,7 @@
 
   // Initialize
   function init() {
+    if (!stoneSlug()) return;
     addStyles();
     convertSampleLinks();
     addSamplePanel();

@@ -3017,6 +3017,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             vendor: product.brand,
             brandDisplay: product.brandDisplay || product.brand,
             productType: product.type,
+            // These colors have no catalog row, so the flag has to come from the
+            // material: we sample engineered surfaces, never natural stone.
+            sample_eligible: !/granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i.test(product.type || ''),
             images: product.images || [product.primaryImage, product.secondaryImage].filter(Boolean),
             primaryColor: product.primaryColor,
             accentColor: product.accentColor,
@@ -3060,6 +3063,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0] || '',
             tags: p.tags || [],
             available: p.in_stock !== false,
+            // Whether we actually sample this product. The server enforces the
+            // same rule, so a button shown without this flag just 400s at
+            // checkout (sinks and faucets are not sampleable).
+            sample_eligible: p.sample_eligible === true,
             price: p.retail_price,
             currency: 'USD',
             images: imgs,
@@ -3353,8 +3360,13 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         || product.has_sample === false
         || product.samples_available === false
         || tags.some(t => ['no-sample','no-samples','no_sample','samples-unavailable','no_samples'].includes(t));
+      // Sinks, faucets and fixtures are not sampleable, but this button used to
+      // render on their pages and add them to the cart at their full retail
+      // price — a "sample" of a $590 sink cost $590. The server rejects anything
+      // that isn't sample_eligible, so only offer what it will actually sell.
+      const sampleEligible = product.sample_eligible === true;
       if (sampleBtn) {
-        if (isGranite || isCambria || sampleBlockedByFlag) {
+        if (isGranite || isCambria || sampleBlockedByFlag || !sampleEligible) {
           sampleBtn.style.display = 'none';
         } else if (window.SgCart) {
           sampleBtn.href = 'javascript:void(0)';
@@ -3363,7 +3375,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             window.SgCart.addToCart({
               id: product.handle || product.id,
               name: title + ' (Sample)',
-              price: parseFloat(product.variants?.[0]?.price) || parseFloat(product.sample_price) || 12.99,
+              // Flat sample fee — never the slab's price. The server re-prices
+              // samples anyway (api/validators/price-validator.js), so this only
+              // has to match what the cart shows the buyer.
+              price: 12.99,
               image: (product.images && product.images[0]) || '',
               quantity: 1,
               variant: 'Sample',
