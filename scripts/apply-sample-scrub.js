@@ -23,6 +23,12 @@ const SAMPLE_DISTRIBUTORS = new Set([
   'msi', 'arizona-tile', 'daltile', 'cosentino', 'arcsurfaces', 'pentalquartz',
 ]);
 
+// Sampleable regardless of who stocks it. LX Hausys (Viatera) samples come
+// through Monterrey Tile, whose own stone is not sampleable — so the exemption
+// has to key on brand, not vendor_id.
+const SAMPLE_BRAND_RX = /lx ?hausys|lx ?viatera|viatera|hanstone/i;
+const isSampleable = (r) => SAMPLE_DISTRIBUTORS.has(r.vendor_id) || SAMPLE_BRAND_RX.test(r.brand || '');
+
 const NATURAL_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious|natural stone/i;
 
 const WRITE = process.argv.includes('--write');
@@ -45,9 +51,9 @@ async function fetchAll(query) {
 }
 
 (async () => {
-  const eligible = await fetchAll('select=id,slug,name,vendor_id,category,subcategory,sample_eligible&sample_eligible=eq.true&active=eq.true');
-  const disable = eligible.filter((r) => !SAMPLE_DISTRIBUTORS.has(r.vendor_id));
-  const keep = eligible.filter((r) => SAMPLE_DISTRIBUTORS.has(r.vendor_id));
+  const eligible = await fetchAll('select=id,slug,name,vendor_id,brand,category,subcategory,sample_eligible&sample_eligible=eq.true&active=eq.true');
+  const disable = eligible.filter((r) => !isSampleable(r));
+  const keep = eligible.filter(isSampleable);
   const naturalKept = keep.filter((r) => NATURAL_RX.test(r.subcategory || ''));
 
   const tally = (rows, key) => Object.entries(rows.reduce((m, r) => (m[r[key] || '?'] = (m[r[key] || '?'] || 0) + 1, m), {}))
@@ -89,8 +95,8 @@ async function fetchAll(query) {
   }
   console.log('');
 
-  const after = await fetchAll('select=id,vendor_id&sample_eligible=eq.true&active=eq.true');
-  const stragglers = after.filter((r) => !SAMPLE_DISTRIBUTORS.has(r.vendor_id));
+  const after = await fetchAll('select=id,vendor_id,brand&sample_eligible=eq.true&active=eq.true');
+  const stragglers = after.filter((r) => !isSampleable(r));
   console.log(`\nverify: sample_eligible now ${after.length} (expected ${keep.length})`);
   console.log(`        non-distributor rows still eligible: ${stragglers.length} (expected 0)`);
   if (after.length !== keep.length || stragglers.length) { console.error('MISMATCH — investigate before trusting.'); process.exit(1); }

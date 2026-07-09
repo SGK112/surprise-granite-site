@@ -21,14 +21,18 @@ const SAMPLE_PRICE_CENTS = 1299;
 // the stone yard instead (owner rule, 2026-07-06).
 const NATURAL_STONE_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
 
-// Samples are cut and shipped by the national distributors only. Local yards
-// don't supply chips, so a sample from one is an order we can't fill. Catalog
-// rows carry this as sample_eligible; the static countertop colors below have
-// no catalog row, so they're gated on brand instead.
-// Silestone/Sensa are Cosentino brands; PentalQuartz is Architectural Surfaces.
+// Brands we can source a chip for. Catalog rows carry this as sample_eligible;
+// the static countertop colors below have no catalog row, so they're gated on
+// brand instead.
+//
+// This is a BRAND rule, not a vendor one. Silestone/Sensa are Cosentino brands;
+// PentalQuartz comes through Architectural Surfaces; LX Hausys (Viatera) comes
+// through Monterrey Tile, who supply its samples even though they cut no chips
+// of their own stone. Everything else — the local yards' own material — is not
+// sampleable.
 const SAMPLE_BRANDS = new Set([
   'msi-surfaces', 'arizona-tile', 'daltile', 'cosentino', 'silestone', 'sensa',
-  'arcsurfaces', 'pentalquartz',
+  'arcsurfaces', 'pentalquartz', 'lx-hausys',
 ]);
 
 // Tax rates by state (combined state + avg local)
