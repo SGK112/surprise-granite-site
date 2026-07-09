@@ -36,6 +36,9 @@
   let filters = {};
   let currentPage = 1;
   let isLoading = false;
+  // True when we are showing less than the full catalog — the static fallback,
+  // or a paginated load that lost a page. The count must not read as a total.
+  let isPartial = false;
 
   // Active filters
   let activeFilters = {
@@ -49,23 +52,44 @@
 
   const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
 
+  // Sample chips are their own catalog rows (`<colour>-sample`) sitting in the
+  // slab category. They are the same stone as the colour beside them, so they
+  // render as duplicate cards.
+  const isSampleSku = (slug) => /-sample$/.test(slug || '');
+
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  // One page of the catalog, retried on a transient failure. A bare `break` here
+  // silently truncated the grid: a single 500 or 429 on page 6 left ~1,000 slabs
+  // out and the page still reported the short count as the total.
+  async function fetchPage(url, attempts = 3) {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) return await res.json();
+        // 4xx other than 429 won't succeed on retry.
+        if (res.status < 500 && res.status !== 429) return null;
+      } catch { /* network — retry */ }
+      if (i < attempts - 1) await sleep(400 * (i + 1));
+    }
+    return null;
+  }
+
   // Pull all slabs for this material from the marketplace catalog, mapping the
   // flat catalog row to the shape the rest of this file expects.
+  // Returns { items, complete } — `complete` false means a page was lost and the
+  // caller must not present the result as the full catalog.
   async function loadFromCatalog() {
     const out = [];
     const matQ = PAGE_CATEGORY ? `&material=${encodeURIComponent(PAGE_CATEGORY)}` : '';
     for (let offset = 0; offset < 6000; offset += 250) {
-      let json;
-      try {
-        const res = await fetch(`${API_BASE}/api/catalog?category=slab${matQ}&limit=250&offset=${offset}`);
-        if (!res.ok) break;
-        json = await res.json();
-      } catch { break; }
+      const json = await fetchPage(`${API_BASE}/api/catalog?category=slab${matQ}&limit=250&offset=${offset}`);
+      if (!json) return { items: out, complete: false };
       const rows = (json && json.products) || [];
-      for (const p of rows) out.push(mapCatalogRow(p));
+      for (const p of rows) if (!isSampleSku(p.slug)) out.push(mapCatalogRow(p));
       if (rows.length < 250) break;
     }
-    return out;
+    return { items: out, complete: true };
   }
 
   // View counts live only in the static countertops.json (the catalog carries
@@ -137,12 +161,20 @@
       // with subcategory = material (Quartz/Granite/...). Falls back to the JSON
       // only if the API is unreachable.
       await loadViews(); // populate view counts before mapping catalog rows
-      allCountertops = await loadFromCatalog();
+      const catalog = await loadFromCatalog();
+      allCountertops = catalog.items;
+
       if (!allCountertops.length) {
-        console.warn('Catalog returned 0 slabs — falling back to static JSON');
+        // The static file holds 619 colours from 9 brands; the catalog holds
+        // ~2,300 across 14 vendors. Showing the fallback as though it were the
+        // whole catalog reads as "we lost most of our slabs".
+        console.warn('Catalog unreachable — falling back to static JSON');
         const r = await fetch(CONFIG.jsonPath);
         const data = await r.json();
         allCountertops = (data.countertops || []).filter(c => !PAGE_CATEGORY || c.type === PAGE_CATEGORY);
+        isPartial = allCountertops.length > 0;
+      } else if (!catalog.complete) {
+        isPartial = true;   // a page was lost mid-pagination; do not claim a total
       }
       filters = deriveFilters(allCountertops);
 
@@ -424,6 +456,8 @@
     countEls.forEach(el => {
       if (el.matches('[fs-cmsfilter-element="results-count-2"]')) {
         el.textContent = filteredCountertops.length;
+      } else if (isPartial) {
+        el.textContent = `Showing ${filteredCountertops.length} — full catalog temporarily unavailable`;
       } else {
         el.textContent = `Showing ${filteredCountertops.length} of ${total}`;
       }
