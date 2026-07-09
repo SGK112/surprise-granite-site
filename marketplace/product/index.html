@@ -3017,9 +3017,14 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             vendor: product.brand,
             brandDisplay: product.brandDisplay || product.brand,
             productType: product.type,
-            // These colors have no catalog row, so the flag has to come from the
-            // material: we sample engineered surfaces, never natural stone.
-            sample_eligible: !/granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i.test(product.type || ''),
+            // These colors have no catalog row, so the flag comes from material
+            // and brand: engineered surfaces only, and only brands a national
+            // distributor will cut a chip for. Mirrors SAMPLE_BRANDS in
+            // api/validators/price-validator.js — if this shows a button the
+            // server won't honour, checkout 400s after the buyer commits.
+            sample_eligible: !/granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i.test(product.type || '')
+              && ['msi-surfaces','arizona-tile','daltile','cosentino','silestone','sensa','arcsurfaces','pentalquartz']
+                .includes(String(product.brand || '').toLowerCase()),
             images: product.images || [product.primaryImage, product.secondaryImage].filter(Boolean),
             primaryColor: product.primaryColor,
             accentColor: product.accentColor,
