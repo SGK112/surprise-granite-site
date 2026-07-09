@@ -58,11 +58,48 @@ function cacheSet(key, body) {
   }
 }
 
+// ── Load shedding ─────────────────────────────────────────────────────────
+// The catalog is the only public endpoint doing a full count per request, and
+// it is the one a crawler hammers. Without a ceiling, ~100 req/s queued faster
+// than Postgres drained and took the instance down. Reject early and cheaply.
+//
+// Bounded: entries are swept on a timer, so the limiter cannot itself leak the
+// way publicRateLimitStore does (that one keys on ip+path and is never pruned).
+const RATE_LIMIT_MAX = 60;          // per IP
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const hits = new Map();             // ip -> number[] (timestamps)
+
+setInterval(() => {
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS;
+  for (const [ip, stamps] of hits) {
+    const live = stamps.filter((t) => t > cutoff);
+    if (live.length) hits.set(ip, live);
+    else hits.delete(ip);
+  }
+}, RATE_LIMIT_WINDOW_MS).unref();
+
+function overLimit(req) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+  const now = Date.now();
+  const stamps = (hits.get(ip) || []).filter((t) => t > now - RATE_LIMIT_WINDOW_MS);
+  if (stamps.length >= RATE_LIMIT_MAX) return true;
+  stamps.push(now);
+  hits.set(ip, stamps);
+  return false;
+}
+
 router.use((req, res, next) => {
   if (req.method !== 'GET') return next();
   const key = req.originalUrl || req.url;
 
-  const hit = cacheGet(key);
+  // A cache hit costs nothing, so only rate-limit what would reach the database.
+  const cachedBody = cacheGet(key);
+  if (!cachedBody && overLimit(req)) {
+    res.set('Retry-After', '60');
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
+
+  const hit = cachedBody;
   res.set('Cache-Control', 'public, max-age=60');
   if (hit) {
     res.set('X-Cache', 'HIT');
