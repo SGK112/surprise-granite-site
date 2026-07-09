@@ -606,29 +606,20 @@
     }, 100);
   }
 
-  // Pin the site-wide ".dinner-promo-strip" announcement bar above the fixed
-  // nav. The strip ships in normal flow as the first <body> child; once the
-  // fixed nav is injected it would otherwise sit flush under the header and
-  // slide behind it on scroll. We flag its presence (CSS pins strip → top,
-  // pushes nav below it) and publish the live height so the offsets stay exact
-  // across breakpoints / text-wrapping. No-op when no strip is on the page.
   // Set the body's top padding to the fixed header's real bottom edge. Uses the
-  // nav's actual positioned geometry (getBoundingClientRect includes any promo-
-  // strip offset + row wrapping + font metrics), so content clears it exactly —
-  // unlike the static --nav-height estimate, which was too short and clipped the
-  // breadcrumb under the nav. Idempotent + safe to call repeatedly.
+  // nav's actual positioned geometry (getBoundingClientRect includes row
+  // wrapping + font metrics), so content clears it exactly — unlike the static
+  // --nav-height estimate, which was too short and clipped the breadcrumb under
+  // the nav. Idempotent + safe to call repeatedly.
   function syncNavOffset() {
     try {
       const nav = document.querySelector('#unifiedNav, .unified-nav');
       if (!nav) return;
-      // Nav + strip are position:fixed → their rects are already viewport
-      // coordinates. Adding scrollY here inflated body padding by the scroll
-      // distance whenever iOS Safari re-fired resize mid-scroll (URL bar
-      // collapse) — the "huge white gap above every detail page" bug.
-      let bottom = nav.getBoundingClientRect().bottom;
-      const strip = document.querySelector('.dinner-promo-strip');
-      if (strip) bottom = Math.max(bottom, strip.getBoundingClientRect().bottom);
-      bottom = Math.ceil(bottom);
+      // The nav is position:fixed → its rect is already in viewport coordinates.
+      // Adding scrollY here inflated body padding by the scroll distance
+      // whenever iOS Safari re-fired resize mid-scroll (URL bar collapse) — the
+      // "huge white gap above every detail page" bug.
+      const bottom = Math.ceil(nav.getBoundingClientRect().bottom);
       if (bottom > 0 && bottom < 400) document.body.style.paddingTop = bottom + 'px';
     } catch (e) { /* non-fatal */ }
   }
@@ -646,185 +637,13 @@
     } catch (e) { /* non-fatal */ }
   }
 
-  function anchorPromoStrip() {
-    try {
-      const strip = document.querySelector('.dinner-promo-strip');
-      if (!strip) return;
-      document.body.classList.add('has-promo-strip');
-      const publishHeight = () => {
-        const h = strip.offsetHeight || 0;
-        document.documentElement.style.setProperty('--promo-strip-height', h + 'px');
-        syncNavOffset(); // body padding is owned by syncNavOffset (measured geometry)
-      };
-      publishHeight();
-      // Re-measure after fonts settle and on resize (mobile text can wrap).
-      window.addEventListener('resize', publishHeight);
-      window.addEventListener('load', publishHeight);
-      if (document.fonts && document.fonts.ready) document.fonts.ready.then(publishHeight);
-    } catch (e) { /* non-fatal */ }
-  }
 
-  // Inject the floating "Full Course Remodel" promo CTA.
   // Floating bottom-left card, dismissible, persists dismissal in
   // localStorage so it doesn't haunt repeat visitors.
-  function insertPromoCallout() {
-    try {
-      const path = (location.pathname || '').toLowerCase();
-      // Don't show on the promo page itself or on the high-intent lead form
-      if (path.startsWith('/special-offers/full-remodel-dinner')) return;
-      if (path.startsWith('/get-a-free-estimate')) return;
-      if (path.startsWith('/account')) return; // logged-in CRM users don't need it
-      if (path.startsWith('/cart') || path.startsWith('/checkout')) return;
-      // Pro tools (blueprint takeoff, room designer, calculators) are workspace
-      // surfaces — keep marketing widgets off them.
-      if (path.startsWith('/tools/')) return;
-      // Error pages — 404, etc. Marking via body class on the error template
-      // since pathname is whatever the user typed.
-      if (document.body && document.body.classList.contains('page-404')) return;
 
-      // If user previously dismissed the full callout, show the small
-      // re-open pill instead so the offer never fully disappears.
-      if (localStorage.getItem('sg_promo_full_course_dismissed') === '1') {
-        injectPromoReopenPill();
-        return;
-      }
-    } catch (e) {}
-
-    const styles = document.createElement('style');
-    styles.id = 'sg-promo-callout-styles';
-    styles.textContent = `
-      /* Bottom-RIGHT corner. Stacking order from bottom-up on desktop:
-           1. Scroll-to-top         (bottom: 24px, right: 24px) [in own block]
-           2. Remodely Hub button   (bottom: 90px, right: 24px)
-           3. Promo callout         (bottom: 156px, right: 16px)
-         On mobile we hide the promo callout entirely — the sticky bottom
-         action bar + Remodely Hub button are already enough. Adding a
-         third floating widget on a phone just clutters. */
-      .sg-promo-callout {
-        position: fixed; right: 16px; bottom: 156px; z-index: 9998;
-        max-width: 320px; background: linear-gradient(135deg, #1a1a2e, #2d2d44);
-        color: #fff; border: 1px solid rgba(249,203,0,.4); border-radius: 14px;
-        padding: 18px 18px 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-        animation: sg-promo-in .35s cubic-bezier(.2,.7,.3,1) both;
-      }
-      @keyframes sg-promo-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-      .sg-promo-callout__close {
-        position: absolute !important; top: 10px !important; right: 10px !important;
-        width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
-        max-width: 28px !important; max-height: 28px !important;
-        background: #fff !important; border: none !important; border-radius: 50% !important;
-        color: #1a1a2e !important; font-size: 0 !important; line-height: 0 !important;
-        cursor: pointer; padding: 0 !important; z-index: 5;
-        transition: transform .15s, background .15s;
-        box-shadow: 0 2px 8px rgba(0,0,0,.3);
-      }
-      .sg-promo-callout__close::before,
-      .sg-promo-callout__close::after {
-        content: ''; position: absolute; top: 50%; left: 50%;
-        width: 12px; height: 2px; background: #1a1a2e; border-radius: 1px;
-      }
-      .sg-promo-callout__close::before { transform: translate(-50%, -50%) rotate(45deg); }
-      .sg-promo-callout__close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
-      .sg-promo-callout__close:hover { background: #f9cb00 !important; transform: scale(1.08); }
-      .sg-promo-callout__badge {
-        display: inline-block; background: rgba(249,203,0,.18); color: #f9cb00;
-        padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
-      }
-      .sg-promo-callout__title { font-size: 16px; font-weight: 800; margin: 0 0 4px; line-height: 1.25; padding-right: 28px; }
-      .sg-promo-callout__title em { color: #f9cb00; font-style: normal; }
-      .sg-promo-callout__sub { font-size: 13px; color: rgba(255,255,255,.78); margin: 0 0 12px; line-height: 1.5; }
-      .sg-promo-callout__cta {
-        display: block; background: #f9cb00; color: #1a1a2e; text-decoration: none;
-        text-align: center; padding: 10px 14px; border-radius: 8px;
-        font-weight: 700; font-size: 13px; transition: background .2s;
-      }
-      .sg-promo-callout__cta:hover { background: #e5b800; }
-      /* Mobile: hide the floating callout. Mobile action bar + Remodely
-         Hub button already cover both intent paths. The callout adds
-         clutter on small screens. */
-      @media (max-width: 768px) {
-        .sg-promo-callout { display: none !important; }
-      }
-
-      /* Re-open pill — appears after user dismisses the full callout.
-         Small, low-noise, but the offer never fully disappears. */
-      .sg-promo-reopen {
-        position: fixed; right: 16px; bottom: 156px; z-index: 9998;
-        display: inline-flex; align-items: center; gap: 8px;
-        background: #1a1a2e; color: #f9cb00;
-        border: 1px solid rgba(249,203,0,.5);
-        padding: 9px 14px 9px 12px; border-radius: 999px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-        font-size: 12px; font-weight: 700; letter-spacing: .02em;
-        cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.3);
-        transition: background .2s, transform .15s;
-        animation: sg-promo-in .35s cubic-bezier(.2,.7,.3,1) both;
-      }
-      .sg-promo-reopen:hover { background: #2d2d44; transform: translateY(-1px); }
-      .sg-promo-reopen__icon { font-size: 14px; line-height: 1; }
-      @media (max-width: 768px) {
-        .sg-promo-reopen { display: none !important; }
-      }
-    `;
-    document.head.appendChild(styles);
-
-    const el = document.createElement('aside');
-    el.className = 'sg-promo-callout';
-    el.setAttribute('role', 'complementary');
-    el.setAttribute('aria-label', 'Special offer');
-    el.innerHTML = `
-      <button class="sg-promo-callout__close" aria-label="Dismiss promo">×</button>
-      <span class="sg-promo-callout__badge">Dinner's On Us</span>
-      <p class="sg-promo-callout__title">Up to <em>3 Free Dinners</em> with Your Remodel</p>
-      <p class="sg-promo-callout__sub">1 with new countertops · 2 with a kitchen remodel · 3 with the Full Course (kitchen + bath).</p>
-      <a class="sg-promo-callout__cta" href="/special-offers/full-remodel-dinner/?src=promo-callout">See the tiers →</a>
-    `;
-    document.body.appendChild(el);
-
-    el.querySelector('.sg-promo-callout__close').addEventListener('click', () => {
-      try { localStorage.setItem('sg_promo_full_course_dismissed', '1'); } catch (e) {}
-      el.style.animation = 'sg-promo-in .25s reverse forwards';
-      setTimeout(() => {
-        el.remove();
-        // Drop in the small re-open pill so the offer is one tap away.
-        injectPromoReopenPill();
-      }, 250);
-    });
-  }
-
-  // Small "3 Free Dinners" re-open pill. Shown:
   //   1. After user X's the full callout (in the dismiss handler above)
   //   2. On future page loads while the dismissed flag is still set
   // Click it → wipe the flag and re-show the full callout.
-  function injectPromoReopenPill() {
-    if (document.querySelector('.sg-promo-reopen')) return;
-    // Same error-page suppression as insertPromoCallout — the pill is the
-    // dismissed-state cousin and shouldn't haunt the 404 either.
-    if (document.body && document.body.classList.contains('page-404')) return;
-    // Ensure the pill's CSS is present. When we arrive here via the "already
-    // dismissed" early-return in insertPromoCallout, that function returns
-    // BEFORE it injects its <style> block — so without this the pill rendered
-    // as an unstyled default button stuck at the bottom-left of the page.
-    if (!document.getElementById('sg-promo-reopen-styles')) {
-      const s = document.createElement('style');
-      s.id = 'sg-promo-reopen-styles';
-      s.textContent = ".sg-promo-reopen{position:fixed;right:16px;bottom:156px;z-index:9998;display:inline-flex;align-items:center;gap:8px;background:#1a1a2e;color:#f9cb00;border:1px solid rgba(249,203,0,.5);padding:9px 14px 9px 12px;border-radius:999px;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.02em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:background .2s,transform .15s;}.sg-promo-reopen:hover{background:#2d2d44;transform:translateY(-1px);}.sg-promo-reopen__icon{font-size:14px;line-height:1;}@media (max-width:768px){.sg-promo-reopen{display:none!important;}}";
-      document.head.appendChild(s);
-    }
-    const pill = document.createElement('button');
-    pill.type = 'button';
-    pill.className = 'sg-promo-reopen';
-    pill.setAttribute('aria-label', 'Re-open dinner promo');
-    pill.innerHTML = '<span class="sg-promo-reopen__icon">🍽</span> 3 Free Dinners';
-    pill.addEventListener('click', () => {
-      try { localStorage.removeItem('sg_promo_full_course_dismissed'); } catch (e) {}
-      pill.remove();
-      insertPromoCallout();
-    });
-    document.body.appendChild(pill);
-  }
 
   // Sticky mobile action bar — Call + Get Quote always one thumb away.
   // 70% of traffic is mobile. The single biggest conversion win is making
@@ -874,8 +693,6 @@
         .sg-mab { display: flex; }
         /* Reserve space at bottom of body so the bar doesn't cover content */
         body.unified-nav-active { padding-bottom: 76px; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
-        /* Lift the promo callout above the bar so they don't stack on top of each other */
-        .sg-promo-callout { bottom: 88px !important; bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
       }
     `;
     document.head.appendChild(styles);
@@ -981,14 +798,11 @@
     // Insert navigation HTML
     document.body.insertAdjacentHTML('afterbegin', createNavHTML());
 
-    // Pin the site-wide dinner promo strip ABOVE the fixed nav (instead of
     // letting it get tucked under the header). CSS does the positioning; we
     // just flag its presence and publish its measured height so the nav and
     // body padding offset by exactly the right amount at any breakpoint.
-    anchorPromoStrip();
 
     // Pin the body's top padding to the fixed header's ACTUAL bottom edge, so
-    // content never clips under it. Runs regardless of the promo strip and uses
     // the real rendered geometry (not the estimated --nav-height var, which is
     // shorter than the 3-row nav on some pages — that's what clipped breadcrumbs).
     syncNavOffset();
@@ -1007,13 +821,6 @@
     matchRootToFooter();
     window.addEventListener('load', matchRootToFooter);
     setTimeout(matchRootToFooter, 400);
-
-    // Inject site-wide promo: "The Full Course Remodel" floating CTA.
-    // Dismissed state persists in localStorage so a returning visitor isn't
-    // hammered with it. Hidden on the promo page itself (don't promote a
-    // page to the user already viewing it) and on the lead form (don't
-    // distract from a high-intent action).
-    insertPromoCallout();
 
     // Sticky bottom action bar on mobile — Call + Free Estimate always
     // one thumb away. 70% of traffic is mobile; this is the highest-
