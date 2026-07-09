@@ -19,6 +19,67 @@ function sanitize(s, max = 200) {
   return v || null;
 }
 
+// ── Response cache ────────────────────────────────────────────────────────
+// The catalog is read far more often than it changes, and the storefront fires
+// one `?vendor=X&limit=1` per vendor purely to read `total` — a dozen-plus
+// count:'exact' scans over ~9k rows per page view. A normal traffic burst
+// queued enough of those to OOM-kill the 512Mi instance repeatedly.
+//
+// Bounded by BYTES, not entry count: a 250-product page serialises to ~220KB,
+// so an entry cap alone could let the cache grow past the heap it's protecting.
+const CACHE_TTL_MS = 60_000;
+const CACHE_MAX_BYTES = 24 * 1024 * 1024;
+const cache = new Map();   // url -> { at, body: string, bytes }
+let cacheBytes = 0;
+
+function cacheGet(key) {
+  const hit = cache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    cache.delete(key);
+    cacheBytes -= hit.bytes;
+    return null;
+  }
+  return hit.body;
+}
+
+function cacheSet(key, body) {
+  const bytes = Buffer.byteLength(body);
+  if (bytes > CACHE_MAX_BYTES) return;      // never cache a single oversized body
+  const prev = cache.get(key);
+  if (prev) cacheBytes -= prev.bytes;
+  cache.set(key, { at: Date.now(), body, bytes });
+  cacheBytes += bytes;
+  // Map preserves insertion order, so the first key is the oldest.
+  for (const k of cache.keys()) {
+    if (cacheBytes <= CACHE_MAX_BYTES) break;
+    cacheBytes -= cache.get(k).bytes;
+    cache.delete(k);
+  }
+}
+
+router.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  const key = req.originalUrl || req.url;
+
+  const hit = cacheGet(key);
+  res.set('Cache-Control', 'public, max-age=60');
+  if (hit) {
+    res.set('X-Cache', 'HIT');
+    return res.type('application/json').send(hit);
+  }
+
+  res.set('X-Cache', 'MISS');
+  const sendJson = res.json.bind(res);
+  res.json = (body) => {
+    if (res.statusCode === 200) {
+      try { cacheSet(key, JSON.stringify(body)); } catch (_) { /* never fail a response to cache it */ }
+    }
+    return sendJson(body);
+  };
+  next();
+});
+
 router.get('/', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
