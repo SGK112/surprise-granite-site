@@ -78,6 +78,35 @@ setInterval(() => {
   }
 }, RATE_LIMIT_WINDOW_MS).unref();
 
+// A Supabase/Cloudflare failure puts a whole HTML error page in error.message.
+// Logging that verbatim at request rate is what turned a database outage into
+// an OOM kill: ~200KB allocated and retained per failed request.
+const MAX_LOGGED_ERROR = 200;
+const briefly = (err) => String(err?.message ?? err ?? 'unknown').replace(/\s+/g, ' ').slice(0, MAX_LOGGED_ERROR);
+
+// Circuit breaker. When the database is unreachable, every request otherwise
+// waits out its timeout while holding memory. After a few consecutive failures,
+// fail immediately and stop touching the database until the window elapses.
+const BREAKER_THRESHOLD = 5;
+const BREAKER_COOLDOWN_MS = 15_000;
+let consecutiveFailures = 0;
+let breakerOpenedAt = 0;
+
+const breakerOpen = () => {
+  if (consecutiveFailures < BREAKER_THRESHOLD) return false;
+  if (Date.now() - breakerOpenedAt < BREAKER_COOLDOWN_MS) return true;
+  consecutiveFailures = 0;   // half-open: let the next request probe the database
+  return false;
+};
+const noteFailure = () => {
+  consecutiveFailures++;
+  if (consecutiveFailures === BREAKER_THRESHOLD) {
+    breakerOpenedAt = Date.now();
+    logger.error('Catalog circuit breaker opened — database unreachable');
+  }
+};
+const noteSuccess = () => { consecutiveFailures = 0; };
+
 function overLimit(req) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
   const now = Date.now();
@@ -94,6 +123,10 @@ router.use((req, res, next) => {
 
   // A cache hit costs nothing, so only rate-limit what would reach the database.
   const cachedBody = cacheGet(key);
+  if (!cachedBody && breakerOpen()) {
+    res.set('Retry-After', '15');
+    return res.status(503).json({ error: 'Catalog temporarily unavailable' });
+  }
   if (!cachedBody && overLimit(req)) {
     res.set('Retry-After', '60');
     return res.status(429).json({ error: 'Rate limit exceeded' });
@@ -153,9 +186,11 @@ router.get('/', async (req, res) => {
 
     const { data, error, count } = await q;
     if (error) {
-      logger.error('Catalog list error', { error: error.message });
+      noteFailure();
+      logger.error('Catalog list error', { error: briefly(error) });
       return res.status(500).json({ error: 'Could not list catalog' });
     }
+    noteSuccess();
     return res.json({ success: true, products: data || [], total: count, limit, offset });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
@@ -171,7 +206,11 @@ router.get('/categories', async (req, res) => {
       .select('category, vendor_id')
       .eq('active', true)
       .limit(10000);
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      noteFailure();
+      logger.error('Catalog query error', { error: briefly(error) });
+      return res.status(500).json({ error: 'Catalog unavailable' });
+    }
     const counts = {};
     const vendorByCat = {};
     (data || []).forEach(r => {
@@ -196,7 +235,11 @@ router.get('/vendors', async (req, res) => {
       .from('vendor_config')
       .select('vendor_id, vendor_name, vendor_url, vendor_logo_url, sample_offered, last_scraped_at, last_scrape_status, notes')
       .order('vendor_name');
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      noteFailure();
+      logger.error('Catalog query error', { error: briefly(error) });
+      return res.status(500).json({ error: 'Catalog unavailable' });
+    }
     return res.json({ success: true, vendors: data || [] });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
@@ -216,7 +259,11 @@ router.get('/:slug', async (req, res) => {
       .eq('slug', slug)
       .eq('active', true)
       .maybeSingle();
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      noteFailure();
+      logger.error('Catalog query error', { error: briefly(error) });
+      return res.status(500).json({ error: 'Catalog unavailable' });
+    }
     if (!data) return res.status(404).json({ error: 'Product not found' });
 
     // This is a PUBLIC endpoint: never ship costs, margins, sync bookkeeping,
