@@ -65,7 +65,12 @@ function cacheSet(key, body) {
 //
 // Bounded: entries are swept on a timer, so the limiter cannot itself leak the
 // way publicRateLimitStore does (that one keys on ip+path and is never pruned).
-const RATE_LIMIT_MAX = 60;          // per IP
+// A single browse page issues ~10 uncached catalog reads (it pages the whole
+// slab list at limit=250), and a visitor moves through several material pages a
+// minute. 60/min throttled real customers into the static fallback. This is a
+// crawler ceiling, not a browsing budget: keep it far above what a page view
+// costs and let the response cache absorb the repeats.
+const RATE_LIMIT_MAX = 300;         // per IP
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const hits = new Map();             // ip -> number[] (timestamps)
 

@@ -67,8 +67,10 @@
       try {
         const res = await fetch(url);
         if (res.ok) return await res.json();
-        // 4xx other than 429 won't succeed on retry.
-        if (res.status < 500 && res.status !== 429) return null;
+        // Never retry a 429: the window is a minute, retrying inside it just
+        // spends more of the budget and guarantees the fallback. Other 4xx
+        // won't succeed on retry either.
+        if (res.status < 500) return null;
       } catch { /* network — retry */ }
       if (i < attempts - 1) await sleep(400 * (i + 1));
     }
@@ -77,9 +79,15 @@
 
   // Pull all slabs for this material from the marketplace catalog, mapping the
   // flat catalog row to the shape the rest of this file expects.
+  //
+  // ~2,300 slabs is ten sequential pages. Waiting for all of them before drawing
+  // anything left the grid empty and the counter reading "0" for seconds, which
+  // reads as broken. `onPage` fires after each page so the first 250 can paint
+  // immediately and the rest fill in behind.
+  //
   // Returns { items, complete } — `complete` false means a page was lost and the
   // caller must not present the result as the full catalog.
-  async function loadFromCatalog() {
+  async function loadFromCatalog(onPage) {
     const out = [];
     const matQ = PAGE_CATEGORY ? `&material=${encodeURIComponent(PAGE_CATEGORY)}` : '';
     for (let offset = 0; offset < 6000; offset += 250) {
@@ -87,9 +95,19 @@
       if (!json) return { items: out, complete: false };
       const rows = (json && json.products) || [];
       for (const p of rows) if (!isSampleSku(p.slug)) out.push(mapCatalogRow(p));
-      if (rows.length < 250) break;
+      const done = rows.length < 250;
+      if (onPage) { try { onPage(out, done); } catch (e) { console.warn('onPage failed', e); } }
+      if (done) break;
     }
     return { items: out, complete: true };
+  }
+
+  // The background pages must not yank the UI out from under someone who has
+  // already started filtering, searching, or scrolling.
+  function userHasInteracted() {
+    return Boolean(activeFilters.search) || currentPage > 1
+      || activeFilters.brand.length || activeFilters.type.length || activeFilters.style.length
+      || activeFilters.primaryColor.length || activeFilters.accentColor.length;
   }
 
   // View counts live only in the static countertops.json (the catalog carries
@@ -161,10 +179,32 @@
       // with subcategory = material (Quartz/Granite/...). Falls back to the JSON
       // only if the API is unreachable.
       await loadViews(); // populate view counts before mapping catalog rows
-      const catalog = await loadFromCatalog();
-      allCountertops = catalog.items;
 
-      if (!allCountertops.length) {
+      let painted = false;
+      const paint = (items, done) => {
+        allCountertops = items.slice();
+        // Still loading, so the count is not a total yet.
+        isPartial = !done;
+        if (!painted) {
+          filters = deriveFilters(allCountertops);
+          buildFilterUI();
+          setupSearch();
+          applyFilters();
+          setupInfiniteScroll();
+          if (clsGrid) setTimeout(() => { clsGrid.style.minHeight = ''; }, 800);
+          painted = true;
+          return;
+        }
+        // Later pages: refresh in place, but never while the visitor is mid-filter.
+        if (userHasInteracted()) return;
+        filters = deriveFilters(allCountertops);
+        buildFilterUI();   // clears and repopulates the checkbox groups
+        applyFilters();
+      };
+
+      const catalog = await loadFromCatalog(paint);
+
+      if (!catalog.items.length) {
         // The static file holds 619 colours from 9 brands; the catalog holds
         // ~2,300 across 14 vendors. Showing the fallback as though it were the
         // whole catalog reads as "we lost most of our slabs".
@@ -173,26 +213,26 @@
         const data = await r.json();
         allCountertops = (data.countertops || []).filter(c => !PAGE_CATEGORY || c.type === PAGE_CATEGORY);
         isPartial = allCountertops.length > 0;
-      } else if (!catalog.complete) {
-        isPartial = true;   // a page was lost mid-pagination; do not claim a total
+        filters = deriveFilters(allCountertops);
+        buildFilterUI();
+        setupSearch();
+        applyFilters();
+        setupInfiniteScroll();
+        if (clsGrid) setTimeout(() => { clsGrid.style.minHeight = ''; }, 800);
+        return;
       }
-      filters = deriveFilters(allCountertops);
 
-      if (clsGrid) setTimeout(() => { clsGrid.style.minHeight = ''; }, 800);
-      console.log(`Loaded ${allCountertops.length} slabs from catalog`);
-      console.log('Filters:', filters);
-
-      // Build filter UI
-      buildFilterUI();
-
-      // Setup search
-      setupSearch();
-
-      // Apply initial filters and render
-      applyFilters();
-
-      // Setup infinite scroll
-      setupInfiniteScroll();
+      // Final state: a lost page means we still cannot claim a total.
+      allCountertops = catalog.items;
+      isPartial = !catalog.complete;
+      if (!userHasInteracted()) {
+        filters = deriveFilters(allCountertops);
+        buildFilterUI();
+        applyFilters();
+      } else {
+        updateResultsCount();
+      }
+      console.log(`Loaded ${allCountertops.length} slabs from catalog (complete=${catalog.complete})`);
 
     } catch (error) {
       console.error('Failed to initialize filter system:', error);
