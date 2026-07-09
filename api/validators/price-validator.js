@@ -21,6 +21,16 @@ const SAMPLE_PRICE_CENTS = 1299;
 // the stone yard instead (owner rule, 2026-07-06).
 const NATURAL_STONE_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
 
+// Samples are cut and shipped by the national distributors only. Local yards
+// don't supply chips, so a sample from one is an order we can't fill. Catalog
+// rows carry this as sample_eligible; the static countertop colors below have
+// no catalog row, so they're gated on brand instead.
+// Silestone/Sensa are Cosentino brands; PentalQuartz is Architectural Surfaces.
+const SAMPLE_BRANDS = new Set([
+  'msi-surfaces', 'arizona-tile', 'daltile', 'cosentino', 'silestone', 'sensa',
+  'arcsurfaces', 'pentalquartz',
+]);
+
 // Tax rates by state (combined state + avg local)
 const STATE_TAX_RATES = {
   AZ: 0.081,  AL: 0.092,  AR: 0.094,  CA: 0.0875, CO: 0.075,
@@ -168,6 +178,10 @@ async function validateCartPrices(items, supabase, shippingState) {
  * the 434 sampleable colors as of 2026-07. Their samples still have to sell,
  * so the static dataset backs the allowlist alongside the catalog.
  *
+ * Excludes natural stone, and any brand we can't source a chip from — without
+ * the brand gate this list resold local-yard samples that the catalog's
+ * sample_eligible flag had already turned off.
+ *
  * @returns {{bySlug: Map, byName: Map}} Sampleable countertops, keyed both ways
  */
 let sampleableCache = null;
@@ -180,6 +194,7 @@ function sampleableCountertops() {
     const { countertops } = require(path.join(__dirname, '../../data/countertops.json'));
     for (const product of countertops || []) {
       if (NATURAL_STONE_RX.test(product.type || '')) continue;
+      if (!SAMPLE_BRANDS.has(String(product.brand || '').toLowerCase())) continue;
       if (product.slug) bySlug.set(product.slug.toLowerCase(), product);
       if (product.name) byName.set(product.name.toLowerCase(), product);
     }
