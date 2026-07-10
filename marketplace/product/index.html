@@ -2809,7 +2809,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/sampleable.js?v=20260710a"></script>
+<script src="/js/sampleable.js?v=20260710b"></script>
   <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
@@ -3027,6 +3027,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             title: p.name,
             handle: p.slug || handle,
             vendor: p.brand || p.vendor_id || '',
+            // The stable key. `brand` is a display name ("Silestone by
+            // Cosentino", "MSI Surfaces"), so the sampleable rule must not key
+            // on it — doing so hid the sample button on every Arizona Tile, MSI
+            // and Cosentino product in the catalog.
+            vendor_id: p.vendor_id || '',
             brandDisplay: p.brand || p.vendor_id || '',
             brandTier: 'premium',
             productType: p.subcategory || p.category || category,
@@ -3310,8 +3315,18 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         if (sp.slab_sqft) {
           specsHtml += `<div class="spec-item"><span class="spec-label">Sqft / Slab</span><span class="spec-value">~${sp.slab_sqft} sq ft</span></div>`;
         }
-        specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">${sp.thickness || sp.slab_thickness || '2cm, 3cm (typ.)'}</span></div>`;
-        specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">${sp.finish || prod.finish || 'Polished (typ.)'}</span></div>`;
+        // No "(typ.)" defaults. Thickness is known on 1,083 of 2,402 slabs and
+        // finish on 541; printing "2cm, 3cm" and "Polished" for the rest told
+        // every customer the same thing about every stone, and some of them
+        // would have been choosing a thickness the slab is not sold in.
+        const thickness = sp.thickness || sp.slab_thickness;
+        if (thickness) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">${thickness}</span></div>`;
+        }
+        const finish = sp.finish || prod.finish;
+        if (finish) {
+          specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">${finish}</span></div>`;
+        }
         specsGrid.innerHTML = specsHtml;
         // Printed quartz: the pattern is HD-printed on the surface, not
         // through-body — buyers must know before picking an edge profile.

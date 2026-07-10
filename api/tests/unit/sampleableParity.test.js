@@ -80,6 +80,53 @@ describe('isSampleable', () => {
 });
 
 /**
+ * catalog_products.brand is a free-text DISPLAY name; vendor_id is the slug.
+ * Matching the display name against the brand slugs hid the sample button on
+ * every Arizona Tile, MSI, Cosentino and Arch Surfaces product in the catalog —
+ * which is how a customer looking at altais-white (Arizona Tile quartz,
+ * sample_eligible, $12.99) saw no button at all.
+ */
+describe('vendor_id is the key, not the display brand', () => {
+  const catalogRows = [
+    ['arizona-tile', 'Arizona Tile', 'Quartz', true],
+    ['msi', 'MSI Surfaces', 'Quartz', true],
+    ['msi', 'msi', 'Quartz', true],
+    ['msi', 'MSI', 'Quartz', true],
+    ['cosentino', 'Silestone by Cosentino', 'Quartz', true],
+    ['cosentino', 'Dekton by Cosentino', 'Porcelain', true],
+    ['arcsurfaces', 'Architectural Surfaces', 'Quartz', true],
+    ['pentalquartz', 'PentalQuartz', 'Quartz', true],
+    ['lx-hausys', 'LX Hausys', 'Quartz', true],
+    ['daltile', 'Daltile', 'Quartz', true],
+    // natural stone from a sourceable vendor is still refused
+    ['cosentino', 'Sensa by Cosentino', 'Granite', false],
+    ['msi', 'MSI Surfaces', 'Granite', false],
+    // vendors no distributor cuts a chip for
+    ['caesarstone', 'Caesarstone', 'Quartz', false],
+    ['cactus-stone', 'Cactus Stone', 'Quartz', false],
+    ['the-yard-az', 'The Yard', 'Quartz', false],
+  ];
+
+  it.each(catalogRows)('vendor_id=%s brand=%s type=%s -> %s', (vendor_id, brand, type, want) => {
+    expect(client.isSampleable({ vendor_id, brand, type, sample_eligible: true })).toBe(want);
+  });
+
+  it('falls back to the brand slug when there is no vendor_id', () => {
+    expect(client.isSampleable({ brand: 'msi-surfaces', type: 'Quartz' })).toBe(true);
+    expect(client.isSampleable({ brand: 'bolder-image-stone', type: 'Quartz' })).toBe(false);
+  });
+
+  it('does not match a lookalike brand by substring', () => {
+    expect(client.isSampleable({ brand: 'cosentinolookalike', type: 'Quartz' })).toBe(false);
+    expect(client.isSampleable({ brand: 'not-msi-clone-co', type: 'Quartz' })).toBe(false);
+  });
+
+  it('an unknown vendor_id is refused even if the brand looks sourceable', () => {
+    expect(client.isSampleable({ vendor_id: 'some-local-yard', brand: 'MSI Surfaces', type: 'Quartz' })).toBe(false);
+  });
+});
+
+/**
  * The real dataset: whatever the client would offer, the server must accept.
  * This is the assertion that actually protects the buyer.
  */

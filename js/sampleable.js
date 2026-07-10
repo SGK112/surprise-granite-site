@@ -34,12 +34,43 @@
   // cuts them: MSI quartz, Arizona Tile's quartz line, Daltile, Cosentino
   // (Silestone, Dekton, Sensa), Arch Surfaces (PentalQuartz), and LX Hausys
   // (Viatera/HanStone) through Monterrey Tile. A local yard will not.
+  //
+  // These are the `brand` slugs used by data/countertops.json, and they must stay
+  // identical to SAMPLE_BRANDS in api/validators/price-validator.js.
   var SAMPLE_BRANDS = [
     'msi-surfaces', 'arizona-tile', 'daltile', 'cosentino', 'silestone', 'sensa',
     'arcsurfaces', 'pentalquartz', 'lx-hausys'
   ];
 
+  // catalog_products keys the same companies by `vendor_id`, and its `brand`
+  // column is a free-text DISPLAY name: "Arizona Tile", "MSI Surfaces", "msi",
+  // "Silestone by Cosentino", "Architectural Surfaces". Matching the display name
+  // against the slugs above hid the sample button on every Arizona Tile, MSI,
+  // Cosentino and Arch Surfaces product in the catalog. vendor_id is the stable
+  // key; the brand is only a fallback for the static colour list.
+  var SAMPLE_VENDOR_IDS = [
+    'msi', 'arizona-tile', 'daltile', 'cosentino', 'arcsurfaces', 'pentalquartz', 'lx-hausys'
+  ];
+
   function norm(v) { return String(v == null ? '' : v).toLowerCase(); }
+
+  /** "Silestone by Cosentino" -> "silestone-by-cosentino" */
+  function slugify(v) {
+    return norm(v).trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  /**
+   * Does `slug` begin or end with `token` as a whole hyphen-delimited component?
+   *
+   * Real brand names put the company first ("msi-surfaces") or last
+   * ("silestone-by-cosentino"). A token buried in the MIDDLE is not the company:
+   * "not-msi-clone-co" is not MSI, and an earlier version of this accepted it.
+   */
+  function hasToken(slug, token) {
+    return slug === token
+      || slug.indexOf(token + '-') === 0
+      || (slug.length > token.length && slug.lastIndexOf('-' + token) === slug.length - token.length - 1);
+  }
 
   // Material only — never the NAME. Engineered surfaces are routinely named
   // after the stone they imitate: "Soapstone Mist" is MSI quartz, "Ice Onyx" is
@@ -54,8 +85,23 @@
       || tags.some(function (t) { return NATURAL_STONE_RX.test(norm(t)); });
   }
 
-  function brandOf(product) {
-    return norm(product.brand || product.vendor || product.brandDisplay);
+  /**
+   * True when the product comes from a distributor that will cut us a chip.
+   *
+   * vendor_id decides when present — it is the stable slug. Otherwise slugify the
+   * brand and look for an allowed token: "msi-surfaces" starts with "msi",
+   * "silestone-by-cosentino" ends with "cosentino". A bare substring test would
+   * be wrong ("cosentino-lookalike" is not Cosentino), so match whole components.
+   */
+  function fromSampleableVendor(product) {
+    var vid = slugify(product.vendor_id);
+    if (vid) return SAMPLE_VENDOR_IDS.indexOf(vid) > -1;
+
+    var slug = slugify(product.brand || product.vendor || product.brandDisplay);
+    if (!slug) return false;
+    if (SAMPLE_BRANDS.indexOf(slug) > -1) return true;
+    return SAMPLE_VENDOR_IDS.some(function (t) { return hasToken(slug, t); })
+      || SAMPLE_BRANDS.some(function (t) { return hasToken(slug, t); });
   }
 
   /** An explicit "no sample" on a specific SKU always wins. */
@@ -89,14 +135,16 @@
     if (discontinued(product)) return false;
     if (blockedByFlag(product)) return false;
     if (isNaturalStone(product)) return false;
-    return SAMPLE_BRANDS.indexOf(brandOf(product)) > -1;
+    return fromSampleableVendor(product);
   }
 
   return {
     isSampleable: isSampleable,
     isNaturalStone: isNaturalStone,
+    fromSampleableVendor: fromSampleableVendor,
     NATURAL_STONE_RX: NATURAL_STONE_RX,
     SAMPLE_BRANDS: SAMPLE_BRANDS,
+    SAMPLE_VENDOR_IDS: SAMPLE_VENDOR_IDS,
     SAMPLE_PRICE: 12.99
   };
 }));

@@ -437,9 +437,19 @@
     if (!out.length) { document.getElementById('h-fresh').closest('section').style.display = 'none'; return; }
     rail.innerHTML = out.slice(0, 12).map(function (p) {
       var img = p.primary_image_url || (p.image_urls && p.image_urls[0]) || '';
-      // $12.99 is the default sample price, NOT a per-sqft material price —
-      // never advertise it as one (owner rule).
-      var price = p.sample_price != null && Number(p.sample_price) !== 12.99 ? Number(p.sample_price) : null;
+      // This rail used to read `sample_price`, treating any value other than
+      // $12.99 as a per-sqft material price. Those values were the retired
+      // "sample price = the colour's $/sqft" figures, and after vendor costs
+      // were imported they were IDENTICAL TO DEALER COST on 842 rows — so the
+      // storefront advertised what we pay. Migration 019 emptied that column.
+      //
+      // retail_price is the public price, but it is per-sqft only on slabs, and
+      // not even on all of them: The Yard quotes per slab ($2,595), and
+      // price_unit says 'each' on every row, so it cannot tell us which. Publish
+      // a /sqft figure only when the number is plausibly a /sqft figure — the
+      // same $3-$300 band scripts/apply-retail-markup.js trusts.
+      var v = Number(p.retail_price);
+      var price = (p.category === 'slab' && isFinite(v) && v >= 3 && v <= 300) ? v : null;
       return '<a class="p-card" href="/marketplace/product/?handle=' + encodeURIComponent(p.slug) + '&category=slabs">' +
         '<div class="im"><img loading="lazy" src="' + img + '" alt="' + (p.name || '') + ' slab"/></div>' +
         '<div class="bd"><b>' + (p.name || '') + '</b>' +
