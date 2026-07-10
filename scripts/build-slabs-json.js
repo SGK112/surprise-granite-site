@@ -52,7 +52,7 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   let rows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supa.from('catalog_products')
-      .select('id, vendor_id, name, slug, brand, subcategory, description, sample_price, retail_price, in_stock, specs, primary_image_url, image_urls, size, active, tags')
+      .select('id, vendor_id, name, slug, brand, subcategory, description, sample_price, sample_eligible, retail_price, in_stock, specs, primary_image_url, image_urls, size, active, tags')
       .eq('category', 'slab').eq('active', true).order('id').range(from, from + 999);
     if (error) throw error;
     rows = rows.concat(data);
@@ -104,8 +104,20 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         ? r.description : (old.description || r.description || ''),
       tags: [...new Set([...(old.tags || []), ...(Array.isArray(r.tags) ? r.tags : [])])],
       available: r.in_stock !== false,
-      price: String(r.sample_price != null ? r.sample_price : (old.price || '12.99')),
-      currency: 'USD',
+      // A slab has NO price: it is quote-based (sqft varies per job, and the
+      // vendors price per-slab vs per-sqft inconsistently). The old `price` was
+      // really `sample_price`, and when that was null it fell back to
+      // `old.price` — the value in the file this script is about to overwrite.
+      // 1,577 of 2,402 prices had no catalog backing and were laundered forward
+      // on every run, including The Yard's per-slab $1,995. Two consumers read
+      // it: the schema.org Offer (which published $12.99 to Google as the slab's
+      // price for 917 pages) and the Hanstone vendor grid ("$12.99/sf").
+      //
+      // `sample_eligible` is the field slab pages could never see. It is the
+      // catalog's name for it, and the server checks the same column at
+      // checkout, so the button and the server cannot drift.
+      sample_eligible: r.sample_eligible === true,
+      sample_price: r.sample_eligible === true ? String(r.sample_price != null ? r.sample_price : '12.99') : null,
       images: images.length ? images : (old.images || []),
       variants: old.variants || [],
       ...(old.origin ? { origin: old.origin } : {}),

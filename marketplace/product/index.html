@@ -2914,12 +2914,17 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
   // Fetch product data from the appropriate category JSON
   async function findProduct() {
-    // A static-JSON hit with no real price (0.00 / no variants — e.g. slab
-    // samples in slabs.json) is stale: treat it as a miss so we fall through to
-    // the live catalog API, which carries the correct sample price ($12.99).
-    // Keep it as a last-resort fallback in case the API also misses.
+    // A static-JSON hit with no real price (0.00 / no variants) is stale for a
+    // PURCHASABLE product: treat it as a miss so we fall through to the live
+    // catalog API. Keep it as a last-resort fallback in case the API also misses.
+    //
+    // Slabs are the exception: they are quote-based and data/slabs.json carries
+    // no price by design, so a slab hit is authoritative. It used to carry one
+    // (really the sample price), which is why every slab returned here before
+    // the catalog was ever consulted.
     let staleProduct = null;
-    const usablePrice = (p) => Number(p && p.price) > 0
+    const usablePrice = (p) => category === 'slabs'
+      || Number(p && p.price) > 0
       || (Array.isArray(p && p.variants) && p.variants.some(v => Number(v && v.price) > 0));
     // Try the specified category first
     try {
