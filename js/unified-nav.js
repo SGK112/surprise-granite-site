@@ -220,7 +220,8 @@
       { name: 'Dekton Countertops', desc: 'Ultracompact by Cosentino', href: '/materials/countertops/dekton-countertops/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg' },
       { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
       { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
-      { name: 'Remnants', desc: 'One-off pieces, live inventory', href: '/marketplace/remnants/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
+      { name: 'Remnants', desc: 'One-off pieces, live inventory', href: '/marketplace/remnants/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Discontinued Colors', desc: 'Retired colors — find yours', href: '/discontinued/', img: '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' }
     ],
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
