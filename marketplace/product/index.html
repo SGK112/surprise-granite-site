@@ -3324,6 +3324,15 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         return key === 'thickness' ? '2cm, 3cm (typ.)' : 'Polished (typ.)';
       }
 
+      /** `131 x 77` -> `131" x 77"`. Already-quoted values pass through unchanged. */
+      function formatSize(v) {
+        if (!v) return null;
+        const s = String(v).trim();
+        if (/["″]/.test(s)) return s;
+        const m = s.match(/^([\d.]+)\s*[x×]\s*([\d.]+)$/i);
+        return m ? `${m[1]}" x ${m[2]}"` : s;
+      }
+
       function renderSlabSpecs(prod) {
         const specsGrid = document.getElementById('specs-grid');
         const sp = prod.specs || {};
@@ -3340,7 +3349,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         const origin    = (prod.originCountry && prod.originFlag)
           ? `${prod.originFlag} ${prod.originCountry}`
           : val(sp.origin, prod.origin);
-        const slabSize  = sp.slab_size ? `${sp.slab_size}"` : val(prod.size, sp.piece_size);
+        // Sizes arrive in two shapes: bare from the vendor price sheets
+        // ("131 x 77") and already-quoted from the engineered-brand standards
+        // ('126" x 57"', or '130" x 65" (typ.)' where the vendor publishes no
+        // uniform size). Blindly appending a quote produced `126" x 57""`.
+        const slabSize  = formatSize(val(sp.slab_size, prod.size, sp.piece_size));
 
         let specsHtml = '';
         specsHtml += row('Material',   material);

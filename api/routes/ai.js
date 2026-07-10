@@ -551,7 +551,15 @@ router.post('/blueprint/parse-text', express.json({ limit: '12mb' }), (req, res)
       return res.status(400).json({ error: 'text (string) is required' });
     }
     const { extractTakeoffFromText } = require('../lib/takeoff/text-extract');
-    return res.json(extractTakeoffFromText(text));
+    const { parseCaseworkSchedules } = require('../lib/takeoff/casework-schedule');
+    // Casework schedules are printed as tables on the enlarged-plan sheets and
+    // live in the text layer. Vision reads maybe a tenth of the rows off a
+    // rasterized E-size sheet; this reads all of them, exactly, for free.
+    const casework = parseCaseworkSchedules(text);
+    return res.json({
+      ...extractTakeoffFromText(text),
+      casework: casework.rooms.length ? casework : null,
+    });
   } catch (err) {
     logger.error('[Blueprint] parse-text error:', err.message);
     return handleApiError(res, err, 'Blueprint text parse');

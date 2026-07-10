@@ -3100,7 +3100,8 @@ flooring_lvp,5,3"></textarea>
   function renderTextTakeoff(t) {
     const rooms = (t && Array.isArray(t.rooms)) ? t.rooms : [];
     const mats = (t && Array.isArray(t.materials)) ? t.materials : [];
-    if (!rooms.length && !mats.length) return;
+    const cw = (t && t.casework) ? t.casework : null;
+    if (!rooms.length && !mats.length && !cw) return;
     const list = document.getElementById('sheetList');
     if (!list) return;
     let box = document.getElementById('textTakeoffBox');
@@ -3134,6 +3135,27 @@ flooring_lvp,5,3"></textarea>
         `<div style="font-weight:700;color:#22c55e;margin:12px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">🪵 ${mats.length} material spec${mats.length>1?'s':''} from the schedule</div>`+
         `<table style="width:100%;border-collapse:collapse">${mrows}</table>`+
         `<div style="margin-top:6px;color:var(--text-muted);font-style:italic">Material specs are exact from the schedule. Counter LF/SF aren't printed on plans — measure them or read the elevations.</div>`;
+    }
+    // Commercial sets print a casework schedule (count + type mark + width) on
+    // the enlarged-plan sheets. Those rows are text, so the counts are exact —
+    // this is the number the vision pass systematically undercounts.
+    if (cw && cw.rooms && cw.rooms.length) {
+      const withCabs = cw.rooms.filter(r => r.baseLF || r.upperLF || r.tallLF);
+      const crows = withCabs.map(r =>
+        `<tr><td style="padding:2px 12px 2px 0">${esc(r.room)}</td>`+
+        `<td style="text-align:right;font-variant-numeric:tabular-nums;padding-right:12px">${r.baseLF} LF base</td>`+
+        `<td style="text-align:right;font-variant-numeric:tabular-nums;padding-right:12px">${r.upperLF} LF upper</td>`+
+        `<td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.countertopSF} SF top</td></tr>`
+      ).join('');
+      const T = cw.totals || {};
+      html +=
+        `<div style="font-weight:700;color:#22c55e;margin:12px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">🗄️ Casework schedule — ${T.cabinetCount || 0} cabinets across ${withCabs.length} room${withCabs.length>1?'s':''}, read as text</div>`+
+        `<table style="width:100%;border-collapse:collapse">${crows}</table>`+
+        `<div style="margin-top:8px;font-weight:600">Countertop: ${T.countertopLF || 0} LF · ${T.countertopSF || 0} SF `+
+        `<span style="color:var(--text-muted);font-weight:400">(at ${T.counterDepthIn || 25}" deep)</span></div>`+
+        `<div style="margin-top:4px;color:var(--text-muted)">Cabinets: ${T.cabinetLF || 0} LF total · ${T.sinkCabinets || 0} sink base${T.sinkCabinets===1?'':'s'}`+
+        `${T.fumeHoods ? ` · ${T.fumeHoods} fume hood${T.fumeHoods===1?'':'s'}` : ''}</div>`+
+        `<div style="margin-top:6px;color:var(--text-muted);font-style:italic">Counts and widths are exact from the schedule. Countertop material is not on the drawings — check the spec book.</div>`;
     }
     box.innerHTML = html;
   }
