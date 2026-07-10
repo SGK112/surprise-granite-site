@@ -3346,7 +3346,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       renderSlabSpecs(product);
       // Static slabs.json hits carry empty specs — enrich from the live
       // catalog (which the dimensions backfill populated) and re-render.
-      if (!(product.specs && product.specs.slab_size) && category === 'slabs') {
+      // Also enrich when the static hit carries no sample_eligible flag — that is
+      // the catalog's answer, and slabs.json never has it.
+      if (category === 'slabs'
+          && (!(product.specs && product.specs.slab_size) || product.sample_eligible === undefined)) {
         (async () => {
           const h = product.handle || handle;
           // catalog slugs are inconsistent about the -sample suffix — try both
@@ -3360,7 +3363,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
               if (!p || (!p.specs && !p.size)) continue;
               product.specs = Object.assign({}, p.specs, product.specs);
               if (!product.size && p.size) product.size = p.size;
+              // The catalog's flag and vendor_id are authoritative; slabs.json
+              // has neither. Re-decide the sample button now that we know.
+              if (p.sample_eligible !== undefined) product.sample_eligible = p.sample_eligible;
+              if (p.vendor_id) product.vendor_id = p.vendor_id;
               renderSlabSpecs(product);
+              if (typeof window.__sgApplySampleButton === 'function') window.__sgApplySampleButton(product);
               return;
             } catch (e) { /* try next */ }
           }
@@ -3395,46 +3403,60 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       //   2. Product is explicitly flagged: tag `no-sample`/`no-samples`/`samples-unavailable`,
       //      or `no_sample: true` / `has_sample: false` in the product record.
       //      (Use this for specific tile SKUs without samples.)
-      const sampleBtn = document.getElementById('btn-order-sample');
-      // Sinks, faucets and fixtures are not sampleable, but this button used to
-      // render on their pages and add them to the cart at their full retail
-      // price — a "sample" of a $590 sink cost $590. Only catalog rows the
-      // server marked sample_eligible may be offered.
-      //
-      // The natural-stone and brand rules moved to js/sampleable.js, which is
-      // pinned to the server's copy by api/tests/unit/sampleableParity.test.js.
-      // Four hand-maintained copies of this rule had drifted apart.
-      const sampleEligible = product.sample_eligible === true
-        && window.SGSampleable.isSampleable({
-          ...product,
-          material,
-          title,
-          brand: product.brand || product.vendor
-        });
-      if (sampleBtn) {
-        if (!sampleEligible) {
-          sampleBtn.style.display = 'none';
-        } else if (window.SgCart) {
-          sampleBtn.href = 'javascript:void(0)';
-          sampleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            window.SgCart.addToCart({
-              id: product.handle || product.id,
-              name: title + ' (Sample)',
-              // Flat sample fee — never the slab's price. The server re-prices
-              // samples anyway (api/validators/price-validator.js), so this only
-              // has to match what the cart shows the buyer.
-              price: 12.99,
-              image: (product.images && product.images[0]) || '',
-              quantity: 1,
-              variant: 'Sample',
-              category: category || '',
-              href: window.location.href
+      /**
+       * Show the Order Sample button only where checkout will honour it, and
+       * re-run when the catalog answers.
+       *
+       * `sample_eligible` is authoritative when present: the server trusts the
+       * same catalog flag at checkout, so the button must agree. But slab pages
+       * are served from data/slabs.json, and ALL 2,398 of its entries have a
+       * price, so findProduct() returns one before the catalog API is ever
+       * consulted — and none of them carries the flag. Requiring `=== true` hid
+       * the sample button on every slab page on the site. For a static hit the
+       * shared rule decides; the enrichment below then re-runs this with the
+       * catalog's real flag and vendor_id.
+       *
+       * Idempotent: the click handler is bound once, so a re-run cannot add a
+       * second listener and put two chips in the cart.
+       */
+      function applySampleButton(prod) {
+        const sampleBtn = document.getElementById('btn-order-sample');
+        if (!sampleBtn) return;
+
+        const eligible = prod.sample_eligible === true ? true
+          : prod.sample_eligible === false ? false
+          : window.SGSampleable.isSampleable({
+              ...prod,
+              material,
+              title,
+              brand: prod.brand || prod.vendor
             });
-            if (window.openCartDrawer) window.openCartDrawer();
+
+        if (!eligible) { sampleBtn.style.display = 'none'; return; }
+        sampleBtn.style.display = '';
+        if (!window.SgCart || sampleBtn.dataset.sampleBound) return;
+        sampleBtn.dataset.sampleBound = '1';
+        sampleBtn.href = 'javascript:void(0)';
+        sampleBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          window.SgCart.addToCart({
+            id: prod.handle || prod.id,
+            name: title + ' (Sample)',
+            // Flat sample fee — never the slab's price. The server re-prices
+            // samples anyway (api/validators/price-validator.js), so this only
+            // has to match what the cart shows the buyer.
+            price: 12.99,
+            image: (prod.images && prod.images[0]) || '',
+            quantity: 1,
+            variant: 'Sample',
+            category: category || '',
+            href: window.location.href
           });
-        }
+          if (window.openCartDrawer) window.openCartDrawer();
+        });
       }
+      window.__sgApplySampleButton = applySampleButton;
+      applySampleButton(product);
 
       // --- Add to Cart for purchasable products ---
       // Flooring AND tile are intentionally excluded: both are priced per sq ft,
