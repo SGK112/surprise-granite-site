@@ -204,6 +204,7 @@ const csvCell = (v) => {
 
   if (!write) { console.log('\nDRY RUN — add --write'); process.exit(0); }
 
+  fs.mkdirSync(OUT_DIR, { recursive: true });
   const payload = { generatedAt: new Date().toISOString(), counts, categories };
   fs.writeFileSync(OUT_JSON, JSON.stringify(payload, null, 1));
 

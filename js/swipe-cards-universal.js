@@ -35,9 +35,14 @@ function __sgInitSwipeCards() {
   } else if (path.includes('countertop') || path.includes('granite') || path.includes('marble') || path.includes('quartz') || path.includes('porcelain') || path.includes('quartzite')) {
     productType = 'countertop';
     productLabel = 'Countertops';
-    jsonPath = '/data/countertops.json';
-    jsonKey = 'countertops';
-    urlPrefix = '/countertops/';
+    // Full vendor catalog (2,118 real slabs, chips excluded) — replaces the old
+    // 619-colour data/countertops.json. slabs.json is a bare array with a
+    // different field shape, normalised in normalizeSlab() below. Detail links go
+    // through the marketplace product page, which resolves any catalog slug
+    // (/countertops/:slug only knew the 619 Webflow slugs).
+    jsonPath = '/data/slabs.json';
+    jsonKey = 'slabs';
+    urlPrefix = '/marketplace/product/?handle=';
   } else if (path.includes('tile')) {
     productType = 'tile';
     productLabel = 'Tiles';
@@ -187,7 +192,13 @@ function __sgInitSwipeCards() {
         const response = await fetch(jsonPath);
         if (response.ok) {
           const data = await response.json();
-          const items = data[jsonKey] || data.countertops || data.flooring || data.tile || [];
+          // slabs.json is a bare array; the category files are { <key>: [...] }.
+          let items = Array.isArray(data) ? data : (data[jsonKey] || data.countertops || data.flooring || data.tile || []);
+          // Bridge slabs.json's field shape (title/handle/brandDisplay/images[]/
+          // colour-in-tags) onto what parseJSONProducts expects.
+          if (productType === 'countertop' && jsonPath.indexOf('slabs.json') > -1) {
+            items = items.map(normalizeSlab);
+          }
           parseJSONProducts(items);
           console.log(`Swipe Cards: Loaded ${cards.length} ${productLabel} from JSON`);
         }
@@ -358,6 +369,35 @@ function __sgInitSwipeCards() {
     renderCards();
     updateProgress();
     updateStats();
+  }
+
+  // Pull a value out of the "Prefix_Value" tag convention the catalog uses for
+  // colour/style, e.g. tagValue(tags, 'Primary Color_') -> 'White'. Strips the
+  // "(derived)" marker the colour backfill adds.
+  function tagValue(tags, prefix) {
+    if (!Array.isArray(tags)) return '';
+    const t = tags.find((x) => typeof x === 'string' && x.indexOf(prefix) === 0);
+    return t ? t.slice(prefix.length).replace(/\s*\(derived\)$/i, '') : '';
+  }
+
+  // Map a data/slabs.json record onto the item shape parseJSONProducts reads.
+  function normalizeSlab(s) {
+    const imgs = Array.isArray(s.images) ? s.images : [];
+    return {
+      name: s.title || s.name || '',
+      slug: s.handle || s.id || '',
+      brand: s.brandDisplay || s.vendor || '',
+      type: s.material || s.productType || '',
+      primaryColor: tagValue(s.tags, 'Primary Color_'),
+      accentColor: tagValue(s.tags, 'Accent Color_'),
+      style: tagValue(s.tags, 'Countertop Style_'),
+      thickness: s.thickness || '',
+      finish: s.finish || '',
+      primaryImage: imgs[0] || '',
+      secondaryImage: imgs[1] || '',
+      available: s.available,
+      sample_eligible: s.sample_eligible,
+    };
   }
 
   // Parse products from JSON data
