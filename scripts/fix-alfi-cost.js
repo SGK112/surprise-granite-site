@@ -20,6 +20,8 @@
  * Writes vendor_cost only.
  */
 
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { MongoClient } = require(path.join(__dirname, '../api/node_modules/mongodb'));
 const { execFileSync } = require('child_process');
@@ -37,24 +39,39 @@ function q(sql) {
   }
 }
 
+// Whatever vendor_config says today, so a repaired row lands on the same price
+// apply-retail-markup.js would give it. Hardcoding 30 here would silently drift.
+const MARKUP_PCT = Number(q(`SELECT default_markup_pct FROM vendor_config WHERE vendor_id='alfi-trade';`));
+if (!Number.isFinite(MARKUP_PCT)) { console.error('no markup configured for alfi-trade'); process.exit(1); }
+
+// Integer cents: `39.95 * 1.3` is 51.934999… in float, so toFixed(2) gives 51.93
+// where Postgres round(numeric,2) stores 51.94. Must agree, or verify() fails.
+const markedUp = (cost) => Math.round((Math.round(cost * 100) * (100 + MARKUP_PCT)) / 100) / 100;
+
 const SHEETS = [
   { file: 'ALFI brand and EAGO Datasheet - JAN 2026.xlsx', priceHeader: /msrp/i, ratio: 0.405, brand: 'ALFI/EAGO' },
   { file: 'Whitehaus Datasheet - JAN 26.xlsx', priceHeader: /msrp/i, ratio: 0.500, brand: 'Whitehaus' },
 ];
 
-// Only repair costs that CANNOT be right, never ones that merely look unusual.
-//
 // A base SKU maps to several finishes with different MSRPs: AB1003 costs $153.90,
-// which is exactly 380 x 0.405 (the BN finish), while its retail $280 is the PC
-// finish's MSRP. Picking the MSRP nearest retail and "correcting" from it would
-// have overwritten a correct cost. So: if the cost matches ratio x MSRP for ANY
-// finish of that SKU, it is right.
+// which is exactly 380 x 0.405 (the BN finish), while its MSRP-era retail $280 is
+// the PC finish's. So: if the cost matches ratio x MSRP for ANY finish of that
+// SKU, it is right, and nothing here touches it.
 //
-// What remains corrupt is unambiguous — a cost at or above MSRP (you cannot buy
-// above list), or a retail more than 10x cost (WHNCD72 and WHNCMB4413 both carry
-// a stuck $131.63 against $4,990 and $1,720 MSRPs).
+// Everything else that HAS a datasheet entry is corrupt. That is a harder line
+// than this script first drew, and it has to be: retail_price is now derived as
+// cost x 1.30 (one markup, every vendor — owner, 2026-07-09), so a wrong cost is
+// no longer a private bookkeeping error, it is a wrong price on the website.
+// AB3018UD's cost implies a $567 MSRP where the sheet says $1,150, and it was
+// publishing $298 for an eleven-hundred-dollar sink.
 const MATCH_TOL = 0.02;
-const isCorrupt = (cost, msrp, retail) => cost >= msrp * 0.9 || retail > cost * 10;
+
+// Rows the datasheets don't contain cannot be priced at all: no MSRP, so no cost,
+// so no defensible retail. Selling one means guessing. WH3018 was on offer at
+// $121.10 against a $1,100 list price. Deactivate rather than guess — a listing
+// we can restore in one UPDATE is cheaper than a sink sold at an 89% discount.
+const RETAIL_BEFORE = path.join(process.env.HOME, 'sg-backups', 'retail_price_before_markup_dropship.json');
+const COLLAPSE = 0.5;
 
 async function loadSheet(client, spec) {
   const doc = await client.db().collection('_vendor_docs').findOne({ filename: spec.file });
@@ -85,9 +102,16 @@ async function loadSheet(client, spec) {
  * SKU and take the MSRP nearest the row's retail price — retail already equals an
  * MSRP on 611 of 613 matched rows, so it identifies which finish this row is.
  */
-// The suffix can be on either side: the catalog has `WHQ5530-M` where the sheet
-// has `WHQ5530`, and `AB1003` where the sheet has `AB1003-BN`. Strip both.
-const stripFinish = (s) => s.replace(/-[A-Z0-9]{1,4}$/, '');
+// A finish suffix is ALPHABETIC (-BN brushed nickel, -PC polished chrome, -W
+// white, -BM matte black). A suffix containing a digit is a SIZE or model, and a
+// different size is a different product.
+//
+// This regex used to be /-[A-Z0-9]{1,4}$/, which stripped sizes too, so
+// `WHRAX-63` collapsed to `WHRAX` and "verified" its cost against `WHRAX-48` —
+// a 48-inch unit. `WH1-114` likewise matched `WH1-102L`. Both then passed the
+// ratio check and were reported correct. Widening a key until it matches is not
+// verification; it just moves the error somewhere quieter.
+const stripFinish = (s) => s.replace(/-[A-Z]{1,3}$/, '');
 
 function msrpCandidates(map, sku) {
   if (map.has(sku)) return [map.get(sku)];
@@ -115,10 +139,17 @@ function msrpCandidates(map, sku) {
     return { id, sku: sku.toUpperCase(), cost: +cost, retail: +retail };
   });
 
+  // retail_price is now cost x 1.30, so it can no longer tell us which finish a
+  // row is. Its pre-markup value equalled the MSRP on 611 of 613 rows, and that
+  // is what identifies the finish. Read it from the backup taken before the write.
+  const priorRetail = new Map(JSON.parse(fs.readFileSync(RETAIL_BEFORE, 'utf8'))
+    .map((r) => [r.id, r.retail_price === '' || r.retail_price == null ? null : Number(r.retail_price)]));
+
   const fixes = [];
   const unmatched = [];
   let matched = 0;
   for (const r of rows) {
+    r.was = priorRetail.get(r.id) ?? r.retail;
     let sheet = null, cands = [];
     for (const s2 of sheets) {
       const c = msrpCandidates(s2.map, r.sku);
@@ -130,44 +161,60 @@ function msrpCandidates(map, sku) {
     // Right for ANY finish of this SKU -> leave it alone.
     if (cands.some((m) => Math.abs(r.cost / m - sheet.ratio) <= MATCH_TOL)) continue;
 
-    const msrp = cands.reduce((a, b) => (Math.abs(b - r.retail) < Math.abs(a - r.retail) ? b : a));
-    if (!isCorrupt(r.cost, msrp, r.retail)) continue;         // unusual, but possible — not ours to rewrite
-
+    const msrp = cands.reduce((a, b) => (Math.abs(b - r.was) < Math.abs(a - r.was) ? b : a));
     fixes.push({ ...r, msrp, expected: Number((msrp * sheet.ratio).toFixed(2)), ratio: +(r.cost / msrp).toFixed(3), brand: sheet.brand });
   }
-  const unfixable = unmatched.filter((r) => r.retail > r.cost * 10);
+
+  // No datasheet entry AND the reprice slashed the public price: the cost that
+  // drove it is unsupported by any source we hold. Pull the listing.
+  const unfixable = unmatched.filter((r) => r.was && r.retail < r.was * COLLAPSE);
 
   const pad = (s, n) => String(s).padEnd(n);
   console.log(`\nalfi rows with a cost      : ${rows.length}`);
   console.log(`  matched to a datasheet   : ${matched}`);
-  console.log(`  unambiguously corrupt    : ${fixes.length}`);
-  console.log(`  no datasheet SKU          : ${unmatched.length}  (of which ${unfixable.length} still look >10x)\n`);
+  console.log(`  cost contradicts the sheet: ${fixes.length}  (repair)`);
+  console.log(`  no datasheet SKU         : ${unmatched.length}  (of which ${unfixable.length} now underpriced -> deactivate)\n`);
 
-  console.log(pad('sku', 15) + pad('brand', 12) + pad('msrp', 10) + pad('cost now', 11) + pad('cost should be', 15) + 'ratio');
-  console.log('-'.repeat(76));
-  fixes.forEach((f) => console.log(
-    pad(f.sku, 15) + pad(f.brand, 12) + pad(`$${f.msrp}`, 10) + pad(`$${f.cost}`, 11) + pad(`$${f.expected}`, 15) + f.ratio));
+  if (fixes.length) {
+    console.log(pad('sku', 15) + pad('brand', 12) + pad('msrp', 10) + pad('cost now', 11) + pad('cost should be', 15) + pad('retail now', 12) + 'retail after');
+    console.log('-'.repeat(100));
+    fixes.forEach((f) => console.log(
+      pad(f.sku, 15) + pad(f.brand, 12) + pad(`$${f.msrp}`, 10) + pad(`$${f.cost}`, 11) + pad(`$${f.expected}`, 15)
+      + pad(`$${f.retail.toFixed(2)}`, 12) + `$${markedUp(f.expected).toFixed(2)}`));
+  }
+
+  if (unfixable.length) {
+    console.log(`\n--- absent from both datasheets, retail collapsed -> DEACTIVATE ---`);
+    console.log(pad('sku', 15) + pad('cost', 11) + pad('was', 11) + pad('now', 11) + 'name');
+    unfixable.forEach((r) => console.log(pad(r.sku, 15) + pad(`$${r.cost}`, 11) + pad(`$${r.was.toFixed(2)}`, 11) + pad(`$${r.retail.toFixed(2)}`, 11)));
+  }
 
   if (!WRITE) { console.log('\nDRY RUN — nothing written. Re-run with --write.\n'); return; }
-  if (!fixes.length) { console.log('\nnothing to do.\n'); return; }
+  if (!fixes.length && !unfixable.length) { console.log('\nnothing to do.\n'); return; }
 
-  const fs = require('fs');
-  const os = require('os');
   const dir = path.join(os.homedir(), 'sg-backups');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'alfi_vendor_cost_before.json'), JSON.stringify(rows, null, 1));
   console.log(`\nbackup: ${path.join(dir, 'alfi_vendor_cost_before.json')} (${rows.length} rows)`);
 
-  for (const f of fixes) q(`UPDATE catalog_products SET vendor_cost = ${f.expected} WHERE id = '${f.id}';`);
-  console.log(`  updated ${fixes.length}`);
-
-  const ids = fixes.map((f) => `'${f.id}'`).join(',');
-  const bad = q(`SELECT count(*) FROM catalog_products WHERE id IN (${ids}) AND retail_price > vendor_cost * 10;`);
-  console.log(`\nverify: repaired rows still >10x cost: ${bad} (expect 0)`);
-  if (bad !== '0') { console.error('MISMATCH — restore from the backup.'); process.exit(1); }
-  if (unfixable.length) {
-    console.log(`\nstill >10x but absent from both datasheets (${unfixable.length}) — cost unknown, left alone:`);
-    unfixable.slice(0, 6).forEach((r) => console.log(`  ${r.sku.padEnd(16)} cost $${r.cost}  retail $${r.retail}`));
+  // Repair the cost AND the price it now derives. Leaving retail behind would
+  // republish the very number this script exists to remove.
+  for (const f of fixes) {
+    q(`UPDATE catalog_products SET vendor_cost = ${f.expected}, retail_price = ${markedUp(f.expected)} WHERE id = '${f.id}';`);
   }
+  for (const r of unfixable) q(`UPDATE catalog_products SET active = false WHERE id = '${r.id}';`);
+  console.log(`  repaired ${fixes.length}, deactivated ${unfixable.length}`);
+
+  if (fixes.length) {
+    const ids = fixes.map((f) => `'${f.id}'`).join(',');
+    const bad = q(`SELECT count(*) FROM catalog_products
+                    WHERE id IN (${ids})
+                      AND abs(retail_price - round((vendor_cost * ${1 + MARKUP_PCT / 100})::numeric, 2)) >= 0.01;`);
+    console.log(`\nverify: repaired rows off the ${MARKUP_PCT}% markup: ${bad} (expect 0)`);
+    if (bad !== '0') { console.error('MISMATCH — restore from the backup.'); process.exit(1); }
+  }
+  const live = q(`SELECT count(*) FROM catalog_products WHERE active AND id IN (${unfixable.map((r) => `'${r.id}'`).join(',') || `''`});`);
+  console.log(`verify: unpriceable rows still active     : ${live} (expect 0)`);
+  if (live !== '0') { console.error('MISMATCH — those rows are still on sale.'); process.exit(1); }
   console.log('\nDONE.\n');
 })().catch((e) => { console.error(e.message); process.exit(1); });
