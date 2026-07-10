@@ -91,3 +91,71 @@ describe('the slug is the identity; a colliding name cannot override it', () => 
     expect(r.validatedPrice).toBe(SAMPLE_PRICE_CENTS);
   });
 });
+
+/**
+ * The static list slugs a colour `<name>-<material>`; the catalog slugs it
+ * `<name>`. `white-egeo-granite` missed its catalog row (`white-egeo`, Granite,
+ * sample_eligible=false), fell through to data/countertops.json -- which called
+ * it Quartz -- and checkout ACCEPTED $12.99 for a granite chip. Live, verified.
+ */
+describe('a `<name>-<material>` slug still finds its catalog row', () => {
+  /** Minimal supabase stub: one table, exact-match .eq() only. */
+  const stubCatalog = (rows) => ({
+    from: () => {
+      const filters = {};
+      const api = {
+        select: () => api,
+        eq: (col, val) => { filters[col] = val; return api; },
+        limit: () => api,
+        maybeSingle: async () => ({
+          data: rows.find((r) => Object.entries(filters).every(([k, v]) => r[k] === v)) || null,
+        }),
+      };
+      return api;
+    },
+  });
+
+  const catalog = [
+    { slug: 'white-egeo', vendor_id: 'cosentino', sample_eligible: false, active: true },
+    { slug: 'arctic-ice', vendor_id: 'bolder-image-stone', sample_eligible: true, active: true },
+    { slug: 'kensho-quartz', vendor_id: 'msi', sample_eligible: true, active: true },
+  ];
+
+  it('refuses white-egeo-granite via the base slug', async () => {
+    const r = await validateSingleItem(
+      { id: 'white-egeo-granite', name: 'White Egeo (Sample)', price: 1299, quantity: 1 },
+      stubCatalog(catalog));
+    expect(r.validatedPrice).toBeNull();
+    expect(r.unmatched.reason).toBe('not_sampleable');
+  });
+
+  it('does not prefix-match a different stone (arctic-quartz is not arctic-ice)', async () => {
+    const r = await validateSingleItem(
+      { id: 'arctic-quartz', name: 'Arctic (Sample)', price: 1299, quantity: 1 },
+      stubCatalog(catalog));
+    // arctic-quartz has no catalog row of its own and no `arctic` base row, so it
+    // must NOT inherit arctic-ice's eligibility. Whatever it resolves to, it may
+    // not come from arctic-ice.
+    expect(r.priceSource).not.toBe('catalog_sample');
+  });
+
+  it('still honours an exact catalog slug', async () => {
+    const r = await validateSingleItem(
+      { id: 'kensho-quartz', name: 'Kensho (Sample)', price: 1299, quantity: 1 },
+      stubCatalog(catalog));
+    expect(r.validatedPrice).toBe(SAMPLE_PRICE_CENTS);
+    expect(r.priceSource).toBe('catalog_sample');
+  });
+});
+
+describe('the two mislabelled granites', () => {
+  it('refuses bedrock-quartz (MSI has no Bedrock quartz; it is granite)', async () => {
+    const r = await check('bedrock-quartz', 'Bedrock (Sample)');
+    expect(r.unmatched.reason).toBe('not_sampleable');
+  });
+
+  it('refuses white-egeo-granite from the static list alone', async () => {
+    const r = await check('white-egeo-granite', 'White Egeo (Sample)');
+    expect(r.unmatched.reason).toBe('not_sampleable');
+  });
+});

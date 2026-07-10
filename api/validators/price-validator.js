@@ -302,10 +302,25 @@ async function resolveSampleableProduct(item, supabase) {
   // all, and must only run then.
   const identity = item.id || item.handle || item.sku;
 
+  // The static list slugs a colour `<name>-<material>`; the catalog slugs it
+  // `<name>`. `white-egeo-granite` therefore missed its catalog row (`white-egeo`,
+  // Granite, sample_eligible=false), fell through to data/countertops.json — which
+  // wrongly calls it Quartz — and checkout sold a granite chip for $12.99.
+  //
+  // Try the base slug too, EXACTLY. Never a prefix match: `arctic-quartz` must not
+  // resolve to `arctic-ice`, which is a different stone.
+  const baseSlug = (s) => String(s || '').replace(/-(quartz|granite|marble|quartzite|dekton|porcelain|soapstone)$/i, '') || null;
+
   // The catalog is authoritative and carries vendor_id, which the caller needs
   // to charge shipping per vendor (each vendor drop-ships separately).
   if (supabase) {
-    const idLookups = [['slug', item.id], ['slug', item.handle], ['sku', item.sku]];
+    const idLookups = [
+      ['slug', item.id],
+      ['slug', item.handle],
+      ['sku', item.sku],
+      ['slug', baseSlug(item.id) !== item.id ? baseSlug(item.id) : null],
+      ['slug', baseSlug(item.handle) !== item.handle ? baseSlug(item.handle) : null],
+    ];
     for (const [column, value] of idLookups) {
       if (!value) continue;
       try {
