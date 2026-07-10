@@ -108,7 +108,8 @@
         { label: 'Dekton', href: '/materials/countertops/dekton-countertops/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
         { label: 'LVP Flooring', href: '/materials/flooring' },
-        { label: 'Remnants', href: '/marketplace/remnants/' }
+        { label: 'Remnants', href: '/marketplace/remnants/' },
+        { label: 'Discontinued Colors', href: '/discontinued/' }
       ]
     },
     {
