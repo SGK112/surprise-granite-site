@@ -149,32 +149,7 @@ setInterval(() => {
 // ============================================
 // GENERAL RATE LIMITER FOR PUBLIC ENDPOINTS
 // ============================================
-const publicRateLimitStore = new Map();
-
-function publicRateLimiter(options = {}) {
-  const { maxRequests = 10, windowMs = 60000, message = 'Too many requests' } = options;
-
-  return (req, res, next) => {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
-    const key = `${ip}:${req.path}`;
-    const now = Date.now();
-
-    let record = publicRateLimitStore.get(key) || { timestamps: [] };
-    record.timestamps = record.timestamps.filter(ts => ts > now - windowMs);
-
-    if (record.timestamps.length >= maxRequests) {
-      return res.status(429).json({
-        error: 'Rate limit exceeded',
-        message: message,
-        retryAfter: Math.ceil((record.timestamps[0] + windowMs - now) / 1000)
-      });
-    }
-
-    record.timestamps.push(now);
-    publicRateLimitStore.set(key, record);
-    next();
-  };
-}
+const { publicRateLimiter } = require('./middleware/publicRateLimiter');
 
 // Middleware instances for different endpoints
 const leadRateLimiter = publicRateLimiter({ maxRequests: 5, windowMs: 60000, message: 'Too many lead submissions. Please wait a minute.' });
