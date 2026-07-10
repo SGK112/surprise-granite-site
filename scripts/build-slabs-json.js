@@ -71,6 +71,14 @@ const fmtSize = (s) => {
     if (data.length < 1000) break;
   }
 
+  // Sample CHIP rows (`<slug>-sample`) share category 'slab' but are not products
+  // — they are the physical 4x4 chip SKUs the checkout resolves. Publishing them
+  // put 288 phantom "slabs" in the storefront grid and vendor pages. They are
+  // sold through the sample flow, never browsed as slabs, so exclude them here.
+  const chipCount = rows.filter((r) => /-sample$/.test(r.slug)).length;
+  rows = rows.filter((r) => !/-sample$/.test(r.slug));
+  console.log('excluded sample-chip rows:', chipCount);
+
   // Josh: don't advertise discontinued — deactivate + exclude.
   const discontinued = rows.filter((r) => r.specs && r.specs.discontinued);
   console.log('active slabs:', rows.length, '| discontinued to retire:', discontinued.length);
