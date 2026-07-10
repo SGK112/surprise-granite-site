@@ -3124,16 +3124,22 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         return s;
       };
 
+      // Engineered surfaces really are made in 2cm/3cm and sold polished; natural
+      // stone is not, so it shows only what the price sheet gives us.
+      var mat = clean(specs.material) || clean(product.subcategory) || clean(product.productType);
+      var engineered = /quartz|porcelain|dekton|sintered/i.test(mat || '') && !/quartzite/i.test(mat || '');
+
       const rows = [
-        ['Material Type',       clean(specs.material) || clean(product.subcategory) || clean(product.productType)],
+        ['Material Type',       mat],
         ['Brand',               clean(product.brandDisplay) || clean(product.vendor) || clean(product.brand)],
         ['Collection',          clean(product.collection) || clean(specs.collection) || clean(specs.line) || clean(specs.product_line)],
         ['Primary Color',       clean(product.primaryColor) || clean(product.color_family)],
         ['Accent Color',        clean(product.accentColor) || clean(specs.accentColor)],
         ['Pattern Style',       clean(product.style) || clean(specs.style)],
-        ['Available Thickness', clean(specs.thickness)],
-        ['Finish',              clean(product.finish) || clean(specs.finish)],
+        ['Available Thickness', clean(specs.thickness) || (engineered ? '2cm, 3cm (typ.)' : null)],
+        ['Finish',              clean(product.finish) || clean(specs.finish) || (engineered ? 'Polished (typ.)' : null)],
         ['Slab Size',           clean(specs.slab_size) || clean(product.size)],
+        ['Sqft / Slab',         specs.slab_sqft ? ('~' + specs.slab_sqft + ' sq ft') : null],
         ['Piece Size',          clean(specs.piece_size)],
         ['Origin',              clean(specs.origin)],
       ].filter(function (r) { return r[1]; });
@@ -3280,13 +3286,18 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
       // Update colors section
       const colorsSection = document.getElementById('colors-section');
-      if (product.primaryColor || product.accentColor) {
+      // Same trap as the specs grid: slabs.json has no primaryColor/accentColor.
+      // The catalog keeps them in `color_family` and `specs.accentColor`.
+      const csp = product.specs || {};
+      const primaryColor = product.primaryColor || product.color_family || null;
+      const accentColor = product.accentColor || csp.accentColor || null;
+      if (colorsSection && (primaryColor || accentColor)) {
         let colorsHtml = '<div class="section-label">Colors</div><div class="color-swatches">';
-        if (product.primaryColor) {
-          colorsHtml += `<div class="color-swatch"><span class="swatch-dot" style="background: ${getColorHex(product.primaryColor)};"></span><span class="swatch-label">Primary: ${product.primaryColor}</span></div>`;
+        if (primaryColor) {
+          colorsHtml += `<div class="color-swatch"><span class="swatch-dot" style="background: ${getColorHex(primaryColor)};"></span><span class="swatch-label">Primary: ${primaryColor}</span></div>`;
         }
-        if (product.accentColor && product.accentColor !== product.primaryColor) {
-          colorsHtml += `<div class="color-swatch"><span class="swatch-dot" style="background: ${getColorHex(product.accentColor)};"></span><span class="swatch-label">Accent: ${product.accentColor}</span></div>`;
+        if (accentColor && accentColor !== primaryColor) {
+          colorsHtml += `<div class="color-swatch"><span class="swatch-dot" style="background: ${getColorHex(accentColor)};"></span><span class="swatch-label">Accent: ${accentColor}</span></div>`;
         }
         colorsHtml += '</div>';
         colorsSection.innerHTML = colorsHtml;
@@ -3296,37 +3307,46 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // have them; the old hardcoded "2cm, 3cm / Polished" lied for
       // leathered/jumbo/porcelain slabs (owner: show the dimensions from the
       // price lists, 2026-07-06).
+      // ENGINEERED surfaces are genuinely made in 2cm and 3cm and sold polished:
+      // that is a fact about the product line, not a guess, and Arizona Tile /
+      // MSI / Cosentino publish it that way. NATURAL stone is not -- a leathered
+      // or jumbo slab is neither -- so for stone we print only what the price
+      // sheet gives us. Removing the typicals for everything left rows like
+      // bianco-levanto showing nothing but "Material", which is useless.
+      const ENGINEERED_RX = /quartz|porcelain|dekton|sintered|ultra.?compact/i;
+      function typicalFor(mat, key) {
+        if (!ENGINEERED_RX.test(String(mat || '')) || /quartzite/i.test(String(mat || ''))) return null;
+        return key === 'thickness' ? '2cm, 3cm (typ.)' : 'Polished (typ.)';
+      }
+
       function renderSlabSpecs(prod) {
         const specsGrid = document.getElementById('specs-grid');
         const sp = prod.specs || {};
+        // slabs.json carries almost none of this at the top level; the catalog
+        // keeps it in `specs`. Reading only `prod.*` is why this card collapsed
+        // to a single row.
+        const val = (...xs) => xs.find(x => x !== undefined && x !== null && String(x).trim() !== '') || null;
+        const row = (label, v) => v
+          ? `<div class="spec-item"><span class="spec-label">${label}</span><span class="spec-value">${v}</span></div>`
+          : '';
+
+        const thickness = val(sp.thickness, sp.slab_thickness, typicalFor(material, 'thickness'));
+        const finish    = val(sp.finish, prod.finish, typicalFor(material, 'finish'));
+        const origin    = (prod.originCountry && prod.originFlag)
+          ? `${prod.originFlag} ${prod.originCountry}`
+          : val(sp.origin, prod.origin);
+        const slabSize  = sp.slab_size ? `${sp.slab_size}"` : val(prod.size, sp.piece_size);
+
         let specsHtml = '';
-        specsHtml += `<div class="spec-item"><span class="spec-label">Material</span><span class="spec-value">${material}</span></div>`;
-        if (prod.style) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Style</span><span class="spec-value">${prod.style}</span></div>`;
-        }
-        if (prod.originCountry && prod.originFlag) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Origin</span><span class="spec-value">${prod.originFlag} ${prod.originCountry}</span></div>`;
-        }
-        if (sp.slab_size) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Slab Size</span><span class="spec-value">${sp.slab_size}"</span></div>`;
-        } else if (prod.size) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Size</span><span class="spec-value">${prod.size}</span></div>`;
-        }
-        if (sp.slab_sqft) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Sqft / Slab</span><span class="spec-value">~${sp.slab_sqft} sq ft</span></div>`;
-        }
-        // No "(typ.)" defaults. Thickness is known on 1,083 of 2,402 slabs and
-        // finish on 541; printing "2cm, 3cm" and "Polished" for the rest told
-        // every customer the same thing about every stone, and some of them
-        // would have been choosing a thickness the slab is not sold in.
-        const thickness = sp.thickness || sp.slab_thickness;
-        if (thickness) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Thickness</span><span class="spec-value">${thickness}</span></div>`;
-        }
-        const finish = sp.finish || prod.finish;
-        if (finish) {
-          specsHtml += `<div class="spec-item"><span class="spec-label">Finish</span><span class="spec-value">${finish}</span></div>`;
-        }
+        specsHtml += row('Material',   material);
+        specsHtml += row('Thickness',  thickness);
+        specsHtml += row('Finish',     finish);
+        specsHtml += row('Style',      val(prod.style, sp.style));
+        specsHtml += row('Slab Size',  slabSize);
+        specsHtml += sp.slab_sqft ? row('Sqft / Slab', `~${sp.slab_sqft} sq ft`)
+                   : (sp.piece_sqft ? row('Sqft / Piece', `~${sp.piece_sqft} sq ft`) : '');
+        specsHtml += row('Origin',     origin);
+        specsHtml += row('Collection', val(prod.collection, sp.collection, sp.line, sp.product_line));
         specsGrid.innerHTML = specsHtml;
         // Printed quartz: the pattern is HD-printed on the surface, not
         // through-body — buyers must know before picking an edge profile.
