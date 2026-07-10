@@ -47,6 +47,18 @@ const VENDOR_DISPLAY = {
 
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
+// Dimensions come in two shapes: the clean top-level `size` (126" x 63") and
+// specs.slab_size, which is sometimes bare (126 x 63) and sometimes already
+// quoted/annotated (130" x 65" (typ.)). Normalize the bare form to inches;
+// leave anything already carrying a unit mark (", mm) untouched.
+const fmtSize = (s) => {
+  const v = String(s || '').trim();
+  if (!v) return '';
+  if (/["'mM]/.test(v)) return v;                         // already has a unit
+  const m = v.match(/^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+  return m ? `${m[1]}" x ${m[2]}"` : v;
+};
+
 (async () => {
   const write = process.argv.includes('--write');
   let rows = [];
@@ -91,6 +103,13 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const old = legacyByKey.get(r.slug) || legacyByKey.get(norm(vendor) + '|' + norm(r.name)) || {};
     const images = [r.primary_image_url, ...(Array.isArray(r.image_urls) ? r.image_urls : [])]
       .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+    // Customer-facing spec fields from the catalog master. These live in specs
+    // but were never projected here, so the slab spec card had only material.
+    // Prefer the clean top-level size; fall back to the normalized slab_size.
+    // NOTE: sqft_price / each_price are DEALER COST and stay out of this file.
+    const sp = r.specs || {};
+    const size = r.size || fmtSize(sp.slab_size);
+    const origin = old.origin || sp.origin || '';
     return {
       id: old.id || r.slug,
       title: r.name,
@@ -120,9 +139,12 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       sample_price: r.sample_eligible === true ? String(r.sample_price != null ? r.sample_price : '12.99') : null,
       images: images.length ? images : (old.images || []),
       variants: old.variants || [],
-      ...(old.origin ? { origin: old.origin } : {}),
-      ...(r.size ? { size: r.size } : {}),
-      ...(r.specs && r.specs.material ? { material: r.specs.material } : {}),
+      ...(origin ? { origin } : {}),
+      ...(size ? { size } : {}),
+      ...(sp.thickness ? { thickness: String(sp.thickness) } : {}),
+      ...(sp.finish ? { finish: String(sp.finish) } : {}),
+      ...(sp.slab_sqft != null ? { slab_sqft: Number(sp.slab_sqft) } : {}),
+      ...(sp.material ? { material: sp.material } : {}),
     };
   });
 
