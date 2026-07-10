@@ -37,6 +37,13 @@
   }
 
   function eligible(p) {
+    // The catalog's sample_eligible flag is authoritative and matches what the
+    // server honours at checkout, so an explicit true wins outright (SGSampleable
+    // re-derives from brand/vendor and its vendor list is narrower — it hid
+    // sampleable Silestone/Cosentino colours whose vendor_id wasn't in the list).
+    // Otherwise fall back to the shared rule.
+    if (p.sample_eligible === true) return true;
+    if (p.sample_eligible === false) return false;
     return !!(window.SGSampleable && window.SGSampleable.isSampleable(p));
   }
 
@@ -53,11 +60,18 @@
     // a plain inline display:none — so an ineligible button stayed visible (and
     // dead) on phones. Inline !important is the one thing that outranks it. To
     // show, REMOVE the inline rule so the stylesheet's own display wins.
+    // Re-gate visibility on EVERY call: the marketplace calls wire() once with the
+    // data-poor initial product, then again once the catalog enrichment adds the
+    // authoritative sample_eligible / vendor_id (that second pass used to be lost
+    // to a whole-function guard, which hid the button on Silestone/Kensho). The
+    // click binds only once (guard below) so a re-run can't add a second listener.
     if (!eligible(product)) {
       btn.style.setProperty('display', 'none', 'important');
       return false;
     }
     btn.style.removeProperty('display');
+    if (btn.dataset.sgSampleBound) return true;
+    btn.dataset.sgSampleBound = '1';
 
     // The server (api/validators/price-validator.js) resolves a sample by looking
     // up the catalog EXACTLY by slug = item.id, then trusts that row's

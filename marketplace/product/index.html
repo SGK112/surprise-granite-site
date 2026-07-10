@@ -2815,7 +2815,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/shopify-products.js"></script>
 <script src="/js/cart.js?v=20260707a"></script>
 <script src="/js/shop-cart-integration.js?v=20260628e"></script>
-<script src="/js/sample-cart.js?v=20260710e"></script>
+<script src="/js/sample-cart.js?v=20260710g"></script>
 <script src="/js/site-search.js?v=5"></script>
 <script src="/js/related-products.js"></script>
 
@@ -3051,6 +3051,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0] || '',
             tags: p.tags || [],
             available: p.in_stock !== false,
+            // Discontinued colours are kept live for SEO but must never read as
+            // orderable — this drives the DISCONTINUED banner and hides every CTA.
+            discontinued: p.active === false || !!(p.specs && p.specs.discontinued),
             // Whether we actually sample this product. The server enforces the
             // same rule, so a button shown without this flag just 400s at
             // checkout (sinks and faucets are not sampleable).
@@ -3245,6 +3248,29 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // Update material badge
       document.getElementById('material-badge').textContent = material;
 
+      // Discontinued colours stay live for SEO but must not read as orderable:
+      // show a clear banner and strip every order CTA (sample, estimate, compare,
+      // quick-price). Idempotent + exposed so the async catalog enrichment, which
+      // is what usually reveals the retired flag, can re-apply it.
+      function markDiscontinued(prod) {
+        if (!(prod && (prod.discontinued === true || prod.active === false))) return;
+        document.querySelectorAll('.cta-group, .sg-price-preview').forEach(el => { el.style.display = 'none'; });
+        const sampleBtn = document.getElementById('btn-order-sample');
+        if (sampleBtn) sampleBtn.style.setProperty('display', 'none', 'important');
+        if (!document.getElementById('discontinued-banner')) {
+          const titleEl = document.querySelector('.product-title') || document.querySelector('h1');
+          const banner = document.createElement('div');
+          banner.id = 'discontinued-banner';
+          banner.style.cssText = 'margin:16px 0;padding:14px 18px;background:#fdecea;border:1px solid #f5b5ae;border-radius:10px;color:#8a1c11;font-size:15px;font-weight:600;line-height:1.5;';
+          banner.innerHTML = 'This colour has been <strong>DISCONTINUED</strong> by the manufacturer and is no longer available to order. ' +
+            'Call <a href="tel:+16028333189" style="color:#8a1c11;text-decoration:underline;">(602) 833-3189</a> and we’ll help you find a similar in-stock colour.';
+          if (titleEl && titleEl.parentNode) titleEl.parentNode.insertBefore(banner, titleEl.nextSibling);
+          else document.body.insertBefore(banner, document.body.firstChild);
+        }
+      }
+      window.__sgMarkDiscontinued = markDiscontinued;
+      markDiscontinued(product);
+
       // Update origin badge with flag
       const originBadge = document.getElementById('origin-badge');
       if (product.originFlag && product.originCountry) {
@@ -3393,6 +3419,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           const h = product.handle || handle;
           // catalog slugs are inconsistent about the -sample suffix — try both
           const tries = [h, h.endsWith('-sample') ? h.replace(/-sample$/, '') : h + '-sample'];
+          // The /:slug API returns ONLY active products, so a discontinued colour
+          // 404s on every try. Track whether every miss was a clean 404 (vs a
+          // network error) — a colour with no active catalog record at all is not
+          // orderable and must be flagged discontinued, not shown as available.
+          let cleanMiss = true;
           for (const slug of tries) {
             try {
               const r = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(slug));
@@ -3406,10 +3437,21 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
               // has neither. Re-decide the sample button now that we know.
               if (p.sample_eligible !== undefined) product.sample_eligible = p.sample_eligible;
               if (p.vendor_id) product.vendor_id = p.vendor_id;
+              if (p.active === false || (p.specs && p.specs.discontinued)) product.discontinued = true;
               renderSlabSpecs(product);
               if (typeof window.__sgApplySampleButton === 'function') window.__sgApplySampleButton(product);
+              if (typeof window.__sgMarkDiscontinued === 'function') window.__sgMarkDiscontinued(product);
               return;
-            } catch (e) { /* try next */ }
+            } catch (e) { cleanMiss = false; /* network error — uncertain, don't flag */ }
+          }
+          // No active catalog record on any try: retired/unavailable colour that
+          // only survives in the curated countertops.json. Keep it up for SEO but
+          // flag it so the sample button stays hidden and the banner shows.
+          if (cleanMiss) {
+            product.discontinued = true;
+            product.sample_eligible = false;
+            if (typeof window.__sgApplySampleButton === 'function') window.__sgApplySampleButton(product);
+            if (typeof window.__sgMarkDiscontinued === 'function') window.__sgMarkDiscontinued(product);
           }
         })();
       }
@@ -3460,13 +3502,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
        */
       function applySampleButton(prod) {
         const sampleBtn = document.getElementById('btn-order-sample');
-        if (!sampleBtn || sampleBtn.dataset.sampleBound) return;
-        sampleBtn.dataset.sampleBound = '1';
+        if (!sampleBtn) return;
 
-        // SGSampleCart gates on the shared rule, then binds an add-to-cart that
-        // uses the correct <slug>-sample SKU id (not the product's own handle),
-        // the sample price, and opens the cart. Button is hidden by default, so
-        // if the helper is missing it stays hidden (fail-safe).
+        // Call wire() every time (no whole-function guard): this runs once with
+        // the initial product and again after catalog enrichment supplies the
+        // authoritative sample_eligible / vendor_id. wire() re-gates visibility
+        // each call and binds the click only once.
         if (window.SGSampleCart) {
           window.SGSampleCart.wire(sampleBtn, {
             ...prod,
