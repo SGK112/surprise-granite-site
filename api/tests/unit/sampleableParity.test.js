@@ -127,6 +127,39 @@ describe('vendor_id is the key, not the display brand', () => {
 });
 
 /**
+ * LX Hausys IS LX Viatera, and Monterrey Tile distributes it (owner, 2026-07-10).
+ * Its 63 catalog rows carry vendor_id 'monterrey-tile' and brand 'LX Viatera', so
+ * keying on vendor_id called them a local yard and hid the button — while the
+ * catalog flagged them eligible and checkout accepted them. A lost sale each time.
+ *
+ * HanStone is a different company. It is a local yard and gets no chips.
+ */
+describe('LX Viatera is sampleable through Monterrey Tile; HanStone is not', () => {
+  it('offers a sample for LX Viatera even though its vendor_id is a local yard', () => {
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'LX Viatera', type: 'Quartz' })).toBe(true);
+    expect(server.isSampleable
+      ? server.isSampleable({ vendor_id: 'monterrey-tile', brand: 'LX Viatera', type: 'Quartz' })
+      : true).toBe(true);
+  });
+
+  it('still refuses Monterrey Tile\'s own material, and the lines it merely distributes', () => {
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'Monterrey Tile', type: 'Quartz' })).toBe(false);
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'Monterrey Tile', type: 'Granite' })).toBe(false);
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'Symphony', type: 'Quartz' })).toBe(false);
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'Vita Bella', type: 'Quartz' })).toBe(false);
+  });
+
+  it('refuses HanStone — it is not LX, and it is a local yard', () => {
+    expect(client.isSampleable({ vendor_id: 'hanstone', brand: 'Hanstone Quartz', type: 'Quartz' })).toBe(false);
+    expect(client.isSampleable({ brand: 'hanstone', type: 'Quartz' })).toBe(false);
+  });
+
+  it('never offers LX natural stone, if such a row ever appears', () => {
+    expect(client.isSampleable({ vendor_id: 'monterrey-tile', brand: 'LX Viatera', type: 'Granite' })).toBe(false);
+  });
+});
+
+/**
  * The real dataset: whatever the client would offer, the server must accept.
  * This is the assertion that actually protects the buyer.
  */

@@ -32,14 +32,16 @@
 
   // Engineered surfaces we can get a chip for, because a national distributor
   // cuts them: MSI quartz, Arizona Tile's quartz line, Daltile, Cosentino
-  // (Silestone, Dekton, Sensa), Arch Surfaces (PentalQuartz), and LX Hausys
-  // (Viatera/HanStone) through Monterrey Tile. A local yard will not.
+  // (Silestone, Dekton, Sensa), Arch Surfaces (PentalQuartz), and LX Hausys —
+  // which IS LX Viatera, distributed through Monterrey Tile. A local yard will
+  // not. HanStone is NOT LX (owner, 2026-07-10): it is a separate brand and a
+  // local yard, so it gets no chips.
   //
   // These are the `brand` slugs used by data/countertops.json, and they must stay
   // identical to SAMPLE_BRANDS in api/validators/price-validator.js.
   var SAMPLE_BRANDS = [
     'msi-surfaces', 'arizona-tile', 'daltile', 'cosentino', 'silestone', 'sensa',
-    'arcsurfaces', 'pentalquartz', 'lx-hausys'
+    'arcsurfaces', 'pentalquartz', 'lx-hausys', 'lx-viatera'
   ];
 
   // catalog_products keys the same companies by `vendor_id`, and its `brand`
@@ -86,18 +88,39 @@
   }
 
   /**
+   * Manufacturers whose chips reach us through a distributor that is NOT itself
+   * sampleable. LX Viatera's catalog rows carry vendor_id "monterrey-tile" (the
+   * distributor) and brand "LX Viatera" (the maker). vendor_id alone therefore
+   * says "local yard, no chip" and hid the button on all 63 of them, while the
+   * catalog flagged them eligible and the server accepted them at checkout — a
+   * silently lost sale on every one. The brand has to be able to override.
+   *
+   * Deliberately narrow: only LX. Monterrey's own colours, and the Symphony /
+   * Vita Bella lines it also distributes, are not covered.
+   */
+  var SAMPLE_SUB_BRANDS = ['lx-viatera', 'lx-hausys'];
+
+  function brandSlug(product) {
+    return slugify(product.brand || product.vendor || product.brandDisplay);
+  }
+
+  /**
    * True when the product comes from a distributor that will cut us a chip.
    *
-   * vendor_id decides when present — it is the stable slug. Otherwise slugify the
-   * brand and look for an allowed token: "msi-surfaces" starts with "msi",
-   * "silestone-by-cosentino" ends with "cosentino". A bare substring test would
-   * be wrong ("cosentino-lookalike" is not Cosentino), so match whole components.
+   * A sampleable sub-brand wins outright: it names the manufacturer, and the
+   * vendor_id only names who ships it. Otherwise vendor_id decides when present —
+   * it is the stable slug. Failing that, slugify the brand and look for an
+   * allowed token: "msi-surfaces" starts with "msi", "silestone-by-cosentino"
+   * ends with "cosentino". A bare substring test would be wrong
+   * ("cosentino-lookalike" is not Cosentino), so match whole components.
    */
   function fromSampleableVendor(product) {
+    var slug = brandSlug(product);
+    if (slug && SAMPLE_SUB_BRANDS.indexOf(slug) > -1) return true;
+
     var vid = slugify(product.vendor_id);
     if (vid) return SAMPLE_VENDOR_IDS.indexOf(vid) > -1;
 
-    var slug = slugify(product.brand || product.vendor || product.brandDisplay);
     if (!slug) return false;
     if (SAMPLE_BRANDS.indexOf(slug) > -1) return true;
     return SAMPLE_VENDOR_IDS.some(function (t) { return hasToken(slug, t); })
@@ -145,6 +168,7 @@
     NATURAL_STONE_RX: NATURAL_STONE_RX,
     SAMPLE_BRANDS: SAMPLE_BRANDS,
     SAMPLE_VENDOR_IDS: SAMPLE_VENDOR_IDS,
+    SAMPLE_SUB_BRANDS: SAMPLE_SUB_BRANDS,
     SAMPLE_PRICE: 12.99
   };
 }));

@@ -26,13 +26,14 @@ const NATURAL_STONE_RX = /granite|quartzite|marble|dolomite|limestone|travertine
 // brand instead.
 //
 // This is a BRAND rule, not a vendor one. Silestone/Sensa are Cosentino brands;
-// PentalQuartz comes through Architectural Surfaces; LX Hausys (Viatera) comes
-// through Monterrey Tile, who supply its samples even though they cut no chips
-// of their own stone. Everything else — the local yards' own material — is not
-// sampleable.
+// PentalQuartz comes through Architectural Surfaces; LX Hausys IS LX Viatera and
+// comes through Monterrey Tile, who supply its samples even though they cut no
+// chips of their own stone. HanStone is NOT LX (owner, 2026-07-10) — it is a
+// separate brand and a local yard. Everything else — the local yards' own
+// material — is not sampleable.
 const SAMPLE_BRANDS = new Set([
   'msi-surfaces', 'arizona-tile', 'daltile', 'cosentino', 'silestone', 'sensa',
-  'arcsurfaces', 'pentalquartz', 'lx-hausys',
+  'arcsurfaces', 'pentalquartz', 'lx-hausys', 'lx-viatera',
 ]);
 
 // Tax rates by state (combined state + avg local)

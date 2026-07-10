@@ -590,7 +590,7 @@
           <div class="icon">📐</div>
           <div class="title">Drop a PDF here, or click to browse</div>
           <div class="subtitle">PDF up to 50MB · image fallback coming soon</div>
-          <input type="file" id="fileInput" accept="application/pdf,.pdf">
+          <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple>
         </label>
         <div class="url-pane">
           <div class="url-label">Or paste a share link</div>
@@ -1216,8 +1216,21 @@ flooring_lvp,5,3"></textarea>
   }
 
   // ---- State ----
-  let pdfDoc = null;
-  let sheets = []; // {pageNum, sheetNum, type, title, text, selected}
+  // One entry per uploaded PDF, in the order they were indexed. Sheets carry a
+  // GLOBAL pageNum (1..N across every file) so the page cache, per-page results
+  // and saved projects keep the flat page numbering they always had. pageMap
+  // translates that global number back to (which doc, which page inside it).
+  let pdfDocs = [];
+  let pageMap = []; // pageMap[globalPageNum - 1] = { docIdx, localPage }
+  let sheets = []; // {pageNum, sheetNum, type, title, text, selected, docIdx, localPage, file}
+
+  function havePdf() { return pdfDocs.length > 0; }
+
+  async function getPdfPage(globalPageNum) {
+    const m = pageMap[globalPageNum - 1];
+    if (!m) throw new Error(`Page ${globalPageNum} is not loaded — re-upload the PDF.`);
+    return pdfDocs[m.docIdx].getPage(m.localPage);
+  }
 
   // ---- DOM ----
   const $ = (id) => document.getElementById(id);
@@ -1644,6 +1657,7 @@ flooring_lvp,5,3"></textarea>
     const sheetsLite = sheets.map(s => ({
       pageNum: s.pageNum, sheetNum: s.sheetNum, type: s.type,
       title: s.title, selected: s.selected,
+      docIdx: s.docIdx, localPage: s.localPage, file: s.file,
     }));
     return {
       v: PROJECT_FORMAT_VERSION,
@@ -1716,7 +1730,7 @@ flooring_lvp,5,3"></textarea>
     if (!p) return;
     currentProjectId = id;
 
-    pdfDoc = null; // PDF binary not saved
+    pdfDocs = []; pageMap = []; // PDF binary not saved
     sheets = (p.sheets || []).map(s => ({ ...s, text: '' }));
 
     window.__lastTotals = p.lastTotals || null;
@@ -1975,18 +1989,12 @@ flooring_lvp,5,3"></textarea>
     // Start fresh = hide the banner AND fully wipe project state + page cache.
     // The user clicked "fresh" instead of "resume" — that's an explicit reset
     // intent, no need to re-prompt. Calls hardResetProject() directly to
-    // bypass the btnNewPdf confirm dialog.
+    // bypass the btnNewPdf confirm dialog. Pass latest.id explicitly: this
+    // project was never loaded, so currentProjectId is null and the delete
+    // would otherwise be a no-op.
     $('btnDismissResume').onclick = () => {
       $('resumeBanner').hidden = true;
-      if (typeof hardResetProject === 'function') {
-        hardResetProject();
-      } else {
-        // Fallback if the reset wiring isn't loaded yet (script ordering)
-        try { localStorage.removeItem('sg_takeoff_page_cache'); } catch (_) {}
-        try { localStorage.removeItem('sg_takeoff_handoff'); } catch (_) {}
-        currentProjectId = null;
-        location.replace(location.pathname); // hard reset
-      }
+      hardResetProject(latest.id);
     };
   }
   maybeShowResumeBanner();
@@ -2844,11 +2852,11 @@ flooring_lvp,5,3"></textarea>
   }));
   dropZone.addEventListener('drop', e => {
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
-      handleFile(e.dataTransfer.files[0]);
+      handleFiles(Array.from(e.dataTransfer.files));
     }
   });
   fileInput.addEventListener('change', e => {
-    if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length) handleFiles(Array.from(e.target.files));
   });
 
   // ---- URL paste / rewrite ----
@@ -2941,10 +2949,14 @@ flooring_lvp,5,3"></textarea>
     }
   }
 
-  async function handleFile(file) {
-    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
-    if (!isPdf) {
-      showParseError('Image-only support is coming. For now drop a PDF (even single-page architectural PDFs work).');
+  // Single-file entry point, kept for the URL-fetch path.
+  async function handleFile(file) { return handleFiles([file]); }
+
+  async function handleFiles(files) {
+    if (!files || !files.length) return;
+    const notPdf = files.filter(f => !(f.type === 'application/pdf' || /\.pdf$/i.test(f.name)));
+    if (notPdf.length) {
+      showParseError(`Image-only support is coming. For now drop PDFs (even single-page architectural PDFs work). Not a PDF: ${notPdf.map(f => f.name).join(', ')}`);
       return;
     }
     if (typeof pdfjsLib === 'undefined') {
@@ -2952,11 +2964,15 @@ flooring_lvp,5,3"></textarea>
       return;
     }
 
-    // Fresh upload = new project. Track filename as source label for the
+    // Sort by filename so page order — and therefore the cache key below — is
+    // the same no matter what order the OS picker hands us the files in.
+    files = files.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+    // Fresh upload = new project. Track filenames as source label for the
     // saved-project list. Reset extraction caches so we don't accidentally
     // attribute old results to a new PDF.
     currentProjectId = null;
-    window.__lastSourceLabel = file.name;
+    window.__lastSourceLabel = files.map(f => f.name).join(' + ');
     window.__lastTotals = null;
     window.__lastMaterials = null;
     window.__lastEstimate = null;
@@ -2968,41 +2984,70 @@ flooring_lvp,5,3"></textarea>
 
     $('parseError').hidden = true;
     $('parseProgress').hidden = false;
-    setParseProgress(0, 'Reading PDF…');
+    setParseProgress(0, files.length > 1 ? `Reading ${files.length} PDFs…` : 'Reading PDF…');
 
     try {
-      const arrayBuf = await file.arrayBuffer();
       // Hash the PDF bytes ONCE on load. Cache key for each page extraction
       // becomes `${pdfHash}:${pageNum}:${scale}` — stable across rasterize
       // runs (canvas rendering has sub-pixel variance that defeats hashing
-      // the rendered JPEG).
-      window.__currentPdfHash = await sha256HexBytes(arrayBuf);
-      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+      // the rendered JPEG). A single file hashes exactly as it always did, so
+      // existing page caches keep hitting; multiple files hash the ordered
+      // list of their individual hashes.
+      const buffers = [];
+      const hashes = [];
+      for (const f of files) {
+        const buf = await f.arrayBuffer();
+        hashes.push(await sha256HexBytes(buf));
+        buffers.push(buf);
+      }
+      window.__currentPdfHash = hashes.length === 1
+        ? hashes[0]
+        : await sha256HexBytes(new TextEncoder().encode(hashes.join(':')).buffer);
+
+      pdfDocs = [];
+      pageMap = [];
       sheets = [];
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const tc = await page.getTextContent();
-        const text = tc.items.map(it => it.str).join(' ').replace(/\s+/g,' ').trim();
-        // layoutText preserves rows/columns from item positions — schedules
-        // (room# | name | SF) get scrambled by plain item-order join, which
-        // binds SF values to the wrong rooms. Used by the text-layer takeoff.
-        const layoutText = buildLayoutText(tc);
-        const type = classifyPageText(text);
-        const sheetNum = extractSheetNumber(text) || `P${i}`;
-        const title = extractSheetTitle(text) || '(no title detected)';
-        sheets.push({
-          pageNum: i, sheetNum, type, title, text, layoutText,
-          selected: TAKEOFF_RELEVANT.has(type),
-        });
-        setParseProgress(i / pdfDoc.numPages, `Indexed ${i} of ${pdfDoc.numPages} pages`);
+
+      // Two passes: open every doc first so we know the true total page count
+      // and the progress bar doesn't restart per file.
+      for (let d = 0; d < files.length; d++) {
+        pdfDocs.push(await pdfjsLib.getDocument({ data: new Uint8Array(buffers[d]) }).promise);
+      }
+      const totalPages = pdfDocs.reduce((n, doc) => n + doc.numPages, 0);
+
+      let g = 0; // global page number
+      for (let d = 0; d < pdfDocs.length; d++) {
+        const doc = pdfDocs[d];
+        for (let localPage = 1; localPage <= doc.numPages; localPage++) {
+          g++;
+          pageMap[g - 1] = { docIdx: d, localPage };
+          const page = await doc.getPage(localPage);
+          const tc = await page.getTextContent();
+          const text = tc.items.map(it => it.str).join(' ').replace(/\s+/g,' ').trim();
+          // layoutText preserves rows/columns from item positions — schedules
+          // (room# | name | SF) get scrambled by plain item-order join, which
+          // binds SF values to the wrong rooms. Used by the text-layer takeoff.
+          const layoutText = buildLayoutText(tc);
+          const type = classifyPageText(text);
+          const sheetNum = extractSheetNumber(text) || `P${g}`;
+          const title = extractSheetTitle(text) || '(no title detected)';
+          sheets.push({
+            pageNum: g, sheetNum, type, title, text, layoutText,
+            docIdx: d, localPage, file: files[d].name,
+            selected: TAKEOFF_RELEVANT.has(type),
+          });
+          const suffix = files.length > 1 ? ` (file ${d + 1} of ${files.length})` : '';
+          setParseProgress(g / totalPages, `Indexed ${g} of ${totalPages} pages${suffix}`);
+        }
       }
       showSheetIndex();
       // FREE, EXACT pass: read room/area schedules straight from the PDF text
       // layer (no vision, no cost, no hallucination) and show them before
       // extraction. Verified on First Watch: Dining 1437, Kitchen 1320, ...
       extractTextLayerTakeoff();
-      // Auto-save: project name = sanitized filename
-      autoSave(prettifyProjectName(window.__lastSourceLabel || 'Untitled'));
+      // Auto-save: project name = sanitized filename(s)
+      const baseName = prettifyProjectName(files[0].name || 'Untitled');
+      autoSave(files.length > 1 ? `${baseName} +${files.length - 1} more` : baseName);
     } catch (err) {
       console.error('PDF parse error:', err);
       showParseError('Could not parse PDF: ' + (err.message || err));
@@ -3121,14 +3166,20 @@ flooring_lvp,5,3"></textarea>
 
   function renderSheetList() {
     const list = $('sheetList');
-    list.innerHTML = sheets.map((s, i) => `
+    // When pages came from more than one upload, prefix the title with the
+    // source filename — otherwise a global page number is ambiguous.
+    const multiFile = new Set(sheets.map(s => s.file).filter(Boolean)).size > 1;
+    list.innerHTML = sheets.map((s, i) => {
+      const label = multiFile && s.file ? `${s.file} · ${s.title}` : s.title;
+      return `
       <label class="sheet-row ${s.selected ? 'selected' : ''}" data-i="${i}">
         <input type="checkbox" ${s.selected ? 'checked' : ''} data-i="${i}">
         <span class="pg">${s.pageNum}</span>
         <span class="code">${escapeHtml(s.sheetNum)}</span>
-        <span class="title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}</span>
+        <span class="title" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
         <span class="type-badge type-${s.type} ${s.selected ? 'always' : ''}">${s.type}</span>
-      </label>`).join('');
+      </label>`;
+    }).join('');
 
     list.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.addEventListener('change', e => {
@@ -3215,7 +3266,7 @@ flooring_lvp,5,3"></textarea>
   // type:'plan_sign', and gives the user a short URL to send. Recipient opens
   // → sees the pages stacked → signs the canvas at the bottom → record stored.
   function openSignOff() {
-    if (!pdfDoc) { alert('Upload a PDF first (Step 1).'); return; }
+    if (!havePdf()) { alert('Upload a PDF first (Step 1).'); return; }
     const sel = sheets.filter(s => s.selected);
     if (!sel.length) { alert('Select at least one sheet to send.'); return; }
     $('soPagesHint').textContent = `${sel.length} sheet${sel.length>1?'s':''} will be packaged: ` +
@@ -3815,7 +3866,7 @@ flooring_lvp,5,3"></textarea>
   }
 
   async function rasterizePage(pageNum, scale) {
-    const page = await pdfDoc.getPage(pageNum);
+    const page = await getPdfPage(pageNum);
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(viewport.width);
@@ -4659,7 +4710,7 @@ flooring_lvp,5,3"></textarea>
 
     if (alreadyHasMetadata) {
       applyCoverInfo(alreadyHasMetadata);
-    } else if (coverSheet && pdfDoc && fieldsAreEmpty) {
+    } else if (coverSheet && havePdf() && fieldsAreEmpty) {
       await tryAutoFillFromCover(coverSheet);
     }
     if (!$('propCustomer').value) $('propCustomer').focus();
@@ -5134,7 +5185,7 @@ flooring_lvp,5,3"></textarea>
 
   async function openMeasureModal() {
     if (!sheets.length) { alert('No sheets loaded — drop a PDF first.'); return; }
-    if (!pdfDoc) {
+    if (!havePdf()) {
       alert('PDF binary not loaded for this project. Re-drop the PDF to use measurement tools.');
       return;
     }
@@ -5165,7 +5216,7 @@ flooring_lvp,5,3"></textarea>
     if (!sheet) return;
     const canvas = $('measureCanvas');
     const ctx = canvas.getContext('2d');
-    const page = await pdfDoc.getPage(sheet.pageNum);
+    const page = await getPdfPage(sheet.pageNum);
     const viewport = page.getViewport({ scale: 1.5 });
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
@@ -5940,13 +5991,17 @@ ${pb.license || ''}`;
   // anywhere). User assets that aren't project-specific (BYOK keys, My
   // Pricing, vendor catalogs, My Company, OTHER saved projects) are
   // intentionally preserved.
-  function hardResetProject() {
+  // idOverride: the resume banner resets a project it never LOADED, so
+  // currentProjectId is still null there. Without an explicit id the delete
+  // below was skipped and the banner re-surfaced the same project on reload —
+  // which is what made "Start fresh" look like it did nothing.
+  function hardResetProject(idOverride) {
     // Capture current project ID BEFORE we null it — we need it to delete
     // the cloud + localStorage entries.
-    const idToDelete = currentProjectId;
+    const idToDelete = idOverride || currentProjectId;
 
     // 1) In-memory state — every window.__last* the tool writes.
-    pdfDoc = null; sheets = [];
+    pdfDocs = []; pageMap = []; sheets = [];
     currentProjectId = null;
     window.__lastSourceLabel = '';
     window.__lastTotals = null;
@@ -6025,7 +6080,7 @@ ${pb.license || ''}`;
 
   $('btnNewPdf').addEventListener('click', () => {
     // Only confirm if there's actually work in progress to lose.
-    const hasWork = !!(pdfDoc || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown || currentProjectId);
+    const hasWork = !!(havePdf() || sheets.length || window.__lastEstimate || window.__lastProposalMarkdown || currentProjectId);
     if (hasWork && !confirm('Start over and DELETE this project?\n\n• Local cache wiped\n• In-memory state cleared\n• Saved project deleted (local + cloud)\n• Page cache cleared so next vision call re-runs from scratch\n\nKept: BYOK keys, My Pricing, vendor catalogs, My Company info, OTHER saved projects.')) {
       return;
     }
@@ -6033,7 +6088,21 @@ ${pb.license || ''}`;
   });
 
   $('btnExportJson').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ sheets, results: window.__lastResults || null }, null, 2)], { type:'application/json' });
+    // window.__lastResults is never assigned anywhere — exporting it always
+    // wrote `results: null`, so this button silently produced a file with the
+    // sheet index and none of the extraction output. Export what the tool
+    // actually writes.
+    const results = {
+      source: window.__lastSourceLabel || '',
+      pdfHash: window.__currentPdfHash || null,
+      totals: window.__lastTotals || null,
+      materials: window.__lastMaterials || null,
+      measurements: window.__lastMeasurements || null,
+      estimate: window.__lastEstimate || null,
+      perPage: window.__lastPerPage || null,
+      textTakeoff: window.__textTakeoff || null,
+    };
+    const blob = new Blob([JSON.stringify({ sheets, results }, null, 2)], { type:'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'blueprint-takeoff.json';
