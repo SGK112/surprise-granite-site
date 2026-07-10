@@ -1894,39 +1894,17 @@
       </div>
     </div>
 
+    <!-- Rows are rendered from the product by renderSpecs(). This table used to be
+         hardcoded: EVERY product on the site, granite and quartzite included,
+         read "Quartz / White / Gold / Subtle Veining / 2cm, 3cm / Polished /
+         MSI Surfaces". We now print only what we actually know. -->
     <div id="specifications" class="tab-content">
       <h3>Technical Specifications</h3>
-      <table class="specs-table">
-        <tr>
-          <th>Material Type</th>
-          <td>Quartz</td>
-        </tr>
-        <tr>
-          <th>Primary Color</th>
-          <td>White</td>
-        </tr>
-        <tr>
-          <th>Accent Color</th>
-          <td>Gold</td>
-        </tr>
-        <tr>
-          <th>Pattern Style</th>
-          <td>Subtle Veining</td>
-        </tr>
-        <tr>
-          <th>Available Thickness</th>
-          <td>2cm, 3cm</td>
-        </tr>
-        <tr>
-          <th>Finish Options</th>
-          <td>Polished</td>
-        </tr>
-        <tr>
-          <th>Brand</th>
-          <td>MSI Surfaces</td>
-        </tr>
-        
-      </table>
+      <table class="specs-table"><tbody id="specs-body"></tbody></table>
+      <p id="specs-empty" style="display:none;color:#86868b;">
+        Detailed specifications for this material aren't published yet. Call us at
+        (602) 833-3189 and we'll get them for you.
+      </p>
     </div>
 
     <div id="applications" class="tab-content">
@@ -3022,6 +3000,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             primaryColor: product.primaryColor,
             accentColor: product.accentColor,
             style: product.style,
+            collection: product.collection,
             description: `Premium ${product.type} from ${product.brandDisplay || product.brand}. Perfect for countertops, kitchen islands, and bathroom vanities.`,
             views: product.views,
             trending: product.trending,
@@ -3112,10 +3091,70 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       images = product.images || []; // Update the images array for lightbox
 
       // Update page title and meta
+    /**
+     * Print what we know about this product, and nothing else.
+     *
+     * This table was static HTML. Every product on the site — granite,
+     * quartzite, porcelain — claimed to be "Quartz / White / Gold / Subtle
+     * Veining / 2cm, 3cm / Polished / MSI Surfaces". A spec sheet that is the
+     * same on every page is worse than no spec sheet: a customer chooses a
+     * 3cm slab that may only come in 2cm.
+     *
+     * Every row is sourced. A field we do not have is omitted, never defaulted —
+     * `finish` is populated on 541 of 2,402 slabs, and guessing "Polished" for
+     * the rest is how the old table lied. `material` here is the real material
+     * from the price sheet (specs.material / subcategory), not the page's
+     * `productType` fallback, which is the literal string "Stone" when unknown.
+     */
+    function renderSpecs(product) {
+      const body = document.getElementById('specs-body');
+      const empty = document.getElementById('specs-empty');
+      if (!body) return;
+      const specs = (product && product.specs) || {};
+
+      const clean = (v) => {
+        if (v === null || v === undefined) return null;
+        const s = String(v).trim();
+        if (!s || s.toLowerCase() === 'stone' || s.toLowerCase() === 'unknown') return null;
+        return s;
+      };
+
+      const rows = [
+        ['Material Type',       clean(specs.material) || clean(product.subcategory) || clean(product.productType)],
+        ['Brand',               clean(product.brandDisplay) || clean(product.vendor) || clean(product.brand)],
+        ['Collection',          clean(product.collection) || clean(specs.collection) || clean(specs.line) || clean(specs.product_line)],
+        ['Primary Color',       clean(product.primaryColor) || clean(product.color_family)],
+        ['Accent Color',        clean(product.accentColor) || clean(specs.accentColor)],
+        ['Pattern Style',       clean(product.style) || clean(specs.style)],
+        ['Available Thickness', clean(specs.thickness)],
+        ['Finish',              clean(product.finish) || clean(specs.finish)],
+        ['Slab Size',           clean(specs.slab_size) || clean(product.size)],
+        ['Piece Size',          clean(specs.piece_size)],
+        ['Origin',              clean(specs.origin)],
+      ].filter(function (r) { return r[1]; });
+
+      // textContent, not innerHTML: these strings come from vendor price sheets.
+      body.textContent = '';
+      rows.forEach(function (r) {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        const td = document.createElement('td');
+        th.textContent = r[0];
+        td.textContent = r[1];
+        tr.appendChild(th);
+        tr.appendChild(td);
+        body.appendChild(tr);
+      });
+
+      if (empty) empty.style.display = rows.length ? 'none' : '';
+    }
+
       const title = product.title || product.name || 'Product';
       const brand = product.brandDisplay || product.vendor || 'Premium Brand';
       const material = product.productType || 'Stone';
       const description = product.description || `Premium ${material} from ${brand}. Perfect for countertops, kitchen islands, and bathroom vanities.`;
+
+      renderSpecs(product);
 
       document.getElementById('page-title').textContent = `${title} | ${material} Countertops | Surprise Granite`;
       document.getElementById('meta-description').content = description;

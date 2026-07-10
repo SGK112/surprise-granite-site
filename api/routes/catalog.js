@@ -30,6 +30,33 @@ function sanitize(s, max = 200) {
 const CACHE_TTL_MS = 60_000;
 const CACHE_MAX_BYTES = 24 * 1024 * 1024;
 const cache = new Map();   // url -> { at, body: string, bytes }
+
+/**
+ * The only `specs` keys a customer may see. Everything else is withheld.
+ *
+ * This was a DENY regex, and a blocklist guarding a public endpoint fails open:
+ * it caught `cost_basis` and `msrp` but shipped `sqft_price` — which equals
+ * vendor_cost on 1,020 slabs — plus `each_price`, `msi_price_sqft`, `lots`,
+ * `slab_count` and the yard's stock levels. We removed dealer cost from
+ * retail_price and kept publishing it here.
+ *
+ * A new scraper key is invisible until someone adds it below, which is the point:
+ * an unknown key is withheld, not published.
+ */
+const PUBLIC_SPEC_KEYS = new Set([
+  'material', 'thickness', 'finish', 'origin', 'style', 'accentColor',
+  'collection', 'line', 'product_line', 'printed_quartz',
+  'slab_size', 'slab_sqft', 'piece_size', 'piece_sqft',   // physical dimensions
+  'wear_layer', 'sf_per_box',                             // flooring
+]);
+
+function publicSpecs(specs) {
+  const out = {};
+  for (const k of Object.keys(specs)) {
+    if (PUBLIC_SPEC_KEYS.has(k)) out[k] = specs[k];
+  }
+  return out;
+}
 let cacheBytes = 0;
 
 function cacheGet(key) {
@@ -278,11 +305,10 @@ router.get('/:slug', async (req, res) => {
     delete data.last_scraped_at;
     delete data.first_scraped_at;
     delete data.last_changed_at;
+    delete data.vendor_sku;
+    delete data.lookup_mode;
     if (data.specs && typeof data.specs === 'object') {
-      const DENY = /^_|(_at|_id)$|cost|margin|markup|wholesale|dealer|profit|source|scraped|synced|crawled|imported|published|shopify|odoo|handle|alfi_stock|ruvati_(sku|qty)|yard_(product|location)|sample_pricing|no_pricing|brand_?tier|msrp/i;
-      for (const k of Object.keys(data.specs)) {
-        if (DENY.test(k)) delete data.specs[k];
-      }
+      data.specs = publicSpecs(data.specs);
     }
     return res.json({ success: true, product: data });
   } catch (e) {
@@ -291,3 +317,7 @@ router.get('/:slug', async (req, res) => {
 });
 
 module.exports = router;
+// Exported for api/tests/unit/publicSpecs.test.js — this allowlist is the only
+// thing standing between dealer cost and a public JSON response.
+module.exports.publicSpecs = publicSpecs;
+module.exports.PUBLIC_SPEC_KEYS = PUBLIC_SPEC_KEYS;
