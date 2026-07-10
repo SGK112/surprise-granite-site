@@ -48,11 +48,16 @@
   function wire(btn, product) {
     if (!btn || !product) return false;
 
+    // Hide with !important: css/marketplace-mobile-fix.css forces
+    // `.btn-secondary { display: inline-flex !important }` on mobile, which beats
+    // a plain inline display:none — so an ineligible button stayed visible (and
+    // dead) on phones. Inline !important is the one thing that outranks it. To
+    // show, REMOVE the inline rule so the stylesheet's own display wins.
     if (!eligible(product)) {
-      btn.style.display = 'none';
+      btn.style.setProperty('display', 'none', 'important');
       return false;
     }
-    btn.style.display = '';
+    btn.style.removeProperty('display');
 
     // The server (api/validators/price-validator.js) resolves a sample by looking
     // up the catalog EXACTLY by slug = item.id, then trusts that row's
