@@ -57,3 +57,37 @@ describe('sample refusal is classified, not lumped together', () => {
     expect(r.validatedPrice).toBe(SAMPLE_PRICE_CENTS);
   });
 });
+
+/**
+ * Display names collide across colours and materials. The slug identifies the
+ * product; a name never can. When the slug lookup missed because the colour was
+ * not sampleable, the search used to continue to the name — and "White Pearl"
+ * granite matched a DIFFERENT quartz colour of the same name, so we charged
+ * $12.99 for a granite chip we do not stock.
+ */
+describe('the slug is the identity; a colliding name cannot override it', () => {
+  it('refuses white-pearl-granite even though a quartz "White Pearl" exists', async () => {
+    const r = await check('white-pearl-granite', 'White Pearl (Sample)');
+    expect(r.validatedPrice).toBeNull();
+    expect(r.unmatched.reason).toBe('not_sampleable');
+  });
+
+  it('refuses an unsourceable brand whose name matches a sourceable colour', async () => {
+    const r = await check('avenza-quartz-bolder-image-stone', 'Avenza (Sample)');
+    expect(r.validatedPrice).toBeNull();
+    expect(r.unmatched.reason).toBe('not_sampleable');
+  });
+
+  // The fallback still has a job: a cart that carries no id at all.
+  it('still resolves by name when the cart sends no id', async () => {
+    const r = await validateSingleItem(
+      { name: 'Kensho (Sample)', price: 1299, quantity: 1 }, null);
+    expect(r.validatedPrice).toBe(SAMPLE_PRICE_CENTS);
+  });
+
+  it('falls back to the name for an unknown id, so stale slugs keep working', async () => {
+    const r = await validateSingleItem(
+      { id: 'kensho-quartz-v2-renamed', name: 'Kensho (Sample)', price: 1299, quantity: 1 }, null);
+    expect(r.validatedPrice).toBe(SAMPLE_PRICE_CENTS);
+  });
+});

@@ -2691,7 +2691,8 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth-state.js?v=2.0.1"></script>
+<script src="/js/sampleable.js?v=20260710a"></script>
+  <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
 <script src="/js/site-search.js?v=5"></script>
@@ -2803,24 +2804,19 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       document.getElementById('page-title').textContent = `${title} | ${material} Countertops | Surprise Granite`;
       document.getElementById('meta-description').content = description;
 
-      // Hide the "Order Sample" button when:
-      //   - material is granite (never sampled), OR
-      //   - brand is premium quartz (pulled site-wide 2026-04-22), OR
-      //   - product is flagged no-sample (for specific SKUs like certain tile).
-      const tags = Array.isArray(product.tags) ? product.tags.map(t => String(t).toLowerCase()) : [];
-      const isGranite = /granite/i.test(material || '')
-        || /granite/i.test(product.productType || '')
-        || /granite/i.test(product.type || '')
-        || /\bgranite\b/i.test(title || '')
-        || tags.some(t => /granite/.test(t));
-      const isCambria = false;
-      const sampleBlockedByFlag = product.no_sample === true
-        || product.has_sample === false
-        || product.samples_available === false
-        || tags.some(t => ['no-sample','no-samples','no_sample','samples-unavailable','no_samples'].includes(t));
-      if (isGranite || isCambria || sampleBlockedByFlag) {
-        const sampleBtn = document.getElementById('btn-order-sample');
-        if (sampleBtn) sampleBtn.style.display = 'none';
+      // Offer "Order Sample" only where checkout will honour it. This used to
+      // test /granite/ alone, so marble, quartzite, travertine and every brand
+      // no distributor will cut a chip for still showed a button — and the
+      // buyer hit a 400 after committing. js/sampleable.js is the single rule,
+      // pinned to the server's by api/tests/unit/sampleableParity.test.js.
+      const sampleBtn = document.getElementById('btn-order-sample');
+      if (sampleBtn && !window.SGSampleable.isSampleable({
+        ...product,
+        material,
+        title,
+        brand: product.brand || product.vendor
+      })) {
+        sampleBtn.style.display = 'none';
       }
 
       // Update OG tags

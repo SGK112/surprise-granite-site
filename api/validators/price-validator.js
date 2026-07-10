@@ -290,30 +290,67 @@ function baseProductName(name) {
 async function resolveSampleableProduct(item, supabase) {
   const base = baseProductName(item.name);
 
+  // A slug/sku IDENTIFIES the product. If it names something we know, that thing
+  // decides the answer — never fall through to a name lookup, because display
+  // names collide across colours and materials.
+  //
+  // `white-pearl-granite` is not sampleable, so its slug missed, and the search
+  // continued to the name "White Pearl", which matched a DIFFERENT, quartz
+  // colour of the same name. The server then charged $12.99 for a granite chip
+  // we do not stock. `avenza-quartz-bolder-image-stone` resolved the same way
+  // through "Avenza". The name fallback exists for carts that carry no id at
+  // all, and must only run then.
+  const identity = item.id || item.handle || item.sku;
+
   // The catalog is authoritative and carries vendor_id, which the caller needs
   // to charge shipping per vendor (each vendor drop-ships separately).
   if (supabase) {
-    const lookups = [['slug', item.id], ['slug', item.handle], ['sku', item.sku], ['name', base]];
-    for (const [column, value] of lookups) {
+    const idLookups = [['slug', item.id], ['slug', item.handle], ['sku', item.sku]];
+    for (const [column, value] of idLookups) {
       if (!value) continue;
       try {
         const { data } = await supabase
           .from('catalog_products')
           .select('vendor_id, sample_eligible')
           .eq(column, value).eq('active', true).limit(1).maybeSingle();
-        if (data && data.sample_eligible) {
-          return { vendorId: data.vendor_id || null, source: 'catalog_sample' };
+        if (data) {
+          // Identity found. Its own flag is the verdict, either way.
+          return data.sample_eligible
+            ? { vendorId: data.vendor_id || null, source: 'catalog_sample' }
+            : null;
         }
       } catch (err) {
         logger.debug('Sample catalog lookup failed', { column, error: err.message });
       }
     }
+
+    if (!identity && base) {
+      try {
+        const { data } = await supabase
+          .from('catalog_products')
+          .select('vendor_id, sample_eligible')
+          .eq('name', base).eq('active', true).limit(1).maybeSingle();
+        if (data && data.sample_eligible) {
+          return { vendorId: data.vendor_id || null, source: 'catalog_sample' };
+        }
+      } catch (err) {
+        logger.debug('Sample catalog name lookup failed', { error: err.message });
+      }
+    }
   }
 
   const { bySlug, byName } = sampleableCountertops();
-  const match = (item.id && bySlug.get(String(item.id).toLowerCase()))
-    || (item.handle && bySlug.get(String(item.handle).toLowerCase()))
-    || (base && byName.get(base.toLowerCase()));
+
+  if (identity) {
+    const key = String(identity).toLowerCase();
+    const known = allCountertopColours().bySlug.get(key);
+    // We publish this colour: sampleable iff it survived the policy filter.
+    if (known) return bySlug.get(key) ? { vendorId: known.brand || null, source: 'static_countertops' } : null;
+    // An id we have never seen falls through to the name, so a cart that sends a
+    // stale slug for a colour we still sample keeps working.
+  }
+
+  const match = base && byName.get(base.toLowerCase());
   if (match) return { vendorId: match.brand || null, source: 'static_countertops' };
 
   return null;
@@ -563,7 +600,13 @@ module.exports = {
   calculateShipping,
   calculateTax,
   isSampleItem,
+  classifySampleRefusal,
   STATE_TAX_RATES,
   SHIPPING_TIERS,
-  SAMPLE_PRICE_CENTS
+  SAMPLE_PRICE_CENTS,
+  // Exported so api/tests/unit/sampleableParity.test.js can assert the browser's
+  // copy (js/sampleable.js) still agrees. The two drifting is what put an
+  // "Order Sample" button on colours checkout refuses.
+  NATURAL_STONE_RX,
+  SAMPLE_BRANDS
 };

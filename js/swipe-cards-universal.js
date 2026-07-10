@@ -1556,30 +1556,13 @@ function __sgInitSwipeCards() {
     }
   };
 
-  window.requestSampleForCard = function(title, imageUrl) {
-    const SAMPLE_PRICE = 25.00;
-    const sampleName = title + ' - Sample';
-    const sampleId = sampleName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    if (window.SgCart && typeof window.SgCart.addToCart === 'function') {
-      window.SgCart.addToCart({
-        id: sampleId,
-        name: sampleName,
-        price: SAMPLE_PRICE,
-        image: imageUrl || '/migrated/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif',
-        quantity: 1,
-        category: 'samples'
-      });
-
-      if (window.openCartDrawer) {
-        window.openCartDrawer();
-      }
-
-      showSampleAddedNotification(sampleName);
-    } else {
-      window.location.href = '/shop/?collection=countertop-samples';
-    }
-  };
+  // window.requestSampleForCard was removed. It had no eligibility gate at all,
+  // priced samples at $25 (they are $12.99), and built the cart id from the card
+  // TITLE — "Absolute Black" became "absolute-black-sample", a slug the server
+  // has never seen, so it would have raised the missing-product alarm rather
+  // than the polite "we don't sample natural stone". Nothing ever called it.
+  // If swipe cards need a sample button, gate it on window.SGSampleable and send
+  // the real slug.
 
   function showSampleAddedNotification(name) {
     const existing = document.querySelector('.sample-added-notification');

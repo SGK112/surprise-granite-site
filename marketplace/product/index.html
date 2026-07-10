@@ -2831,7 +2831,8 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth-state.js?v=2.0.1"></script>
+<script src="/js/sampleable.js?v=20260710a"></script>
+  <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
 <script src="/js/cart.js?v=20260707a"></script>
@@ -3013,12 +3014,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             productType: product.type,
             // These colors have no catalog row, so the flag comes from material
             // and brand: engineered surfaces only, and only brands a national
-            // distributor will cut a chip for. Mirrors SAMPLE_BRANDS in
-            // api/validators/price-validator.js — if this shows a button the
-            // server won't honour, checkout 400s after the buyer commits.
-            sample_eligible: !/granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i.test(product.type || '')
-              && ['msi-surfaces','arizona-tile','daltile','cosentino','silestone','sensa','arcsurfaces','pentalquartz','lx-hausys']
-                .includes(String(product.brand || '').toLowerCase()),
+            // distributor will cut a chip for. js/sampleable.js holds that rule
+            // and is pinned to the server's — if this shows a button the server
+            // won't honour, checkout 400s after the buyer commits.
+            sample_eligible: window.SGSampleable.isSampleable(product),
             images: product.images || [product.primaryImage, product.secondaryImage].filter(Boolean),
             primaryColor: product.primaryColor,
             accentColor: product.accentColor,
@@ -3343,29 +3342,23 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       //      or `no_sample: true` / `has_sample: false` in the product record.
       //      (Use this for specific tile SKUs without samples.)
       const sampleBtn = document.getElementById('btn-order-sample');
-      const tags = Array.isArray(product.tags) ? product.tags.map(t => String(t).toLowerCase()) : [];
-      // Samples are only offered on engineered surfaces (quartz, porcelain,
-      // Dekton). Natural stone is never sampled — every lot is unique, so we
-      // send buyers to the stone yard instead (owner rule, 2026-07-06).
-      const NATURAL_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
-      const isGranite = NATURAL_RX.test(material || '')
-        || NATURAL_RX.test(product.productType || '')
-        || NATURAL_RX.test(product.type || '')
-        || /\bgranite\b/i.test(title || '')
-        || tags.some(t => NATURAL_RX.test(t));
-      // premium quartz — samples and pricing pulled site-wide (2026-04-22).
-      const isCambria = false;
-      const sampleBlockedByFlag = product.no_sample === true
-        || product.has_sample === false
-        || product.samples_available === false
-        || tags.some(t => ['no-sample','no-samples','no_sample','samples-unavailable','no_samples'].includes(t));
       // Sinks, faucets and fixtures are not sampleable, but this button used to
       // render on their pages and add them to the cart at their full retail
-      // price — a "sample" of a $590 sink cost $590. The server rejects anything
-      // that isn't sample_eligible, so only offer what it will actually sell.
-      const sampleEligible = product.sample_eligible === true;
+      // price — a "sample" of a $590 sink cost $590. Only catalog rows the
+      // server marked sample_eligible may be offered.
+      //
+      // The natural-stone and brand rules moved to js/sampleable.js, which is
+      // pinned to the server's copy by api/tests/unit/sampleableParity.test.js.
+      // Four hand-maintained copies of this rule had drifted apart.
+      const sampleEligible = product.sample_eligible === true
+        && window.SGSampleable.isSampleable({
+          ...product,
+          material,
+          title,
+          brand: product.brand || product.vendor
+        });
       if (sampleBtn) {
-        if (isGranite || isCambria || sampleBlockedByFlag || !sampleEligible) {
+        if (!sampleEligible) {
           sampleBtn.style.display = 'none';
         } else if (window.SgCart) {
           sampleBtn.href = 'javascript:void(0)';
