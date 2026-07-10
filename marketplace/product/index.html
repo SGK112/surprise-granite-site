@@ -3076,6 +3076,32 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       }
     } catch (e) { console.log('catalog API lookup failed:', e); }
 
+    // Discontinued colors are active=false, so the catalog API (active-only) and
+    // slabs.json both miss them — that is why some retired colors showed "Product
+    // Not Found" while others (in countertops.json) showed a banner. Resolve any
+    // of them from data/discontinued.json so EVERY discontinued color renders the
+    // same way: the color, its image, and the banner.
+    if (!staleProduct && category === 'slabs') {
+      try {
+        const dRes = await fetch('/data/discontinued.json');
+        if (dRes.ok) {
+          const list = await dRes.json();
+          const clean = handle.replace(/-sample$/, '');
+          const d = list.find(p => p.handle === handle || p.handle === clean || p.id === clean);
+          if (d) {
+            return {
+              id: d.id, title: d.title, handle: d.handle,
+              vendor: d.brandDisplay, brandDisplay: d.brandDisplay,
+              productType: d.material, category: 'slabs',
+              description: d.title + ' is a ' + d.material + ' color that has been discontinued by the manufacturer.',
+              images: d.images || [], tags: [],
+              available: false, sample_eligible: false, discontinued: true
+            };
+          }
+        }
+      } catch (e) { console.log('discontinued lookup failed:', e); }
+    }
+
     // API missed too — fall back to the priceless JSON hit if we had one, so the
     // page still renders (better than "Product Not Found").
     return staleProduct;

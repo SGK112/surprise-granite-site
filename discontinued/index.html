@@ -203,7 +203,10 @@
       fetch('/data/discontinued.json')
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          all = (Array.isArray(data) ? data : []).sort(function (a, b) { return (a.title || '').localeCompare(b.title || ''); });
+          // Hide colors still sold by another vendor (activeTwin) — retired from
+          // one supplier, not actually discontinued.
+          all = (Array.isArray(data) ? data : []).filter(function (p) { return !p.activeTwin; })
+            .sort(function (a, b) { return (a.title || '').localeCompare(b.title || ''); });
           buildChips();
           render();
         })

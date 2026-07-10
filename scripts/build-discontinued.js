@@ -29,6 +29,20 @@ const cleanHandle = (slug) => String(slug || '').replace(/-sample$/, '');
 
 (async () => {
   const write = process.argv.includes('--write');
+
+  // Active slab color names — a color retired by ONE vendor but still sold by
+  // another is NOT discontinued (Copenhagen is dead at Arizona Tile but active
+  // at Cactus/ASG). Only list colors with no active twin.
+  let active = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supa.from('catalog_products')
+      .select('name, slug').eq('category', 'slab').eq('active', true).order('id').range(from, from + 999);
+    if (error) throw error;
+    active = active.concat(data);
+    if (data.length < 1000) break;
+  }
+  const activeNames = new Set(active.filter((r) => !/-sample$/.test(r.slug)).map((r) => norm(r.name)));
+
   let rows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supa.from('catalog_products')
@@ -39,7 +53,10 @@ const cleanHandle = (slug) => String(slug || '').replace(/-sample$/, '');
     if (data.length < 1000) break;
   }
 
-  // One entry per color (a color may exist as both a product and a chip row).
+  // One entry per color. Keep colors that are active from another vendor too,
+  // but flag them (activeTwin) — the LIST page hides them (the color isn't really
+  // gone), while the detail page can still resolve their retired handle to a
+  // banner instead of a jarring "Product Not Found".
   const byColor = new Map();
   for (const r of rows) {
     const key = norm(r.name);
@@ -62,6 +79,9 @@ const cleanHandle = (slug) => String(slug || '').replace(/-sample$/, '');
       category: 'discontinued',
       discontinued: true,
       available: false,
+      // True when the same color name is still sold by another vendor — the
+      // list hides these, the detail page still resolves them.
+      activeTwin: activeNames.has(norm(r.name)),
       images,
       url: `/marketplace/product/?handle=${encodeURIComponent(handle)}&category=slabs`,
     };
