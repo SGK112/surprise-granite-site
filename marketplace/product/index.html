@@ -1815,10 +1815,10 @@
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             Call (602) 833-3189
           </a>
-          <a id="btn-order-sample" href="/shop/?collection=countertop-samples" target="_blank" class="btn-secondary btn-sample">
+          <button type="button" id="btn-order-sample" class="btn-secondary btn-sample" style="display:none">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             Order Sample
-          </a>
+          </button>
           <a href="/tools/countertop-calculator/" class="btn-secondary btn-compare">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             Compare Prices
@@ -2815,6 +2815,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/shopify-products.js"></script>
 <script src="/js/cart.js?v=20260707a"></script>
 <script src="/js/shop-cart-integration.js?v=20260628e"></script>
+<script src="/js/sample-cart.js?v=20260710d"></script>
 <script src="/js/site-search.js?v=5"></script>
 <script src="/js/related-products.js"></script>
 
@@ -3459,39 +3460,22 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
        */
       function applySampleButton(prod) {
         const sampleBtn = document.getElementById('btn-order-sample');
-        if (!sampleBtn) return;
-
-        const eligible = prod.sample_eligible === true ? true
-          : prod.sample_eligible === false ? false
-          : window.SGSampleable.isSampleable({
-              ...prod,
-              material,
-              title,
-              brand: prod.brand || prod.vendor
-            });
-
-        if (!eligible) { sampleBtn.style.display = 'none'; return; }
-        sampleBtn.style.display = '';
-        if (!window.SgCart || sampleBtn.dataset.sampleBound) return;
+        if (!sampleBtn || sampleBtn.dataset.sampleBound) return;
         sampleBtn.dataset.sampleBound = '1';
-        sampleBtn.href = 'javascript:void(0)';
-        sampleBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          window.SgCart.addToCart({
-            id: prod.handle || prod.id,
-            name: title + ' (Sample)',
-            // Flat sample fee — never the slab's price. The server re-prices
-            // samples anyway (api/validators/price-validator.js), so this only
-            // has to match what the cart shows the buyer.
-            price: 12.99,
-            image: (prod.images && prod.images[0]) || '',
-            quantity: 1,
-            variant: 'Sample',
-            category: category || '',
-            href: window.location.href
+
+        // SGSampleCart gates on the shared rule, then binds an add-to-cart that
+        // uses the correct <slug>-sample SKU id (not the product's own handle),
+        // the sample price, and opens the cart. Button is hidden by default, so
+        // if the helper is missing it stays hidden (fail-safe).
+        if (window.SGSampleCart) {
+          window.SGSampleCart.wire(sampleBtn, {
+            ...prod,
+            slug: prod.handle || prod.slug || prod.id,
+            material,
+            title,
+            brand: prod.brand || prod.vendor
           });
-          if (window.openCartDrawer) window.openCartDrawer();
-        });
+        }
       }
       window.__sgApplySampleButton = applySampleButton;
       applySampleButton(product);

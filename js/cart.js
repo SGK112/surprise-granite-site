@@ -473,7 +473,12 @@
       const safeId = escapeAttr(item.id);
       const safeVariant = escapeAttr(item.variant || '');
       const safeName = escapeHtml(item.name);
-      const safeImage = escapeAttr((item.image && item.image.startsWith('http')) ? item.image : '/images/6243807090316203124aee66_placeholder-image.svg');
+      // Accept absolute (http) AND site-rooted (/migrated/…, /images/…) images.
+      // The old check allowed only http, so every relative image — which is what
+      // the product pages pass for samples — fell back to the placeholder and
+      // rendered blank. Genuinely broken URLs are still caught by onerror below.
+      const validImage = item.image && (item.image.startsWith('http') || item.image.startsWith('/'));
+      const safeImage = escapeAttr(validImage ? item.image : '/images/6243807090316203124aee66_placeholder-image.svg');
       const safeHref = escapeAttr(item.href || '#');
       const safePrice = parseFloat(item.price) || 0;
       const safeQty = parseInt(item.quantity) || 1;

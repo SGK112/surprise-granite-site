@@ -69,7 +69,11 @@ const PLACEHOLDER = 'Call for availability';
     rows = rows.concat(data);
     if (data.length < 1000) break;
   }
-  rows = rows.filter((r) => !(r.specs && r.specs.discontinued));
+  // Exclude the sample CHIP rows (`<slug>-sample`) from the match pool. They
+  // share a colour's name, so they corrupt name matching (a product would match
+  // its own chip) and they are not products. The checkout resolves a sample from
+  // the PRODUCT slug, so a product must map to its product row, not its chip.
+  rows = rows.filter((r) => !(r.specs && r.specs.discontinued) && !/-sample$/.test(r.slug));
 
   const bySlug = new Map(rows.map((r) => [r.slug, r]));
   const byName = new Map();
@@ -114,7 +118,12 @@ const PLACEHOLDER = 'Call for availability';
     const eligible = m ? m.sample_eligible === true : false;
     c.sample_eligible = eligible;
     c.sample_price = eligible ? String(m.sample_price != null ? m.sample_price : '12.99') : null;
-    if (eligible) stats.sampleable++;
+    // The catalog slug for this colour. countertops.json slugs are the Webflow
+    // slugs, which differ from the catalog slug; the checkout resolves a sample
+    // by EXACT catalog slug (api/validators/price-validator.js), so the sample
+    // button must send the catalog slug, not the Webflow one.
+    if (eligible) { c.sample_slug = m.slug; stats.sampleable++; }
+    else delete c.sample_slug;
   }
 
   console.log('=== enrich countertops.json ===');
