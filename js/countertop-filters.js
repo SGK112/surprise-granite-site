@@ -586,6 +586,7 @@
               <img src="${item.primaryImage}"
                    loading="lazy"
                    alt="${item.name} countertop sample"
+                   onerror="this.onerror=null;this.src='/images/6243807090316203124aee66_placeholder-image.svg'"
                    class="product1_image is-primary"/>
               ${item.secondaryImage ? `
               <img src="${item.secondaryImage}"
