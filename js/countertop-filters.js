@@ -138,6 +138,14 @@
   };
   const viewsFor = (p) => (VIEWS && (VIEWS[viewKey(p.slug)] || VIEWS[viewKey(p.name)])) || pseudoViews(p.slug || p.name);
 
+  // Extract the value from a "Countertop Style_<value>" tag, minus any
+  // "(derived)" marker. Returns '' when there is no style tag.
+  function styleFromTags(tags) {
+    if (!Array.isArray(tags)) return '';
+    const t = tags.find(x => typeof x === 'string' && x.indexOf('Countertop Style_') === 0);
+    return t ? t.slice('Countertop Style_'.length).replace(/\s*\(derived\)$/i, '') : '';
+  }
+
   function mapCatalogRow(p) {
     const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
     return {
@@ -145,7 +153,10 @@
       slug: p.slug || p.sku,
       brand: p.brand || p.vendor_id,
       type: p.subcategory || 'Slab',
-      style: (p.tags && p.tags.find && p.tags.find(t => /style/i.test(t))) || '',
+      // Style lives as a "Countertop Style_<value>" tag — take the VALUE, not the
+      // whole tag (this used to feed "Countertop Style_Subtle Veining" into the
+      // facet). Strip the "(derived)" marker the backfill adds.
+      style: styleFromTags(p.tags),
       primaryColor: p.color_family || '',
       accentColor: '',
       primaryImage: imgs[0] || '',
@@ -158,6 +169,19 @@
   function deriveFilters(items) {
     const uniq = (key) => [...new Set(items.map(i => i[key]).filter(Boolean))].sort();
     return { brands: uniq('brand'), types: uniq('type'), styles: uniq('style'), colors: uniq('primaryColor'), accents: uniq('accentColor') };
+  }
+
+  // How many items carry each facet value, so the checkboxes can read
+  // "White (515)". Keyed by filterKey then value.
+  function facetCounts(items) {
+    const out = { brand: {}, type: {}, style: {}, primaryColor: {}, accentColor: {} };
+    for (const it of items) {
+      for (const k of Object.keys(out)) {
+        const v = it[k];
+        if (v) out[k][v] = (out[k][v] || 0) + 1;
+      }
+    }
+    return out;
   }
 
   // Initialize
@@ -253,6 +277,10 @@
     const filterGroups = filterWrapper.querySelectorAll('.filters2_filter-group');
     console.log(`Found ${filterGroups.length} filter groups`);
 
+    // Per-facet counts over the set this page shows (category-scoped).
+    const countBase = PAGE_CATEGORY ? allCountertops.filter(c => c.type === PAGE_CATEGORY) : allCountertops;
+    const counts = facetCounts(countBase);
+
     filterGroups.forEach((group, index) => {
       const headingEl = group.querySelector('.heading-style-h6');
       if (!headingEl) return;
@@ -305,9 +333,10 @@
         // Clear existing checkboxes
         checkboxGrid.innerHTML = '';
 
-        // Create new checkboxes
+        // Create new checkboxes, each labelled with how many items carry it.
+        const keyCounts = counts[filterKey] || {};
         filterData.forEach(value => {
-          const checkbox = createCheckbox(value, filterKey);
+          const checkbox = createCheckbox(value, filterKey, keyCounts[value]);
           checkboxGrid.appendChild(checkbox);
         });
       }
@@ -318,18 +347,20 @@
   }
 
   // Create a checkbox element
-  function createCheckbox(value, filterKey) {
+  function createCheckbox(value, filterKey, count) {
     const label = document.createElement('label');
     label.className = 'w-checkbox filters_form-checkbox1';
 
     const displayName = formatDisplayName(value);
+    const countText = (typeof count === 'number' && count > 0)
+      ? ` <span class="filters_count" style="opacity:.55">(${count})</span>` : '';
 
     label.innerHTML = `
       <input type="checkbox"
              class="w-checkbox-input filters_form-checkbox1-icon"
              data-filter-key="${filterKey}"
              data-filter-value="${value}">
-      <span class="filters_form-checkbox1-label w-form-label">${displayName}</span>
+      <span class="filters_form-checkbox1-label w-form-label">${displayName}${countText}</span>
     `;
 
     // Add change listener

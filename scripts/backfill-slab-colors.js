@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * Backfill primaryColor for catalog slabs so the colour filter works when the
- * storefront reads the full 2,100-product catalog instead of the 619 curated
- * colours. The taxonomy lives in tags ("Primary Color_Gray") but covers ~15%;
- * this derives the rest from the product name.
+ * Backfill color_family for catalog slabs so the browse filter and swipe cards
+ * can filter by colour across the full 2,100-product catalog.
  *
- * Source of truth order:
- *   1. An existing "Primary Color_X" tag  — hand-curated, never overwritten.
- *   2. A colour word / known series in the NAME — derived, tagged as derived.
- *   3. Unknown — left alone (no guess).
+ * color_family is the canonical column the browse grid (js/countertop-filters.js
+ * mapCatalogRow) reads and that build-slabs-json.js now publishes. It covered
+ * ~24%; this fills the rest by deriving from the product name, then its
+ * description.
  *
- * Derivation is conservative: a name maps to a colour only via an explicit word
- * or a well-known series (Calacatta -> White). Ambiguous names stay unknown
- * rather than get a wrong colour, because a wrong facet is worse than a missing
- * one — a buyer filtering "White" must not see a black slab.
+ * Source priority (first hit wins, never overwrites a real value):
+ *   1. existing color_family              — curated / vendor, kept as-is
+ *   2. an existing "Primary Color_X" tag  — from the earlier tag pass
+ *   3. a colour word / known series in the NAME
+ *   4. the first colour word in the DESCRIPTION (products lead with their own
+ *      colour: "Portofino Classico is a white quartz…")
  *
- * Dry-run by default (prints coverage + samples). --write persists a
- * "Primary Color_X (derived)" tag to catalog_products so build-slabs-json.js and
- * the enrichment pick it up. Chip rows (`<slug>-sample`) are skipped.
+ * Conservative: an explicit colour word or known series only. Ambiguous names
+ * with no description stay blank — a wrong facet (a black slab under "White") is
+ * worse than a missing one.
+ *
+ * Dry-run by default. --write persists color_family to catalog_products.
+ * Idempotent: rows that already have color_family are skipped. Chip rows
+ * (`<slug>-sample`) are excluded.
  *
  * Usage: NODE_PATH=api/node_modules node scripts/backfill-slab-colors.js [--write]
  */
@@ -27,12 +31,8 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supa = createClient('https://ypeypgwsycxcagncgdur.supabase.co', process.env.SUPABASE_SERVICE_KEY);
 
-// Colour <- ordered keyword rules. First hit wins, so put specific series before
-// generic words (Absolute Black before "black"; Calacatta before anything).
+// Colour <- ordered keyword rules. Specific series before generic words.
 const COLOR_RULES = [
-  // NB: "pearl" and "ivory" are intentionally NOT here — "Blue Pearl"/"Black
-  // Pearl" are dark, and ivory reads as Beige. Blue/Black/Beige rules below
-  // catch those; a bare "Pearl" stays unknown rather than guess White.
   ['White', /calacatt|carrar|carrer|statuario|bianco|blanc|\bwhite\b|\balba\b|glacier|\bsnow\b|alpin|\bpure\b|arctic|\bfrost\b|\bcloud|\bmist\b/i],
   ['Black', /absolute black|\bblack\b|\bnero\b|\bnoir\b|midnight|obsidian|\bjet\b|\bcosmic\b|\braven\b|\bcarbon\b/i],
   ['Gray',  /\bgr[ae]y\b|grigio|concret|cement|\bsilver\b|\bash\b|\bsmoke|pietra|\bsteel\b|\bfog\b|\bstorm\b|charcoal|graphite|\bslate\b|\bpewter\b/i],
@@ -50,8 +50,8 @@ const tagVal = (tags, pfx) => {
   return t ? t.slice(pfx.length).replace(/\s*\(derived\)$/i, '') : '';
 };
 
-function deriveColor(name) {
-  const n = String(name || '');
+function deriveColor(text) {
+  const n = String(text || '');
   for (const [color, rx] of COLOR_RULES) if (rx.test(n)) return color;
   return '';
 }
@@ -61,7 +61,7 @@ function deriveColor(name) {
   let rows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supa.from('catalog_products')
-      .select('id, slug, name, tags')
+      .select('id, slug, name, color_family, description, tags')
       .eq('category', 'slab').eq('active', true).order('id').range(from, from + 999);
     if (error) throw error;
     rows = rows.concat(data);
@@ -69,53 +69,56 @@ function deriveColor(name) {
   }
   rows = rows.filter((r) => !/-sample$/.test(r.slug));
 
-  const stats = { total: rows.length, hadTag: 0, derived: 0, unknown: 0 };
+  const stats = { total: rows.length, had: 0, fromTag: 0, fromName: 0, fromDesc: 0, unknown: 0 };
   const dist = {};
   const toWrite = [];
-  const samples = { derived: [], unknown: [] };
+  const unknownSamples = [];
 
   for (const r of rows) {
-    const existing = tagVal(r.tags, 'Primary Color_');
-    if (existing) { stats.hadTag++; dist[existing] = (dist[existing] || 0) + 1; continue; }
+    if (r.color_family) { stats.had++; dist[r.color_family] = (dist[r.color_family] || 0) + 1; continue; }
 
-    const color = deriveColor(r.name);
+    let color = tagVal(r.tags, 'Primary Color_');
+    if (color) stats.fromTag++;
+    if (!color) { color = deriveColor(r.name); if (color) stats.fromName++; }
+    // Products lead with their own colour; the first 140 chars avoid trailing
+    // "pairs with white cabinets" noise.
+    if (!color) { color = deriveColor(String(r.description || '').slice(0, 140)); if (color) stats.fromDesc++; }
+
     if (color) {
-      stats.derived++; dist[color] = (dist[color] || 0) + 1;
-      if (samples.derived.length < 12) samples.derived.push(`${r.name} -> ${color}`);
-      const tags = Array.isArray(r.tags) ? r.tags.slice() : [];
-      tags.push(`Primary Color_${color} (derived)`);
-      toWrite.push({ id: r.id, tags });
+      dist[color] = (dist[color] || 0) + 1;
+      toWrite.push({ id: r.id, color_family: color });
     } else {
       stats.unknown++;
-      if (samples.unknown.length < 12) samples.unknown.push(r.name);
+      if (unknownSamples.length < 12) unknownSamples.push(r.name);
     }
   }
 
   const pct = (n) => `${Math.round((100 * n) / stats.total)}%`;
-  console.log('=== slab colour backfill (products only) ===');
-  console.log(`products:            ${stats.total}`);
-  console.log(`already tagged:      ${stats.hadTag} (${pct(stats.hadTag)})`);
-  console.log(`derived from name:   ${stats.derived} (${pct(stats.derived)})`);
-  console.log(`still unknown:       ${stats.unknown} (${pct(stats.unknown)})`);
-  console.log(`--> coverage after:  ${pct(stats.hadTag + stats.derived)} (was ${pct(stats.hadTag)})`);
-  console.log('\ncolour distribution (tag + derived):');
+  const covered = stats.had + stats.fromTag + stats.fromName + stats.fromDesc;
+  console.log('=== slab color_family backfill (products only) ===');
+  console.log(`products:              ${stats.total}`);
+  console.log(`already set:           ${stats.had} (${pct(stats.had)})`);
+  console.log(`from existing tag:     ${stats.fromTag}`);
+  console.log(`derived from name:     ${stats.fromName}`);
+  console.log(`derived from desc:     ${stats.fromDesc}`);
+  console.log(`still unknown:         ${stats.unknown} (${pct(stats.unknown)})`);
+  console.log(`--> coverage after:    ${pct(covered)} (was ${pct(stats.had)})`);
+  console.log('\ncolour distribution:');
   Object.entries(dist).sort((a, b) => b[1] - a[1]).forEach(([k, c]) => console.log('   ' + String(c).padStart(4), k));
-  console.log('\nsample derivations:');
-  samples.derived.forEach((s) => console.log('   ' + s));
-  console.log('\nsample still-unknown (need a rule or manual):');
-  samples.unknown.forEach((s) => console.log('   ' + s));
+  console.log('\nstill-unknown samples:');
+  unknownSamples.forEach((s) => console.log('   ' + s));
 
-  if (!write) { console.log(`\nDRY RUN — ${toWrite.length} rows would get a derived colour tag. Add --write.`); process.exit(0); }
+  if (!write) { console.log(`\nDRY RUN — ${toWrite.length} rows would get color_family. Add --write.`); process.exit(0); }
 
   let i = 0, ok = 0;
   await Promise.all(Array.from({ length: 8 }, async () => {
     while (i < toWrite.length) {
       const row = toWrite[i++];
       const { error } = await supa.from('catalog_products')
-        .update({ tags: row.tags, updated_at: new Date().toISOString() }).eq('id', row.id);
+        .update({ color_family: row.color_family, updated_at: new Date().toISOString() }).eq('id', row.id);
       if (!error) ok++;
     }
   }));
-  console.log(`\nwrote derived colour tags to ${ok}/${toWrite.length} rows`);
+  console.log(`\nwrote color_family to ${ok}/${toWrite.length} rows`);
   process.exit(0);
 })().catch((e) => { console.error('FATAL', e.message); process.exit(1); });

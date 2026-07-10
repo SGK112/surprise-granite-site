@@ -388,7 +388,8 @@ function __sgInitSwipeCards() {
       slug: s.handle || s.id || '',
       brand: s.brandDisplay || s.vendor || '',
       type: s.material || s.productType || '',
-      primaryColor: tagValue(s.tags, 'Primary Color_'),
+      // color_family is the canonical colour field; fall back to the tag form.
+      primaryColor: s.color_family || tagValue(s.tags, 'Primary Color_'),
       accentColor: tagValue(s.tags, 'Accent Color_'),
       style: tagValue(s.tags, 'Countertop Style_'),
       thickness: s.thickness || '',

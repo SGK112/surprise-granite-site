@@ -64,7 +64,7 @@ const fmtSize = (s) => {
   let rows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supa.from('catalog_products')
-      .select('id, vendor_id, name, slug, brand, subcategory, description, sample_price, sample_eligible, retail_price, in_stock, specs, primary_image_url, image_urls, size, active, tags')
+      .select('id, vendor_id, name, slug, brand, subcategory, description, sample_price, sample_eligible, retail_price, in_stock, specs, primary_image_url, image_urls, size, active, tags, color_family')
       .eq('category', 'slab').eq('active', true).order('id').range(from, from + 999);
     if (error) throw error;
     rows = rows.concat(data);
@@ -149,6 +149,7 @@ const fmtSize = (s) => {
       variants: old.variants || [],
       ...(origin ? { origin } : {}),
       ...(size ? { size } : {}),
+      ...(r.color_family ? { color_family: r.color_family } : {}),
       ...(sp.thickness ? { thickness: String(sp.thickness) } : {}),
       ...(sp.finish ? { finish: String(sp.finish) } : {}),
       ...(sp.slab_sqft != null ? { slab_sqft: Number(sp.slab_sqft) } : {}),
