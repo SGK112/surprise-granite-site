@@ -211,6 +211,56 @@ function sampleableCountertops() {
 }
 
 /**
+ * Every colour we publish, sampleable or not, so a refused sample can say WHY.
+ *
+ * "Absolute Black granite" and "a colour we have never heard of" both used to
+ * arrive as one alert reading "possible price tampering, or a product missing
+ * from the catalog". The first is the sampling policy working exactly as the
+ * owner specified, and alarming on it teaches staff to ignore the alert that
+ * matters. Only the second is a lost sale.
+ */
+let allColoursCache = null;
+function allCountertopColours() {
+  if (allColoursCache) return allColoursCache;
+  const bySlug = new Map();
+  const byName = new Map();
+  try {
+    const { countertops } = require(path.join(__dirname, '../../data/countertops.json'));
+    for (const product of countertops || []) {
+      if (product.slug) bySlug.set(product.slug.toLowerCase(), product);
+      if (product.name) byName.set(product.name.toLowerCase(), product);
+    }
+  } catch (err) {
+    logger.warn('Countertop colour list unavailable', { error: err.message });
+  }
+  allColoursCache = { bySlug, byName };
+  return allColoursCache;
+}
+
+/**
+ * Why did a sample fail to resolve?
+ *   'not_sampleable'  — we publish this colour, but policy says no chip for it
+ *                       (natural stone, or a brand no distributor will cut).
+ *   'no_server_price' — we cannot identify it at all: tampering, or a genuinely
+ *                       missing product, and possibly a lost sale.
+ */
+function classifySampleRefusal(item) {
+  const { bySlug, byName } = allCountertopColours();
+  const base = baseProductName(item.name);
+  const known = bySlug.get(String(item.id || '').toLowerCase())
+    || byName.get(String(base || '').toLowerCase())
+    || byName.get(String(item.name || '').toLowerCase());
+  if (!known) return { reason: 'no_server_price' };
+
+  const type = known.type || '';
+  const brand = String(known.brand || '').toLowerCase();
+  const why = NATURAL_STONE_RX.test(type)
+    ? `${type || 'natural stone'} — we don't sample natural stone`
+    : `brand "${brand || 'unknown'}" is not one we can source a chip from`;
+  return { reason: 'not_sampleable', why };
+}
+
+/**
  * A sample line item, by any of the shapes the three add-to-cart paths emit:
  * "Kensho (Sample)" (marketplace), "Kensho - Sample" (countertop pages),
  * or an explicit variant/category tag.
@@ -315,12 +365,17 @@ async function validateSingleItem(item, supabase) {
       return result;
     }
 
-    result.error = `We couldn't verify the price for "${item.name}". Please contact us at (602) 833-3189 to complete your order.`;
+    const { reason, why } = classifySampleRefusal(item);
+    result.error = reason === 'not_sampleable'
+      ? `We don't offer samples of "${baseProductName(item.name)}". Call us at (602) 833-3189 and we'll help you see it in person.`
+      : `We couldn't verify the price for "${item.name}". Please contact us at (602) 833-3189 to complete your order.`;
     result.unmatched = {
       id: item.id || null,
       sku: item.sku || null,
       name: item.name,
-      clientPrice: item.price
+      clientPrice: item.price,
+      reason,
+      why: why || null
     };
     return result;
   }
@@ -433,7 +488,9 @@ async function validateSingleItem(item, supabase) {
     id: item.id || null,
     sku: item.sku || null,
     name: item.name,
-    clientPrice: item.price
+    clientPrice: item.price,
+    reason: 'no_server_price',
+    why: null
   };
   return result;
 }

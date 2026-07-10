@@ -195,22 +195,38 @@ router.post('/checkout', async (req, res) => {
 
     if (!validation.valid) {
       logger.warn('Cart validation failed', { errors: validation.errors });
-      // #2a: items rejected for having NO server price are either tampering or
-      // a real product missing from the catalog. Alert staff so a genuinely
-      // missing product can be added and the sale recovered. Best-effort —
-      // must never block the 400 response.
+      // #2a: alert staff so a genuinely missing product can be added and the sale
+      // recovered. Best-effort — must never block the 400 response.
+      //
+      // Two very different rejections used to share one alarming subject. A
+      // request for a granite sample is the owner's sampling policy working as
+      // specified; it is worth knowing about as demand, but it is not tampering
+      // and not a missing product. Sending both as "possible price tampering"
+      // teaches staff to ignore the alert that actually costs money.
       if (validation.unmatchedItems?.length) {
         try {
           const emailService = require('../services/emailService');
-          const rows = validation.unmatchedItems.map(u =>
-            `<li><strong>${u.name}</strong> — id: ${u.id || '—'}, sku: ${u.sku || '—'}, client price: $${(((u.clientPrice) || 0) / 100).toFixed(2)}</li>`
-          ).join('');
-          emailService.sendAdminNotification(
-            '⚠️ Checkout blocked — unverifiable item price',
-            `<p>A checkout was rejected because these items had no matching server price (possible price tampering, or a product missing from the catalog):</p>
-             <ul>${rows}</ul>
-             <p>Customer email: ${customer_email || 'n/a'}. If a product is genuinely missing, add it to the catalog so it can be purchased.</p>`
-          ).catch(err => logger.warn('Unmatched-item admin alert failed', { error: err.message }));
+          const row = (u) => `<li><strong>${u.name}</strong> — id: ${u.id || '—'}, sku: ${u.sku || '—'}, client price: $${(((u.clientPrice) || 0) / 100).toFixed(2)}${u.why ? ` — ${u.why}` : ''}</li>`;
+          const policy = validation.unmatchedItems.filter(u => u.reason === 'not_sampleable');
+          const missing = validation.unmatchedItems.filter(u => u.reason !== 'not_sampleable');
+
+          if (missing.length) {
+            emailService.sendAdminNotification(
+              '⚠️ Checkout blocked — unverifiable item price',
+              `<p>A checkout was rejected because these items had no matching server price (possible price tampering, or a product missing from the catalog):</p>
+               <ul>${missing.map(row).join('')}</ul>
+               <p>Customer email: ${customer_email || 'n/a'}. If a product is genuinely missing, add it to the catalog so it can be purchased.</p>`
+            ).catch(err => logger.warn('Unmatched-item admin alert failed', { error: err.message }));
+          }
+
+          if (policy.length) {
+            emailService.sendAdminNotification(
+              'Sample requested for a color we don\'t sample',
+              `<p>A customer tried to order a sample we don't offer. This is the sampling policy working, not a bug — recorded because it is a demand signal, and because a button should not have been offered for it:</p>
+               <ul>${policy.map(row).join('')}</ul>
+               <p>Customer email: ${customer_email || 'n/a'}.</p>`
+            ).catch(err => logger.warn('Policy-refusal notice failed', { error: err.message }));
+          }
         } catch (e) {
           logger.warn('Unmatched-item admin alert threw', { error: e.message });
         }
