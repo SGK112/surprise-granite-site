@@ -406,7 +406,14 @@
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error);
+        // `error` is a generic summary ("Invalid cart items"); `details` carries the
+        // per-item reason the server actually wants the buyer to read — e.g. that we
+        // don't sample natural stone, and which number to call. Showing the summary
+        // told a customer nothing and sent him round the checkout four times.
+        const detail = Array.isArray(data.details) && data.details.length
+          ? data.details.join(' ')
+          : null;
+        throw new Error(detail || data.error);
       }
 
       // Do NOT clear cart here — /checkout/success clears it on successful payment.
