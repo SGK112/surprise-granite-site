@@ -649,12 +649,11 @@
         <label style="font-weight: 600; color: var(--navy);">Brand:</label>
         <select id="brand-filter" style="padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer;">
           <option value="all">All Brands</option>
-          <option value="msi">MSI</option>
           <option value="ruvati">Ruvati</option>
-          <option value="alfi">Alfi</option>
-          <option value="kibi">KIBI</option>
           <option value="vigo">Vigo</option>
-          <option value="esi">ESI SharpSinks</option>
+          <option value="alfi">ALFI</option>
+          <option value="whitehaus">Whitehaus</option>
+          <option value="kibi">KIBI</option>
         </select>
         <label style="font-weight: 600; color: var(--navy); margin-left: 16px;">Material:</label>
         <select id="material-filter" style="padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; min-width: 160px; cursor: pointer;">
@@ -764,13 +763,25 @@
       }
     }
 
+    // Collapse the vendor's many name variants into one clean brand label
+    function normalizeBrand(b) {
+      const s = (b || '').toLowerCase();
+      if (s.includes('ruvati')) return 'Ruvati';
+      if (s.includes('vigo')) return 'Vigo';
+      if (s.includes('kibi')) return 'KIBI';
+      if (s.includes('whitehaus')) return 'Whitehaus';
+      if (s.includes('alfi')) return 'ALFI';
+      if (s.includes('esi')) return 'ESI SharpSinks';
+      return b || '';
+    }
+
     // Map a /api/catalog product (vendor-scraped) to the shape this page expects
     function mapCatalogToPageShape(p) {
       return {
         handle: p.slug || p.id,
         title: p.name,
         productType: p.subcategory ? p.subcategory.replace(/-/g, ' ') : 'Sink',
-        vendor: p.brand || p.vendor_id,
+        vendor: normalizeBrand(p.brand || p.vendor_id),
         images: p.image_urls && p.image_urls.length ? p.image_urls : (p.primary_image_url ? [p.primary_image_url] : []),
         price: p.retail_price,
         specs: p.specs || {},
@@ -789,46 +800,35 @@
 
     async function loadProducts() {
       try {
-        // Fetch live catalog (Kibi + others) AND static sinks.json in parallel
+        // Pull the FULL sink catalog from the master-synced live API. The API caps
+        // each response at 250, so page through all of them (was showing only the
+        // first 250). This catalog is the source of truth: cost-based pricing +
+        // vendor images. The old static /data/sinks.json (stale Shopify import) is
+        // no longer merged.
         const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
-        const [staticRes, liveRes] = await Promise.allSettled([
-          fetch('/data/sinks.json?v=' + Date.now()),
-          fetch(API_BASE + '/api/catalog?category=sink&limit=250')
-        ]);
-
-        // Static products
-        let staticProducts = [];
-        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
-          staticProducts = await staticRes.value.json();
+        const LIMIT = 250;
+        let raw = [], offset = 0, total = Infinity;
+        while (offset < total && offset < 3000) {
+          const res = await fetch(`${API_BASE}/api/catalog?category=sink&limit=${LIMIT}&offset=${offset}`);
+          if (!res.ok) break;
+          const json = await res.json();
+          const batch = (json && json.products) || [];
+          raw = raw.concat(batch);
+          total = json.total || raw.length;
+          offset += LIMIT;
+          if (batch.length < LIMIT) break;
         }
 
-        // Live products from scraped catalog
-        let liveProducts = [];
-        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
-          const json = await liveRes.value.json();
-          if (json.success && Array.isArray(json.products)) {
-            liveProducts = json.products.map(mapCatalogToPageShape);
-          }
-        }
-
-        // Dedupe: drop static products whose vendor is now in live catalog.
-        // Live wins because it's fresh, has structured pricing, and matches our drop-ship workflow.
-        const liveVendorNames = new Set(
-          liveProducts
-            .map(p => (p.vendor || p.brandDisplay || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, ''))
-            .filter(Boolean)
-        );
-        const filteredStatic = staticProducts.filter(p => {
-          const v = ((p.vendor || p.brand || p.brandDisplay || '') + '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-          if (!v) return true;
-          // ruvati / ruvatisinks / kibi etc. — any partial match against a live vendor key
-          for (const liveV of liveVendorNames) {
-            if (v.includes(liveV) || liveV.includes(v)) return false;
-          }
-          return true;
-        });
-        const products = [...liveProducts, ...filteredStatic];
-        console.log(`Sinks: ${liveProducts.length} live + ${filteredStatic.length} static (${staticProducts.length - filteredStatic.length} duped) = ${products.length}`);
+        // Keep real, sellable sinks: has image, sane price, not an accessory/part.
+        const ACC = /\b(grid|strainer|drain|bracket|caddy|colander|cutting board|rinse ring|soap|flange|template|towel|tray|basket|stopper|apron panel|accessor|hardware|mount kit|bottom rinse)\b/i;
+        const products = raw
+          .filter(p => {
+            const pr = +p.retail_price || 0;
+            const img = p.primary_image_url || (p.image_urls && p.image_urls[0]);
+            return pr >= 25 && pr <= 4000 && img && !ACC.test(p.name || '');
+          })
+          .map(mapCatalogToPageShape);
+        console.log(`Sinks: ${products.length} sellable of ${raw.length} catalog rows`);
 
         allProductsData = products;
         renderProducts(products);
