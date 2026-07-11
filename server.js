@@ -895,7 +895,10 @@ app.get('/countertops/:slug', (req, res, next) => {
   if (product) {
     res.sendFile(path.join(__dirname, 'templates/product.html'));
   } else {
-    next(); // Fall through to static file handler
+    // Legacy/removed colour URL. Instead of 404ing (thousands of these sit in
+    // GSC), 301 to the marketplace product page, which resolves any catalog
+    // slug — an active colour renders, a discontinued one shows the banner.
+    res.redirect(301, `/marketplace/product/?handle=${encodeURIComponent(slug)}&category=slabs`);
   }
 });
 
@@ -907,7 +910,7 @@ app.get('/tiles/:slug', (req, res, next) => {
   if (product) {
     res.sendFile(path.join(__dirname, 'templates/product.html'));
   } else {
-    next();
+    res.redirect(301, '/marketplace/tile/'); // legacy/removed tile URL
   }
 });
 
@@ -918,7 +921,7 @@ app.get('/tile/:slug', (req, res, next) => {
   if (product) {
     res.sendFile(path.join(__dirname, 'templates/product.html'));
   } else {
-    next();
+    res.redirect(301, '/marketplace/tile/'); // legacy/removed tile URL
   }
 });
 
@@ -930,7 +933,7 @@ app.get('/flooring/:slug', (req, res, next) => {
   if (product) {
     res.sendFile(path.join(__dirname, 'templates/product.html'));
   } else {
-    next();
+    res.redirect(301, '/materials/flooring'); // legacy/removed flooring URL
   }
 });
 
