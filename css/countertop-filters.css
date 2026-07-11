@@ -343,26 +343,67 @@ span.filters_form-checkbox1-label.w-form-label,
 
 /* ===== MOBILE LANDSCAPE BREAKPOINT (767px and below) ===== */
 @media (max-width: 768px) {
-  /* SIMPLE FIX: Hide filters entirely on mobile */
+  /* Filters live behind a floating "Filter" button on mobile so they stay
+     reachable while scrolling the grid, instead of being hidden entirely. */
+
+  /* Panel is collapsed by default on mobile... */
   .filters_filters-wrapper,
   .filters_filters-wrapper[data-w-id],
   [data-w-id="90e7635a-343f-5afd-1314-efe078517166"] {
     display: none !important;
   }
 
-  /* Hide mobile filter toggle button too */
-  .mobile-filter-toggle {
-    display: none !important;
+  /* ...and opens as a full-screen drawer when the toggle is tapped. */
+  .filters_filters-wrapper.mobile-expanded {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9998 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #fff !important;
+    padding: 68px 18px 96px !important;
+    box-shadow: none !important;
+    animation: filterDrawerIn .22s ease;
   }
 
-  /* Hide the non-functional Filters and Sort by buttons on mobile */
+  /* Floating Filter button — fixed so it follows the scroll. */
+  .mobile-filter-toggle {
+    display: inline-flex !important;
+    position: fixed !important;
+    right: 16px !important;
+    bottom: 88px !important;
+    z-index: 9999 !important;
+    width: auto !important;
+    padding: 13px 20px !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28) !important;
+  }
+
+  /* When the drawer is open the button turns into a clear "Done" action. */
+  .mobile-filter-toggle[aria-expanded="true"] {
+    background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%) !important;
+    color: #16222e !important;
+  }
+  .mobile-filter-toggle[aria-expanded="true"] .filter-count {
+    background: #16222e !important;
+    color: #f9cb00 !important;
+  }
+
+  /* Hide the non-functional Finsweet Filters/Sort buttons and feed header. */
   .filters_tablet-filters-button,
   .filters_sort-dropdown,
   .filters_feed-header-top {
     display: none !important;
   }
 
-  /* Also hide the entire filter feed header bar */
   .filters_feed-header {
     display: none !important;
   }
@@ -460,9 +501,9 @@ span.filters_form-checkbox1-label.w-form-label,
     font-size: 15px;
   }
 
-  /* Reduce filter wrapper padding */
+  /* Keep top/bottom clearance for the fixed nav and Filter button */
   .filters_filters-wrapper.mobile-expanded {
-    padding: 12px 10px !important;
+    padding: 64px 12px 96px !important;
   }
 
   /* Smaller filter headings */
@@ -536,4 +577,10 @@ span.filters_form-checkbox1-label.w-form-label,
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+/* Mobile filter drawer slide/fade-in */
+@keyframes filterDrawerIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

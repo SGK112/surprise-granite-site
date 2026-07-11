@@ -692,7 +692,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
       </svg>
-      <span class="filter-text">Show Filters</span>
+      <span class="filter-text">Filter</span>
       <span class="filter-count" style="display: none;">0</span>
     `;
 
@@ -708,11 +708,14 @@
       this.setAttribute('aria-expanded', isExpanded);
 
       const filterText = this.querySelector('.filter-text');
-      filterText.textContent = isExpanded ? 'Hide Filters' : 'Show Filters';
+      filterText.textContent = isExpanded ? 'Done' : 'Filter';
 
-      // Scroll to filters when opening
+      // Lock background scroll while the full-screen drawer is open
+      document.body.style.overflow = isExpanded ? 'hidden' : '';
+
+      // Jump the drawer to the top when opening
       if (isExpanded) {
-        filterWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        filterWrapper.scrollTop = 0;
       }
     });
 
