@@ -61,6 +61,9 @@ function page(p) {
   const desc = (p.short_description || `${name}${brand ? ' by ' + brand : ''} — available at Surprise Granite with fast shipping. Quality ${CAT}s for your kitchen or bath remodel.`).replace(/\s+/g, ' ').trim();
   const metaDesc = desc.length > 300 ? desc.slice(0, 297) + '…' : desc;
   const catLabel = CAT.charAt(0).toUpperCase() + CAT.slice(1);
+  // Single-item freight for this product, per the checkout's per-vendor tiers
+  // (api/validators/price-validator.js): <$100 → $15, <$500 → $25, else free.
+  const shipVal = price >= 500 ? 0 : price >= 100 ? 25 : 15;
 
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product', name, description: desc, image: imgs,
@@ -68,7 +71,16 @@ function page(p) {
     category: `${PLURAL}`, url,
     offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD',
       availability: 'https://schema.org/InStock', url,
-      seller: { '@type': 'Organization', name: 'Surprise Granite' } }
+      seller: { '@type': 'Organization', name: 'Surprise Granite' },
+      // 30-day return window on all non-sample products (site refund policy);
+      // SG issues a prepaid return label → free return. US.
+      hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn' },
+      shippingDetails: { '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US' } } }
   };
   const crumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [

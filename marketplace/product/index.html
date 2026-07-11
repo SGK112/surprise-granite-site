@@ -3245,13 +3245,23 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // structured data (Google flags "missing field price in offers").
       const sdPrice = parseFloat(product.price);
       if (!isNaN(sdPrice) && sdPrice > 0) {
+        // Single-item freight per the checkout's per-vendor tiers: <$100 $15,
+        // <$500 $25, else free. 30-day free returns (site refund policy).
+        const shipVal = sdPrice >= 500 ? 0 : sdPrice >= 100 ? 25 : 15;
         structuredData.offers = {
           "@type": "Offer",
           "price": sdPrice.toFixed(2),
           "priceCurrency": "USD",
           "availability": "https://schema.org/InStock",
           "url": canonicalUrl,
-          "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" }
+          "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" },
+          "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "applicableCountry": "US",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 30, "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn" },
+          "shippingDetails": { "@type": "OfferShippingDetails",
+            "shippingRate": { "@type": "MonetaryAmount", "value": shipVal.toFixed(2), "currency": "USD" },
+            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US" } }
         };
       }
       // Google requires one of offers/review/aggregateRating on Product schema.
