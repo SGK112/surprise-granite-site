@@ -1558,37 +1558,84 @@
                     Countertop Measurements
                 </h2>
 
-                <!-- Edge Profile Selection -->
-                <div class="edge-selection">
-                    <label class="edge-label">Edge Profile</label>
-                    <div class="edge-options">
-                        <label class="edge-option">
-                            <input type="radio" name="edge-tier" value="0" checked onchange="calculateAll()">
-                            <span class="edge-card">
-                                <span class="edge-name">Standard</span>
-                                <span class="edge-desc">Eased, Beveled</span>
-                                <span class="edge-price">Included</span>
-                            </span>
-                        </label>
-                        <label class="edge-option">
-                            <input type="radio" name="edge-tier" value="5" onchange="calculateAll()">
-                            <span class="edge-card">
-                                <span class="edge-name">Designer</span>
-                                <span class="edge-desc">Bullnose, Ogee</span>
-                                <span class="edge-price">+$5/linear ft</span>
-                            </span>
-                        </label>
-                        <label class="edge-option">
-                            <input type="radio" name="edge-tier" value="10" onchange="calculateAll()">
-                            <span class="edge-card">
-                                <span class="edge-name">Premium</span>
-                                <span class="edge-desc">Mitered, Waterfall</span>
-                                <span class="edge-price">+$10/linear ft</span>
-                            </span>
-                        </label>
+                <!-- Project Options -->
+                <div class="project-options">
+                    <label class="edge-label">Material &amp; Service</label>
+                    <div class="options-grid">
+                        <div class="input-group">
+                            <label>Material Price Tier</label>
+                            <select id="optMaterialTier" onchange="calculateAll()">
+                                <option value="1">Tier 1 · $10–20/sqft</option>
+                                <option value="2">Tier 2 · $20–40/sqft</option>
+                                <option value="3" selected>Tier 3 · $40–60/sqft</option>
+                                <option value="4">Tier 4 · $60–80/sqft</option>
+                                <option value="5">Tier 5 · $80+/sqft</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Service</label>
+                            <select id="optService" onchange="calculateAll()">
+                                <option value="55" selected>Fabrication &amp; Install · $55/sqft</option>
+                                <option value="45">Fabrication only · $45/sqft</option>
+                                <option value="35">Install only (prefab) · $35/sqft</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Edge Profile</label>
+                            <select id="optEdge" onchange="calculateAll()">
+                                <option value="0" selected>Flat / Eased / Square · Free</option>
+                                <option value="20">Miter · +$20/linear ft</option>
+                                <option value="30">Ogee / Double Ogee · +$30/linear ft</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Countertop Removal</label>
+                            <select id="optDemo" onchange="calculateAll()">
+                                <option value="0" selected>None</option>
+                                <option value="5">Laminate · $5/sqft</option>
+                                <option value="10">Quartz / 2cm surface · $10/sqft</option>
+                                <option value="20">3cm granite / heavy stone · $20/sqft</option>
+                            </select>
+                        </div>
                     </div>
-                    <p class="edge-note">* Quartzite, Porcelain & Dekton require premium edge fabrication</p>
+                    <label class="edge-label" style="margin-top:18px;">Sinks &amp; Cutouts</label>
+                    <div class="options-grid">
+                        <div class="input-group">
+                            <label>Kitchen sink reconnect <span class="opt-price">$550 ea</span></label>
+                            <input type="number" id="optKitchenSink" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
+                        </div>
+                        <div class="input-group">
+                            <label>Bath vanity reconnect <span class="opt-price">$275 ea</span></label>
+                            <input type="number" id="optBathSink" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
+                        </div>
+                        <div class="input-group">
+                            <label>Undermount cutout <span class="opt-price">1 free, then $150</span></label>
+                            <input type="number" id="optUndermount" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
+                        </div>
+                        <div class="input-group">
+                            <label>Bar prep sink <span class="opt-price">1 free, then $125</span></label>
+                            <input type="number" id="optBarPrep" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
+                        </div>
+                        <div class="input-group">
+                            <label>Cooktop cutout <span class="opt-price">$150 ea</span></label>
+                            <input type="number" id="optCooktop" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
+                        </div>
+                    </div>
+                    <p class="edge-note">Flat, eased &amp; square edges are included free. Material is estimated by price tier — your exact color sets the final number. Demo discounts may apply on larger projects.</p>
                 </div>
+                <style>
+                    .project-options { margin-bottom: 24px; }
+                    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+                    .project-options .input-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; color: rgba(255,255,255,.78); }
+                    .project-options .opt-price { font-weight:500; opacity:.6; font-size:11.5px; }
+                    .project-options select, .project-options input[type=number] {
+                        width:100%; padding:11px 12px; border-radius:10px;
+                        background: rgba(255,255,255,0.05); color:#fff;
+                        border:1px solid rgba(255,255,255,0.14); font-size:14px; font-family:inherit;
+                    }
+                    .project-options select:focus, .project-options input:focus { outline:none; border-color:#f9cb00; }
+                    .project-options option { background:#1a1a2e; color:#fff; }
+                </style>
 
                 <div class="countertop-sections" id="sections">
                     <div class="countertop-section" data-index="0">
@@ -1748,7 +1795,7 @@
                 </div>
                 <div class="results-grid" style="margin-top: 12px;">
                     <div class="result-card">
-                        <div class="result-label">With 10% Waste</div>
+                        <div class="result-label">With 15% Waste</div>
                         <div class="result-value"><span id="withWaste">0</span> <small>sqft</small></div>
                     </div>
                     <div class="result-card">
@@ -1762,29 +1809,28 @@
                 </div>
 
                 <div class="estimate-section">
-                    <div class="estimate-title">Estimated Installed Price by Tier</div>
-                    <div class="estimate-grid tier-grid">
-                        <div class="estimate-item tier-budget">
-                            <div class="estimate-material">Budget-Friendly</div>
-                            <div class="estimate-desc">Basic granite & quartz</div>
-                            <div class="estimate-price" id="priceBudget">$0 - $0</div>
-                            <div class="estimate-rate">$45-55/sqft</div>
-                        </div>
-                        <div class="estimate-item tier-popular">
-                            <div class="estimate-material">Popular Choice</div>
-                            <div class="estimate-desc">Mid-range selections</div>
-                            <div class="estimate-price" id="pricePopular">$0 - $0</div>
-                            <div class="estimate-rate">$55-75/sqft</div>
-                        </div>
-                        <div class="estimate-item tier-premium">
-                            <div class="estimate-material">Premium</div>
-                            <div class="estimate-desc">High-end & exotic</div>
-                            <div class="estimate-price" id="pricePremium">$0 - $0</div>
-                            <div class="estimate-rate">$75-120/sqft</div>
-                        </div>
+                    <div class="estimate-title">Your Estimated Price</div>
+                    <div class="itemized-estimate">
+                        <div class="est-line"><span class="est-label">Material <small id="estMatDetail">(Tier 3, incl. 15% waste)</small></span><span class="est-amt" id="estMaterial">$0 – $0</span></div>
+                        <div class="est-line"><span class="est-label" id="estServiceLabel">Fabrication &amp; Install</span><span class="est-amt" id="estLabor">$0</span></div>
+                        <div class="est-line" id="estEdgeLine" style="display:none;"><span class="est-label" id="estEdgeLabel">Edge upgrade</span><span class="est-amt" id="estEdge">$0</span></div>
+                        <div class="est-line" id="estDemoLine" style="display:none;"><span class="est-label" id="estDemoLabel">Countertop removal</span><span class="est-amt" id="estDemo">$0</span></div>
+                        <div class="est-line" id="estAddonLine" style="display:none;"><span class="est-label">Sinks &amp; cutouts</span><span class="est-amt" id="estAddons">$0</span></div>
+                        <div class="est-line est-total"><span class="est-label">Estimated total</span><span class="est-amt" id="estTotal">$0 – $0</span></div>
                     </div>
-                    <div class="estimate-disclaimer">* Estimates based on typical project costs. Actual price depends on material selection, edge profile, and layout complexity.</div>
+                    <div class="estimate-disclaimer">* Ballpark based on your inputs and current rates. Material is estimated by price tier — your exact color sets the final number. Schedule a free in-home measure for an exact quote.</div>
                 </div>
+                <style>
+                    .itemized-estimate { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:6px 18px; }
+                    .est-line { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:13px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+                    .est-line:last-child { border-bottom:0; }
+                    .est-label { color: rgba(255,255,255,0.8); font-size:14.5px; }
+                    .est-label small { opacity:.6; font-size:12px; }
+                    .est-amt { font-weight:700; color:#fff; font-variant-numeric:tabular-nums; white-space:nowrap; }
+                    .est-total { margin-top:2px; }
+                    .est-total .est-label { font-weight:800; color:#fff; font-size:16px; }
+                    .est-total .est-amt { color:#f9cb00; font-size:19px; font-weight:800; }
+                </style>
             </div>
 
             <div class="cta-section">
@@ -1908,7 +1954,7 @@
                             <span class="value" id="quoteSplashSqft">0 sqft</span>
                         </div>
                         <div class="quote-line-item">
-                            <span class="label">Total with 10% Waste</span>
+                            <span class="label">Total with 15% Waste</span>
                             <span class="value" id="quoteTotalSqft">0 sqft</span>
                         </div>
                         <div class="quote-line-item">
@@ -1926,27 +1972,32 @@
                     </div>
                 </div>
                 <div class="quote-summary-section">
-                    <h3>Estimated Price Range</h3>
-                    <div class="quote-price-tier">
-                        <div>
-                            <div class="tier-name">Budget-Friendly</div>
-                            <div class="tier-desc">Basic granite & quartz</div>
+                    <h3>Estimated Price</h3>
+                    <div class="quote-line-items">
+                        <div class="quote-line-item">
+                            <span class="label" id="quoteMatLabel">Material</span>
+                            <span class="value" id="quoteMaterial">$0 – $0</span>
                         </div>
-                        <div class="tier-price" id="quotePriceBudget">$0 - $0</div>
-                    </div>
-                    <div class="quote-price-tier popular">
-                        <div>
-                            <div class="tier-name">Popular Choice</div>
-                            <div class="tier-desc">Mid-range selections</div>
+                        <div class="quote-line-item">
+                            <span class="label" id="quoteServiceLabel">Fabrication &amp; Install</span>
+                            <span class="value" id="quoteLabor">$0</span>
                         </div>
-                        <div class="tier-price" id="quotePricePopular">$0 - $0</div>
-                    </div>
-                    <div class="quote-price-tier">
-                        <div>
-                            <div class="tier-name">Premium</div>
-                            <div class="tier-desc">High-end & exotic</div>
+                        <div class="quote-line-item" id="quoteEdgeLineRow" style="display:none;">
+                            <span class="label" id="quoteEdgeLabel2">Edge</span>
+                            <span class="value" id="quoteEdge2">$0</span>
                         </div>
-                        <div class="tier-price" id="quotePricePremium">$0 - $0</div>
+                        <div class="quote-line-item" id="quoteDemoRow" style="display:none;">
+                            <span class="label" id="quoteDemoLabel">Countertop removal</span>
+                            <span class="value" id="quoteDemo">$0</span>
+                        </div>
+                        <div class="quote-line-item" id="quoteAddonRow" style="display:none;">
+                            <span class="label">Sinks &amp; cutouts</span>
+                            <span class="value" id="quoteAddons">$0</span>
+                        </div>
+                        <div class="quote-line-item" style="border-top:2px solid rgba(0,0,0,0.12);margin-top:6px;padding-top:12px;">
+                            <span class="label" style="font-weight:800;">Estimated total</span>
+                            <span class="value" id="quoteTotal" style="font-weight:800;">$0 – $0</span>
+                        </div>
                     </div>
                 </div>
                 <div class="quote-date" id="quoteDate"></div>
@@ -2106,12 +2157,58 @@
     <script>
         let sectionCount = 1;
 
-        // Price tiers per sqft (installed)
-        const tiers = {
-            budget: { min: 45, max: 55 },    // Budget-Friendly
-            popular: { min: 55, max: 75 },   // Popular Choice
-            premium: { min: 75, max: 120 }   // Premium
+        // ---- Authoritative pricing (Josh, 2026-07-11) ----
+        // Material estimated by price tier ($/sqft, sold by slab). Tier 5 is open-ended.
+        const MATERIAL_TIERS = {
+            '1': { min: 10, max: 20,   label: 'Tier 1' },
+            '2': { min: 20, max: 40,   label: 'Tier 2' },
+            '3': { min: 40, max: 60,   label: 'Tier 3' },
+            '4': { min: 60, max: 80,   label: 'Tier 4' },
+            '5': { min: 80, max: null, label: 'Tier 5' }   // $80+ (open-ended)
         };
+        const WASTE = 1.15;                 // +15% for cuts & waste
+        const SERVICE_LABELS = { '55': 'Fabrication & Install', '45': 'Fabrication only', '35': 'Install only (prefab)' };
+        const EDGE_LABELS    = { '0': 'Edge (flat / eased / square)', '20': 'Miter edge', '30': 'Ogee / Double Ogee edge' };
+        const DEMO_LABELS    = { '0': 'None', '5': 'Countertop removal (laminate)', '10': 'Countertop removal (quartz / 2cm)', '20': 'Countertop removal (3cm / heavy)' };
+        const ADDON = { kitchen: 550, bath: 275, undermount: 150, barPrep: 125, cooktop: 150 };
+
+        // Format a dollar amount, no cents
+        const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+
+        // Read the current pricing inputs and compute the itemized estimate
+        function computePricing(totalSqft, counterSqft, edgeLF) {
+            const tierSel   = document.getElementById('optMaterialTier').value;
+            const tier      = MATERIAL_TIERS[tierSel] || MATERIAL_TIERS['3'];
+            const serviceRate = parseFloat(document.getElementById('optService').value) || 55;
+            const edgeRate    = parseFloat(document.getElementById('optEdge').value) || 0;
+            const demoRate    = parseFloat(document.getElementById('optDemo').value) || 0;
+
+            const kitchen  = parseInt(document.getElementById('optKitchenSink').value) || 0;
+            const bath     = parseInt(document.getElementById('optBathSink').value) || 0;
+            const under    = parseInt(document.getElementById('optUndermount').value) || 0;
+            const barPrep  = parseInt(document.getElementById('optBarPrep').value) || 0;
+            const cooktop  = parseInt(document.getElementById('optCooktop').value) || 0;
+
+            const billedSqft = totalSqft * WASTE;              // material buys the waste
+            const matMin = billedSqft * tier.min;
+            const matMax = tier.max != null ? billedSqft * tier.max : null;
+
+            const laborCost = totalSqft * serviceRate;          // labor on actual installed area
+            const edgeCost  = edgeLF * edgeRate;
+            const demoCost  = counterSqft * demoRate;           // demo on existing counter area
+            const addonCost = kitchen * ADDON.kitchen + bath * ADDON.bath
+                + Math.max(0, under - 1) * ADDON.undermount     // first undermount cutout free
+                + Math.max(0, barPrep - 1) * ADDON.barPrep      // first bar prep cutout free
+                + cooktop * ADDON.cooktop;
+
+            const fixed = laborCost + edgeCost + demoCost + addonCost;
+            return {
+                tier, serviceRate, edgeRate, demoRate, billedSqft,
+                matMin, matMax, laborCost, edgeCost, demoCost, addonCost,
+                totalMin: matMin + fixed,
+                totalMax: matMax != null ? matMax + fixed : null
+            };
+        }
 
         const fractionOptions = `
             <option value="0">0</option>
@@ -2292,10 +2389,6 @@
             let totalWaterfallSqft = 0;
             let totalEdgeLF = 0;
 
-            // Get edge tier price per linear foot
-            const edgeTierInput = document.querySelector('input[name="edge-tier"]:checked');
-            const edgePricePerLF = edgeTierInput ? parseFloat(edgeTierInput.value) : 0;
-
             sections.forEach(section => {
                 // Get length: whole number + fraction
                 const lengthWhole = parseFloat(section.querySelector('.length-whole').value) || 0;
@@ -2396,13 +2489,12 @@
 
             // Calculate totals
             const totalSqft = totalCounterSqft + totalSplashSqft + totalWaterfallSqft;
-            const edgeUpgradeCost = totalEdgeLF * edgePricePerLF;
 
             // Update totals display
             document.getElementById('totalSqft').textContent = totalSqft.toFixed(2);
             document.getElementById('counterSqft').textContent = totalCounterSqft.toFixed(2);
             document.getElementById('splashSqft').textContent = totalSplashSqft.toFixed(2);
-            document.getElementById('withWaste').textContent = (totalSqft * 1.1).toFixed(2);
+            document.getElementById('withWaste').textContent = (totalSqft * WASTE).toFixed(2);
             document.getElementById('totalEdgeLF').textContent = totalEdgeLF.toFixed(1);
 
             // Show/hide waterfall sqft
@@ -2414,32 +2506,60 @@
                 waterfallCard.style.display = 'none';
             }
 
-            // Show/hide edge upgrade cost
+            // ---- Itemized pricing ----
+            const p = computePricing(totalSqft, totalCounterSqft, totalEdgeLF);
+
+            // Edge upgrade summary card
             const edgeUpgradeCard = document.getElementById('edgeUpgradeCard');
-            if (edgePricePerLF > 0) {
-                document.getElementById('edgeUpgradeCost').textContent = Math.round(edgeUpgradeCost).toLocaleString();
+            if (p.edgeCost > 0) {
+                document.getElementById('edgeUpgradeCost').textContent = Math.round(p.edgeCost).toLocaleString();
                 edgeUpgradeCard.style.display = 'block';
             } else {
                 edgeUpgradeCard.style.display = 'none';
             }
 
-            // Update tier-based price estimates (using sqft with waste factor + edge upgrade)
-            const sqftWithWaste = totalSqft * 1.1;
+            // Material line (range; Tier 5 is open-ended)
+            document.getElementById('estMatDetail').textContent =
+                '(' + p.tier.label + ', incl. 15% waste)';
+            document.getElementById('estMaterial').textContent = p.matMax != null
+                ? fmt$(p.matMin) + ' – ' + fmt$(p.matMax)
+                : fmt$(p.matMin) + '+';
 
-            // Budget tier (add edge upgrade cost)
-            const budgetMin = Math.round(sqftWithWaste * tiers.budget.min + edgeUpgradeCost);
-            const budgetMax = Math.round(sqftWithWaste * tiers.budget.max + edgeUpgradeCost);
-            document.getElementById('priceBudget').textContent = '$' + budgetMin.toLocaleString() + ' - $' + budgetMax.toLocaleString();
+            // Service (labor) line
+            const svcSel = document.getElementById('optService').value;
+            document.getElementById('estServiceLabel').textContent =
+                (SERVICE_LABELS[svcSel] || 'Fabrication & Install') + ' ($' + p.serviceRate + '/sqft)';
+            document.getElementById('estLabor').textContent = fmt$(p.laborCost);
 
-            // Popular tier (add edge upgrade cost)
-            const popularMin = Math.round(sqftWithWaste * tiers.popular.min + edgeUpgradeCost);
-            const popularMax = Math.round(sqftWithWaste * tiers.popular.max + edgeUpgradeCost);
-            document.getElementById('pricePopular').textContent = '$' + popularMin.toLocaleString() + ' - $' + popularMax.toLocaleString();
+            // Edge line (only when charged)
+            const edgeSel = document.getElementById('optEdge').value;
+            toggleLine('estEdgeLine', p.edgeCost > 0,
+                'estEdgeLabel', (EDGE_LABELS[edgeSel] || 'Edge') + ' ($' + p.edgeRate + '/lf)',
+                'estEdge', fmt$(p.edgeCost));
 
-            // Premium tier (add edge upgrade cost)
-            const premiumMin = Math.round(sqftWithWaste * tiers.premium.min + edgeUpgradeCost);
-            const premiumMax = Math.round(sqftWithWaste * tiers.premium.max + edgeUpgradeCost);
-            document.getElementById('pricePremium').textContent = '$' + premiumMin.toLocaleString() + ' - $' + premiumMax.toLocaleString();
+            // Demo line
+            const demoSel = document.getElementById('optDemo').value;
+            toggleLine('estDemoLine', p.demoCost > 0,
+                'estDemoLabel', (DEMO_LABELS[demoSel] || 'Countertop removal') + ' ($' + p.demoRate + '/sqft)',
+                'estDemo', fmt$(p.demoCost));
+
+            // Add-ons line
+            toggleLine('estAddonLine', p.addonCost > 0, null, null, 'estAddons', fmt$(p.addonCost));
+
+            // Total (range)
+            document.getElementById('estTotal').textContent = p.totalMax != null
+                ? fmt$(p.totalMin) + ' – ' + fmt$(p.totalMax)
+                : fmt$(p.totalMin) + '+';
+        }
+
+        // Show/hide an itemized line and set its label + amount
+        function toggleLine(lineId, show, labelId, labelText, amtId, amtText) {
+            const line = document.getElementById(lineId);
+            line.style.display = show ? 'flex' : 'none';
+            if (show) {
+                if (labelId && labelText != null) document.getElementById(labelId).textContent = labelText;
+                document.getElementById(amtId).textContent = amtText;
+            }
         }
 
         // Initialize
@@ -2454,12 +2574,6 @@
             let totalCounterSqft = 0;
             let totalSplashSqft = 0;
             let totalEdgeLF = 0;
-
-            // Get edge tier
-            const edgeTierInput = document.querySelector('input[name="edge-tier"]:checked');
-            const edgePricePerLF = edgeTierInput ? parseFloat(edgeTierInput.value) : 0;
-            const edgeNames = { '0': 'Standard (Included)', '5': 'Designer (+$5/lf)', '10': 'Premium (+$10/lf)' };
-            const edgeName = edgeNames[edgeTierInput.value] || 'Standard';
 
             // Build section details
             sections.forEach((section, index) => {
@@ -2522,14 +2636,11 @@
                 quoteSectionsEl.innerHTML += sectionHtml;
             });
 
-            // Calculate totals
-            const totalSqft = totalCounterSqft + totalSplashSqft;
-            const sqftWithWaste = totalSqft * 1.1;
-            const edgeUpgradeCost = totalEdgeLF * edgePricePerLF;
+            // Make sure the live panel reflects current inputs, then mirror it into the modal
+            calculateAll();
 
-            // Update modal summary
+            // Area summary
             document.getElementById('quoteCounterSqft').textContent = totalCounterSqft.toFixed(2) + ' sqft';
-
             const splashRow = document.getElementById('quoteSplashRow');
             if (totalSplashSqft > 0) {
                 document.getElementById('quoteSplashSqft').textContent = totalSplashSqft.toFixed(2) + ' sqft';
@@ -2537,23 +2648,34 @@
             } else {
                 splashRow.style.display = 'none';
             }
+            document.getElementById('quoteTotalSqft').textContent = document.getElementById('withWaste').textContent + ' sqft';
 
-            document.getElementById('quoteTotalSqft').textContent = sqftWithWaste.toFixed(2) + ' sqft';
-            document.getElementById('quoteEdgeProfile').textContent = edgeName;
+            // Edge profile (informational)
+            const EDGE_NAMES = { '0': 'Flat / Eased / Square', '20': 'Miter', '30': 'Ogee / Double Ogee' };
+            const edgeSelQ = document.getElementById('optEdge').value;
+            document.getElementById('quoteEdgeProfile').textContent = EDGE_NAMES[edgeSelQ] || 'Edge';
             document.getElementById('quoteEdgeLF').textContent = totalEdgeLF.toFixed(1) + ' linear ft';
+            document.getElementById('quoteEdgeCostRow').style.display = 'none';
 
-            const edgeCostRow = document.getElementById('quoteEdgeCostRow');
-            if (edgePricePerLF > 0) {
-                document.getElementById('quoteEdgeCost').textContent = '+$' + Math.round(edgeUpgradeCost).toLocaleString();
-                edgeCostRow.style.display = 'flex';
-            } else {
-                edgeCostRow.style.display = 'none';
-            }
+            // Mirror the itemized pricing from the live panel (guaranteed to match)
+            const copyText = (fromId, toId) => { document.getElementById(toId).textContent = document.getElementById(fromId).textContent; };
+            document.getElementById('quoteMatLabel').textContent = 'Material ' + document.getElementById('estMatDetail').textContent;
+            copyText('estMaterial', 'quoteMaterial');
+            copyText('estServiceLabel', 'quoteServiceLabel');
+            copyText('estLabor', 'quoteLabor');
 
-            // Update price tiers
-            document.getElementById('quotePriceBudget').textContent = document.getElementById('priceBudget').textContent;
-            document.getElementById('quotePricePopular').textContent = document.getElementById('pricePopular').textContent;
-            document.getElementById('quotePricePremium').textContent = document.getElementById('pricePremium').textContent;
+            const mirrorLine = (panelLineId, panelLabelId, panelAmtId, modalRowId, modalLabelId, modalAmtId) => {
+                const shown = document.getElementById(panelLineId).style.display !== 'none';
+                document.getElementById(modalRowId).style.display = shown ? 'flex' : 'none';
+                if (shown) {
+                    if (modalLabelId && panelLabelId) document.getElementById(modalLabelId).textContent = document.getElementById(panelLabelId).textContent;
+                    document.getElementById(modalAmtId).textContent = document.getElementById(panelAmtId).textContent;
+                }
+            };
+            mirrorLine('estEdgeLine', 'estEdgeLabel', 'estEdge', 'quoteEdgeLineRow', 'quoteEdgeLabel2', 'quoteEdge2');
+            mirrorLine('estDemoLine', 'estDemoLabel', 'estDemo', 'quoteDemoRow', 'quoteDemoLabel', 'quoteDemo');
+            mirrorLine('estAddonLine', null, 'estAddons', 'quoteAddonRow', null, 'quoteAddons');
+            copyText('estTotal', 'quoteTotal');
 
             // Set date
             const today = new Date();
@@ -2584,7 +2706,7 @@
                 return;
             }
 
-            // Collect estimate data
+            // Collect estimate data (itemized)
             const estimateData = {
                 email: email,
                 counterSqft: document.getElementById('quoteCounterSqft').textContent,
@@ -2592,9 +2714,9 @@
                 totalSqft: document.getElementById('quoteTotalSqft').textContent,
                 edgeProfile: document.getElementById('quoteEdgeProfile').textContent,
                 edgeLF: document.getElementById('quoteEdgeLF').textContent,
-                priceBudget: document.getElementById('quotePriceBudget').textContent,
-                pricePopular: document.getElementById('quotePricePopular').textContent,
-                pricePremium: document.getElementById('quotePricePremium').textContent,
+                material: document.getElementById('quoteMaterial').textContent,
+                labor: document.getElementById('quoteLabor').textContent,
+                total: document.getElementById('quoteTotal').textContent,
                 date: new Date().toISOString()
             };
 
@@ -2631,7 +2753,7 @@
                     homeowner_email: email,
                     project_type: 'kitchen_countertops',
                     project_zip: '00000',
-                    project_details: `Estimate from calculator: ${estimateData.totalSqft} sqft, Edge: ${estimateData.edgeProfile} (${estimateData.edgeLF} LF), Budget: ${estimateData.priceBudget}, Popular: ${estimateData.pricePopular}, Premium: ${estimateData.pricePremium}`,
+                    project_details: `Estimate from calculator: ${estimateData.totalSqft}, Edge: ${estimateData.edgeProfile} (${estimateData.edgeLF}), Material: ${estimateData.material}, Fab/Install: ${estimateData.labor}, Estimated total: ${estimateData.total}`,
                     source: '/tools/countertop-calculator/'
                 })
             }).catch(() => {}); // Silent - don't block the email flow

@@ -41,9 +41,9 @@ module.exports = async (req, res) => {
             totalSqft,
             edgeProfile,
             edgeLF,
-            priceBudget,
-            pricePopular,
-            pricePremium,
+            material,
+            labor,
+            total,
             sections,
             date
         } = req.body;
@@ -99,7 +99,7 @@ module.exports = async (req, res) => {
             </div>
             ` : ''}
             <div class="line-item">
-                <span class="label">Total with 10% Waste</span>
+                <span class="label">Total with 15% Waste</span>
                 <span class="value">${totalSqft}</span>
             </div>
             <div class="line-item">
@@ -113,29 +113,23 @@ module.exports = async (req, res) => {
         </div>
 
         <div class="section">
-            <h2>Estimated Price Range</h2>
-            <div class="price-tier">
-                <div>
-                    <div class="tier-name">Budget-Friendly</div>
-                    <div class="tier-desc">Basic granite & quartz</div>
-                </div>
-                <div class="tier-price">${priceBudget}</div>
+            <h2>Estimated Price</h2>
+            <div class="line-item">
+                <span class="label">Material</span>
+                <span class="value">${material || '—'}</span>
             </div>
-            <div class="price-tier popular">
-                <div>
-                    <div class="tier-name">Popular Choice</div>
-                    <div class="tier-desc">Mid-range selections</div>
-                </div>
-                <div class="tier-price">${pricePopular}</div>
+            <div class="line-item">
+                <span class="label">Fabrication &amp; Install</span>
+                <span class="value">${labor || '—'}</span>
             </div>
-            <div class="price-tier">
+            <div class="price-tier popular" style="margin-top:12px;">
                 <div>
-                    <div class="tier-name">Premium</div>
-                    <div class="tier-desc">High-end & exotic</div>
+                    <div class="tier-name">Estimated Total</div>
+                    <div class="tier-desc">Material + labor, incl. options</div>
                 </div>
-                <div class="tier-price">${pricePremium}</div>
+                <div class="tier-price">${total || '—'}</div>
             </div>
-            <p class="disclaimer">* This is an estimate only. Final pricing depends on material selection, edge profile, cutouts, and layout complexity.</p>
+            <p class="disclaimer">* This is an estimate only. Material is estimated by price tier — your exact color sets the final number. Final pricing depends on material selection, edge profile, cutouts, and layout complexity.</p>
         </div>
 
         <div class="cta">
@@ -175,9 +169,9 @@ module.exports = async (req, res) => {
                 <p><strong>Total (with waste):</strong> ${totalSqft}</p>
                 <p><strong>Edge:</strong> ${edgeProfile} - ${edgeLF}</p>
                 <hr>
-                <p><strong>Budget Range:</strong> ${priceBudget}</p>
-                <p><strong>Popular Range:</strong> ${pricePopular}</p>
-                <p><strong>Premium Range:</strong> ${pricePremium}</p>
+                <p><strong>Material:</strong> ${material || '—'}</p>
+                <p><strong>Fabrication & Install:</strong> ${labor || '—'}</p>
+                <p><strong>Estimated Total:</strong> ${total || '—'}</p>
             `
         });
 
