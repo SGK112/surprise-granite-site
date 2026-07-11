@@ -3255,15 +3255,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           "availability": "https://schema.org/InStock",
           "url": canonicalUrl,
           "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" },
-          "hasMerchantReturnPolicy": (function () {
-            const restock = { 'alfi-trade': 25, kibi: 20 }[product.vendor_id]; // ALFI+Whitehaus 25%, Kibi 20%
-            const pol = { "@type": "MerchantReturnPolicy", "applicableCountry": "US",
-              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-              "merchantReturnDays": 30, "returnMethod": "https://schema.org/ReturnByMail",
-              "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility" }; // customer pays return shipping
-            if (restock) pol.restockingFee = restock;
-            return pol;
-          })(),
+          // Blanket store policy: 30-day returns, customer pays return shipping,
+          // restocking may apply (varies by vendor, so not asserted as a fixed fee).
+          "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "applicableCountry": "US",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 30, "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility" },
           "shippingDetails": { "@type": "OfferShippingDetails",
             "shippingRate": { "@type": "MonetaryAmount", "value": shipVal.toFixed(2), "currency": "USD" },
             "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US" } }
