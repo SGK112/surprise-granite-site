@@ -32,11 +32,15 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       .eq('category', 'slab').eq('specs->>discontinued', 'true').order('name').range(f, f + 999);
     rows = rows.concat(data); if (data.length < 1000) break;
   }
-  const targets = rows.filter((r) => names.has(norm(r.name))
-    && !/-sample$/.test(r.slug)
-    && (r.primary_image_url || (Array.isArray(r.image_urls) && r.image_urls.length)));
+  // Clear the stale flag on every matching row. Product rows with an image are
+  // reactivated (returned to the live catalog); chip-only colors (a `-sample`
+  // SKU with no product row, e.g. Ethereal Haze) just lose the discontinued flag
+  // so they drop off /discontinued/ — they were never a browsable product.
+  const targets = rows.filter((r) => names.has(norm(r.name)));
+  const products = targets.filter((r) => !/-sample$/.test(r.slug) && (r.primary_image_url || (Array.isArray(r.image_urls) && r.image_urls.length)));
+  const chipsOrData = targets.filter((r) => !products.includes(r));
 
-  console.log('rows to reactivate:', targets.length);
+  console.log('product rows to reactivate:', products.length, '| other rows to un-flag:', chipsOrData.length);
   if (!write) { console.log('\nDRY RUN — add --write'); process.exit(0); }
 
   let ok = 0;
@@ -45,11 +49,12 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     delete specs.discontinued;
     delete specs.discontinued_source;
     specs._reactivated = 'vendor-verified still on public site';
-    const { error } = await supa.from('catalog_products')
-      .update({ active: true, in_stock: true, specs, updated_at: new Date().toISOString() })
-      .eq('id', r.id);
+    const isProduct = products.includes(r);
+    const patch = { specs, updated_at: new Date().toISOString() };
+    if (isProduct) { patch.active = true; patch.in_stock = true; }
+    const { error } = await supa.from('catalog_products').update(patch).eq('id', r.id);
     if (!error) ok++; else console.warn('  failed', r.slug, error.message);
   }
-  console.log(`reactivated ${ok}/${targets.length}`);
+  console.log(`updated ${ok}/${targets.length} (reactivated ${products.length}, flag-cleared ${chipsOrData.length})`);
   process.exit(0);
 })().catch((e) => { console.error('FATAL', e.message); process.exit(1); });
