@@ -2821,23 +2821,33 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     document.getElementById('twitter-title').content = title;
     document.getElementById('twitter-description').content = desc;
 
-    // Structured data
-    document.getElementById('structured-data').textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Product",
-      "name": product.name,
-      "description": desc,
-      "image": [product.primaryImage],
-      "brand": { "@type": "Brand", "name": brandDisplay },
-      "category": `${product.type} Countertops`,
-      "material": product.type,
-      "offers": {
-        "@type": "Offer",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock",
-        "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" }
-      }
-    });
+    // Structured data — only claim @type Product when there's a real Offer.
+    // Countertop slabs are quote-based (no price), and an Offer with no price is
+    // invalid: Google then reports "Either offers, review, or aggregateRating
+    // should be specified" on every colour page. Match marketplace/product —
+    // emit the Product+Offer only when priced, else remove the schema entirely.
+    const sdPrice = parseFloat(product.price ?? product.retailPrice ?? product.pricePerSqFt ?? product.startingPrice);
+    if (!isNaN(sdPrice) && sdPrice > 0) {
+      document.getElementById('structured-data').textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.name,
+        "description": desc,
+        "image": [product.primaryImage],
+        "brand": { "@type": "Brand", "name": brandDisplay },
+        "category": `${product.type} Countertops`,
+        "material": product.type,
+        "offers": {
+          "@type": "Offer",
+          "price": sdPrice.toFixed(2),
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" }
+        }
+      });
+    } else {
+      document.getElementById('structured-data')?.remove();
+    }
 
     // Breadcrumb
     document.getElementById('breadcrumb-type').textContent = product.type;
