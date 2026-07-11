@@ -32,6 +32,9 @@ const CFG = {
   accessory: { dir: 'kitchen-accessories', sing: 'Kitchen Accessory', plural: 'Kitchen Accessories' },
 }[CAT] || { dir: CAT + 's', sing: CAT, plural: CAT + 's' };
 const DIR = CFG.dir, PLURAL = CFG.plural, SING = CFG.sing;
+// Vendor restocking fees (% of price), confirmed from each vendor's public
+// return policy. alfi-trade = ALFI + Whitehaus. Ruvati/ESI/MSI: none published.
+const RESTOCK = { 'alfi-trade': 25, kibi: 20 };
 const OUTDIR = path.join(ROOT, 'marketplace', DIR);
 
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -74,10 +77,14 @@ function page(p) {
       seller: { '@type': 'Organization', name: 'Surprise Granite' },
       // 30-day return window on all non-sample products (site refund policy);
       // SG issues a prepaid return label → free return. US.
-      hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
+      hasMerchantReturnPolicy: Object.assign({ '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
         returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
         merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/FreeReturn' },
+        // Every vendor makes the customer pay return shipping (verified on their
+        // sites); restocking % varies by vendor (RESTOCK) — alfi-trade covers
+        // Whitehaus too.
+        returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility' },
+        RESTOCK[p.vendor_id] ? { restockingFee: RESTOCK[p.vendor_id] } : {}),
       shippingDetails: { '@type': 'OfferShippingDetails',
         shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US' } } }
