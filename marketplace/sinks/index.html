@@ -618,21 +618,6 @@
       <a href="/account/" class="pricing-banner-btn" id="banner-btn">Sign In</a>
     </div>
 
-    <!-- Ruvati Video Ad Banner -->
-    <div class="video-ad-banner">
-      <div class="video-ad-inner">
-        <div class="video-ad-text">
-          <span class="video-ad-badge">Featured Brand</span>
-          <h3 class="video-ad-title">Ruvati Sinks</h3>
-          <p class="video-ad-desc">Premium workstation, undermount & farmhouse sinks built to last. See why contractors and homeowners trust Ruvati.</p>
-          <a href="#" class="video-ad-cta" onclick="document.getElementById('brand-filter').value='ruvati';document.getElementById('brand-filter').dispatchEvent(new Event('change'));this.closest('.video-ad-banner').scrollIntoView({behavior:'smooth',block:'start'});return false;">Shop Ruvati Sinks</a>
-        </div>
-        <div class="video-ad-player">
-          <iframe src="https://www.youtube.com/embed/Gxg7dc4PU7o?rel=0&modestbranding=1" title="Ruvati Sinks - Featured Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
-        </div>
-      </div>
-    </div>
-
     <!-- Filter Section -->
     <div class="filter-section" style="margin-bottom: 24px;">
       <!-- Room Selector (primary axis) -->
@@ -649,21 +634,15 @@
         <label style="font-weight: 600; color: var(--navy);">Brand:</label>
         <select id="brand-filter" style="padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer;">
           <option value="all">All Brands</option>
-          <option value="msi">MSI</option>
-          <option value="ruvati">Ruvati</option>
-          <option value="alfi">Alfi</option>
-          <option value="kibi">KIBI</option>
-          <option value="vigo">Vigo</option>
           <option value="esi">ESI SharpSinks</option>
+          <option value="vigo">Vigo</option>
         </select>
         <label style="font-weight: 600; color: var(--navy); margin-left: 16px;">Material:</label>
         <select id="material-filter" style="padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; min-width: 160px; cursor: pointer;">
           <option value="all">All Materials</option>
+          <option value="vitreous china">Vitreous China</option>
           <option value="stainless">Stainless Steel</option>
-          <option value="fireclay">Fireclay</option>
           <option value="quartz">Quartz Composite</option>
-          <option value="granite">Granite Composite</option>
-          <option value="porcelain">Porcelain</option>
         </select>
       </div>
       <!-- Style Filters -->
@@ -789,46 +768,12 @@
 
     async function loadProducts() {
       try {
-        // Fetch live catalog (Kibi + others) AND static sinks.json in parallel
-        const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
-        const [staticRes, liveRes] = await Promise.allSettled([
-          fetch('/data/sinks.json?v=' + Date.now()),
-          fetch(API_BASE + '/api/catalog?category=sink&limit=250')
-        ]);
-
-        // Static products
-        let staticProducts = [];
-        if (staticRes.status === 'fulfilled' && staticRes.value.ok) {
-          staticProducts = await staticRes.value.json();
-        }
-
-        // Live products from scraped catalog
-        let liveProducts = [];
-        if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
-          const json = await liveRes.value.json();
-          if (json.success && Array.isArray(json.products)) {
-            liveProducts = json.products.map(mapCatalogToPageShape);
-          }
-        }
-
-        // Dedupe: drop static products whose vendor is now in live catalog.
-        // Live wins because it's fresh, has structured pricing, and matches our drop-ship workflow.
-        const liveVendorNames = new Set(
-          liveProducts
-            .map(p => (p.vendor || p.brandDisplay || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, ''))
-            .filter(Boolean)
-        );
-        const filteredStatic = staticProducts.filter(p => {
-          const v = ((p.vendor || p.brand || p.brandDisplay || '') + '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-          if (!v) return true;
-          // ruvati / ruvatisinks / kibi etc. — any partial match against a live vendor key
-          for (const liveV of liveVendorNames) {
-            if (v.includes(liveV) || liveV.includes(v)) return false;
-          }
-          return true;
-        });
-        const products = [...liveProducts, ...filteredStatic];
-        console.log(`Sinks: ${liveProducts.length} live + ${filteredStatic.length} static (${staticProducts.length - filteredStatic.length} duped) = ${products.length}`);
+        // Single source of truth: data/sinks.json is generated from the CRM master
+        // price sheet (scripts/build-sinks-from-master.js) with cost x tax x markup.
+        // The old live-API merge is retired — it published stale/mismatched pricing.
+        const staticRes = await fetch('/data/sinks.json?v=' + Date.now());
+        const products = staticRes.ok ? await staticRes.json() : [];
+        console.log(`Sinks: ${products.length} master-sheet products`);
 
         allProductsData = products;
         renderProducts(products);
@@ -852,7 +797,8 @@
     // Keeps the grid uniform — no half-rendered cards.
     function isCardReady(p) {
       if (!p || !p.title || !p.title.trim()) return false;
-      if (!(p.images && p.images[0])) return false;
+      // Image is optional: master-sheet products may not have imagery yet and
+      // render with the placeholder fallback. Price is what matters for selling.
       const priceNum = p.price ? parseFloat(p.price) : 0;
       if (!(priceNum > 0)) return false;
       const tagBlob = ((p.tags || []).join(' ') + ' ' + (p.status || '') + ' ' + (p.productType || '')).toLowerCase();
