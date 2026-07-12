@@ -1576,6 +1576,34 @@
     flex-shrink: 0;
 }
 
+/* Natural stone / remnant "view in person" disclaimer */
+.sg-stone-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 16px 0 0;
+    padding: 13px 15px;
+    background: #fdf6ec;
+    border: 1px solid #f0dcb8;
+    border-radius: 12px;
+    font-size: 0.83rem;
+    line-height: 1.5;
+    color: #6b5836;
+}
+.sg-stone-note svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: #c08a2d;
+}
+.sg-stone-note strong { color: #5a4a28; display: block; margin-bottom: 2px; }
+.sg-stone-note a { color: #b06f14; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+@media (prefers-color-scheme: dark) {
+    .sg-stone-note { background: rgba(192,138,45,.10); border-color: rgba(192,138,45,.35); color: #d8c49a; }
+    .sg-stone-note strong { color: #ecdcb8; }
+}
+
 .sg-calc-btn {
     display: flex;
     align-items: center;
@@ -1749,6 +1777,12 @@
         Calculate Your Project Cost
         <svg class="calc-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
     </a>
+</div>
+
+<!-- Shown only for natural stone & remnants (set in JS) — every slab is unique -->
+<div id="stone-disclaimer" class="sg-stone-note" style="display:none" role="note">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19H19a2 2 0 001.75-2.96l-6.93-12a2 2 0 00-3.5 0l-6.93 12A2 2 0 005.07 19z"/></svg>
+    <div><strong>See this material in person before you buy.</strong><span id="stone-disclaimer-text">Natural stone and remnant slabs are one of a kind — color, veining, and movement vary from slab to slab, and on-screen photos may not accurately represent the actual piece. View the slab at a partner stone yard or book a <a href="/book/">free in-home estimate</a> before purchasing.</span></div>
 </div>
 
 <!-- Scroll CTA Banner -->
@@ -3199,6 +3233,28 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       const brand = product.brandDisplay || product.vendor || 'Premium Brand';
       const material = product.productType || 'Stone';
       const description = product.description || `Premium ${material} from ${brand}. Perfect for countertops, kitchen islands, and bathroom vanities.`;
+
+      // Natural-stone / remnant disclaimer: every natural slab is unique, so
+      // photos can't be relied on — show a "view in person" note. Engineered
+      // surfaces (quartz, porcelain, dekton, sintered) are consistent and
+      // are NOT flagged. Remnants are always flagged regardless of material.
+      (function showStoneDisclaimer() {
+        const el = document.getElementById('stone-disclaimer');
+        if (!el) return;
+        // Only countertop slabs & remnants — never sinks/faucets (a "granite
+        // composite" sink must not trip the natural-stone note).
+        if (category !== 'slabs' && category !== 'remnants') return;
+        const m = String(material || '');
+        const isNatural = /\b(granite|marble|quartzite|travertine|limestone|onyx|soapstone|slate|sandstone|dolomite|natural stone)\b/i.test(m);
+        const isRemnant = category === 'remnants' || /remnant/i.test(String(product.tags || '') + ' ' + String(product.category || ''));
+        if (isNatural || isRemnant) {
+          if (isRemnant && !isNatural) {
+            const t = document.getElementById('stone-disclaimer-text');
+            if (t) t.textContent = 'Remnant pieces are one of a kind — size, color, veining, and edges vary, and on-screen photos may not accurately represent the actual piece. View the remnant at the stone yard or book a free in-home estimate before purchasing.';
+          }
+          el.style.display = 'flex';
+        }
+      })();
 
       renderSpecs(product);
 
