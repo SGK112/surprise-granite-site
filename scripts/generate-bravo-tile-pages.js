@@ -414,7 +414,7 @@ function generatePage(tile) {
   </style>
 
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
-<script defer src="/js/unified-nav.js?v=20260110e"></script>
+<script defer src="/js/unified-nav.js?v=20260712a"></script>
 
 </head>
 <body>

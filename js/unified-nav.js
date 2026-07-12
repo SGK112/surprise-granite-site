@@ -80,6 +80,7 @@
   // ASPN's public member directory at /aspn/directory/).
   const MENU_ITEMS = [
     { label: 'Materials', href: '/materials/all-countertops', hasMenu: true, menuType: 'materials' },
+    { label: 'Gallery', href: '/tools/interior-design-gallery/' },
     { label: 'Online Store', href: '/marketplace/', hasMenu: true, isMarketplace: true, menuType: 'marketplace' },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Tools', href: '/tools/' },

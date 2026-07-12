@@ -18,7 +18,7 @@
 <link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
 <meta name="theme-color" content="#16222e"/>
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260709c"/>
-<script defer src="/js/unified-nav.js?v=20260710i"></script>
+<script defer src="/js/unified-nav.js?v=20260712a"></script>
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
 <style>
   :root{--gold:#f9cb00;--gold-deep:#e0b400;--gold-ink:#8a6d00;--navy:#16222e;--navy-2:#0f1a24;--ink:#1b2530;--ink-2:#586472;--ink-3:#8b96a3;--bg:#f2f3f5;--card:#fff;--line:#e2e6ea;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;}
@@ -85,8 +85,12 @@
 <div class="wrap">
   <div class="g-filters">
     <button class="pill on" data-room="all">All spaces</button>
-    <button class="pill" data-room="kitchen">🍳 Kitchens</button>
-    <button class="pill" data-room="bath">🛁 Bathrooms</button>
+    <button class="pill" data-room="kitchen" hidden>🍳 Kitchen</button>
+    <button class="pill" data-room="bath" hidden>🛁 Bath</button>
+    <button class="pill" data-room="commercial" hidden>🏢 Commercial</button>
+    <button class="pill" data-room="outdoor" hidden>🌵 Outdoor</button>
+    <button class="pill" data-room="laundry" hidden>🧺 Laundry</button>
+    <button class="pill" data-room="other" hidden>✨ More spaces</button>
     <span class="g-count" id="gCount"></span>
   </div>
   <div class="masonry" id="grid"></div>
@@ -205,7 +209,13 @@
   var ALL=[], view=[], shown=0, BATCH=48, room='all';
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-  function classify(u){u=u.toLowerCase(); if(/bath|vanity|shower|powder|lavatory/.test(u))return'bath'; if(/kitchen/.test(u))return'kitchen'; return'other';}
+  function classify(u){u=u.toLowerCase();
+    if(/outdoor|patio|exterior|bbq|grill|\bpool\b|alfresco/.test(u))return'outdoor';
+    if(/laundry|mudroom|utility/.test(u))return'laundry';
+    if(/kitchen/.test(u))return'kitchen';
+    if(/bath|vanity|shower|powder|lavatory/.test(u))return'bath';
+    if(/_com_|commercial|office|hotel|restaurant|hospitality|retail|lobby|reception/.test(u))return'commercial';
+    return'other';}
   function bigger(u){return u.indexOf('wid=')>-1?u.replace(/wid=\d+/,'wid=900'):u;}
 
   function skeletons(n){var h='';for(var i=0;i<n;i++)h+='<div class="skel" style="height:'+(180+((i*57)%160))+'px"></div>';grid.innerHTML=h;}
@@ -217,9 +227,21 @@
       +'<div class="cap"><b>'+esc(t.name)+'</b><span>'+esc(t.material)+'</span><span class="shop">Shop this stone &rarr;</span></div></a>';
   }
 
+  // Reveal only the space filters we actually have photos for, with counts.
+  function updatePills(){
+    var counts={}; ALL.forEach(function(t){counts[t.room]=(counts[t.room]||0)+1;});
+    document.querySelectorAll('.pill[data-room]').forEach(function(p){
+      var r=p.getAttribute('data-room'); if(r==='all')return;
+      var n=counts[r]||0;
+      if(n>0){p.hidden=false; p.insertAdjacentHTML('beforeend',' <span style="opacity:.55;font-weight:600">'+n+'</span>');}
+      else p.hidden=true;
+    });
+  }
   function applyFilter(){
     view=room==='all'?ALL:ALL.filter(function(t){return t.room===room;});
-    shown=0; grid.innerHTML=''; renderMore();
+    shown=0; grid.innerHTML='';
+    if(!view.length){grid.innerHTML='<div class="g-empty">No looks in this space yet.</div>';gCount.textContent='';moreBtn.style.display='none';return;}
+    renderMore();
     gCount.textContent=view.length+' looks';
   }
   function renderMore(){
@@ -265,6 +287,7 @@
       pages.forEach(ingest);
       shuffle(ALL);
       if(!ALL.length){grid.innerHTML='<div class="g-empty">Gallery is loading fresh looks — check back shortly, or <a href="/get-a-free-estimate/" style="color:var(--gold-ink);font-weight:700">book a free estimate</a>.</div>';return;}
+      updatePills();
       applyFilter();
     });
   }
