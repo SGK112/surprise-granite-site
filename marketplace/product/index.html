@@ -3386,6 +3386,24 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         `).join('');
       }
 
+      // Reusable gallery swap so the async catalog enrichment can drop in the
+      // full image_urls set (slabs.json usually carries just one image; the
+      // enriched catalog is the source of truth for the gallery).
+      window.__sgApplyImages = function (imgs) {
+        imgs = (imgs || []).filter(Boolean);
+        if (imgs.length <= (product.images ? product.images.length : 0)) return;
+        product.images = imgs;
+        window.PRODUCT_DATA = product;
+        window.productImages = imgs;
+        images = imgs;
+        const mi = document.getElementById('mainImage');
+        if (mi) { mi.src = imgs[0]; mi.alt = title; }
+        if (thumbsContainer) thumbsContainer.innerHTML = imgs.map((img, i) => `
+          <div class="thumb ${i === 0 ? 'active' : ''}" onclick="changeImage(${i}, this)">
+            <img src="${img}" alt="${title} view ${i + 1}"/>
+          </div>`).join('');
+      };
+
       // Update product info
       document.getElementById('brand-name').textContent = brand;
       document.getElementById('product-title').textContent = title;
@@ -3508,8 +3526,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // catalog (which the dimensions backfill populated) and re-render.
       // Also enrich when the static hit carries no sample_eligible flag — that is
       // the catalog's answer, and slabs.json never has it.
-      if (category === 'slabs'
-          && (!(product.specs && product.specs.slab_size) || product.sample_eligible === undefined)) {
+      // Always enrich slabs from the live catalog: it carries the full image
+      // gallery + specs + sample flag that static slabs.json lacks.
+      if (category === 'slabs') {
         (async () => {
           const h = product.handle || handle;
           // catalog slugs are inconsistent about the -sample suffix — try both
@@ -3525,7 +3544,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
               if (!r.ok) continue;
               const d = await r.json();
               const p = d && (d.product || (Array.isArray(d.products) ? d.products[0] : null));
-              if (!p || (!p.specs && !p.size)) continue;
+              if (!p || (!p.specs && !p.size && !(p.image_urls && p.image_urls.length))) continue;
+              // Swap in the full catalog gallery (slabs.json usually has 1 image).
+              if (Array.isArray(p.image_urls) && p.image_urls.length && window.__sgApplyImages) {
+                window.__sgApplyImages(p.image_urls);
+              }
               product.specs = Object.assign({}, p.specs, product.specs);
               if (!product.size && p.size) product.size = p.size;
               // The catalog's flag and vendor_id are authoritative; slabs.json
