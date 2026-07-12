@@ -472,6 +472,12 @@
           throw new Error('Booking failed');
         }
 
+        // Turn this lead into a user: provision a Supabase account + email a
+        // magic link so they can track the project — and so Aria/the CRM can
+        // manage them (autonomous follow-up call, qualify, schedule). Fire and
+        // forget: account provisioning must never block or fail the booking.
+        this.provisionUser(data);
+
         // Show success
         document.getElementById('schedule-cta-form').style.display = 'none';
         document.getElementById('schedule-success').style.display = 'block';
@@ -483,6 +489,42 @@
         btn.disabled = false;
         btnText.style.display = 'inline';
         btnLoading.style.display = 'none';
+      }
+    },
+
+    /**
+     * Provision a Surprise Granite user account from a lead and email them a
+     * magic link ("track your project"). Uses the initialized Supabase client
+     * when present, otherwise the GoTrue REST endpoint with the public anon key
+     * (safe — the anon key already ships to the browser). Always swallows errors.
+     */
+    async provisionUser(data) {
+      try {
+        if (!data || !data.email) return;
+        const cfg = window.SG_CONFIG || {};
+        const url = cfg.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+        const key = cfg.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        const meta = {
+          full_name: data.name || '',
+          phone: data.phone || '',
+          source: data.source || 'estimate',
+          lead_project: data.project_type || '',
+          provisioned_from: 'estimate_form'
+        };
+        const redirect = window.location.origin + '/account/?welcome=1';
+        const client = window._sgSupabaseClient || (window.SgAuth && window.SgAuth.getClient && window.SgAuth.getClient());
+        if (client && client.auth && client.auth.signInWithOtp) {
+          await client.auth.signInWithOtp({ email: data.email, options: { data: meta, emailRedirectTo: redirect, shouldCreateUser: true } });
+        } else {
+          await fetch(url + '/auth/v1/otp?redirect_to=' + encodeURIComponent(redirect), {
+            method: 'POST',
+            headers: { 'apikey': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: data.email, create_user: true, data: meta, gotrue_meta_security: {} })
+          });
+        }
+      } catch (e) {
+        /* Account provisioning is best-effort and must stay invisible to the
+           customer — a failed magic link never affects the completed booking. */
       }
     },
 

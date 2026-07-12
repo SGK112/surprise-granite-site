@@ -1440,6 +1440,26 @@
       leads.push(formData);
       localStorage.setItem('sg_leads', JSON.stringify(leads));
 
+      // Turn this lead into a user: provision a Supabase account + email a magic
+      // link ("track your project") so Aria/the CRM can manage them. Best-effort
+      // and non-blocking — the completed estimate never depends on it.
+      try {
+        const _redirect = window.location.origin + '/account/?welcome=1';
+        fetch('https://ypeypgwsycxcagncgdur.supabase.co/auth/v1/otp?redirect_to=' + encodeURIComponent(_redirect), {
+          method: 'POST',
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            create_user: true,
+            data: { full_name: formData.name, phone: formData.phone, source: formData.source, lead_project: formData.projectType, provisioned_from: 'estimate_form' },
+            gotrue_meta_security: {}
+          })
+        }).catch(function () { /* provisioning is best-effort */ });
+      } catch (e) { /* never block the estimate on account provisioning */ }
+
       // Show success
       document.getElementById('estimateForm').style.display = 'none';
       document.getElementById('successCard').classList.add('show');
