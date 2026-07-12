@@ -578,7 +578,7 @@
 
         <div class="rh-footer">
           <span class="rh-footer-text">Powered by</span>
-          <span class="rh-footer-brand">Remodely.ai</span>
+          <a class="rh-footer-brand" href="https://www.remodely.ai" target="_blank" rel="noopener" style="text-decoration:none;">Remodely.ai</a>
         </div>
       </div>
     `;
