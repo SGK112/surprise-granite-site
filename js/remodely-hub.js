@@ -38,7 +38,7 @@
     triggerType: 'none', // We control opening via hub
 
     // Greeting
-    greeting: "Hey! I'm Aria, your AI remodeling assistant. How can I help you today?",
+    greeting: "Hi, I'm Aria — your personal shopper at Surprise Granite. I can help you find products, order countertop samples, track an order, or book a free estimate. What are you looking for?",
 
     // Phone number for transfers
     phone: '(602) 833-3189',
@@ -536,12 +536,34 @@
             <path d="M21 21h-7" stroke="#34A853" stroke-width="2" stroke-linecap="round"/>
           </svg>
           <div class="rh-header-text">
-            <p class="rh-header-title">Remodely Tools</p>
-            <p class="rh-header-subtitle">AI-powered design suite</p>
+            <p class="rh-header-title">Aria</p>
+            <p class="rh-header-subtitle">Your personal shopper &amp; support</p>
           </div>
         </div>
 
         <div class="rh-items">
+          <!-- Personal-shopper quick actions -->
+          <a href="/marketplace/" class="rh-item">
+            <div class="rh-item-icon aria">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="rh-item-text"><div class="rh-item-title">Shop products</div><div class="rh-item-desc">Sinks, faucets, tile &amp; more</div></div>
+          </a>
+          <a href="/marketplace/samples/" class="rh-item">
+            <div class="rh-item-icon designer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <div class="rh-item-text"><div class="rh-item-title">Order a sample</div><div class="rh-item-desc">Countertop colors — $12.99</div></div>
+          </a>
+          <a href="/get-a-free-estimate/" class="rh-item">
+            <div class="rh-item-icon tools">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="rh-item-text"><div class="rh-item-title">Book a free estimate</div><div class="rh-item-desc">Fab &amp; install from $55/sqft</div></div>
+          </a>
+
+          <div class="rh-divider"></div>
+
           <!-- Auth-gated: Room Designer -->
           <a href="javascript:void(0)" class="rh-item auth-required" id="rhDesignerLink" data-tool-url="/tools/room-designer/">
             <div class="rh-item-icon designer">
@@ -571,8 +593,8 @@
               </svg>
             </div>
             <div class="rh-item-text">
-              <div class="rh-item-title">Aria Voice</div>
-              <div class="rh-item-desc">AI assistant</div>
+              <div class="rh-item-title">Ask Aria</div>
+              <div class="rh-item-desc">Products, orders &amp; support</div>
             </div>
             <svg class="rh-item-lock" id="rhAriaLock" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -608,7 +630,7 @@
             </div>
             <div class="rh-item-text">
               <div class="rh-item-title" id="rhAccountTitle">Sign In</div>
-              <div class="rh-item-desc" id="rhAccountDesc">Access your projects</div>
+              <div class="rh-item-desc" id="rhAccountDesc">Orders, tracking &amp; saved items</div>
             </div>
           </a>
         </div>
