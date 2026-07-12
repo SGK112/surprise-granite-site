@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260709c">
   <link rel="stylesheet" href="/css/design-system.css?v=20260111c">
   <script defer src="/js/unified-nav.js?v=20260710i"></script>
-  <link rel="stylesheet" href="/css/cart.css?v=20260711b">
+  <link rel="stylesheet" href="/css/cart.css?v=20260712a">
 
   <!-- Cart -->
   <script src="/js/invoice-builder.js?v=20260408"></script>
@@ -222,6 +222,17 @@
         } catch (e) { /* malformed handoff payload — just show the existing cart */ }
       })();
 
+      // Resolve a product-page link for a cart line so shoppers can bounce back.
+      // Prefer the stored href; otherwise rebuild it from the item's id + category.
+      function hrefOf(item) {
+        var h = item && item.href;
+        if (h && /^(https?:\/\/|\/)/.test(h)) return h;
+        var id = item && item.id;
+        if (!id) return '/marketplace/';
+        return '/marketplace/product/?handle=' + encodeURIComponent(id) +
+               '&category=' + encodeURIComponent((item && item.category) || 'product');
+      }
+
       function renderCart() {
         if (!window.SgCart) return;
         var cart = window.SgCart.getCart();
@@ -260,9 +271,9 @@
           // broke whenever a value held a quote (e.g. a 24" size), leaving the
           // Remove button inert. Index is looked up against the live cart on click.
           return '<div class="cart-item">' +
-            '<div class="cart-item-image"><img src="' + esc(item.image || '/images/placeholder-card.svg') + '" alt="' + esc(item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\'/images/placeholder-card.svg\'"></div>' +
+            '<a class="cart-item-image" href="' + esc(hrefOf(item)) + '"><img src="' + esc(item.image || '/images/placeholder-card.svg') + '" alt="' + esc(item.name) + '" loading="lazy" onerror="this.onerror=null;this.src=\'/images/placeholder-card.svg\'"></a>' +
             '<div class="cart-item-details">' +
-              '<h3 class="cart-item-name">' + esc(item.name) + '</h3>' +
+              '<a class="cart-item-name" href="' + esc(hrefOf(item)) + '">' + esc(item.name) + '</a>' +
               (item.variant ? '<p class="cart-item-variant">' + esc(item.variant) + '</p>' : '') +
               '<p class="cart-item-price">' + fmt(price) + ' each</p>' +
             '</div>' +
