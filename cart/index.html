@@ -195,6 +195,33 @@
       function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
       function fmt(n) { return '$' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
+      // Cart handoff — Aria (or any deep link) can pre-load items via
+      // /cart/?add=<url-encoded JSON array of {name,price,image,href,category,quantity}>.
+      // Add each through SgCart, then strip the param so refresh/back won't re-add.
+      // Prices are re-validated server-side at checkout, so a stale handoff self-corrects.
+      (function loadCartHandoff() {
+        try {
+          var raw = new URLSearchParams(location.search).get('add');
+          if (!raw || !window.SgCart) return;
+          var items = JSON.parse(raw);
+          if (!Array.isArray(items) || !items.length) return;
+          items.forEach(function (it) {
+            if (!it || !it.name) return;
+            window.SgCart.addToCart({
+              id: it.id || it.handle || it.name,
+              name: it.name,
+              price: Number(it.price) || 0,
+              image: it.image || '',
+              variant: it.variant || '',
+              quantity: Number(it.quantity) || 1,
+              category: it.category || 'product',
+              href: it.href || ''
+            });
+          });
+          history.replaceState(null, '', location.pathname);
+        } catch (e) { /* malformed handoff payload — just show the existing cart */ }
+      })();
+
       function renderCart() {
         if (!window.SgCart) return;
         var cart = window.SgCart.getCart();
