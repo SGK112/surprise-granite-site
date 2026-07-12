@@ -542,48 +542,8 @@
         </div>
 
         <div class="rh-items">
-          <!-- Personal-shopper quick actions -->
-          <a href="/marketplace/" class="rh-item">
-            <div class="rh-item-icon aria">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
-            </div>
-            <div class="rh-item-text"><div class="rh-item-title">Shop products</div><div class="rh-item-desc">Sinks, faucets, tile &amp; more</div></div>
-          </a>
-          <a href="/marketplace/samples/" class="rh-item">
-            <div class="rh-item-icon designer">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            </div>
-            <div class="rh-item-text"><div class="rh-item-title">Order a sample</div><div class="rh-item-desc">Countertop colors — $12.99</div></div>
-          </a>
-          <a href="/get-a-free-estimate/" class="rh-item">
-            <div class="rh-item-icon tools">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <div class="rh-item-text"><div class="rh-item-title">Book a free estimate</div><div class="rh-item-desc">Fab &amp; install from $55/sqft</div></div>
-          </a>
-
-          <div class="rh-divider"></div>
-
-          <!-- Auth-gated: Room Designer -->
-          <a href="javascript:void(0)" class="rh-item auth-required" id="rhDesignerLink" data-tool-url="/tools/room-designer/">
-            <div class="rh-item-icon designer">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M3 9h18M9 21V9"/>
-              </svg>
-            </div>
-            <div class="rh-item-text">
-              <div class="rh-item-title">Room Designer Pro</div>
-              <div class="rh-item-desc">Design your space in 3D</div>
-            </div>
-            <svg class="rh-item-lock" id="rhDesignerLock" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </a>
-
-          <!-- Auth-gated: Aria Voice -->
-          <button class="rh-item auth-required" id="rhAriaBtn">
+          <!-- Ask Aria — the concierge: shop, samples, estimates & support, all in one chat -->
+          <button class="rh-item" id="rhAriaBtn">
             <div class="rh-item-icon aria">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -594,28 +554,9 @@
             </div>
             <div class="rh-item-text">
               <div class="rh-item-title">Ask Aria</div>
-              <div class="rh-item-desc">Products, orders &amp; support</div>
+              <div class="rh-item-desc">Shop, order samples &amp; get help</div>
             </div>
-            <svg class="rh-item-lock" id="rhAriaLock" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
           </button>
-
-          <div class="rh-divider"></div>
-
-          <a href="/tools/" class="rh-item">
-            <div class="rh-item-icon tools">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-            </div>
-            <div class="rh-item-text">
-              <div class="rh-item-title">All Tools</div>
-              <div class="rh-item-desc">Explore design suite</div>
-            </div>
-          </a>
 
           <div class="rh-divider"></div>
 
