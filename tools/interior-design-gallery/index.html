@@ -18,7 +18,7 @@
 <link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
 <meta name="theme-color" content="#16222e"/>
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260709c"/>
-<script defer src="/js/unified-nav.js?v=20260712a"></script>
+<script defer src="/js/unified-nav.js?v=20260712b"></script>
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
 <style>
   :root{--gold:#f9cb00;--gold-deep:#e0b400;--gold-ink:#8a6d00;--navy:#16222e;--navy-2:#0f1a24;--ink:#1b2530;--ink-2:#586472;--ink-3:#8b96a3;--bg:#f2f3f5;--card:#fff;--line:#e2e6ea;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;}
@@ -311,6 +311,14 @@
   document.getElementById('lbNext').addEventListener('click',function(e){e.stopPropagation();step(1);});
   lb.addEventListener('click',function(e){if(e.target===lb)closeLb();});
   document.addEventListener('keydown',function(e){if(!lb.classList.contains('on'))return;if(e.key==='Escape')closeLb();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);});
+  // Mobile swipe: flick left/right on the open image to move through looks.
+  var _tx=0,_ty=0;
+  lb.addEventListener('touchstart',function(e){var t=e.changedTouches[0];_tx=t.clientX;_ty=t.clientY;},{passive:true});
+  lb.addEventListener('touchend',function(e){
+    var t=e.changedTouches[0], dx=t.clientX-_tx, dy=t.clientY-_ty;
+    if(Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)){step(dx<0?1:-1);}      // horizontal → prev/next
+    else if(dy>70 && Math.abs(dy)>Math.abs(dx)){closeLb();}                   // swipe down → close
+  },{passive:true});
   // open lightbox on tile click (but let real navigation happen on the Shop button)
   grid.addEventListener('click',function(e){
     var shopBtn=e.target.closest('.shop'); if(shopBtn)return; // shop → navigate
