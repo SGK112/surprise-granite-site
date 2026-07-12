@@ -39,7 +39,8 @@
   /* thin value strip */
   .vstrip{background:var(--navy-3);color:#e7eef3;font-size:12.5px;font-weight:600;} .vstrip .wrap{display:flex;gap:8px 22px;justify-content:center;flex-wrap:wrap;padding:9px 16px;} .vstrip b{color:var(--gold);} .vstrip span{white-space:nowrap;}
 
-  section{padding:22px 0;} .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:12px;} .sh h2{font-size:20px;font-weight:800;} .sh a{color:var(--gold-ink);font-weight:700;font-size:13.5px;white-space:nowrap;}
+  section{padding:22px 0;} #store section{content-visibility:auto;contain-intrinsic-size:auto 440px;}
+  .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:12px;} .sh h2{font-size:20px;font-weight:800;} .sh a{color:var(--gold-ink);font-weight:700;font-size:13.5px;white-space:nowrap;}
   @media (prefers-color-scheme: dark){.sh a{color:var(--gold);}}
 
   /* department tiles — the hook */
@@ -194,28 +195,29 @@
   }
   function skels(el,n){var h='';for(var i=0;i<n;i++)h+='<div class="pc"><div class="im skel"></div><div class="bd"><div class="nm skel" style="height:34px;border-radius:4px"></div><div class="pr skel" style="height:20px;width:56px;border-radius:4px;margin-top:8px"></div></div></div>';el.innerHTML=h;}
 
-  function loadRail(id,cat,limit){var el=document.getElementById(id);skels(el,5);
-    fetch(API+'/api/catalog?category='+cat+'&limit=250').then(function(r){return r.json();}).then(function(j){
-      var rows=(j.products||[]).filter(sellable).slice(0,limit||10);
-      el.innerHTML=rows.map(function(p){return card(p,cat);}).join('');
-    }).catch(function(){el.innerHTML='';});}
-  loadRail('railSinks','sink',12);
+  // Shared, cached fetches — smaller payloads, no duplicate requests
+  var _cache={};
+  function getCat(cat,limit){var k=cat+':'+limit;if(_cache[k])return _cache[k];_cache[k]=fetch(API+'/api/catalog?category='+cat+'&limit='+limit).then(function(r){return r.json();}).then(function(j){return j.products||[];}).catch(function(){return [];});return _cache[k];}
+  function hasImg(p){return p.primary_image_url||(p.image_urls&&p.image_urls[0]);}
+  function setTile(cat,rows){var t=document.querySelector('#depts .dt[data-cat="'+cat+'"]');if(!t)return;for(var i=0;i<rows.length;i++){if(hasImg(rows[i])){t.querySelector('.th').style.backgroundImage='url("'+imgOf(rows[i])+'")';break;}}}
+  function whenNear(el,fn){if(!el)return;if(!('IntersectionObserver' in window)){fn();return;}var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){io.disconnect();fn();}},{rootMargin:'500px 0px'});io.observe(el);}
 
-  (function(){var el=document.getElementById('railValue');skels(el,5);
-    Promise.all([fetch(API+'/api/catalog?category=sink&limit=250').then(function(r){return r.json();}),fetch(API+'/api/catalog?category=faucet&limit=250').then(function(r){return r.json();})])
-    .then(function(res){var all=[];(res[0].products||[]).filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['sink',p]);});(res[1].products||[]).filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['faucet',p]);});
-      el.innerHTML=all.slice(0,12).map(function(x){return card(x[1],x[0]);}).join('');}).catch(function(){el.innerHTML='';});})();
+  // Above the fold now: sinks rail + department photos (shared fetches)
+  skels(document.getElementById('railSinks'),5);
+  var pSink=getCat('sink',60), pFaucet=getCat('faucet',60), pSlab=getCat('slab',36);
+  pSink.then(function(rows){document.getElementById('railSinks').innerHTML=rows.filter(sellable).slice(0,12).map(function(p){return card(p,'sink');}).join('');setTile('sink',rows);});
+  pFaucet.then(function(rows){setTile('faucet',rows);});
+  pSlab.then(function(rows){setTile('slab',rows);});
+  ['tile','flooring','accessory'].forEach(function(c){getCat(c,8).then(function(rows){setTile(c,rows);});});
 
-  fetch(API+'/api/catalog?category=slab&limit=60').then(function(r){return r.json();}).then(function(j){
-    var rows=(j.products||[]).filter(function(p){return p.primary_image_url||(p.image_urls&&p.image_urls[0]);}).slice(0,16);
-    document.getElementById('wall').innerHTML=rows.map(function(p){
+  // Below the fold: colour wall + value rail load only as you scroll near them
+  whenNear(document.getElementById('wall'),function(){pSlab.then(function(rows){
+    document.getElementById('wall').innerHTML=rows.filter(hasImg).slice(0,16).map(function(p){
       return '<a class="sw" style="background-image:url(&quot;'+esc(imgOf(p))+'&quot;)" href="/countertops/'+encodeURIComponent(p.slug)+'/"><span class="l">'+esc(p.name||'')+'<span>'+esc(p.subcategory||'Stone')+' · $12.99</span></span></a>';
-    }).join('');}).catch(function(){});
-
-  document.querySelectorAll('#depts .dt').forEach(function(t){var cat=t.dataset.cat;if(!cat)return;
-    fetch(API+'/api/catalog?category='+cat+'&limit=30').then(function(r){return r.json();}).then(function(j){
-      var p=(j.products||[]).filter(function(x){return x.primary_image_url||(x.image_urls&&x.image_urls[0]);})[0];
-      if(p)t.querySelector('.th').style.backgroundImage='url("'+imgOf(p)+'")';}).catch(function(){});});
+    }).join('');});});
+  whenNear(document.getElementById('railValue'),function(){var el=document.getElementById('railValue');skels(el,5);
+    Promise.all([pSink,pFaucet]).then(function(a){var all=[];a[0].filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['sink',p]);});a[1].filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['faucet',p]);});
+      el.innerHTML=all.slice(0,12).map(function(x){return card(x[1],x[0]);}).join('');});});
 
   // ---- Working product search (hits the live catalog) ----
   var results=document.getElementById('results'), store=document.getElementById('store'), rgrid=document.getElementById('rgrid'), rtitle=document.getElementById('rtitle');
