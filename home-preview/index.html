@@ -59,7 +59,7 @@
   .pc .add{margin-top:9px;background:var(--gold);color:var(--navy);border:0;border-radius:8px;padding:11px;font-weight:800;font-size:12.5px;} .pc .add:hover{background:var(--gold-deep);}
   .skel{background:linear-gradient(90deg,var(--inset),#e9ecef,var(--inset));background-size:200% 100%;animation:sh 1.2s infinite;} @keyframes sh{to{background-position:-200% 0;}} @media (prefers-reduced-motion:reduce){.skel{animation:none;}}
 
-  /* colour wall */
+  /* color wall */
   .wall{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;} @media(max-width:900px){.wall{grid-template-columns:repeat(4,1fr);}} @media(max-width:520px){.wall{grid-template-columns:repeat(3,1fr);}}
   .sw{aspect-ratio:1/1;border-radius:10px;position:relative;overflow:hidden;border:1px solid var(--line);background:#2a3640 center/cover;} .sw::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(8,10,12,.6));} .sw .l{position:absolute;left:7px;bottom:6px;z-index:1;color:#fff;font-size:11px;font-weight:700;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.6);} .sw .l span{display:block;font-size:9px;font-weight:500;opacity:.85;}
 
@@ -115,7 +115,7 @@
     <section>
       <div class="sh"><h2>Shop by department</h2><a href="/marketplace/">See all &rarr;</a></div>
       <div class="depts" id="depts">
-        <a class="dt" href="/materials/all-countertops" data-cat="slab"><div class="th"><span class="nm">Countertops<span>3,392 colours</span></span></div></a>
+        <a class="dt" href="/materials/all-countertops" data-cat="slab"><div class="th"><span class="nm">Countertops<span>3,392 colors</span></span></div></a>
         <a class="dt" href="/marketplace/sinks/" data-cat="sink"><div class="th"><span class="nm">Sinks<span>748 items</span></span></div></a>
         <a class="dt" href="/marketplace/faucets/" data-cat="faucet"><div class="th"><span class="nm">Faucets<span>534 items</span></span></div></a>
         <a class="dt" href="/materials/all-tile" data-cat="tile"><div class="th"><span class="nm">Tile<span>Backsplash &amp; floor</span></span></div></a>
@@ -130,7 +130,7 @@
     </section>
 
     <section>
-      <div class="sh"><h2>Countertop colours</h2><a href="/materials/all-countertops">All 3,392 &rarr;</a></div>
+      <div class="sh"><h2>Countertop colors</h2><a href="/materials/all-countertops">All 3,392 &rarr;</a></div>
       <div class="wall" id="wall"></div>
     </section>
 
@@ -142,7 +142,7 @@
     <section>
       <div class="band"><div class="k">Shop &amp; install — one place</div><h2>Everything for the kitchen &amp; bath. Shipped or installed.</h2><p>Thousands of products in stock, plus countertop fabrication from $55/sqft.</p><a class="b" href="/get-a-free-estimate/">Get a free estimate &rarr;</a>
         <div class="promo2">
-          <a class="scard samp" href="/marketplace/samples/"><span class="t">Countertops</span><b>Order a sample — $12.99</b><span>See the colour before you commit</span></a>
+          <a class="scard samp" href="/marketplace/samples/"><span class="t">Countertops</span><b>Order a sample — $12.99</b><span>See the color before you commit</span></a>
           <a class="scard free" href="/sign-up/"><span class="t">Free account</span><b>Track orders &amp; get updates</b><span>Sign up free — or check out as guest</span></a>
         </div>
       </div>
@@ -210,10 +210,11 @@
   pSlab.then(function(rows){setTile('slab',rows);});
   ['tile','flooring','accessory'].forEach(function(c){getCat(c,8).then(function(rows){setTile(c,rows);});});
 
-  // Below the fold: colour wall + value rail load only as you scroll near them
+  // Below the fold: color wall + value rail load only as you scroll near them
   whenNear(document.getElementById('wall'),function(){pSlab.then(function(rows){
     document.getElementById('wall').innerHTML=rows.filter(hasImg).slice(0,16).map(function(p){
-      return '<a class="sw" style="background-image:url(&quot;'+esc(imgOf(p))+'&quot;)" href="/countertops/'+encodeURIComponent(p.slug)+'/"><span class="l">'+esc(p.name||'')+'<span>'+esc(p.subcategory||'Stone')+' · $12.99</span></span></a>';
+      var tag=p.sample_eligible?'$12.99 sample':'see in person';
+      return '<a class="sw" style="background-image:url(&quot;'+esc(imgOf(p))+'&quot;)" href="/countertops/'+encodeURIComponent(p.slug)+'/"><span class="l">'+esc(p.name||'')+'<span>'+esc(p.subcategory||'Stone')+' · '+tag+'</span></span></a>';
     }).join('');});});
   whenNear(document.getElementById('railValue'),function(){var el=document.getElementById('railValue');skels(el,5);
     Promise.all([pSink,pFaucet]).then(function(a){var all=[];a[0].filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['sink',p]);});a[1].filter(sellable).forEach(function(p){if(+p.retail_price<=150)all.push(['faucet',p]);});
@@ -231,7 +232,7 @@
     fetch(API+'/api/catalog?search='+encodeURIComponent(q)+'&limit=48&in_stock=false').then(function(r){return r.json();}).then(function(j){
       var rows=(j.products||[]).filter(function(p){var pr=+p.retail_price||0;var img=p.primary_image_url||(p.image_urls&&p.image_urls[0]);return pr>0&&img;});
       rtitle.innerHTML='Results for &ldquo;'+esc(q)+'&rdquo; <b>('+rows.length+')</b>';
-      rgrid.innerHTML=rows.length?rows.map(function(p){return card(p,p.category);}).join(''):'<div class="rempty">No products matched &ldquo;'+esc(q)+'&rdquo;. Try a colour, brand, or product type — or <a href="/marketplace/" style="color:var(--gold-ink);font-weight:700">browse all departments</a>.</div>';
+      rgrid.innerHTML=rows.length?rows.map(function(p){return card(p,p.category);}).join(''):'<div class="rempty">No products matched &ldquo;'+esc(q)+'&rdquo;. Try a color, brand, or product type — or <a href="/marketplace/" style="color:var(--gold-ink);font-weight:700">browse all departments</a>.</div>';
     }).catch(function(){rgrid.innerHTML='<div class="rempty">Search is unavailable right now. <a href="/marketplace/" style="color:var(--gold-ink);font-weight:700">Browse all departments</a>.</div>';});
   }
   document.getElementById('searchForm').addEventListener('submit',function(e){e.preventDefault();var q=document.getElementById('q').value;history.replaceState(null,'','?q='+encodeURIComponent(q));runSearch(q);});
