@@ -210,6 +210,22 @@
   .logo{order:1;display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;white-space:nowrap;} .logo .mk{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;padding:3px;display:block;box-shadow:0 1px 3px rgba(0,0,0,.25);} .logo small{display:block;font-size:9px;letter-spacing:.15em;color:var(--gold);font-weight:700;}
   .cart{order:2;margin-left:auto;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap;position:relative;} .cart svg{width:20px;height:20px;} .cart b{color:var(--gold);}
   .cart .ci{position:relative;display:inline-flex;} .cbadge{position:absolute;top:-8px;right:-9px;background:var(--gold);color:var(--navy);font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35);} .cbadge.on{display:flex;}
+  .cbadge.pop{animation:badgePop .4s ease;} @keyframes badgePop{0%{transform:scale(1);}40%{transform:scale(1.45);}100%{transform:scale(1);}} @media (prefers-reduced-motion:reduce){.cbadge.pop{animation:none;}}
+
+  /* add-to-cart flyout toast */
+  .cart-toast{position:fixed;z-index:60;left:14px;right:14px;bottom:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 44px rgba(8,12,20,.30);padding:11px 12px;display:flex;align-items:center;gap:11px;transform:translateY(150%);opacity:0;transition:transform .34s cubic-bezier(.2,.9,.3,1),opacity .34s ease;pointer-events:none;}
+  .cart-toast.on{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .cart-toast .ct-img{width:46px;height:46px;border-radius:9px;background:#eef0f2 center/cover;flex:none;border:1px solid var(--line);}
+  .cart-toast .ct-body{flex:1;min-width:0;}
+  .cart-toast .ct-top{font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--good);display:flex;align-items:center;gap:5px;}
+  .cart-toast .ct-top::before{content:"\2713";display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--good);color:#fff;font-size:9px;font-weight:700;}
+  .cart-toast .ct-nm{font-size:13.5px;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .cart-toast .ct-pr{font-size:12.5px;font-weight:800;color:var(--ink);} .cart-toast .ct-pr small{font-size:10px;color:var(--ink-3);}
+  .cart-toast .ct-actions{display:flex;align-items:center;gap:6px;flex:none;}
+  .cart-toast .ct-view{background:var(--gold);color:var(--navy);font-weight:800;font-size:12.5px;padding:9px 13px;border-radius:9px;white-space:nowrap;} .cart-toast .ct-view:hover{background:var(--gold-deep);}
+  .cart-toast .ct-x{background:transparent;border:0;color:var(--ink-3);font-size:21px;line-height:1;padding:2px 5px;}
+  @media(min-width:560px){.cart-toast{left:auto;right:20px;bottom:20px;width:384px;}}
+  @media (prefers-reduced-motion:reduce){.cart-toast{transition:opacity .2s ease;transform:none;} .cart-toast:not(.on){transform:none;}}
   .search{order:3;flex-basis:100%;display:flex;align-items:stretch;position:relative;background:#fff;border-radius:12px;overflow:hidden;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.2);} .search:focus-within{border-color:var(--gold);box-shadow:0 3px 14px rgba(249,203,0,.28);}
   .search .si{position:absolute;left:16px;top:0;bottom:0;display:flex;align-items:center;color:#98a2ad;pointer-events:none;} .search .si svg{width:19px;height:19px;}
   .search input{flex:1;border:0;padding:15px 16px 15px 46px;font-size:16px;line-height:1.2;outline:none;color:#1b2530;min-width:40px;background:transparent;} .search input::placeholder{color:#9aa4af;}
@@ -373,6 +389,13 @@
   </div>
 </div>
 
+<!-- add-to-cart flyout -->
+<div class="cart-toast" id="cartToast" role="status" aria-live="polite">
+  <div class="ct-img" id="ctImg"></div>
+  <div class="ct-body"><div class="ct-top">Added to cart</div><div class="ct-nm" id="ctNm"></div><div class="ct-pr" id="ctPr"></div></div>
+  <div class="ct-actions"><a class="ct-view" href="/cart/">View cart</a><button class="ct-x" type="button" aria-label="Dismiss" onclick="document.getElementById('cartToast').classList.remove('on')">&times;</button></div>
+</div>
+
 
   <div class="wrap">
     <section class="seo-zone">
@@ -497,16 +520,48 @@
       +'<div class="pr">'+priceHtml(pr)+'</div>'+(pr>=500?'<div class="ship">Free shipping</div>':'')
       +'<button class="add" data-add="'+esc(key)+'" data-cat="'+esc(cat||p.category||'')+'">'+(slab?'View item':'Add to Cart')+'</button></div></a>';
   }
-  // Real add-to-cart via the stateless /cart/?add= handoff; slabs go to their page (samples/estimate, not drop-ship)
+  // ---- Cart (localStorage sg_cart) — add-and-stay with a flyout, no page load ----
+  function readCart(){try{var r=localStorage.getItem('sg_cart'),c=r?JSON.parse(r):[];return Array.isArray(c)?c:[];}catch(e){return [];}}
+  function writeCart(c){try{localStorage.setItem('sg_cart',JSON.stringify(c));}catch(e){}}
+  function cartTotals(c){var q=0,t=0;(c||readCart()).forEach(function(i){var n=Number(i&&i.quantity)||1;q+=n;t+=(Number(i&&i.price)||0)*n;});return {q:q,t:t};}
+  function refreshBadge(pop){
+    var s=cartTotals();
+    var tt=document.getElementById('cartTotal'); if(tt) tt.textContent='$'+Math.round(s.t).toLocaleString('en-US');
+    var c=document.getElementById('cartCount'); if(!c) return;
+    if(s.q>0){c.textContent=s.q>99?'99+':String(s.q);c.classList.add('on');if(pop){c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');}}
+    else c.classList.remove('on');
+  }
+  var _toastT;
+  function showCartToast(p){
+    var el=document.getElementById('cartToast'); if(!el) return;
+    var im=document.getElementById('ctImg'); if(im) im.style.backgroundImage='url("'+esc(imgOf(p))+'")';
+    var nm=document.getElementById('ctNm'); if(nm) nm.textContent=p.name||'Item';
+    var pr=document.getElementById('ctPr'); if(pr) pr.innerHTML=priceHtml(+p.retail_price||0);
+    el.classList.add('on');
+    clearTimeout(_toastT); _toastT=setTimeout(function(){el.classList.remove('on');},3800);
+  }
+  function addItemToCart(p,cat){
+    var id=p.slug||p.id;
+    var url='/marketplace/product/?handle='+encodeURIComponent(id)+'&category='+(cat||'product');
+    var cart=readCart();
+    var ix=cart.findIndex(function(i){return i&&i.id===id&&(i.variant||'')==='';});
+    if(ix>-1) cart[ix].quantity=(Number(cart[ix].quantity)||1)+1;
+    else cart.push({id:id,name:p.name||'',price:+p.retail_price||0,originalPrice:+p.retail_price||0,pricingTier:'guest',image:imgOf(p),variant:'',quantity:1,category:cat||'product',href:url});
+    writeCart(cart);
+    refreshBadge(true);
+    showCartToast(p);
+    try{window.dispatchEvent(new Event('cartUpdated'));}catch(e){}
+  }
+  // Delegated add handler; slabs go to their page (samples/estimate, not drop-ship)
   document.addEventListener('click',function(e){
     var b=e.target&&e.target.closest&&e.target.closest('button.add[data-add]'); if(!b) return;
     e.preventDefault(); e.stopPropagation();
     var p=_prod[b.getAttribute('data-add')]; if(!p) return;
     var cat=b.getAttribute('data-cat');
-    var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||'slabs');
-    if(isSlabCat(cat)){location.href=url;return;}
-    var item=[{id:p.slug||p.id,name:p.name||'',price:+p.retail_price||0,image:imgOf(p),category:cat||'product',href:url}];
-    location.href='/cart/?add='+encodeURIComponent(JSON.stringify(item));
+    if(isSlabCat(cat)){location.href='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||'slabs');return;}
+    addItemToCart(p,cat);
+    var orig=b.textContent; b.textContent='Added ✓';
+    setTimeout(function(){b.textContent=orig;},1400);
   });
   function skels(el,n){var h='';for(var i=0;i<n;i++)h+='<div class="pc"><div class="im skel"></div><div class="bd"><div class="nm skel" style="height:34px;border-radius:4px"></div><div class="pr skel" style="height:20px;width:56px;border-radius:4px;margin-top:8px"></div></div></div>';el.innerHTML=h;}
 
@@ -553,17 +608,27 @@
   document.getElementById('searchForm').addEventListener('submit',function(e){e.preventDefault();var q=document.getElementById('q').value;history.replaceState(null,'','?q='+encodeURIComponent(q));runSearch(q);});
   (function(){var m=location.search.match(/[?&]q=([^&]+)/);if(m){var q=decodeURIComponent(m[1].replace(/\+/g,' '));document.getElementById('q').value=q;runSearch(q);}})();
 
-  // ---- Live header cart badge (reads sg_cart directly; no cart JS needed here) ----
-  (function(){
-    try{
-      var raw=localStorage.getItem('sg_cart'), cart=raw?JSON.parse(raw):[];
-      if(!Array.isArray(cart)) cart=[];
-      var qty=0,total=0;
-      cart.forEach(function(i){var q=Number(i&&i.quantity)||1;qty+=q;total+=(Number(i&&i.price)||0)*q;});
-      var t=document.getElementById('cartTotal'); if(t) t.textContent='$'+Math.round(total).toLocaleString('en-US');
-      var c=document.getElementById('cartCount'); if(c&&qty>0){c.textContent=qty>99?'99+':String(qty);c.classList.add('on');}
-    }catch(e){}
-  })();
+  // ---- Header cart badge: hydrate now, keep in sync across tabs/updates ----
+  refreshBadge(false);
+  window.addEventListener('cartUpdated',function(){refreshBadge(false);});
+  window.addEventListener('storage',function(e){if(e.key==='sg_cart')refreshBadge(false);});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)refreshBadge(false);});
+
+  // ---- Live department counts (deferred; sellable counts, so tiles match their page) ----
+  function catSellableCount(cat){
+    var k='scnt:'+cat; if(_cache[k]) return _cache[k];
+    _cache[k]=(function(){var n=0;
+      function pg(off){return fetch(API+'/api/catalog?category='+cat+'&limit=250&offset='+off).then(function(r){return r.json();}).then(function(j){var rows=j.products||[];n+=rows.filter(sellable).length;return (rows.length===250&&off<1000)?pg(off+250):n;});}
+      return pg(0).catch(function(){return 0;});
+    })();
+    return _cache[k];
+  }
+  function setDeptSub(cat,txt){var t=document.querySelector('#depts .dt[data-cat="'+cat+'"] .nm span');if(t)t.textContent=txt;}
+  function loadDeptCounts(){
+    catSellableCount('sink').then(function(n){if(n)setDeptSub('sink',n.toLocaleString('en-US')+' items');});
+    catSellableCount('faucet').then(function(n){if(n)setDeptSub('faucet',n.toLocaleString('en-US')+' items');});
+  }
+  if('requestIdleCallback' in window) requestIdleCallback(loadDeptCounts,{timeout:4000}); else setTimeout(loadDeptCounts,2000);
 
   // ---- Rotating announcement bar ----
   (function(){
