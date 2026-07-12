@@ -224,6 +224,19 @@
       color: var(--text-muted);
       margin-bottom: 24px;
     }
+    /* shop toolbar: count + sort */
+    .shop-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+    .shop-toolbar .product-count { margin-bottom: 0; }
+    .sort-wrap { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); }
+    .sort-wrap select { padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; cursor: pointer; background: var(--bg); color: var(--navy); min-height: 40px; }
+    /* active filter chips */
+    .active-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+    .active-chips:empty { display: none; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px 6px 13px; background: var(--navy); color: #fff; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .chip button { background: rgba(255,255,255,.22); border: 0; color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 14px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+    .chip button:hover { background: rgba(255,255,255,.4); }
+    .chip-clear { background: none; border: 0; color: #8a6d00; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; align-self: center; padding: 4px; }
+    .chip-clear:hover { color: var(--navy); }
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -677,7 +690,19 @@
       </div>
     </div>
 
-    <div class="product-count">Showing <span id="count">0</span> sinks</div>
+    <div class="shop-toolbar">
+      <div class="product-count">Showing <span id="count">0</span> sinks</div>
+      <div class="sort-wrap">
+        <label for="sort-filter">Sort</label>
+        <select id="sort-filter" aria-label="Sort products">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="name">Name: A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="active-chips" id="active-chips"></div>
 
     <div class="products-grid" id="products-grid">
       <!-- Products loaded via JS -->
@@ -1004,7 +1029,36 @@
           return true;
         });
 
+        // Sort (Featured keeps catalog order)
+        const sort = document.getElementById('sort-filter')?.value || 'featured';
+        const priceOf = (p) => {
+          try { if (window.SG_PRICING && p.wholesaleCost) { const pr = window.SG_PRICING.calculatePrice(p); if (pr && pr.yourPrice > 0) return pr.yourPrice; } } catch (e) {}
+          const s = p.price ? parseFloat(p.price) : 0; return s > 0 ? s : Infinity;
+        };
+        if (sort === 'price-asc') filtered.sort((a, b) => priceOf(a) - priceOf(b));
+        else if (sort === 'price-desc') filtered.sort((a, b) => {
+          const pa = priceOf(a), pb = priceOf(b);
+          return (pb === Infinity ? -Infinity : pb) - (pa === Infinity ? -Infinity : pa);
+        });
+        else if (sort === 'name') filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+        renderChips({ style: styleFilter, room: roomFilter, brand: brandFilter, material: materialFilter });
         renderProducts(filtered);
+      }
+
+      // Active filter chips — labels pulled from the live controls, one-tap remove
+      function renderChips(f) {
+        const wrap = document.getElementById('active-chips');
+        if (!wrap) return;
+        const chips = [];
+        const roomBtn = document.querySelector('#room-filters .room-btn.active');
+        const styleBtn = document.querySelector('#style-filters .filter-btn.active');
+        if (f.room && f.room !== 'all' && roomBtn) chips.push({ k: 'room', label: roomBtn.textContent.trim() });
+        if (f.brand && f.brand !== 'all' && brandSelect) chips.push({ k: 'brand', label: brandSelect.options[brandSelect.selectedIndex].text });
+        if (f.material && f.material !== 'all' && materialSelect) chips.push({ k: 'material', label: materialSelect.options[materialSelect.selectedIndex].text });
+        if (f.style && f.style !== 'all' && styleBtn) chips.push({ k: 'style', label: styleBtn.textContent.trim() });
+        wrap.innerHTML = chips.map(c => `<span class="chip">${c.label}<button type="button" data-clear="${c.k}" aria-label="Remove ${c.label} filter">×</button></span>`).join('')
+          + (chips.length > 1 ? '<button type="button" class="chip-clear" data-clear="all">Clear all</button>' : '');
       }
 
       // Style button clicks (mutually exclusive within their own group)
@@ -1028,6 +1082,22 @@
       // Dropdown changes
       if (brandSelect) brandSelect.addEventListener('change', applyFilters);
       if (materialSelect) materialSelect.addEventListener('change', applyFilters);
+      const sortSelect = document.getElementById('sort-filter');
+      if (sortSelect) sortSelect.addEventListener('change', applyFilters);
+
+      // Chip removal / clear all
+      const chipsWrap = document.getElementById('active-chips');
+      if (chipsWrap) chipsWrap.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-clear]'); if (!btn) return;
+        const k = btn.getAttribute('data-clear');
+        const resetStyle = () => { styleButtons.forEach(b => b.classList.remove('active')); document.querySelector('#style-filters [data-filter="all"]')?.classList.add('active'); };
+        const resetRoom = () => { roomButtons.forEach(b => b.classList.remove('active')); document.querySelector('#room-filters [data-room="all"]')?.classList.add('active'); };
+        if (k === 'room' || k === 'all') resetRoom();
+        if (k === 'brand' || k === 'all') { if (brandSelect) brandSelect.value = 'all'; }
+        if (k === 'material' || k === 'all') { if (materialSelect) materialSelect.value = 'all'; }
+        if (k === 'style' || k === 'all') resetStyle();
+        applyFilters();
+      });
 
       // Check URL params
       const params = new URLSearchParams(window.location.search);
