@@ -536,7 +536,7 @@
             <path d="M21 21h-7" stroke="#34A853" stroke-width="2" stroke-linecap="round"/>
           </svg>
           <div class="rh-header-text">
-            <a class="rh-header-title" href="https://www.remodely.ai" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:inline-block;">Aria</a>
+            <a class="rh-header-title" href="https://www.remodely.ai" target="_blank" rel="noopener" style="text-decoration:none;color:#fb923c;display:inline-block;">Aria</a>
             <p class="rh-header-subtitle">Your personal shopper &amp; support</p>
           </div>
         </div>
@@ -578,7 +578,7 @@
 
         <div class="rh-footer">
           <span class="rh-footer-text">Powered by</span>
-          <a class="rh-footer-brand" href="https://www.remodely.ai" target="_blank" rel="noopener" style="text-decoration:none;">Remodely.ai</a>
+          <a class="rh-footer-brand" href="https://www.remodely.ai" target="_blank" rel="noopener" style="text-decoration:none;color:#fb923c;">Remodely.ai</a>
         </div>
       </div>
     `;
