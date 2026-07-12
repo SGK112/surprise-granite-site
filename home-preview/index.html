@@ -36,8 +36,12 @@
   @media(min-width:760px){ .search{order:2;flex:1;flex-basis:auto;max-width:700px;margin:0 16px;} .cart{order:3;margin-left:0;} }
   @media(max-width:400px){ .search button .lbl{display:none;} .search button{padding:0 16px;} }
 
-  /* thin value strip */
-  .vstrip{background:var(--navy-3);color:#e7eef3;font-size:12.5px;font-weight:600;} .vstrip .wrap{display:flex;gap:8px 22px;justify-content:center;flex-wrap:wrap;padding:9px 16px;} .vstrip b{color:var(--gold);} .vstrip span{white-space:nowrap;}
+  /* rotating announcement bar */
+  .promobar{background:var(--navy-3);color:#eef3f7;overflow:hidden;height:40px;display:flex;align-items:center;justify-content:center;}
+  .promobar .pb{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;letter-spacing:.01em;white-space:nowrap;padding:0 16px;transition:opacity .38s ease, transform .38s ease;}
+  .promobar .pb b{color:var(--gold);} .promobar .pb .em{font-size:15px;}
+  .promobar.fade .pb{opacity:0;transform:translateY(-7px);}
+  @media (prefers-reduced-motion:reduce){ .promobar .pb{transition:opacity .2s ease;} .promobar.fade .pb{transform:none;} }
 
   section{padding:22px 0;} #store section{content-visibility:auto;contain-intrinsic-size:auto 440px;}
   .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:12px;} .sh h2{font-size:20px;font-weight:800;} .sh a{color:var(--gold-ink);font-weight:700;font-size:13.5px;white-space:nowrap;}
@@ -101,7 +105,7 @@
   </form>
 </div></header>
 
-<div class="vstrip"><div class="wrap"><span>&#128666; <b>Free shipping</b> over $500</span><span>&#127912; Countertop samples <b>$12.99</b></span><span>&#128296; Install from <b>$55/sqft</b></span></div></div>
+<div class="promobar" id="promobar" aria-live="polite"><div class="pb" id="pbMsg"></div></div>
 
 <!-- SEARCH RESULTS (hidden until you search) -->
 <div class="wrap" id="results">
@@ -237,6 +241,23 @@
   }
   document.getElementById('searchForm').addEventListener('submit',function(e){e.preventDefault();var q=document.getElementById('q').value;history.replaceState(null,'','?q='+encodeURIComponent(q));runSearch(q);});
   (function(){var m=location.search.match(/[?&]q=([^&]+)/);if(m){var q=decodeURIComponent(m[1].replace(/\+/g,' '));document.getElementById('q').value=q;runSearch(q);}})();
+
+  // ---- Rotating announcement bar ----
+  (function(){
+    var promos=[
+      '<span class="em">&#128666;</span> <span><b>Free shipping</b> on orders over $500</span>',
+      '<span class="em">&#127912;</span> <span>Countertop samples &mdash; <b>$12.99</b>, shipped to your door</span>',
+      '<span class="em">&#128296;</span> <span>Fabrication &amp; install from <b>$55/sqft</b></span>',
+      '<span class="em">&#11088;</span> <span><b>4.6/5</b> from 400+ Arizona homeowners</span>'
+    ];
+    var bar=document.getElementById('promobar'), msg=document.getElementById('pbMsg'), i=0;
+    if(!bar||!msg) return;
+    msg.innerHTML=promos[0];
+    setInterval(function(){
+      bar.classList.add('fade');
+      setTimeout(function(){ i=(i+1)%promos.length; msg.innerHTML=promos[i]; bar.classList.remove('fade'); }, 380);
+    }, 4000);
+  })();
 </script>
 </body>
 </html>
