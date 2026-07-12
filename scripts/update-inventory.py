@@ -14,6 +14,16 @@ SCRIPT_DIR = Path(__file__).parent
 DATA_DIR = SCRIPT_DIR.parent / 'data'
 OUTPUT_DIR = SCRIPT_DIR / 'scraper-output'
 
+# --dry-run: compute + report what WOULD change, but write nothing. Safe way to
+# preview the scraper's effect on the catalog before letting it mutate files.
+DRY_RUN = '--dry-run' in sys.argv
+
+# --add-new: also APPEND products the scrape found that we don't list yet. Off by
+# default — new entries currently link to the vendor's own URL (product_url), so
+# adding them unreviewed would put off-site links in our search/catalog. The safe
+# default is fill-only: enrich images on products we already have, add nothing.
+ADD_NEW = '--add-new' in sys.argv
+
 
 def normalize_name(name: str) -> str:
     """Normalize product name for comparison"""
@@ -37,7 +47,9 @@ def load_scraped_products(vendor_filter: str = None):
     with open(latest) as f:
         data = json.load(f)
 
-    items = data.get('items', [])
+    # Scraper output is normally {"generated","count","items":[...]} but tolerate
+    # a bare list too, so a format change never silently yields zero products.
+    items = data.get('items', []) if isinstance(data, dict) else data
 
     if vendor_filter:
         items = [i for i in items if vendor_filter.lower() in i.get('vendor', '').lower()]
@@ -80,8 +92,8 @@ def update_slabs(scraped_products):
                         # Replace non-Shopify images with fresh ones
                         slabs[idx]['images'] = [new_img] + current_images[:2]
                         updated += 1
-        else:
-            # Add new product
+        elif ADD_NEW:
+            # Add new product (only with --add-new; see ADD_NEW note)
             new_slab = {
                 "id": f"scraped-{product.get('vendor', 'unknown')}-{key}",
                 "title": name,
@@ -110,8 +122,11 @@ def update_slabs(scraped_products):
             added += 1
 
     # Save updated file
-    with open(slabs_file, 'w') as f:
-        json.dump(slabs, f, indent=2)
+    if DRY_RUN:
+        print("  [dry-run] slabs.json NOT written")
+    else:
+        with open(slabs_file, 'w') as f:
+            json.dump(slabs, f, indent=2)
 
     print(f"Slabs updated: {updated} products refreshed, {added} new products added")
     return updated, added
@@ -124,15 +139,24 @@ def update_site_search(scraped_products):
     with open(search_file) as f:
         data = json.load(f)
 
-    items = data.get('items', [])
+    # site-search.json is a bare list on disk; an older format wrapped it as
+    # {"items":[...]}. Support both and write back in the SAME shape we read.
+    if isinstance(data, dict):
+        wrapper = data
+        items = data.get('items', [])
+    else:
+        wrapper = None
+        items = data
 
-    # Build lookup by normalized name + brand
+    # Match by normalized NAME (not vendor+name). Vendor labels differ between
+    # the scrape ("msi-surfaces") and the index ("MSI Surfaces"/"MSI"), which is
+    # why the old vendor-keyed lookup produced ~80 duplicates per run instead of
+    # filling blanks. Product names are distinctive enough to dedup on directly.
     existing = {}
     for i, item in enumerate(items):
-        brand = item.get('brand', item.get('vendor', '')).lower()
         title = normalize_name(item.get('title', item.get('name', '')))
-        key = f"{brand}-{title}"
-        existing[key] = i
+        if title and title not in existing:
+            existing[title] = i
 
     updated = 0
     added = 0
@@ -143,15 +167,16 @@ def update_site_search(scraped_products):
         if not name:
             continue
 
-        key = f"{vendor.lower()}-{normalize_name(name)}"
+        key = normalize_name(name)
 
         if key in existing:
-            # Update existing
+            # FILL ONLY: add an image where one is missing; never overwrite an
+            # existing image (protects curated/Shopify art from being clobbered).
             idx = existing[key]
-            if product.get('image_url'):
+            if product.get('image_url') and not items[idx].get('image'):
                 items[idx]['image'] = product['image_url']
                 updated += 1
-        else:
+        elif ADD_NEW:
             # Add new
             new_item = {
                 "title": name,
@@ -164,12 +189,16 @@ def update_site_search(scraped_products):
                 "tags": [product.get('color_family', ''), product.get('material_type', '')]
             }
             items.append(new_item)
+            existing[key] = len(items) - 1
             added += 1
 
-    data['items'] = items
+    out = items if wrapper is None else {**wrapper, 'items': items}
 
-    with open(search_file, 'w') as f:
-        json.dump(data, f, indent=2)
+    if DRY_RUN:
+        print("  [dry-run] site-search.json NOT written")
+    else:
+        with open(search_file, 'w') as f:
+            json.dump(out, f, indent=2)
 
     print(f"Site search updated: {updated} products refreshed, {added} new products added")
     return updated, added
