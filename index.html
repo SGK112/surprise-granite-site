@@ -208,7 +208,8 @@
   /* header */
   .hdr{background:var(--navy);color:#fff;position:sticky;top:0;z-index:15;} .hdr .wrap{display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap;}
   .logo{order:1;display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;white-space:nowrap;} .logo .mk{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;padding:3px;display:block;box-shadow:0 1px 3px rgba(0,0,0,.25);} .logo small{display:block;font-size:9px;letter-spacing:.15em;color:var(--gold);font-weight:700;}
-  .cart{order:2;margin-left:auto;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap;} .cart svg{width:20px;height:20px;} .cart b{color:var(--gold);}
+  .cart{order:2;margin-left:auto;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap;position:relative;} .cart svg{width:20px;height:20px;} .cart b{color:var(--gold);}
+  .cart .ci{position:relative;display:inline-flex;} .cbadge{position:absolute;top:-8px;right:-9px;background:var(--gold);color:var(--navy);font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35);} .cbadge.on{display:flex;}
   .search{order:3;flex-basis:100%;display:flex;align-items:stretch;position:relative;background:#fff;border-radius:12px;overflow:hidden;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.2);} .search:focus-within{border-color:var(--gold);box-shadow:0 3px 14px rgba(249,203,0,.28);}
   .search .si{position:absolute;left:16px;top:0;bottom:0;display:flex;align-items:center;color:#98a2ad;pointer-events:none;} .search .si svg{width:19px;height:19px;}
   .search input{flex:1;border:0;padding:15px 16px 15px 46px;font-size:16px;line-height:1.2;outline:none;color:#1b2530;min-width:40px;background:transparent;} .search input::placeholder{color:#9aa4af;}
@@ -288,7 +289,7 @@
 <body>
 <header class="hdr"><div class="wrap">
   <a class="logo" href="/"><img class="mk" src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png" alt="Surprise Granite" width="36" height="36"/><span>Surprise Granite<small>MARBLE &amp; QUARTZ</small></span></a>
-  <a class="cart" href="/cart/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12zM6 6 5 2H2" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg> Cart <b>$0</b></a>
+  <a class="cart" href="/cart/"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12zM6 6 5 2H2" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg><i class="cbadge num" id="cartCount"></i></span> Cart <b id="cartTotal">$0</b></a>
   <form class="search" id="searchForm" role="search">
     <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg></span>
     <input id="q" name="q" placeholder="Search countertops, sinks, faucets, tile, brands…" autocomplete="off" enterkeyhint="search" aria-label="Search products"/>
@@ -483,14 +484,30 @@
   function imgOf(p){return p.primary_image_url||(p.image_urls&&p.image_urls[0])||'/images/placeholder-card.svg';}
   function priceHtml(pr){pr=+pr||0;var c=pr.toFixed(2).split('.');return '$'+c[0]+'<small>.'+c[1]+'</small>';}
   function sellable(p){var pr=+p.retail_price||0;var img=p.primary_image_url||(p.image_urls&&p.image_urls[0]);return pr>=25&&pr<=4000&&img&&!ACC.test(p.name||'');}
+  var _prod={};
+  function isSlabCat(c){return /slab|countertop|material/i.test(c||'');}
   function card(p,cat){
-    var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||p.category||'slabs');
+    var key=p.slug||p.id;
+    _prod[key]=p;
+    var url='/marketplace/product/?handle='+encodeURIComponent(key)+'&category='+(cat||p.category||'slabs');
     var pr=+p.retail_price||0;
+    var slab=isSlabCat(cat||p.category);
     return '<a class="pc" href="'+url+'"><div class="im"><img loading="lazy" src="'+esc(imgOf(p))+'" alt="'+esc(p.name||'')+'" onerror="this.onerror=null;this.src=\'/images/placeholder-card.svg\';"/></div>'
       +'<div class="bd"><div class="br">'+esc(p.brand||'')+'</div><div class="nm">'+esc(p.name||'')+'</div>'
       +'<div class="pr">'+priceHtml(pr)+'</div>'+(pr>=500?'<div class="ship">Free shipping</div>':'')
-      +'<button class="add" onclick="event.preventDefault();location.href=\''+url+'\'">Add to Cart</button></div></a>';
+      +'<button class="add" data-add="'+esc(key)+'" data-cat="'+esc(cat||p.category||'')+'">'+(slab?'View item':'Add to Cart')+'</button></div></a>';
   }
+  // Real add-to-cart via the stateless /cart/?add= handoff; slabs go to their page (samples/estimate, not drop-ship)
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest&&e.target.closest('button.add[data-add]'); if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var p=_prod[b.getAttribute('data-add')]; if(!p) return;
+    var cat=b.getAttribute('data-cat');
+    var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||'slabs');
+    if(isSlabCat(cat)){location.href=url;return;}
+    var item=[{id:p.slug||p.id,name:p.name||'',price:+p.retail_price||0,image:imgOf(p),category:cat||'product',href:url}];
+    location.href='/cart/?add='+encodeURIComponent(JSON.stringify(item));
+  });
   function skels(el,n){var h='';for(var i=0;i<n;i++)h+='<div class="pc"><div class="im skel"></div><div class="bd"><div class="nm skel" style="height:34px;border-radius:4px"></div><div class="pr skel" style="height:20px;width:56px;border-radius:4px;margin-top:8px"></div></div></div>';el.innerHTML=h;}
 
   // Shared, cached fetches — smaller payloads, no duplicate requests
@@ -535,6 +552,18 @@
   }
   document.getElementById('searchForm').addEventListener('submit',function(e){e.preventDefault();var q=document.getElementById('q').value;history.replaceState(null,'','?q='+encodeURIComponent(q));runSearch(q);});
   (function(){var m=location.search.match(/[?&]q=([^&]+)/);if(m){var q=decodeURIComponent(m[1].replace(/\+/g,' '));document.getElementById('q').value=q;runSearch(q);}})();
+
+  // ---- Live header cart badge (reads sg_cart directly; no cart JS needed here) ----
+  (function(){
+    try{
+      var raw=localStorage.getItem('sg_cart'), cart=raw?JSON.parse(raw):[];
+      if(!Array.isArray(cart)) cart=[];
+      var qty=0,total=0;
+      cart.forEach(function(i){var q=Number(i&&i.quantity)||1;qty+=q;total+=(Number(i&&i.price)||0)*q;});
+      var t=document.getElementById('cartTotal'); if(t) t.textContent='$'+Math.round(total).toLocaleString('en-US');
+      var c=document.getElementById('cartCount'); if(c&&qty>0){c.textContent=qty>99?'99+':String(qty);c.classList.add('on');}
+    }catch(e){}
+  })();
 
   // ---- Rotating announcement bar ----
   (function(){
