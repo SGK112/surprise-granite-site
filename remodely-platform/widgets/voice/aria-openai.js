@@ -663,6 +663,7 @@
         const tokRes = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-realtime-token', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
         });
+        if (!tokRes.ok) throw new Error('token http ' + tokRes.status);
         const tok = await tokRes.json();
         if (!tok || !tok.success || !tok.value) throw new Error('no token');
 
@@ -742,6 +743,7 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: msg.name, arguments: msg.arguments })
         });
+        if (!r.ok) throw new Error('tool http ' + r.status);
         const data = await r.json();
         output = JSON.stringify(data.result != null ? data.result : { error: 'no result' });
       } catch (e) {
@@ -849,6 +851,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: text, conversationHistory: history })
         });
+        if (!res.ok) throw new Error('chat http ' + res.status);
         const data = await res.json();
 
         if (data.success && data.response) {

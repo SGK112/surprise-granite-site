@@ -622,7 +622,8 @@
       const res = await fetch(apiBase + '/api/promotions/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, subtotal })
+        body: JSON.stringify({ code, subtotal }),
+        signal: AbortSignal.timeout(10000)
       });
       const data = await res.json();
       if (data.valid) {

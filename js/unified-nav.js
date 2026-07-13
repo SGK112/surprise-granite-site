@@ -43,18 +43,24 @@
 
   // Load analytics (GA4)
   function loadAnalytics() {
-    if (!window._sgAnalyticsInitialized && !document.querySelector('script[src*="analytics.js"]')) {
-      // Load config first if not present
-      if (!window.SG_CONFIG && !document.querySelector('script[src*="config.js"]')) {
-        const configScript = document.createElement('script');
-        configScript.src = '/js/config.js';
-        document.head.appendChild(configScript);
-      }
-      // Load analytics
-      const analyticsScript = document.createElement('script');
-      analyticsScript.src = '/js/analytics.js?v=20260206';
-      analyticsScript.async = true;
-      document.head.appendChild(analyticsScript);
+    if (window._sgAnalyticsInitialized || document.querySelector('script[src*="analytics.js"]')) return;
+    function injectAnalytics() {
+      const a = document.createElement('script');
+      a.src = '/js/analytics.js?v=20260206';
+      a.async = true;
+      document.head.appendChild(a);
+    }
+    // analytics.js reads window.SG_CONFIG — guarantee config lands FIRST. Dynamic
+    // scripts are async by default (race), so chain analytics off config's load.
+    if (!window.SG_CONFIG && !document.querySelector('script[src*="config.js"]')) {
+      const c = document.createElement('script');
+      c.src = '/js/config.js';
+      c.async = false;
+      c.onload = injectAnalytics;
+      c.onerror = injectAnalytics; // never block analytics if config 404s
+      document.head.appendChild(c);
+    } else {
+      injectAnalytics();
     }
   }
 
@@ -1312,7 +1318,7 @@
   // loaded it directly, e.g. the homepage, to avoid a double mount).
   if (!document.querySelector('script[src*="remodely-hub"]') && !document.getElementById('remodely-hub')) {
     var _aria = document.createElement('script');
-    _aria.src = '/js/remodely-hub.js?v=20260713b';
+    _aria.src = '/js/remodely-hub.js?v=20260713c';
     _aria.defer = true;
     document.head.appendChild(_aria);
   }

@@ -22,7 +22,7 @@
 
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
-  const WIDGET_VERSION = '20260713b'; // v10 — realtime voice call (OpenAI Realtime/WebRTC)
+  const WIDGET_VERSION = '20260713c'; // v10 — realtime voice call (OpenAI Realtime/WebRTC)
 
   // Aria configuration (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
