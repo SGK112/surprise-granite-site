@@ -2020,6 +2020,80 @@
     </div>
   </section>
 
+  <!-- Related / suggested items — cross-item discovery lives HERE, not in the gallery -->
+  <section class="related-section" id="relatedSection" style="display:none">
+    <div class="related-wrap">
+      <h2 class="related-title" id="relatedTitle">You may also like</h2>
+      <div class="related-grid" id="relatedGrid"></div>
+    </div>
+  </section>
+  <style>
+    .related-section{padding:8px 20px 40px;background:transparent;}
+    .related-wrap{max-width:1200px;margin:0 auto;}
+    .related-title{font-size:22px;font-weight:800;margin:0 0 16px;color:var(--text,#16222e);}
+    .related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
+    .related-card{display:flex;flex-direction:column;text-decoration:none;color:inherit;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden;background:#fff;transition:box-shadow .18s ease,transform .18s ease;}
+    .related-card:hover{box-shadow:0 10px 30px rgba(0,0,0,.12);transform:translateY(-3px);}
+    .related-card .rc-im{aspect-ratio:1/1;background:#f4f5f6;overflow:hidden;}
+    .related-card .rc-im img{width:100%;height:100%;object-fit:cover;display:block;}
+    .related-card .rc-b{padding:10px 12px 14px;}
+    .related-card .rc-brand{font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--text-light,#7a8894);}
+    .related-card .rc-name{font-size:14px;font-weight:700;margin:2px 0 6px;line-height:1.3;color:var(--text,#16222e);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .related-card .rc-price{font-size:14px;font-weight:800;color:#0a7d3f;}
+    @media(prefers-color-scheme:dark){
+      .related-title,.related-card .rc-name{color:#e8edf1;}
+      .related-card{background:#1a2530;border-color:rgba(255,255,255,.1);}
+      .related-card .rc-im{background:#222f3c;}
+      .related-card .rc-price{color:#3ddc84;}
+    }
+    @media(max-width:600px){.related-grid{grid-template-columns:repeat(2,1fr);gap:12px;}.related-title{font-size:18px;}}
+  </style>
+
+  <script>
+  (function(){
+    var API='https://surprise-granite-email-api.onrender.com/api/catalog';
+    function norm(c){c=(c||'').toLowerCase();var m={slabs:'slab',remnants:'remnant',sinks:'sink',faucets:'faucet',accessories:'accessory',tiles:'tile',floorings:'flooring'};return m[c]||c.replace(/s$/,'')||c;}
+    function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function img(p){return p.primary_image_url||(Array.isArray(p.image_urls)&&p.image_urls[0])||'';}
+    function priceLabel(p){
+      var cat=(p.category||'').toLowerCase();
+      if(cat==='remnant'||cat==='slab') return '';           // stone is quote-based
+      if(p.retail_price==null) return '';
+      var money='$'+Number(p.retail_price).toLocaleString('en-US');
+      if(cat==='tile'||cat==='flooring') return money+'/sq ft';
+      return money;
+    }
+    async function run(){
+      try{
+        var params=new URLSearchParams(location.search);
+        var handle=params.get('handle')||'';
+        var pageCat=params.get('category')||'slabs';
+        var cat=norm(pageCat);
+        var pd=window.PRODUCT_DATA||{};
+        var mat=((pd.material||pd.subcategory||'')+'').toLowerCase();
+        var res=await fetch(API+'?category='+encodeURIComponent(cat)+'&limit=24');
+        if(!res.ok) return;
+        var data=await res.json();
+        var items=(data.products||[]).filter(function(p){return p.slug&&p.slug!==handle&&img(p);});
+        if(mat) items.sort(function(a,b){return (((b.subcategory||'').toLowerCase()===mat)?1:0)-(((a.subcategory||'').toLowerCase()===mat)?1:0);});
+        items=items.slice(0,8);
+        if(!items.length) return;
+        document.getElementById('relatedGrid').innerHTML=items.map(function(p){
+          var url='/marketplace/product/?handle='+encodeURIComponent(p.slug)+'&category='+encodeURIComponent(pageCat);
+          var pl=priceLabel(p);
+          return '<a class="related-card" href="'+url+'"><div class="rc-im"><img loading="lazy" src="'+esc(img(p))+'" alt="'+esc(p.name)+'" onerror="this.closest(\'.related-card\').style.display=\'none\'"/></div>'
+            +'<div class="rc-b"><div class="rc-brand">'+esc(p.brand)+'</div><div class="rc-name">'+esc(p.name)+'</div>'
+            +(pl?'<div class="rc-price">'+esc(pl)+'</div>':'')+'</div></a>';
+        }).join('');
+        if(cat==='slab'||cat==='remnant') document.getElementById('relatedTitle').textContent='More '+(mat||'stone')+' you may like';
+        document.getElementById('relatedSection').style.display='block';
+      }catch(e){}
+    }
+    var tries=0;
+    (function wait(){ if(window.PRODUCT_DATA||tries>20){run();} else {tries++;setTimeout(wait,250);} })();
+  })();
+  </script>
+
   <!-- Quote Section -->
   <section class="quote-section">
     <div class="quote-container">
