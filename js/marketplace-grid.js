@@ -10,6 +10,7 @@
   var grid, moreBtn, countEl, side, backdrop, toast;
 
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+  function sqftOf(size){ if(!size) return 0; var m=String(size).match(/(\d+(?:\.\d+)?)\D+?(\d+(?:\.\d+)?)/); return m ? (parseFloat(m[1])*parseFloat(m[2]))/144 : 0; }
   function titlecase(s){ return (s||'').replace(/\b\w/g, function(c){return c.toUpperCase();}); }
   function brandOf(p){ return C.brandOf ? C.brandOf(p) : titlecase((p.brand||p.vendor_id||'').replace(/-/g,' ')); }
 
@@ -28,7 +29,7 @@
       if (!sellable(p)) return;
       var x = { slug:p.slug||p.id, name:p.name||'Product',
         img:p.primary_image_url||(p.image_urls&&p.image_urls[0]), price:+p.retail_price||0, brand:brandOf(p),
-        _cat: ROUTE[cat] || C.cardCategory || cat || 'product' };
+        sqft: sqftOf(p.size), _cat: ROUTE[cat] || C.cardCategory || cat || 'product' };
       (C.facets||[]).forEach(function(f){ x[f.key] = f.derive(p) || ''; });
       ALL.push(x); bySlug[x.slug] = x;
     });
@@ -66,10 +67,18 @@
 
   function card(x){
     var url = '/marketplace/product/?handle='+encodeURIComponent(x.slug)+'&category='+(x._cat||C.cardCategory||'product');
+    var priceHtml;
+    if (C.installed){
+      var total = Math.round(x.price + (C.installed.pickup||0) + (x.sqft||0)*(C.installed.fabRate||0));
+      priceHtml = '<div class="pr">from $'+total.toLocaleString('en-US')+'</div>'
+        + '<div class="ship" style="color:var(--ink-3);font-weight:600">'+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft · ':'')+'material + fab + pickup · install quoted</div>';
+    } else {
+      priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
+    }
     return '<a class="pc" href="'+url+'" data-slug="'+esc(x.slug)+'"><div class="im"><img loading="lazy" src="'+esc(x.img)+'" alt="'+esc(x.name)+'" onerror="this.onerror=null;this.src=\''+PH+'\';this.style.mixBlendMode=\'normal\'"/></div>'
       + '<div class="br">'+esc(x.brand||'')+'</div><div class="nm">'+esc(x.name)+'</div>'
-      + '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>'
-      + (C.noAdd ? (C.addNote?'<div class="ship" style="color:var(--ink-3)">'+esc(C.addNote)+'</div>':'') : ((x.price>=500?'<div class="ship">Free shipping</div>':'') + '<button class="add" type="button">Add to cart</button>'))
+      + priceHtml
+      + (C.noAdd ? (C.addNote?'<div class="ship" style="color:var(--ink-3)">'+esc(C.addNote)+'</div>':'') : '<button class="add" type="button">Add to cart</button>')
       + '</a>';
   }
   function apply(){
