@@ -22,7 +22,7 @@
   }
   // Product pages key purchasable detection on the PLURAL route category
   // (sinks/faucets/kitchen-accessories), not the singular catalog category.
-  var ROUTE = { sink:'sinks', faucet:'faucets', accessory:'kitchen-accessories' };
+  var ROUTE = { sink:'sinks', faucet:'faucets', accessory:'kitchen-accessories', remnant:'remnants' };
   function build(rows, cat){
     rows.forEach(function(p){
       if (!sellable(p)) return;
@@ -69,8 +69,8 @@
     return '<a class="pc" href="'+url+'" data-slug="'+esc(x.slug)+'"><div class="im"><img loading="lazy" src="'+esc(x.img)+'" alt="'+esc(x.name)+'" onerror="this.onerror=null;this.src=\''+PH+'\';this.style.mixBlendMode=\'normal\'"/></div>'
       + '<div class="br">'+esc(x.brand||'')+'</div><div class="nm">'+esc(x.name)+'</div>'
       + '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>'
-      + (x.price>=500?'<div class="ship">Free shipping</div>':'')
-      + '<button class="add" type="button">Add to cart</button></a>';
+      + (C.noAdd ? (C.addNote?'<div class="ship" style="color:var(--ink-3)">'+esc(C.addNote)+'</div>':'') : ((x.price>=500?'<div class="ship">Free shipping</div>':'') + '<button class="add" type="button">Add to cart</button>'))
+      + '</a>';
   }
   function apply(){
     view = ALL.filter(passes);
