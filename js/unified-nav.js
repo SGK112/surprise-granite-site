@@ -101,6 +101,7 @@
       items: [
         { label: 'All Countertops', href: '/materials/all-countertops' },
         { label: '🖼️ Design Gallery — see it installed', href: '/tools/interior-design-gallery/' },
+        { label: '🏔️ Stone Yards — see slabs in person', href: '/stone-yards/' },
         { label: 'Compare Materials (Quartz vs Granite vs…)', href: '/compare/' },
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Quartzite', href: '/materials/countertops/quartzite-countertops/' },
@@ -110,7 +111,7 @@
         { label: 'Dekton', href: '/materials/countertops/dekton-countertops/' },
         { label: 'Tile & Backsplash', href: '/materials/all-tile' },
         { label: 'LVP Flooring', href: '/materials/flooring' },
-        { label: 'Remnants', href: '/marketplace/remnants/' },
+        { label: '💎 Remnants — one-of-a-kind deals', href: '/marketplace/remnants/' },
         { label: 'Discontinued Colors', href: '/discontinued/' }
       ]
     },
