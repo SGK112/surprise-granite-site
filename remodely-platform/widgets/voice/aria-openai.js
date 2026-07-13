@@ -25,6 +25,7 @@
       this.currentAudio = null;
       this.audioCtx = null;      // Web Audio context, unlocked on the mic-tap gesture
       this.srcNode = null;       // currently-playing Web Audio source
+      this.rt = null;            // live Realtime call: { pc, dc, stream, audioEl }
       this.recognition = null;
       this.widget = null;
       this.silenceTimer = null;
@@ -622,29 +623,151 @@
 
     sendFromInput() {
       const input = this.widget.querySelector('.aria-input');
-      if (input.value.trim()) {
-        this.send(input.value.trim());
-        input.value = '';
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      // If a live voice call is open, speak the typed text INTO the conversation
+      // (one brain) instead of firing the separate REST endpoint.
+      if (this.rt && this.rt.dc && this.rt.dc.readyState === 'open') {
+        this.addMessage('user', text);
+        this.rtSend({ type: 'conversation.item.create', item: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } });
+        this.rtSend({ type: 'response.create' });
+        return;
       }
+      this.send(text);
     }
 
     toggleVoiceMode() {
-      this.voiceModeActive ? this.stopVoiceMode() : this.startVoiceMode();
+      (this.voiceModeActive || this.rt) ? this.stopVoiceMode() : this.startVoiceMode();
     }
 
-    startVoiceMode() {
-      if (!this.recognition) return;
-      // CRITICAL: unlock audio playback HERE, inside the mic-tap gesture. The TTS
-      // reply arrives seconds later (after STT + the /aria-chat round-trip), by
-      // which point the gesture has expired and a bare Audio.play() is blocked by
-      // the browser's autoplay policy — that's why voice mode was text-only. A
-      // Web Audio context resumed during the gesture can play sound afterwards.
-      this.primeAudio();
+    // Realtime-FIRST: a true hands-free voice call (OpenAI Realtime over WebRTC) —
+    // no browser speech-recognition beep, no dictating into the text box. Falls
+    // back to the legacy speech-recognition path only if realtime can't start.
+    async startVoiceMode() {
+      this.primeAudio(); // unlock audio during the tap (also helps the fallback path)
+      this.setStatus('Connecting', 'thinking');
+      this.widget?.querySelector('.aria-mic-btn')?.classList.add('active');
+      if (window.RTCPeerConnection && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const ok = await this.startRealtime();
+        if (ok) return;
+      }
+      this.startLegacyVoice();
+    }
+
+    async startRealtime() {
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const tokRes = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-realtime-token', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+        });
+        const tok = await tokRes.json();
+        if (!tok || !tok.success || !tok.value) throw new Error('no token');
+
+        const pc = new RTCPeerConnection();
+
+        // Aria's voice comes back on a remote track — play it.
+        const audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        audioEl.setAttribute('playsinline', '');
+        pc.ontrack = (e) => { audioEl.srcObject = e.streams[0]; };
+
+        // Send the mic.
+        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+        // Event channel (tool calls, transcripts).
+        const dc = pc.createDataChannel('oai-events');
+        dc.onmessage = (e) => this.handleRealtimeEvent(e.data);
+        dc.onopen = () => {
+          this.voiceModeActive = true;
+          this.setStatus('Listening', 'listening');
+          // Warm greeting so it feels like she picked up.
+          this.rtSend({ type: 'response.create', response: { instructions: 'Greet the customer warmly in ONE short sentence and ask what they are shopping for or working on.' } });
+        };
+        pc.onconnectionstatechange = () => {
+          if (['failed', 'disconnected', 'closed'].includes(pc.connectionState) && this.rt) this.stopRealtime();
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const sdpRes = await fetch('https://api.openai.com/v1/realtime/calls?model=' + encodeURIComponent(tok.model || 'gpt-realtime'), {
+          method: 'POST', headers: { Authorization: 'Bearer ' + tok.value, 'Content-Type': 'application/sdp' }, body: offer.sdp
+        });
+        if (!sdpRes.ok) throw new Error('sdp ' + sdpRes.status);
+        await pc.setRemoteDescription({ type: 'answer', sdp: await sdpRes.text() });
+
+        this.rt = { pc, dc, stream, audioEl };
+        return true;
+      } catch (e) {
+        console.warn('[Aria] realtime start failed — falling back to basic voice:', e && e.message);
+        try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+        this.rt = null;
+        return false;
+      }
+    }
+
+    rtSend(obj) {
+      try { if (this.rt && this.rt.dc && this.rt.dc.readyState === 'open') this.rt.dc.send(JSON.stringify(obj)); } catch (e) {}
+    }
+
+    async handleRealtimeEvent(raw) {
+      let msg; try { msg = JSON.parse(raw); } catch (e) { return; }
+      switch (msg.type) {
+        case 'input_audio_buffer.speech_started':
+          this.setStatus('Listening', 'listening'); break;
+        case 'response.created':
+          this.setStatus('Speaking', ''); break;
+        case 'conversation.item.input_audio_transcription.completed':
+          if (msg.transcript && msg.transcript.trim()) this.addMessage('user', msg.transcript.trim());
+          break;
+        case 'response.output_audio_transcript.done':
+        case 'response.audio_transcript.done':
+          if (msg.transcript && msg.transcript.trim()) this.addMessage('assistant', msg.transcript.trim());
+          if (this.rt) this.setStatus('Listening', 'listening');
+          break;
+        case 'response.function_call_arguments.done':
+          await this.handleRealtimeToolCall(msg); break;
+        case 'error':
+          console.warn('[Aria realtime]', msg.error); break;
+      }
+    }
+
+    async handleRealtimeToolCall(msg) {
+      let output;
+      try {
+        const r = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-shop-tool', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: msg.name, arguments: msg.arguments })
+        });
+        const data = await r.json();
+        output = JSON.stringify(data.result != null ? data.result : { error: 'no result' });
+      } catch (e) {
+        output = JSON.stringify({ error: 'lookup failed' });
+      }
+      this.rtSend({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id: msg.call_id, output } });
+      this.rtSend({ type: 'response.create' });
+    }
+
+    stopRealtime() {
+      const rt = this.rt; this.rt = null;
+      if (rt) {
+        try { rt.dc && rt.dc.close(); } catch (e) {}
+        try { rt.pc && rt.pc.close(); } catch (e) {}
+        try { rt.stream && rt.stream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        try { if (rt.audioEl) { rt.audioEl.srcObject = null; rt.audioEl.remove(); } } catch (e) {}
+      }
+    }
+
+    // Fallback voice: browser speech-recognition (beeps, fills the input box).
+    startLegacyVoice() {
+      if (!this.recognition) { this.setStatus('Online', ''); this.widget?.querySelector('.aria-mic-btn')?.classList.remove('active'); return; }
       try {
         this.recognition.start();
         this.voiceModeActive = true;
         this.isListening = true;
-        this.widget.querySelector('.aria-mic-btn').classList.add('active');
         this.setStatus('Listening', 'listening');
       } catch (e) {}
     }
@@ -662,6 +785,7 @@
       clearTimeout(this.silenceTimer);
       this.voiceModeActive = false;
       this.isListening = false;
+      this.stopRealtime();
       if (this.recognition) try { this.recognition.stop(); } catch (e) {}
       this.widget?.querySelector('.aria-mic-btn')?.classList.remove('active');
       this.setStatus('Online', '');

@@ -1312,7 +1312,7 @@
   // loaded it directly, e.g. the homepage, to avoid a double mount).
   if (!document.querySelector('script[src*="remodely-hub"]') && !document.getElementById('remodely-hub')) {
     var _aria = document.createElement('script');
-    _aria.src = '/js/remodely-hub.js?v=20260713a';
+    _aria.src = '/js/remodely-hub.js?v=20260713b';
     _aria.defer = true;
     document.head.appendChild(_aria);
   }
