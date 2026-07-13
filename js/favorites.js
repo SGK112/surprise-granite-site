@@ -30,12 +30,25 @@
   function detectProductType() {
     const path = window.location.pathname.toLowerCase();
 
+    // Marketplace product pages carry the real category in ?category=
+    if (path.includes('/marketplace/product')) {
+      const c = (new URLSearchParams(window.location.search).get('category') || '').toLowerCase();
+      if (c.includes('sink')) return 'sink';
+      if (c.includes('faucet')) return 'faucet';
+      if (c.includes('tile')) return 'tile';
+      if (c.includes('floor')) return 'flooring';
+      if (c.includes('remnant') || c.includes('slab')) return 'countertop';
+      if (c) return c.replace(/s$/, '');
+    }
+
     if (path.includes('flooring')) return 'flooring';
     if (path.includes('countertop') || path.includes('granite') || path.includes('marble') || path.includes('quartz') || path.includes('porcelain-countertop')) return 'countertop';
+    if (path.includes('remnant')) return 'countertop';
     if (path.includes('tile')) return 'tile';
     if (path.includes('cabinet')) return 'cabinet';
+    if (path.includes('faucet')) return 'faucet';
     if (path.includes('sink')) return 'sink';
-    if (path.includes('shop')) return 'shop';
+    if (path.includes('shop') || path.includes('marketplace')) return 'shop';
 
     return 'general';
   }
@@ -75,6 +88,7 @@
 
     // Check if this is a product detail page
     const isDetailPage = (
+      (path.includes('/marketplace/product') && window.location.search.includes('handle=')) ||
       (path.includes('/countertops/') && path.split('/').filter(Boolean).length >= 2) ||
       (path.includes('/tile/') && path.split('/').filter(Boolean).length >= 2) ||
       (path.includes('/flooring/') && path.split('/').filter(Boolean).length >= 2)
@@ -417,6 +431,9 @@
       // Shop products
       '.shop-product-card',
       '.product-card',
+      // Marketplace grid cards (js/marketplace-grid.js) + cross-sell strip
+      '.pc[data-slug]',
+      '.related-card',
       // Generic product containers
       '[data-product-card]',
       '.product-thumb_item'
@@ -442,8 +459,9 @@
 
   // Extract product data from a card element
   function extractProductData(card) {
-    // Try to find the link
-    const link = card.querySelector('a[href*="/"]') || card.querySelector('a');
+    // The card may BE the anchor (marketplace grid `.pc` / cross-sell `.related-card`)
+    // or contain one.
+    const link = (card.tagName === 'A' ? card : (card.querySelector('a[href*="/"]') || card.querySelector('a')));
     const url = link ? link.href : window.location.href;
 
     // Try to find images
@@ -459,6 +477,8 @@
     let title = '';
     const titleEl = card.querySelector('[fs-cmsfilter-field="Keyword"]') ||
                     card.querySelector('.product-title') ||
+                    card.querySelector('.nm') ||        // marketplace grid card name
+                    card.querySelector('.rc-name') ||   // cross-sell card name
                     card.querySelector('h3') ||
                     card.querySelector('h4') ||
                     card.querySelector('.text-weight-bold');
