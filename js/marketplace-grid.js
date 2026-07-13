@@ -20,12 +20,15 @@
     if (C.accRegex && C.accRegex.test(p.name||'')) return false;
     return true;
   }
+  // Product pages key purchasable detection on the PLURAL route category
+  // (sinks/faucets/kitchen-accessories), not the singular catalog category.
+  var ROUTE = { sink:'sinks', faucet:'faucets', accessory:'kitchen-accessories' };
   function build(rows, cat){
     rows.forEach(function(p){
       if (!sellable(p)) return;
       var x = { slug:p.slug||p.id, name:p.name||'Product',
         img:p.primary_image_url||(p.image_urls&&p.image_urls[0]), price:+p.retail_price||0, brand:brandOf(p),
-        _cat: cat || C.cardCategory || 'product' };
+        _cat: ROUTE[cat] || C.cardCategory || cat || 'product' };
       (C.facets||[]).forEach(function(f){ x[f.key] = f.derive(p) || ''; });
       ALL.push(x); bySlug[x.slug] = x;
     });
