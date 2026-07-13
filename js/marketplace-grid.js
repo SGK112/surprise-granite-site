@@ -69,9 +69,14 @@
     var url = '/marketplace/product/?handle='+encodeURIComponent(x.slug)+'&category='+(x._cat||C.cardCategory||'product');
     var priceHtml;
     if (C.installed){
-      var total = Math.round(x.price + (C.installed.pickup||0) + (x.sqft||0)*(C.installed.fabRate||0));
-      priceHtml = '<div class="pr">from $'+total.toLocaleString('en-US')+'</div>'
-        + '<div class="ship" style="color:var(--ink-3);font-weight:600">'+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft · ':'')+'installed · material + fab + pickup</div>';
+      // Quote a per-SQUARE-FOOT installed price, never the raw slab cost or a
+      // lump-sum total: total = slab + pickup + sqft·fab, shown as total/sqft.
+      var total = x.price + (C.installed.pickup||0) + (x.sqft||0)*(C.installed.fabRate||0);
+      var perSqft = x.sqft ? Math.round(total / x.sqft) : 0;
+      priceHtml = perSqft
+        ? '<div class="pr">from $'+perSqft.toLocaleString('en-US')+'<span style="font-size:.62em;font-weight:700">/sq ft</span></div>'
+          + '<div class="ship" style="color:var(--ink-3);font-weight:600">installed · '+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft piece · ':'')+'free in-home measure</div>'
+        : '<div class="pr">Free measure</div><div class="ship" style="color:var(--ink-3);font-weight:600">installed price quoted in-home</div>';
     } else {
       priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
     }
