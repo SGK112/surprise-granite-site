@@ -71,7 +71,7 @@
     if (C.installed){
       var total = Math.round(x.price + (C.installed.pickup||0) + (x.sqft||0)*(C.installed.fabRate||0));
       priceHtml = '<div class="pr">from $'+total.toLocaleString('en-US')+'</div>'
-        + '<div class="ship" style="color:var(--ink-3);font-weight:600">'+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft · ':'')+'material + fab + pickup · install quoted</div>';
+        + '<div class="ship" style="color:var(--ink-3);font-weight:600">'+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft · ':'')+'installed · material + fab + pickup</div>';
     } else {
       priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
     }
