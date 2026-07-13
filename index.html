@@ -269,12 +269,13 @@
   .insp{position:relative;overflow:hidden;border-radius:16px;min-height:220px;display:flex;align-items:center;padding:28px;color:#fff;background:#16222e center/cover;}
   .insp::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,14,20,.88),rgba(9,14,20,.30));}
   .insp>div{position:relative;z-index:1;max-width:36ch;} .insp .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);} .insp h2{font-size:24px;font-weight:800;margin:8px 0 0;color:#fff;} .insp p{color:#e0e7ec;margin:8px 0 0;font-size:14px;} .insp .b{margin-top:16px;display:inline-flex;background:var(--gold);color:var(--navy);font-weight:800;padding:12px 20px;border-radius:9px;font-size:14px;}
-  .band.has-vid{position:relative;overflow:hidden;min-height:300px;display:flex;flex-direction:column;justify-content:center;}
-  .band.has-vid .band-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-  .band.has-vid::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(12,22,32,.9),rgba(12,22,32,.42) 62%,rgba(12,22,32,.2));z-index:0;}
-  .band.has-vid>.k,.band.has-vid>h1,.band.has-vid>p,.band.has-vid>.b{position:relative;z-index:1;}
-  .band-mute{position:absolute;bottom:12px;right:12px;z-index:2;background:rgba(0,0,0,.42);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:15px;cursor:pointer;line-height:1;}
-  .band-mute:hover{background:rgba(0,0,0,.66);}
+  .band.has-vid{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
+  .band.has-vid .band-copy{flex:1 1 300px;min-width:260px;}
+  .band-pip{flex:0 0 44%;max-width:500px;position:relative;border-radius:13px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.4);aspect-ratio:16/9;background:#0c1620;}
+  .band-pip .band-vid{width:100%;height:100%;object-fit:cover;display:block;}
+  .band-mute{position:absolute;bottom:10px;right:10px;z-index:2;background:rgba(0,0,0,.5);color:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:15px;cursor:pointer;line-height:1;}
+  .band-mute:hover{background:rgba(0,0,0,.72);}
+  @media(max-width:680px){.band-pip{flex-basis:100%;max-width:none;}}
   .promo2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;} @media(max-width:520px){.promo2{grid-template-columns:1fr;}}
   .scard{border-radius:13px;padding:18px;color:#fff;} .scard.samp{background:linear-gradient(120deg,#6f5a3c,#3f3326);} .scard.free{background:linear-gradient(120deg,#2f5647,#1c3329);} .scard .t{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;} .scard b{font-size:16px;font-weight:800;margin-top:4px;display:block;} .scard span{font-size:12.5px;color:rgba(255,255,255,.82);}
 
@@ -334,7 +335,7 @@
 <div id="store">
   <div class="wrap">
     <section>
-      <div class="band has-vid"><video class="band-vid" autoplay muted loop playsinline preload="metadata" poster="/videos/sg-commercial-poster.jpg"><source src="/videos/sg-commercial.mp4?v=20260712a" type="video/mp4"/></video><button class="band-mute" id="bandMute" type="button" aria-label="Unmute">🔇</button><div class="k">Shop &amp; install — one place</div><h1>Everything for the kitchen &amp; bath. Shipped or installed.</h1><p>Thousands of products in stock, plus countertop fabrication from $55/sqft.</p><a class="b" href="/get-a-free-estimate/">Get a free estimate &rarr;</a></div>
+      <div class="band has-vid"><div class="band-copy"><div class="k">Shop &amp; install — one place</div><h1>Everything for the kitchen &amp; bath. Shipped or installed.</h1><p>Thousands of products in stock, plus countertop fabrication from $55/sqft.</p><a class="b" href="/get-a-free-estimate/">Get a free estimate &rarr;</a></div><div class="band-pip"><video class="band-vid" autoplay muted loop playsinline preload="metadata" poster="/videos/sg-commercial-poster.jpg?v=20260712b"><source src="/videos/sg-commercial.mp4?v=20260712b" type="video/mp4"/></video><button class="band-mute" id="bandMute" type="button" aria-label="Unmute">🔇</button></div></div>
     </section>
     <section>
       <div class="sh"><h2>Shop by department</h2><a href="/marketplace/">See all &rarr;</a></div>
