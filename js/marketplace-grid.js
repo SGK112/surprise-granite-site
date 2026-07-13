@@ -146,12 +146,25 @@
     var so=document.getElementById('mpSort'); if(so) so.addEventListener('change', function(e){ F.sort=e.target.value; apply(); });
 
     (async function(){
+      var TO = { signal: AbortSignal.timeout(12000) };
+      function getPage(cat, off){
+        return fetch(API+'/api/catalog?category='+encodeURIComponent(cat)+'&limit=250&offset='+off, TO)
+          .then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; });
+      }
       var cats = Array.isArray(C.category) ? C.category : [C.category];
       for (var ci=0; ci<cats.length; ci++){
-        var off=0, total=Infinity;
-        while(off<total && off<3500){
-          try{ var r=await fetch(API+'/api/catalog?category='+encodeURIComponent(cats[ci])+'&limit=250&offset='+off); var j=await r.json(); var b=j.products||[]; build(b); total=j.total||off+b.length; off+=250; if(b.length<250) break; }
-          catch(e){ break; }
+        var cat = cats[ci];
+        // First page tells us the total; then pull the remaining pages in PARALLEL
+        // (was up to 14 serial round-trips → now 1 + a single Promise.all). Cold API
+        // fails fast per-page (12s) instead of hanging the whole grid.
+        var first = await getPage(cat, 0);
+        build(first.products || []);
+        var total = Math.min(first.total || (first.products ? first.products.length : 0), 3500);
+        var offs = [];
+        for (var off=250; off<total; off+=250) offs.push(off);
+        if (offs.length){
+          var pages = await Promise.all(offs.map(function(o){ return getPage(cat, o); }));
+          pages.forEach(function(j){ build(j.products || []); });
         }
       }
       if (C.roomDefault && ALL.length){ ALL = ALL.filter(function(x){ return x.room===C.roomDefault; }); }

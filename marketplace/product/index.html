@@ -30,6 +30,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 
+  <!-- Warm up the hosts this page hits at runtime: the catalog API (Render, can cold-start) + image CDNs -->
+  <link rel="preconnect" href="https://surprise-granite-email-api.onrender.com"/>
+  <link rel="dns-prefetch" href="https://surprise-granite-email-api.onrender.com"/>
+  <link rel="preconnect" href="https://cdn.shopify.com" crossorigin/>
+  <link rel="dns-prefetch" href="https://arizonatile.widen.net"/>
+
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -1430,7 +1436,7 @@
       <!-- Gallery -->
       <div class="gallery">
         <div class="main-image-container" onclick="openLightbox(0)">
-          <img id="mainImage" src="" alt="" class="main-image"/>
+          <img id="mainImage" alt="" class="main-image" loading="eager" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22800%22%3E%3Crect width=%22800%22 height=%22800%22 fill=%22%23eef1f3%22/%3E%3C/svg%3E'"/>
           <span class="image-badge" id="material-badge">Loading</span>
           <span class="origin-badge" id="origin-badge" style="display:none;"></span>
           <span class="zoom-hint">
@@ -2084,7 +2090,7 @@
     }
     async function fetchCat(cat,n,handle){
       try{
-        var r=await fetch(API+'?category='+encodeURIComponent(cat)+'&limit=24');
+        var r=await fetch(API+'?category='+encodeURIComponent(cat)+'&limit=24',{signal:AbortSignal.timeout(8000)});
         if(!r.ok) return [];
         var d=await r.json();
         var arr=(d.products||[]).filter(function(p){return p.slug&&p.slug!==handle&&img(p);});
@@ -3069,7 +3075,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       || (Array.isArray(p && p.variants) && p.variants.some(v => Number(v && v.price) > 0));
     // Try the specified category first
     try {
-      const res = await fetch(`/data/${category}.json`);
+      const res = await fetch(`/data/${category}.json`, { signal: AbortSignal.timeout(8000) });
       const data = await res.json();
       const products = Array.isArray(data) ? data : (data.products || data.countertops || []);
       let product = products.find(p => p.handle === handle || p.slug === handle);
@@ -3122,7 +3128,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     // Fallback to countertops.json for slabs
     if (category === 'slabs') {
       try {
-        const ctRes = await fetch('/data/countertops.json');
+        const ctRes = await fetch('/data/countertops.json', { signal: AbortSignal.timeout(8000) });
         const ctData = await ctRes.json();
         const countertops = ctData.countertops || ctData;
         let product = countertops.find(p => p.slug === handle);
@@ -3161,7 +3167,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     // but the catalog service has every product by handle. Map its flat shape to
     // the shape this page renders (notably a variants[0] for price + add-to-cart).
     try {
-      const apiRes = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(handle));
+      const apiRes = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(handle), { signal: AbortSignal.timeout(12000) });
       if (apiRes.ok) {
         const apiData = await apiRes.json();
         const p = apiData.product || (Array.isArray(apiData.products) ? apiData.products[0] : null);
@@ -3223,7 +3229,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     // same way: the color, its image, and the banner.
     if (!staleProduct && category === 'slabs') {
       try {
-        const dRes = await fetch('/data/discontinued.json');
+        const dRes = await fetch('/data/discontinued.json', { signal: AbortSignal.timeout(8000) });
         if (dRes.ok) {
           const list = await dRes.json();
           const clean = handle.replace(/-sample$/, '');
@@ -3484,10 +3490,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 
       // Update thumbnails
       const thumbsContainer = document.getElementById('thumbnails');
+      const escA = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       if (product.images && product.images.length > 0) {
         thumbsContainer.innerHTML = product.images.map((img, i) => `
           <div class="thumb ${i === 0 ? 'active' : ''}" onclick="changeImage(${i}, this)">
-            <img src="${img}" alt="${title} view ${i + 1}"/>
+            <img src="${escA(img)}" alt="${escA(title)} view ${i + 1}"/>
           </div>
         `).join('');
       }
@@ -3512,7 +3519,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         if (mi) { mi.src = imgs[0]; mi.alt = title; }
         if (thumbsContainer) thumbsContainer.innerHTML = imgs.map((img, i) => `
           <div class="thumb ${i === 0 ? 'active' : ''}" onclick="changeImage(${i}, this)">
-            <img src="${img}" alt="${title} view ${i + 1}"/>
+            <img src="${escA(img)}" alt="${escA(title)} view ${i + 1}"/>
           </div>`).join('');
       };
 
@@ -3652,7 +3659,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           let cleanMiss = true;
           for (const slug of tries) {
             try {
-              const r = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(slug));
+              const r = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(slug), { signal: AbortSignal.timeout(12000) });
               if (!r.ok) continue;
               const d = await r.json();
               const p = d && (d.product || (Array.isArray(d.products) ? d.products[0] : null));
@@ -3691,8 +3698,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       const descText = document.getElementById('desc-text');
       if (descHeading) descHeading.textContent = `About ${title}`;
       if (descText) {
-        descText.innerHTML = description +
-          `<p style="margin-top:12px">This premium ${material.toLowerCase()} is available at ${getYardLink(product)}. Schedule a <a href="/book/">free in-home estimate</a> to see this beautiful stone in person.</p>`;
+        // Vendor descriptions are untrusted — render as TEXT, then append the trusted static tail.
+        descText.textContent = description || '';
+        var _mat = String(material || '').toLowerCase().replace(/[<>&"']/g, '');
+        descText.insertAdjacentHTML('beforeend',
+          `<p style="margin-top:12px">This premium ${_mat} is available at ${getYardLink(product)}. Schedule a <a href="/book/">free in-home estimate</a> to see this beautiful stone in person.</p>`);
       }
 
       // Update Twitter meta

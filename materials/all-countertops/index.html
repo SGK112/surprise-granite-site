@@ -247,7 +247,7 @@
   // load: skeletons, fetch all slab pages, lifestyle-first sort, render
   grid.innerHTML=Array.from({length:15}).map(function(){return '<div class="skel"></div>';}).join('');
   var offs=[];for(var o=0;o<2600;o+=250)offs.push(o);
-  Promise.all(offs.map(function(o){return fetch(API+'/api/catalog?category=slab&limit=250&offset='+o).then(function(r){return r.json();}).then(function(j){return j.products||[];}).catch(function(){return[];});}))
+  Promise.all(offs.map(function(o){return fetch(API+'/api/catalog?category=slab&limit=250&offset='+o,{signal:AbortSignal.timeout(12000)}).then(function(r){return r.ok?r.json():{};}).then(function(j){return j.products||[];}).catch(function(){return[];});}))
    .then(function(pages){
      pages.forEach(build);
      // lifestyle-first: colors shown in a real room lead the grid
