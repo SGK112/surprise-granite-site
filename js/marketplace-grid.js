@@ -113,8 +113,8 @@
     backdrop = document.createElement('div'); backdrop.className='mp-backdrop'; document.body.appendChild(backdrop);
     var x = document.createElement('button'); x.className='mp-side-x'; x.type='button'; x.innerHTML='Filters <b>&times;</b>'; side.insertBefore(x, side.firstChild);
     var apply = document.createElement('button'); apply.className='mp-side-apply'; apply.id='mpApply'; apply.type='button'; apply.textContent='Show results'; document.body.appendChild(apply);
-    function open(){ side.classList.add('open'); backdrop.classList.add('on'); apply.style.display='block'; document.body.style.overflow='hidden'; }
-    function close(){ side.classList.remove('open'); backdrop.classList.remove('on'); apply.style.display='none'; document.body.style.overflow=''; }
+    function open(){ side.classList.add('open'); backdrop.classList.add('on'); document.body.classList.add('mp-drawer-open'); document.body.style.overflow='hidden'; }
+    function close(){ side.classList.remove('open'); backdrop.classList.remove('on'); document.body.classList.remove('mp-drawer-open'); document.body.style.overflow=''; }
     toggle.addEventListener('click', open); x.addEventListener('click', close); backdrop.addEventListener('click', close); apply.addEventListener('click', close);
   }
 
