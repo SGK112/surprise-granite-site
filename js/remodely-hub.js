@@ -41,7 +41,7 @@
     greeting: "Hi, I'm Aria — your personal shopper at Surprise Granite. I can help you find products, order countertop samples, track an order, or book a free estimate. What are you looking for?",
 
     // Phone number for transfers
-    phone: '(602) 833-3189',
+    phone: '(602) 833-7194',
 
     // Business context
     businessContext: {
@@ -53,7 +53,7 @@
 
     // FAQ responses
     faqs: [
-      { question: 'hours', answer: "We're available Monday through Saturday, 8am to 6pm for appointments. Give us a call at (602) 833-3189 to schedule!" },
+      { question: 'hours', answer: "We're available Monday through Saturday, 8am to 6pm for appointments. Give us a call at (602) 833-7194 to schedule!" },
       { question: 'location', answer: "We serve the entire Phoenix metro area including Surprise, Scottsdale, Peoria, Goodyear, and more. We come to you for free onsite consultations! To view slabs in person, visit one of our stone supplier partners - check out our vendors list at surprisegranite.com/stone-yards/" },
       { question: 'estimate', answer: "Absolutely! Our estimates are always free. I can help you schedule an in-home consultation where we'll measure your space and discuss materials. What day works best for you?" },
       { question: 'cost', answer: "Countertop pricing depends on the material. Quartz runs $45-85 per square foot, granite $40-75, marble $60-150, and quartzite $70-120. That includes professional installation. Want me to give you a rough estimate for your project?" },

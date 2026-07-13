@@ -14,7 +14,7 @@
         assistantName: config.assistantName || 'Aria',
         businessName: config.businessName || 'Surprise Granite',
         greeting: config.greeting || "Hi! I'm Aria from Surprise Granite. How can I help you today?",
-        phone: config.phone || '(602) 833-3189',
+        phone: config.phone || '(602) 833-7194',
         ...config
       };
       this.messages = [];
