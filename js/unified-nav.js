@@ -1306,4 +1306,13 @@
   _ads.src = '/js/native-ads.js?v=' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + 'b';
   _ads.defer = true;
   document.head.appendChild(_ads);
+
+  // Aria personal shopper hub — persist on every page (skip if the page already
+  // loaded it directly, e.g. the homepage, to avoid a double mount).
+  if (!document.querySelector('script[src*="remodely-hub"]') && !document.getElementById('remodely-hub')) {
+    var _aria = document.createElement('script');
+    _aria.src = '/js/remodely-hub.js?v=20260711f';
+    _aria.defer = true;
+    document.head.appendChild(_aria);
+  }
 })();
