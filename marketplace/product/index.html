@@ -2020,19 +2020,27 @@
     </div>
   </section>
 
-  <!-- Related / suggested items — cross-item discovery lives HERE, not in the gallery -->
+  <!-- Cross-sell — pair complementary categories (sinks↔counters↔tile↔flooring) so
+       every deep-landing page gives a taste of the whole store. NOT gallery bleed. -->
   <section class="related-section" id="relatedSection" style="display:none">
     <div class="related-wrap">
-      <h2 class="related-title" id="relatedTitle">You may also like</h2>
+      <h2 class="related-title" id="relatedTitle">Complete your project</h2>
+      <p class="related-sub" id="relatedSub">Pieces that pair beautifully with this — mix &amp; match your whole space.</p>
       <div class="related-grid" id="relatedGrid"></div>
     </div>
   </section>
   <style>
     .related-section{padding:8px 20px 40px;background:transparent;}
     .related-wrap{max-width:1200px;margin:0 auto;}
-    .related-title{font-size:22px;font-weight:800;margin:0 0 16px;color:var(--text,#16222e);}
-    .related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
-    .related-card{display:flex;flex-direction:column;text-decoration:none;color:inherit;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden;background:#fff;transition:box-shadow .18s ease,transform .18s ease;}
+    .related-title{font-size:22px;font-weight:800;margin:0 0 4px;color:var(--text,#16222e);}
+    .related-sub{font-size:14px;color:var(--text-light,#7a8894);margin:0 0 18px;}
+    /* ONE horizontal line — scrolls sideways, never wraps into an orphan row. */
+    .related-grid{display:flex;flex-wrap:nowrap;gap:16px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 12px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+    .related-grid::-webkit-scrollbar{height:8px;}
+    .related-grid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18);border-radius:8px;}
+    .related-card .rc-im{position:relative;}
+    .related-card .rc-cat{position:absolute;left:8px;top:8px;background:rgba(9,14,20,.72);color:#fff;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:20px;backdrop-filter:blur(4px);}
+    .related-card{flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;text-decoration:none;color:inherit;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden;background:#fff;transition:box-shadow .18s ease,transform .18s ease;}
     .related-card:hover{box-shadow:0 10px 30px rgba(0,0,0,.12);transform:translateY(-3px);}
     .related-card .rc-im{aspect-ratio:1/1;background:#f4f5f6;overflow:hidden;}
     .related-card .rc-im img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -2046,51 +2054,73 @@
       .related-card .rc-im{background:#222f3c;}
       .related-card .rc-price{color:#3ddc84;}
     }
-    @media(max-width:600px){.related-grid{grid-template-columns:repeat(2,1fr);gap:12px;}.related-title{font-size:18px;}}
+    @media(max-width:600px){.related-grid{gap:12px;}.related-card{flex:0 0 150px;}.related-title{font-size:18px;}}
   </style>
 
   <script>
   (function(){
     var API='https://surprise-granite-email-api.onrender.com/api/catalog';
-    function norm(c){c=(c||'').toLowerCase();var m={slabs:'slab',remnants:'remnant',sinks:'sink',faucets:'faucet',accessories:'accessory',tiles:'tile',floorings:'flooring'};return m[c]||c.replace(/s$/,'')||c;}
+    // What pairs with what — the whole point is to CROSS-SELL: a countertop page
+    // shows sinks/faucets/tile, a sink page shows counters/faucets, etc. Most
+    // visitors land deep from Google, so every page previews the rest of the store.
+    var CROSS={
+      slab:['sink','faucet','tile','flooring'], remnant:['sink','faucet','tile','slab'],
+      countertops:['sink','faucet','tile','flooring'], sink:['slab','faucet','tile','accessory'],
+      faucet:['sink','slab','tile','flooring'], tile:['slab','flooring','sink','faucet'],
+      flooring:['tile','slab','sink'], bathroom:['faucet','tile','sink','slab'],
+      accessory:['sink','faucet','slab']
+    };
+    var ROUTE={slab:'slabs',remnant:'remnants',sink:'sinks',faucet:'faucets',accessory:'kitchen-accessories',tile:'tile',flooring:'flooring',bathroom:'bathroom'};
+    var LABEL={slab:'Countertop',remnant:'Remnant',sink:'Sink',faucet:'Faucet',accessory:'Accessory',tile:'Tile',flooring:'Flooring',bathroom:'Bath'};
+    function norm(c){c=(c||'').toLowerCase();var m={slabs:'slab',remnants:'remnant',sinks:'sink',faucets:'faucet',accessories:'accessory',tiles:'tile',floorings:'flooring','kitchen-accessories':'accessory'};return m[c]||c.replace(/s$/,'')||c;}
     function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
     function img(p){return p.primary_image_url||(Array.isArray(p.image_urls)&&p.image_urls[0])||'';}
-    function priceLabel(p){
-      var cat=(p.category||'').toLowerCase();
+    function priceLabel(cat,p){
       if(cat==='remnant'||cat==='slab') return '';           // stone is quote-based
       if(p.retail_price==null) return '';
       var money='$'+Number(p.retail_price).toLocaleString('en-US');
       if(cat==='tile'||cat==='flooring') return money+'/sq ft';
       return money;
     }
+    async function fetchCat(cat,n,handle){
+      try{
+        var r=await fetch(API+'?category='+encodeURIComponent(cat)+'&limit=24');
+        if(!r.ok) return [];
+        var d=await r.json();
+        var arr=(d.products||[]).filter(function(p){return p.slug&&p.slug!==handle&&img(p);});
+        // light shuffle by created order variety: take a spread, not just the first N
+        return arr.slice(0,n).map(function(p){p.__cat=cat;return p;});
+      }catch(e){ return []; }
+    }
     async function run(){
       try{
         var params=new URLSearchParams(location.search);
         var handle=params.get('handle')||'';
-        var pageCat=params.get('category')||'slabs';
-        var cat=norm(pageCat);
-        var pd=window.PRODUCT_DATA||{};
-        var mat=((pd.material||pd.subcategory||'')+'').toLowerCase();
-        var res=await fetch(API+'?category='+encodeURIComponent(cat)+'&limit=24');
-        if(!res.ok) return;
-        var data=await res.json();
-        var items=(data.products||[]).filter(function(p){return p.slug&&p.slug!==handle&&img(p);});
-        if(mat) items.sort(function(a,b){return (((b.subcategory||'').toLowerCase()===mat)?1:0)-(((a.subcategory||'').toLowerCase()===mat)?1:0);});
-        items=items.slice(0,8);
-        if(!items.length) return;
-        document.getElementById('relatedGrid').innerHTML=items.map(function(p){
-          var url='/marketplace/product/?handle='+encodeURIComponent(p.slug)+'&category='+encodeURIComponent(pageCat);
-          var pl=priceLabel(p);
-          return '<a class="related-card" href="'+url+'"><div class="rc-im"><img loading="lazy" src="'+esc(img(p))+'" alt="'+esc(p.name)+'" onerror="this.closest(\'.related-card\').style.display=\'none\'"/></div>'
+        var cat=norm(params.get('category')||'slabs');
+        var comps=CROSS[cat]||['sink','faucet','tile','slab'];
+        var lists=await Promise.all(comps.map(function(c){return fetchCat(c,4,handle);}));
+        // round-robin interleave so the row is a genuine MIX of categories
+        var mixed=[], idx=0, added=true, seen={};
+        while(mixed.length<10 && added){ added=false;
+          for(var i=0;i<lists.length;i++){ var p=lists[i][idx]; if(p&&!seen[p.slug]){seen[p.slug]=1;mixed.push(p);added=true;} }
+          idx++;
+        }
+        mixed=mixed.slice(0,10);
+        if(!mixed.length) return;
+        document.getElementById('relatedGrid').innerHTML=mixed.map(function(p){
+          var c=p.__cat;
+          var url='/marketplace/product/?handle='+encodeURIComponent(p.slug)+'&category='+encodeURIComponent(ROUTE[c]||c);
+          var pl=priceLabel(c,p);
+          return '<a class="related-card" href="'+url+'"><div class="rc-im"><span class="rc-cat">'+esc(LABEL[c]||c)+'</span>'
+            +'<img loading="lazy" src="'+esc(img(p))+'" alt="'+esc(p.name)+'" onerror="this.closest(\'.related-card\').style.display=\'none\'"/></div>'
             +'<div class="rc-b"><div class="rc-brand">'+esc(p.brand)+'</div><div class="rc-name">'+esc(p.name)+'</div>'
             +(pl?'<div class="rc-price">'+esc(pl)+'</div>':'')+'</div></a>';
         }).join('');
-        if(cat==='slab'||cat==='remnant') document.getElementById('relatedTitle').textContent='More '+(mat||'stone')+' you may like';
         document.getElementById('relatedSection').style.display='block';
       }catch(e){}
     }
     var tries=0;
-    (function wait(){ if(window.PRODUCT_DATA||tries>20){run();} else {tries++;setTimeout(wait,250);} })();
+    (function wait(){ if(window.PRODUCT_DATA||tries>16){run();} else {tries++;setTimeout(wait,250);} })();
   })();
   </script>
 
