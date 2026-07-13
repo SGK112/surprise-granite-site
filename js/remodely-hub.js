@@ -22,7 +22,7 @@
 
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
-  const WIDGET_VERSION = '20260121a'; // v8 premium chat
+  const WIDGET_VERSION = '20260713a'; // v9 — voice-mode TTS playback (Web Audio unlock)
 
   // Aria configuration (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {

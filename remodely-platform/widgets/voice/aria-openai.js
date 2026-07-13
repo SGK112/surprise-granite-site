@@ -23,6 +23,8 @@
       this.isListening = false;
       this.voiceModeActive = false;
       this.currentAudio = null;
+      this.audioCtx = null;      // Web Audio context, unlocked on the mic-tap gesture
+      this.srcNode = null;       // currently-playing Web Audio source
       this.recognition = null;
       this.widget = null;
       this.silenceTimer = null;
@@ -632,12 +634,27 @@
 
     startVoiceMode() {
       if (!this.recognition) return;
+      // CRITICAL: unlock audio playback HERE, inside the mic-tap gesture. The TTS
+      // reply arrives seconds later (after STT + the /aria-chat round-trip), by
+      // which point the gesture has expired and a bare Audio.play() is blocked by
+      // the browser's autoplay policy — that's why voice mode was text-only. A
+      // Web Audio context resumed during the gesture can play sound afterwards.
+      this.primeAudio();
       try {
         this.recognition.start();
         this.voiceModeActive = true;
         this.isListening = true;
         this.widget.querySelector('.aria-mic-btn').classList.add('active');
         this.setStatus('Listening', 'listening');
+      } catch (e) {}
+    }
+
+    primeAudio() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!this.audioCtx) this.audioCtx = new AC();
+        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
       } catch (e) {}
     }
 
@@ -736,22 +753,60 @@
     playAudio(base64) {
       return new Promise((resolve) => {
         this.stopAudio();
-        try {
-          this.currentAudio = new Audio('data:audio/mp3;base64,' + base64);
-          this.isPlaying = true;
-          this.currentAudio.onended = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
-          this.currentAudio.onerror = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
-          this.currentAudio.play().catch(() => { this.isPlaying = false; this.currentAudio = null; resolve(); });
-        } catch (e) { resolve(); }
+        // Preferred path: decode + play through the Web Audio context that was
+        // resumed on the mic gesture. This is what actually makes Aria speak in
+        // voice mode (a plain Audio element gets autoplay-blocked post-gesture).
+        if (this.audioCtx) {
+          try {
+            const bin = atob(base64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const done = () => { this.isPlaying = false; this.srcNode = null; resolve(); };
+            this.audioCtx.decodeAudioData(bytes.buffer,
+              (buf) => {
+                try {
+                  if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+                  const src = this.audioCtx.createBufferSource();
+                  src.buffer = buf;
+                  src.connect(this.audioCtx.destination);
+                  src.onended = done;
+                  this.srcNode = src;
+                  this.isPlaying = true;
+                  src.start(0);
+                } catch (e) { this.playAudioFallback(base64, resolve); }
+              },
+              () => this.playAudioFallback(base64, resolve) // decode failed → element
+            );
+            return;
+          } catch (e) { /* fall through to element */ }
+        }
+        this.playAudioFallback(base64, resolve);
       });
     }
 
+    // Last resort if Web Audio is unavailable/blocked. On a browser that allows
+    // it (e.g. after the gesture) this still works; otherwise it fails silently.
+    playAudioFallback(base64, resolve) {
+      try {
+        this.currentAudio = new Audio('data:audio/mp3;base64,' + base64);
+        this.currentAudio.setAttribute('playsinline', '');
+        this.isPlaying = true;
+        this.currentAudio.onended = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
+        this.currentAudio.onerror = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
+        this.currentAudio.play().catch(() => { this.isPlaying = false; this.currentAudio = null; resolve(); });
+      } catch (e) { this.isPlaying = false; resolve(); }
+    }
+
     stopAudio() {
+      if (this.srcNode) {
+        try { this.srcNode.onended = null; this.srcNode.stop(0); } catch (e) {}
+        this.srcNode = null;
+      }
       if (this.currentAudio) {
         this.currentAudio.pause();
         this.currentAudio = null;
-        this.isPlaying = false;
       }
+      this.isPlaying = false;
     }
   }
 
