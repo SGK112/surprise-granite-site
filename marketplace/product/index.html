@@ -3392,6 +3392,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       window.__sgApplyImages = function (imgs) {
         imgs = (imgs || []).filter(Boolean);
         if (imgs.length <= (product.images ? product.images.length : 0)) return;
+        // Lifestyle-first: lead the gallery with a room/install scene if we have
+        // one; the slab close-up then follows in the thumbnails.
+        var _ROOM = /kitchen|bath|room|render|_res_|_com_|install|vanity|shower|vignette|fireplace|laundry|scene|lifestyle|outdoor|patio/i;
+        var _SLAB = /slab|swatch|closeup|detail|bookmatch|_cu_|zoom|_full_/i;
+        var _si = imgs.findIndex(function (u) { return _ROOM.test(u) && !_SLAB.test(u.replace(/.*\//, '')); });
+        if (_si > 0) { imgs.unshift(imgs.splice(_si, 1)[0]); }
         product.images = imgs;
         window.PRODUCT_DATA = product;
         window.productImages = imgs;
