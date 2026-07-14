@@ -231,34 +231,51 @@ function __sgInitSwipeCards() {
     const filterEl = document.getElementById('categoryFilter');
     const statsEl = document.getElementById('swipeStats');
 
-    const dataSources = [
-      { path: '/data/countertops.json', key: 'countertops', type: 'countertop', label: 'Countertop' },
-      { path: '/data/tile.json', key: 'tile', type: 'tile', label: 'Tile' },
-      { path: '/data/flooring.json', key: 'flooring', type: 'flooring', label: 'Flooring' }
+    // Pull EVERY heart-able category live from the in-house catalog (/api/catalog)
+    // — no more static Shopify JSON. Each product becomes a swipeable, favoritable
+    // card, so anything you can heart is in the deck.
+    const API = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+    const CATS = [
+      { cat: 'slab',      pill: 'countertop', label: 'Countertop', route: 'slabs',               shop: false },
+      { cat: 'remnant',   pill: 'remnant',    label: 'Remnant',    route: 'remnants',            shop: false },
+      { cat: 'sink',      pill: 'sink',       label: 'Sink',       route: 'sinks',               shop: true  },
+      { cat: 'faucet',    pill: 'faucet',     label: 'Faucet',     route: 'faucets',             shop: true  },
+      { cat: 'tile',      pill: 'tile',       label: 'Tile',       route: 'tile',                shop: true  },
+      { cat: 'flooring',  pill: 'flooring',   label: 'Flooring',   route: 'flooring',            shop: true  },
+      { cat: 'accessory', pill: 'accessory',  label: 'Accessory',  route: 'kitchen-accessories', shop: true  }
     ];
 
     allProducts = [];
 
-    // Load all JSON data sources
-    for (const source of dataSources) {
+    const lists = await Promise.all(CATS.map(async (c) => {
+      const out = [];
       try {
-        const response = await fetch(source.path);
-        if (response.ok) {
-          const data = await response.json();
-          const items = data[source.key] || [];
-          items.forEach(item => {
-            if (!item.primaryImage && !item.image) return;
-            allProducts.push({
-              ...item,
-              category: source.type,
-              categoryLabel: source.label
-            });
+        const r = await fetch(`${API}/api/catalog?category=${c.cat}&limit=250`, { signal: AbortSignal.timeout(12000) });
+        if (!r.ok) return out;
+        const d = await r.json();
+        (d.products || []).forEach((p) => {
+          const image = p.primary_image_url || (Array.isArray(p.image_urls) && p.image_urls[0]);
+          if (!image) return;
+          const priceNum = p.retail_price != null ? Number(p.retail_price) : 0;
+          out.push({
+            title: p.name,
+            image: image,
+            href: '/marketplace/product/?handle=' + encodeURIComponent(p.slug) + '&category=' + c.route,
+            brand: p.brand || '',
+            material: p.subcategory || c.label,
+            available: p.in_stock !== false,
+            category: c.pill,
+            categoryLabel: c.label,
+            isShop: c.shop,
+            priceNum: priceNum,
+            productId: p.slug,
+            price: (c.shop && priceNum) ? ('$' + priceNum.toLocaleString('en-US') + ((c.cat === 'tile' || c.cat === 'flooring') ? '/sq ft' : '')) : null
           });
-        }
-      } catch (e) {
-        console.warn(`Failed to load ${source.path}:`, e);
-      }
-    }
+        });
+      } catch (e) { /* skip a slow/failed category, keep the rest */ }
+      return out;
+    }));
+    lists.forEach((items) => { allProducts.push.apply(allProducts, items); });
 
     // Shuffle products for variety
     allProducts = shuffleArray(allProducts);
@@ -325,7 +342,10 @@ function __sgInitSwipeCards() {
         available: item.available !== false,
         category: item.category,
         categoryLabel: item.categoryLabel,
-        price: item.price || null
+        price: item.price || null,
+        isShop: item.isShop || false,
+        priceNum: item.priceNum || 0,
+        productId: item.productId || ''
       });
     });
 
