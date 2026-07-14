@@ -2404,6 +2404,34 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             const shippingAddress = session.shipping_details?.address || session.customer_details?.address || {};
             const billingAddress = session.customer_details?.address || {};
 
+            // TAX RECONCILIATION: tax was computed pre-checkout from the form's
+            // shipping_state (metadata.tax_state). Stripe collected the REAL
+            // shipping address; if the customer actually shipped to a different
+            // (higher-tax) state, we under-collected. Flag it so staff can
+            // reconcile before fulfilling — payment already completed.
+            try {
+              const taxedState = (session.metadata?.tax_state || '').toUpperCase().trim();
+              const realState = (shippingAddress.state || '').toUpperCase().trim();
+              if (taxedState && realState && taxedState !== realState) {
+                const RATES = { AZ:0.081,AL:0.092,AR:0.094,CA:0.0875,CO:0.075,CT:0.0635,DC:0.06,FL:0.07,GA:0.074,HI:0.044,ID:0.06,IL:0.0882,IN:0.07,IA:0.06,KS:0.087,KY:0.06,LA:0.0955,ME:0.055,MD:0.06,MA:0.0625,MI:0.06,MN:0.0773,MS:0.07,MO:0.082,NE:0.069,NV:0.082,NJ:0.066,NM:0.073,NY:0.08,NC:0.07,ND:0.069,OH:0.0723,OK:0.089,PA:0.06,RI:0.07,SC:0.074,SD:0.064,TN:0.0955,TX:0.0825,UT:0.071,VT:0.06,VA:0.057,WA:0.092,WV:0.06,WI:0.055,WY:0.054 };
+                const taxCents = Number(session.metadata?.tax_cents || 0);
+                const subtotalCents = Math.round((session.amount_subtotal || 0)) - taxCents;
+                const owedCents = Math.round(subtotalCents * (RATES[realState] || 0));
+                if (owedCents > taxCents + 50) { // >50¢ under-collected
+                  logger.warn('Tax under-collection: shipped state differs from taxed state', {
+                    sessionId: session.id, taxedState, realState,
+                    taxCollected: (taxCents/100).toFixed(2), taxOwed: (owedCents/100).toFixed(2)
+                  });
+                  try {
+                    emailService.sendAdminNotification(
+                      '⚠️ Tax under-collection — reconcile before fulfilling',
+                      `<p>Order <strong>${session.id}</strong> was taxed as <strong>${taxedState}</strong> ($${(taxCents/100).toFixed(2)}) but ships to <strong>${realState}</strong>, which owes ~$${(owedCents/100).toFixed(2)}.</p><p>The customer changed the shipping state at Stripe checkout. Reconcile the sales tax before fulfilling.</p>`
+                    ).catch(function(err){ logger.warn('tax-reconciliation alert email failed', { error: err.message }); });
+                  } catch (e) { /* log already captured it */ }
+                }
+              }
+            } catch (e) { logger.warn('tax reconciliation check failed', { error: e.message }); }
+
             // Check for duplicate (idempotency on stripe_session_id)
             const { data: existingOrder } = await supabase
               .from('orders')

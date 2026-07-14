@@ -187,6 +187,16 @@ router.post('/checkout', async (req, res) => {
       return res.status(400).json({ error: 'No items provided' });
     }
 
+    // Tax is derived from the shipping state, and calculateTax() defaults an
+    // unknown state to 0% — so a missing/garbage state posted straight to this
+    // API would silently pay ZERO tax. A real checkout always sends a state (the
+    // form field is required), so reject anything that isn't a valid US state.
+    const US_STATES = new Set(['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC']);
+    const taxState = String(shipping_state || '').toUpperCase().trim();
+    if (!US_STATES.has(taxState)) {
+      return res.status(400).json({ error: 'A valid US shipping state is required for checkout.' });
+    }
+
     // Import price validator
     const { validateCartPrices, buildStripeLineItems } = require('../validators/price-validator');
 
@@ -350,6 +360,10 @@ router.post('/checkout', async (req, res) => {
         order_source: 'website_cart',
         validated_total: validation.calculatedTotals.total,
         price_adjustments: validation.warnings.length > 0 ? 'yes' : 'no',
+        // Tax basis for webhook reconciliation: compare against the ACTUAL
+        // Stripe-collected shipping state to catch a state-spoofed under-charge.
+        tax_state: taxState,
+        tax_cents: String(validation.calculatedTotals.tax || 0),
         ...(promoResult?.valid ? {
           promo_id: promoResult.promotion.id,
           promo_code: promoResult.promotion.code,
