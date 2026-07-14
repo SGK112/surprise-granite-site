@@ -101,7 +101,7 @@
         .toString().toLowerCase().trim() || 'default';
       vendorSubtotals[key] = (vendorSubtotals[key] || 0) + (item.price * item.quantity);
     });
-    const shipping = Object.values(vendorSubtotals).reduce((sum, sub) => sum + tierFor(sub), 0);
+    let shipping = Object.values(vendorSubtotals).reduce((sum, sub) => sum + tierFor(sub), 0);
 
     // Check for promo with error handling
     let discount = 0;
@@ -109,10 +109,13 @@
       const promoData = localStorage.getItem('sg_promo');
       if (promoData) {
         const promo = JSON.parse(promoData);
-        if (promo && promo.type === 'percent' && typeof promo.discount === 'number') {
-          discount = subtotal * promo.discount;
-        } else if (promo && promo.type === 'shipping') {
+        // cart.js caches { code, type, display_discount } where display_discount is
+        // a DOLLAR amount already computed server-side. Free-shipping zeroes shipping;
+        // everything else subtracts the dollar discount. Server re-validates at checkout.
+        if (promo && promo.type === 'shipping') {
           shipping = 0;
+        } else if (promo && typeof promo.display_discount === 'number') {
+          discount = promo.display_discount;
         }
       }
     } catch (e) {
@@ -193,10 +196,12 @@
         const promo = JSON.parse(promoData);
         const promoApplied = document.getElementById('promoApplied');
         const promoText = document.getElementById('promoText');
-        if (promoApplied && promoText && promo.code && promo.message) {
+        if (promoApplied && promoText && promo.code) {
           promoApplied.style.display = 'flex';
-          // Using textContent is safe (no XSS)
-          promoText.textContent = `${promo.code}: ${promo.message}`;
+          // cart.js stores code + display_discount (dollar), not a message.
+          var savings = (typeof promo.display_discount === 'number' && promo.display_discount > 0)
+            ? ' −' + formatPrice(promo.display_discount) : ' applied';
+          promoText.textContent = promo.code + ':' + savings; // textContent = XSS-safe
         }
       } catch (e) {
         // Invalid promo data, ignore

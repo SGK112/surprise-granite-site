@@ -1415,10 +1415,11 @@
         page_url: window.location.href,
         raw_data: formData
       };
+      let _leadDelivered = false;
       try {
         const _ctrl = new AbortController();
         const _tid = setTimeout(() => _ctrl.abort(), 15000);
-        await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        const _resp = await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
           signal: _ctrl.signal,
           headers: {
@@ -1429,10 +1430,32 @@
           body: JSON.stringify(sgLeadPayload)
         });
         clearTimeout(_tid);
+        // fetch() only rejects on network failure — a 4xx/5xx (RLS/schema/auth)
+        // resolves. MUST check .ok or a rejected insert looks like success.
+        if (!_resp.ok) throw new Error('leads insert HTTP ' + _resp.status);
+        _leadDelivered = true;
         if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
         if (window.SG_notifyNewLead) SG_notifyNewLead({ name: formData.name, email: formData.email, phone: formData.phone, form_name: 'estimate-form', project_type: formData.projectType, message: formData.message });
       } catch (error) {
         console.log('Supabase error:', error);
+        // FALLBACK so the lead is never lost: post to the CRM leads API. Without
+        // this a Supabase reject leaves the lead only in localStorage (never seen).
+        try {
+          const _fb = await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(15000),
+            body: JSON.stringify({
+              homeowner_name: formData.name || 'Estimate Lead',
+              homeowner_email: formData.email,
+              homeowner_phone: formData.phone || '',
+              project_type: formData.projectType || 'estimate',
+              project_zip: (String(formData.address || '').match(/\b\d{5}\b/) || ['00000'])[0],
+              project_details: (formData.message || '') + ' | ' + window.location.href,
+              source: 'estimate-form-fallback'
+            })
+          });
+          _leadDelivered = _fb.ok;
+        } catch (e2) { console.log('Lead fallback failed:', e2 && e2.message); }
       }
 
       // Store locally as backup

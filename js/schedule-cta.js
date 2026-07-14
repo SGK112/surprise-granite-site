@@ -451,24 +451,36 @@
           source: data.source
         };
 
-        // Try the calendar booking API first (creates calendar event)
-        const response = await fetch(`${API_BASE}/api/calendar/book`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+        // Back up the lead locally FIRST so even a total API outage can't lose it.
+        try {
+          const _bk = JSON.parse(localStorage.getItem('sg_leads') || '[]');
+          _bk.push(leadData);
+          localStorage.setItem('sg_leads', JSON.stringify(_bk));
+        } catch (e) { /* localStorage may be unavailable */ }
 
-        // Save as lead for CRM tracking (omit appointment fields to avoid duplicate calendar event)
+        // The API cold-starts on Render, so time out instead of hanging the button.
+        // Run the two calls INDEPENDENTLY — a timeout on one must not abort the other.
         const { appointment_date, appointment_time, ...leadOnly } = leadData;
         leadOnly.project_details = (leadOnly.project_details || '') + ` [Appt: ${data.date} ${this.formatTime(data.time)}]`;
-        const leadsResponse = await fetch(`${API_BASE}/api/leads`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadOnly)
-        });
 
-        // If both failed, throw
-        if (!response.ok && (!leadsResponse || !leadsResponse.ok)) {
+        let bookedOk = false, leadOk = false;
+        try {
+          const response = await fetch(`${API_BASE}/api/calendar/book`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data), signal: AbortSignal.timeout(20000)
+          });
+          bookedOk = response.ok;
+        } catch (e) { /* fall through to the leads call */ }
+        try {
+          const leadsResponse = await fetch(`${API_BASE}/api/leads`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(leadOnly), signal: AbortSignal.timeout(20000)
+          });
+          leadOk = leadsResponse.ok;
+        } catch (e) { /* both failing throws below; lead is in localStorage */ }
+
+        // If both failed, throw (the lead survives in localStorage backup above).
+        if (!bookedOk && !leadOk) {
           throw new Error('Booking failed');
         }
 
