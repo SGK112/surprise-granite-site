@@ -2769,6 +2769,19 @@
                     source: '/tools/countertop-calculator/'
                 })
             }).catch(() => {}); // Silent - don't block the email flow
+
+            // Turn this calculator lead into a managed USER — provision a
+            // passwordless Supabase account + magic link, same as the estimate
+            // forms. Reuses ScheduleCTA.provisionUser; best-effort, never blocks.
+            try {
+                if (window.ScheduleCTA && typeof window.ScheduleCTA.provisionUser === 'function') {
+                    window.ScheduleCTA.provisionUser({
+                        email: email,
+                        source: '/tools/countertop-calculator/',
+                        lead_project: 'kitchen_countertops'
+                    });
+                }
+            } catch (e) { /* provisioning is best-effort */ }
         }
 
         // Close modal on overlay click
