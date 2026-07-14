@@ -28,7 +28,7 @@
     rows.forEach(function(p){
       if (!sellable(p)) return;
       var x = { slug:p.slug||p.id, name:p.name||'Product',
-        img:p.primary_image_url||(p.image_urls&&p.image_urls[0]), price:+p.retail_price||0, brand:brandOf(p),
+        img:p.primary_image_url||(p.image_urls&&p.image_urls[0]), price:+p.retail_price||0, hasPrice:!!(+p.retail_price), brand:brandOf(p),
         sqft: sqftOf(p.size), _cat: ROUTE[cat] || C.cardCategory || cat || 'product' };
       (C.facets||[]).forEach(function(f){ x[f.key] = f.derive(p) || ''; });
       ALL.push(x); bySlug[x.slug] = x;
@@ -77,8 +77,11 @@
         ? '<div class="pr">from $'+perSqft.toLocaleString('en-US')+'<span style="font-size:.62em;font-weight:700">/sq ft</span></div>'
           + '<div class="ship" style="color:var(--ink-3);font-weight:600">installed · '+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft piece · ':'')+'free in-home measure</div>'
         : '<div class="pr">Free measure</div><div class="ship" style="color:var(--ink-3);font-weight:600">installed price quoted in-home</div>';
-    } else {
+    } else if (x.hasPrice) {
       priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
+    } else {
+      // No price on file (e.g. tile lines) — never render "$0"; invite the click.
+      priceHtml = '<div class="pr" style="font-size:15px;color:var(--ink-3,#8b96a3)">See price &rarr;</div>';
     }
     return '<a class="pc" href="'+url+'" data-slug="'+esc(x.slug)+'"><div class="im"><img loading="lazy" src="'+esc(x.img)+'" alt="'+esc(x.name)+'" onerror="this.onerror=null;this.src=\''+PH+'\';this.style.mixBlendMode=\'normal\'"/></div>'
       + '<div class="br">'+esc(x.brand||'')+'</div><div class="nm">'+esc(x.name)+'</div>'
