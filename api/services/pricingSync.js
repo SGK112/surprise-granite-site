@@ -30,6 +30,29 @@ const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const round2 = (n) => Math.round(n * 100) / 100;
 const markupFor = (category) => (/tile/i.test(category || '') ? MARKUP_TILE : MARKUP_STD);
 
+// A catalog vendor_id may be SOURCED under a different CRM vendor label — e.g.
+// Caesarstone/Silestone slabs come off the Aracruz sheet, PentalQuartz off ASG.
+// Mirrors VENDOR_MAP in scripts/audit-site-vs-vendors.js. Default: match own id.
+const VENDOR_ALIAS = {
+  cosentino: ['Cosentino', 'Aracruz Granite'],
+  silestone: ['Cosentino', 'Aracruz Granite'],
+  caesarstone: ['Aracruz Granite', 'Cactus Stone & Tile'],
+  'classic-surfaces': ['Classic Surfaces', 'Architectural Surfaces (ASG)'],
+  pentalquartz: ['Architectural Surfaces (ASG)'],
+  hanstone: ['ESI'],
+};
+const vendorAliases = (vid) => VENDOR_ALIAS[vid] || (vid ? [String(vid)] : []);
+
+// Loose name key: drop finish / thickness / brand / material words so a catalog
+// "Calacatta Nuvo" matches an emailed "Calacatta Nuvo 3cm Polished". Mirrors
+// baseName() in the audit script — same normalization, used here for pricing.
+const baseName = (s) => norm(String(s || '')
+  .replace(/\([^)]*\)/g, ' ')
+  .replace(/\b\d+(?:\.\d+)?\s*cm\b/gi, ' ')
+  .replace(/\b(polished|honed|leathered|leather|caressed|brushed|matte|lava|dual|suede|satin|finish|slabs?)\b/gi, ' ')
+  .replace(/\b(silestone|caesarstone|acarastone|dekton|sensa)\b/gi, ' ')
+  .replace(/\b(quartzite|quartz|granite|marble|porcelain|soapstone|travertine|dolomite)\b/gi, ' '));
+
 // Some vendors don't publish a per-SKU cost — their dealer COST is a fixed
 // multiplier off the LIST/MSRP price (which we carry as retail). Alfi Trade
 // (rep-confirmed 2026): ALFI + EAGO = list x0.405 (50/10/10); Whitehaus = x0.50.
@@ -68,8 +91,11 @@ async function loadSources() {
     const db = client.db(MONGO_DB);
     const vi = await db.collection('vendorinventories')
       .find({}, { projection: { _id: 0, sku: 1, dealerCost: 1, shopifyPrice: 1, availableQty: 1, imageUrl: 1, imageUrls: 1, description: 1 } }).toArray();
+    // unit:'sqft' ONLY — emailed sheets also carry per-SLAB ($/each) rows for the
+    // same colors; applying one of those as a per-sqft cost yields $1,200/sqft.
+    // Per-each products (sinks) get their cost from VendorInventory, not here.
     const lil = await db.collection('lineitemlibraries')
-      .find({}, { projection: { _id: 0, name: 1, cost: 1, vendor: 1 } }).toArray();
+      .find({ unit: 'sqft', cost: { $gt: 0 } }, { projection: { _id: 0, name: 1, cost: 1, vendor: 1 } }).toArray();
     return { vi, lil };
   } finally {
     await client.close();
@@ -104,8 +130,13 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
     if (!viBySku.has(k) || richer(viBySku.get(k), r)) viBySku.set(k, r);
   }
   const lilByVendorName = new Map();
+  const lilByVendorBase = new Map(); // vendorNorm|baseName -> cost (loose fallback)
   for (const r of lil) {
-    if (Number(r.cost) > 0) lilByVendorName.set(norm(r.vendor) + '|' + norm(r.name), Number(r.cost));
+    if (!(Number(r.cost) > 0)) continue;
+    lilByVendorName.set(norm(r.vendor) + '|' + norm(r.name), Number(r.cost));
+    const bk = norm(r.vendor) + '|' + baseName(r.name);
+    // keep the CHEAPEST when a base collides (e.g. 2cm vs 3cm) — conservative retail
+    if (!lilByVendorBase.has(bk) || Number(r.cost) < lilByVendorBase.get(bk)) lilByVendorBase.set(bk, Number(r.cost));
   }
   // SKU-token indexes for the fallback path (catalog rows whose sku field is an
   // internal slug like "ruvati-5763" but whose name ends with the real SKU).
@@ -147,12 +178,22 @@ async function syncPricing(supabase, { mode = 'fill', dryRun = false, limit = 0,
     // Resolve the vendor-inventory match (exact SKU, then token) and any email-
     // sheet cost ONCE — both price and content draw from it.
     let viRow = viBySku.get(norm(p.sku)) || null;
-    let lilCost = viRow ? null : lilByVendorName.get(norm(p.vendor_id) + '|' + norm(p.name));
+    const aliases = vendorAliases(p.vendor_id);
+    // email-sheet cost: exact vendor+name across brand aliases, then loose baseName
+    let lilCost = null;
+    if (!viRow) {
+      for (const av of aliases) { const c = lilByVendorName.get(norm(av) + '|' + norm(p.name)); if (Number(c) > 0) { lilCost = c; break; } }
+      if (!(Number(lilCost) > 0)) {
+        const nb = baseName(p.name);
+        if (nb.length >= 4) for (const av of aliases) { const c = lilByVendorBase.get(norm(av) + '|' + nb); if (Number(c) > 0) { lilCost = c; break; } }
+      }
+    }
     if (!viRow && !(Number(lilCost) > 0)) {
       const tok = productToken(p);
       if (tok) {
         const vt = viByTok.get(tok);
-        const ltok = lilByVendorTok.get(norm(p.vendor_id) + '|' + tok);
+        let ltok = null;
+        for (const av of aliases) { const c = lilByVendorTok.get(norm(av) + '|' + tok); if (Number(c) > 0) { ltok = c; break; } }
         if (vt && Number(vt.dealerCost) > 0) viRow = vt;   // priced VI wins
         else if (Number(ltok) > 0) lilCost = ltok;         // else email-sheet cost
         else if (vt) viRow = vt;                           // else content-only VI (image/copy)
