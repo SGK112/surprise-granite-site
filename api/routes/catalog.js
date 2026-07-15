@@ -182,6 +182,14 @@ router.use((req, res, next) => {
   next();
 });
 
+// Staff/Aria present the shared ARIA_SERVICE_KEY header; those callers get dealer cost
+// + margin. Everyone else gets the public retail view (owner rule 2026-07-07: no inside
+// info to the public). One catalog, one endpoint — the response just adapts to the caller.
+function isInternal(req) {
+  const k = process.env.ARIA_SERVICE_KEY;
+  return !!(k && req.get('x-aria-service-key') === k);
+}
+
 router.get('/', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
@@ -198,7 +206,7 @@ router.get('/', async (req, res) => {
 
     let q = supabase
       .from('catalog_products')
-      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags', { count: 'exact' })
+      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags, vendor_cost, default_markup_pct', { count: 'exact' })
       .eq('active', true)
       .order('vendor_id', { ascending: true })
       .order('name', { ascending: true })
@@ -223,7 +231,16 @@ router.get('/', async (req, res) => {
       return res.status(500).json({ error: 'Could not list catalog' });
     }
     noteSuccess();
-    return res.json({ success: true, products: data || [], total: count, limit, offset });
+    const internal = isInternal(req);
+    const products = (data || []).map(p => {
+      if (internal) {
+        const cost = Number(p.vendor_cost) || 0, price = Number(p.retail_price) || 0;
+        return { ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null };
+      }
+      const { vendor_cost, default_markup_pct, ...pub } = p; // public: retail only
+      return pub;
+    });
+    return res.json({ success: true, products, total: count, limit, offset, cost_visible: internal });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
   }
@@ -304,19 +321,25 @@ router.get('/:slug', async (req, res) => {
     }
     if (!data) return res.status(404).json({ error: 'Product not found' });
 
-    // This is a PUBLIC endpoint: never ship costs, margins, sync bookkeeping,
-    // or scraper provenance (owner rule 2026-07-07 — "no inside information").
-    delete data.vendor_cost;
-    delete data.default_markup_pct;
-    delete data.last_scraped_at;
-    delete data.first_scraped_at;
-    delete data.last_changed_at;
-    delete data.vendor_sku;
-    delete data.lookup_mode;
-    if (data.specs && typeof data.specs === 'object') {
-      data.specs = publicSpecs(data.specs);
+    // One catalog serves both: staff/Aria (service key) see cost + provenance; the public
+    // never does (owner rule 2026-07-07 — "no inside information").
+    const internal = isInternal(req);
+    if (internal) {
+      const cost = Number(data.vendor_cost) || 0, price = Number(data.retail_price) || 0;
+      data.margin_pct = (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null;
+    } else {
+      delete data.vendor_cost;
+      delete data.default_markup_pct;
+      delete data.last_scraped_at;
+      delete data.first_scraped_at;
+      delete data.last_changed_at;
+      delete data.vendor_sku;
+      delete data.lookup_mode;
+      if (data.specs && typeof data.specs === 'object') {
+        data.specs = publicSpecs(data.specs);
+      }
     }
-    return res.json({ success: true, product: data });
+    return res.json({ success: true, product: data, cost_visible: internal });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
   }
