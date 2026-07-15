@@ -206,7 +206,7 @@ router.get('/', async (req, res) => {
 
     let q = supabase
       .from('catalog_products')
-      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags, vendor_cost, default_markup_pct', { count: 'exact' })
+      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags, vendor_cost', { count: 'exact' })
       .eq('active', true)
       .order('vendor_id', { ascending: true })
       .order('name', { ascending: true })
@@ -237,7 +237,7 @@ router.get('/', async (req, res) => {
         const cost = Number(p.vendor_cost) || 0, price = Number(p.retail_price) || 0;
         return { ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null };
       }
-      const { vendor_cost, default_markup_pct, ...pub } = p; // public: retail only
+      const { vendor_cost, ...pub } = p; // public: retail only
       return pub;
     });
     return res.json({ success: true, products, total: count, limit, offset, cost_visible: internal });
