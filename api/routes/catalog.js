@@ -190,6 +190,26 @@ function isInternal(req) {
   return !!(k && req.get('x-aria-service-key') === k);
 }
 
+// The Yard stores the raw slab price (= our material cost); the customer price adds
+// fabrication + install ($55/sqft, +$150 pickup on remnants). This is the SAME formula
+// the storefront grid + Aria's find_products already apply — computed here so a direct
+// /api/catalog caller (Aria) gets the real quote in installed_total / installed_sqft
+// instead of the raw material price. retail_price is left as the material cost basis.
+function sqftFromSize(size) {
+  if (!size) return 0;
+  const m = String(size).match(/(\d+(?:\.\d+)?)\D+?(\d+(?:\.\d+)?)/);
+  return m ? (parseFloat(m[1]) * parseFloat(m[2])) / 144 : 0;
+}
+function withInstalled(p) {
+  if (!p || p.vendor_id !== 'the-yard-az') return p;
+  const sqft = sqftFromSize(p.size);
+  const raw = Number(p.retail_price) || 0;
+  if (!sqft || !raw) return p;
+  const pickup = p.category === 'remnant' ? 150 : 0;
+  const total = Math.round(raw + pickup + 55 * sqft);
+  return { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100, price_note: 'installed (fab + install); retail_price is material cost' };
+}
+
 router.get('/', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
@@ -235,10 +255,10 @@ router.get('/', async (req, res) => {
     const products = (data || []).map(p => {
       if (internal) {
         const cost = Number(p.vendor_cost) || 0, price = Number(p.retail_price) || 0;
-        return { ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null };
+        return withInstalled({ ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null });
       }
       const { vendor_cost, ...pub } = p; // public: retail only
-      return pub;
+      return withInstalled(pub);
     });
     return res.json({ success: true, products, total: count, limit, offset, cost_visible: internal });
   } catch (e) {
@@ -339,7 +359,7 @@ router.get('/:slug', async (req, res) => {
         data.specs = publicSpecs(data.specs);
       }
     }
-    return res.json({ success: true, product: data, cost_visible: internal });
+    return res.json({ success: true, product: withInstalled(data), cost_visible: internal });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
   }
