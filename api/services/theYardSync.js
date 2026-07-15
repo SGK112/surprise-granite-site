@@ -20,14 +20,6 @@ const MATS = { Quartz: 'Quartz', Quartzite: 'Quartzite', Granite: 'Granite', Mar
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const isCambria = (r) => /cambria/i.test(String(r.PublicNotes || '') + ' ' + String(r.StoneName || ''));
 
-// The Yard posts THEIR price (= our material cost). We fabricate + install: our cost is
-// +$26/sqft, we charge the customer +$55/sqft (owner rule 2026-07-15). Both are per-piece
-// ('each'). The raw Yard price is kept in specs.each_price so this stays idempotent.
-const FAB_COST_SQFT = 26, FAB_CHARGE_SQFT = 55;
-const r2 = (n) => Math.round(Number(n) * 100) / 100;
-const yardCost = (price, sqft) => r2(Number(price) + FAB_COST_SQFT * Number(sqft || 0));
-const yardRetail = (price, sqft) => r2(Number(price) + FAB_CHARGE_SQFT * Number(sqft || 0));
-
 async function pullInventory() {
   const all = [];
   let pages = 1;
@@ -61,7 +53,7 @@ async function syncOnce(supabase, logger) {
   let existing = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase.from('catalog_products')
-      .select('id, sku, active, retail_price, vendor_cost, specs')
+      .select('id, sku, active, retail_price, specs')
       .eq('vendor_id', VENDOR_ID).eq('category', 'remnant').range(from, from + 999);
     if (error) throw new Error(error.message);
     existing = existing.concat(data || []);
@@ -78,12 +70,7 @@ async function syncOnce(supabase, logger) {
     } else if (live) {
       const fields = {};
       if (!p.active) { fields.active = true; fields.in_stock = true; }
-      const cost = yardCost(live.Price, live.SQFt), retail = yardRetail(live.Price, live.SQFt);
-      if (Number(p.retail_price) !== retail || Number(p.vendor_cost) !== cost) {
-        fields.retail_price = retail; fields.vendor_cost = cost; fields.sample_price = null;
-      }
-      const specs = { ...(p.specs || {}), each_price: live.Price, piece_sqft: live.SQFt };
-      if (JSON.stringify(specs) !== JSON.stringify(p.specs || {})) fields.specs = specs;
+      if (Number(p.retail_price) !== live.Price) { fields.retail_price = live.Price; fields.sample_price = live.Price; }
       if (Object.keys(fields).length) {
         fields.updated_at = new Date().toISOString();
         await supabase.from('catalog_products').update(fields).eq('id', p.id);
@@ -100,7 +87,7 @@ async function syncOnce(supabase, logger) {
       category: 'remnant', subcategory: MATS[r.StoneType] || r.StoneType || 'Granite',
       description: `${r.StoneNamePlain || r.StoneName} ${(r.StoneType || 'stone').toLowerCase()} remnant, ${Math.round(r.Dim1)}" x ${Math.round(r.Dim2)}" (~${r.SQFt} sqft), ${r.Thickness || 3}cm. In stock at The Yard, Phoenix — live inventory, posted price.`,
       primary_image_url: IMG(r.Basename), image_urls: [IMG(r.Basename)],
-      retail_price: yardRetail(r.Price, r.SQFt), vendor_cost: yardCost(r.Price, r.SQFt), sample_price: null, price_unit: 'each',
+      retail_price: r.Price, sample_price: r.Price, price_unit: 'each',
       sample_eligible: false, in_stock: true, active: true,
       vendor_url: 'https://theyardaz.com/shop/stone/new-arrivals/remnants',
       tags: ['remnant', 'live-inventory', 'no-sample', 'vendor-import'], currency: 'USD',
@@ -125,7 +112,7 @@ async function syncOnce(supabase, logger) {
   let slabRows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase.from('catalog_products')
-      .select('id, name, active, retail_price, vendor_cost, specs')
+      .select('id, name, active, retail_price, specs')
       .eq('vendor_id', VENDOR_ID).eq('category', 'slab').range(from, from + 999);
     if (error) throw new Error(error.message);
     slabRows = slabRows.concat(data || []);
@@ -143,9 +130,8 @@ async function syncOnce(supabase, logger) {
       const sqftPrice = Math.round((best.Price / best.SQFt) * 100) / 100;
       const fields = {};
       if (!p.active) { fields.active = true; fields.in_stock = true; }
-      const cost = yardCost(best.Price, best.SQFt), retail = yardRetail(best.Price, best.SQFt);
-      if (Number(p.retail_price) !== retail || Number(p.vendor_cost) !== cost) { fields.retail_price = retail; fields.vendor_cost = cost; fields.sample_price = null; }
-      const specs = { ...(p.specs || {}), sqft_price: sqftPrice, each_price: best.Price, slab_sqft: best.SQFt, slab_count: c.pieces.length, yard_product_ids: c.pieces.slice(0, 20).map((x) => x.ProductID) };
+      if (Number(p.retail_price) !== best.Price) { fields.retail_price = best.Price; fields.sample_price = best.Price; }
+      const specs = { ...(p.specs || {}), sqft_price: sqftPrice, each_price: best.Price, slab_count: c.pieces.length, yard_product_ids: c.pieces.slice(0, 20).map((x) => x.ProductID) };
       if (JSON.stringify(specs) !== JSON.stringify(p.specs || {})) fields.specs = specs;
       if (Object.keys(fields).length) {
         fields.updated_at = new Date().toISOString();
@@ -165,11 +151,11 @@ async function syncOnce(supabase, logger) {
       name: c.name, slug: `${key}-${norm(mat)}-theyard`, category: 'slab', subcategory: mat,
       description: `${c.name} ${mat.toLowerCase()} — ${c.pieces.length} full slab${c.pieces.length > 1 ? 's' : ''} in stock at The Yard, Phoenix (live inventory, prices posted). From $${sqftPrice}/sqft per slab.`,
       primary_image_url: IMG(best.Basename), image_urls: c.pieces.slice(0, 4).map((x) => IMG(x.Basename)),
-      retail_price: yardRetail(best.Price, best.SQFt), vendor_cost: yardCost(best.Price, best.SQFt), sample_price: null, price_unit: 'each',
+      retail_price: best.Price, sample_price: best.Price, price_unit: 'each',
       sample_eligible: false, in_stock: true, active: true,
       vendor_url: `https://theyardaz.com/shop/stone?SearchTerm=${encodeURIComponent(c.name)}`,
       tags: ['vendor-import', 'no-sample', 'live-inventory'], currency: 'USD',
-      specs: { _source: 'theyardaz-api', material: mat, sqft_price: sqftPrice, each_price: best.Price, slab_size: `${Math.round(big.Dim1)} x ${Math.round(big.Dim2)}`, slab_sqft: best.SQFt, slab_count: c.pieces.length, yard_product_ids: c.pieces.slice(0, 20).map((x) => x.ProductID) },
+      specs: { _source: 'theyardaz-api', material: mat, sqft_price: sqftPrice, each_price: best.Price, slab_size: `${Math.round(big.Dim1)} x ${Math.round(big.Dim2)}`, slab_sqft: big.SQFt, slab_count: c.pieces.length, yard_product_ids: c.pieces.slice(0, 20).map((x) => x.ProductID) },
       size: `${Math.round(big.Dim1)}" x ${Math.round(big.Dim2)}"`,
     });
     if (!error) out.slabAdded++;
