@@ -48,6 +48,7 @@ const PUBLIC_SPEC_KEYS = new Set([
   'collection', 'line', 'product_line', 'printed_quartz',
   'slab_size', 'slab_sqft', 'piece_size', 'piece_sqft',   // physical dimensions
   'wear_layer', 'sf_per_box',                             // flooring
+  'spec_pdf_url', 'install_pdf_url', 'parts_pdf_url',     // vendor spec/cut sheets (public-safe)
 ]);
 
 function publicSpecs(specs) {

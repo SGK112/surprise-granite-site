@@ -3340,7 +3340,24 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         body.appendChild(tr);
       });
 
-      if (empty) empty.style.display = rows.length ? 'none' : '';
+      // Vendor spec / cut / install sheets (PDF) — links only, restricted to the
+      // vendor domain so an unexpected URL can never be rendered as a link.
+      const docs = [
+        ['Spec Sheet (PDF)',         specs.spec_pdf_url],
+        ['Installation Guide (PDF)', specs.install_pdf_url],
+        ['Parts Diagram (PDF)',      specs.parts_pdf_url],
+      ].filter(function (d) { return d[1] && /^https:\/\/(www\.)?alfitrade\.com\//i.test(d[1]); });
+      docs.forEach(function (d) {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th'); th.textContent = 'Document';
+        const td = document.createElement('td');
+        const a = document.createElement('a');
+        a.href = d[1]; a.target = '_blank'; a.rel = 'noopener'; a.textContent = d[0];
+        a.style.color = 'var(--gold-deep,#8a6d00)'; a.style.fontWeight = '700'; a.style.textDecoration = 'underline';
+        td.appendChild(a); tr.appendChild(th); tr.appendChild(td); body.appendChild(tr);
+      });
+
+      if (empty) empty.style.display = (rows.length || docs.length) ? 'none' : '';
     }
 
       const title = product.title || product.name || 'Product';
