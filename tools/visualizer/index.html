@@ -296,6 +296,14 @@
   </style>
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
+  <!-- Embed mode: when iframed by another tool page (?embed=1), hide our own chrome
+       so only the tool shows; the parent page provides nav + footer + Aria hub. -->
+  <script>try{if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('sg-embed');}catch(e){}</script>
+  <style>
+    html.sg-embed #unifiedNav, html.sg-embed .visualizer-hero, html.sg-embed .visualizer-footer, html.sg-embed #remodely-hub { display:none !important; }
+    html.sg-embed body, html.sg-embed body.unified-nav-active { padding-top:0 !important; }
+    html.sg-embed .visualizer-main { padding-top:16px !important; }
+  </style>
 </head>
 <body>
 <!-- HERO -->
