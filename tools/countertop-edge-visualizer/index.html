@@ -81,30 +81,23 @@ a, button {
 .visualizer-embed {
   width: 100% !important;
   position: relative !important;
-  min-height: 640px !important;
-  height: auto !important;
 }
 
+/* No forced height/min-height with !important — the JS sets the exact content height
+   inline, and an !important height here would override it and clip/pad the tool. */
 .visualizer-embed iframe {
   width: 100% !important;
   border: none !important;
   display: block !important;   /* kill inline-baseline gap */
   vertical-align: top !important;
-  min-height: 640px !important;
-  height: auto !important;
+  min-height: 420px;           /* pre-JS floor only; JS grows it to fit */
 }
 
-/* Our tool is a normal scrollable page (with a lead form). Let it flow naturally on
-   every breakpoint — the JS sizes the iframe to its content, nav/footer stay visible. */
-@media (max-width: 991px) {
-  .visualizer-embed, .visualizer-embed iframe { min-height: 600px !important; }
-}
-@media (max-width: 768px) {
-  .visualizer-embed, .visualizer-embed iframe { min-height: 560px !important; }
-}
-@media (max-width: 480px) {
-  .visualizer-embed, .visualizer-embed iframe { min-height: 520px !important; }
-}
+/* The JS sizes the iframe to its content on every breakpoint; these are just pre-JS
+   floors (no !important, so the inline JS height always wins). */
+@media (max-width: 991px) { .visualizer-embed iframe { min-height: 520px; } }
+@media (max-width: 768px) { .visualizer-embed iframe { min-height: 480px; } }
+@media (max-width: 480px) { .visualizer-embed iframe { min-height: 440px; } }
 
 /* Secondary Header */
 .header {
