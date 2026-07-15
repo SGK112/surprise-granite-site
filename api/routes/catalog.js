@@ -200,14 +200,27 @@ function sqftFromSize(size) {
   const m = String(size).match(/(\d+(?:\.\d+)?)\D+?(\d+(?:\.\d+)?)/);
   return m ? (parseFloat(m[1]) * parseFloat(m[2])) / 144 : 0;
 }
-function withInstalled(p) {
+// The Yard charges us 9.1% AZ sales tax on the material (we're not tax-exempt with them —
+// see order #67349: $295 + $26.85 tax). That tax is a real cost, so our cost = raw*1.091 +
+// $26/sqft fab. Customer price is unchanged (margin absorbs the tax).
+const YARD_TAX = 1.091;
+function withInstalled(p, internal) {
   if (!p || p.vendor_id !== 'the-yard-az') return p;
   const sqft = sqftFromSize(p.size);
   const raw = Number(p.retail_price) || 0;
   if (!sqft || !raw) return p;
   const pickup = p.category === 'remnant' ? 150 : 0;
-  const total = Math.round(raw + pickup + 55 * sqft);
-  return { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100, price_note: 'installed (fab + install); retail_price is material cost' };
+  const total = Math.round(raw + pickup + 55 * sqft); // customer installed price
+  const out = { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100,
+    price_note: 'installed (fab+install); retail_price is pre-tax Yard material' };
+  if (internal) {
+    const materialTaxed = raw * YARD_TAX;                 // Yard price + 9.1% AZ tax we pay
+    const ourCost = Math.round(materialTaxed + 26 * sqft); // + $26/sqft fab/install cost
+    out.material_cost_taxed = Math.round(materialTaxed);
+    out.installed_cost = ourCost;
+    out.margin_pct = total > 0 ? Math.round(((total - ourCost) / total) * 100) : null;
+  }
+  return out;
 }
 
 router.get('/', async (req, res) => {
@@ -255,10 +268,10 @@ router.get('/', async (req, res) => {
     const products = (data || []).map(p => {
       if (internal) {
         const cost = Number(p.vendor_cost) || 0, price = Number(p.retail_price) || 0;
-        return withInstalled({ ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null });
+        return withInstalled({ ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null }, true);
       }
       const { vendor_cost, ...pub } = p; // public: retail only
-      return withInstalled(pub);
+      return withInstalled(pub, false);
     });
     return res.json({ success: true, products, total: count, limit, offset, cost_visible: internal });
   } catch (e) {
@@ -359,7 +372,7 @@ router.get('/:slug', async (req, res) => {
         data.specs = publicSpecs(data.specs);
       }
     }
-    return res.json({ success: true, product: withInstalled(data), cost_visible: internal });
+    return res.json({ success: true, product: withInstalled(data, internal), cost_visible: internal });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
   }
