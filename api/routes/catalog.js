@@ -233,23 +233,29 @@ router.get('/categories', async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     if (!supabase) return res.status(503).json({ error: 'Database not available' });
-    const { data, error } = await supabase
-      .from('catalog_products')
-      .select('category, vendor_id')
-      .eq('active', true)
-      .limit(10000);
-    if (error) {
-      noteFailure();
-      logger.error('Catalog query error', { error: briefly(error) });
-      return res.status(500).json({ error: 'Catalog unavailable' });
-    }
+    // Supabase caps a single select at 1000 rows, so a one-shot fetch-and-count silently
+    // undercounts (reported 276 slabs when there are 2416). Page through ALL active rows.
     const counts = {};
     const vendorByCat = {};
-    (data || []).forEach(r => {
-      counts[r.category] = (counts[r.category] || 0) + 1;
-      vendorByCat[r.category] = vendorByCat[r.category] || new Set();
-      vendorByCat[r.category].add(r.vendor_id);
-    });
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('catalog_products')
+        .select('category, vendor_id')
+        .eq('active', true)
+        .range(from, from + PAGE - 1);
+      if (error) {
+        noteFailure();
+        logger.error('Catalog query error', { error: briefly(error) });
+        return res.status(500).json({ error: 'Catalog unavailable' });
+      }
+      (data || []).forEach(r => {
+        counts[r.category] = (counts[r.category] || 0) + 1;
+        vendorByCat[r.category] = vendorByCat[r.category] || new Set();
+        vendorByCat[r.category].add(r.vendor_id);
+      });
+      if (!data || data.length < PAGE) break;
+    }
     const categories = Object.entries(counts)
       .map(([category, count]) => ({ category, count, vendors: [...vendorByCat[category]] }))
       .sort((a, b) => b.count - a.count);
