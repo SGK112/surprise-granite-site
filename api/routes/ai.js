@@ -3549,7 +3549,8 @@ async function replicateKontextEdit(token, prompt, inputImage) {
         aspect_ratio: 'match_input_image',
         safety_tolerance: 2
       }
-    })
+    }),
+    signal: AbortSignal.timeout(70000)                 // Prefer:wait holds up to 60s
   });
 
   let pred = await create.json();
@@ -3562,7 +3563,7 @@ async function replicateKontextEdit(token, prompt, inputImage) {
   while (pred.status && !['succeeded', 'failed', 'canceled'].includes(pred.status)) {
     if (Date.now() - started > 55000) break;
     await new Promise(r => setTimeout(r, 2000));
-    const poll = await fetch(pred.urls.get, { headers: { 'Authorization': `Bearer ${token}` } });
+    const poll = await fetch(pred.urls.get, { headers: { 'Authorization': `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
     pred = await poll.json();
   }
 
@@ -3676,9 +3677,15 @@ router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) =>
  */
 router.post('/room-visualize', aiRateLimiter('ai_visualizer'), async (req, res) => {
   try {
-    const { image, roomType = 'kitchen', selections = [] } = req.body;
-    if (!image || !Array.isArray(selections) || selections.length === 0) {
-      return res.status(400).json({ error: 'image and at least one selection are required' });
+    const { image, roomType = 'kitchen', selections = [] } = req.body || {};
+    if (typeof image !== 'string' || !image) {
+      return res.status(400).json({ error: 'image is required' });
+    }
+    if (image.length > 12_000_000) {                 // ~9MB decoded; the client already caps at 1536px
+      return res.status(413).json({ error: 'Image is too large. Please use a smaller photo.' });
+    }
+    if (!Array.isArray(selections) || selections.length === 0) {
+      return res.status(400).json({ error: 'At least one material selection is required' });
     }
 
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -3686,34 +3693,50 @@ router.post('/room-visualize', aiRateLimiter('ai_visualizer'), async (req, res) 
       return res.status(503).json({ error: 'AI service not configured. Add REPLICATE_API_TOKEN.' });
     }
 
+    // Keep prompts clean and bounded: trim, strip newlines/non-ASCII, cap length.
+    const clean = (v, n = 80) => String(v == null ? '' : v).replace(/[\r\n]+/g, ' ').replace(/[^\x20-\x7E]/g, '').trim().slice(0, n);
+    const room = clean(roomType, 40) || 'kitchen';
+
     const steps = selections
       .filter(s => s && s.surface && s.material)
+      .slice(0, 3)                                    // hard cap: at most 3 surfaces per render (cost/latency)
       .map(s => {
-        const m = s.material;
-        const desc = [m.name, m.type ? `(${m.type})` : '', m.color ? `in ${m.color}` : '']
+        const m = s.material || {};
+        const desc = [clean(m.name), m.type ? `(${clean(m.type, 40)})` : '', m.color ? `in ${clean(m.color, 40)}` : '']
           .filter(Boolean).join(' ');
-        return { surface: s.surface, desc };
-      });
+        return { surface: clean(s.surface, 40), desc };
+      })
+      .filter(s => s.surface && s.desc);
     if (!steps.length) return res.status(400).json({ error: 'No valid selections' });
 
-    // Apply each surface as its OWN Kontext edit, chained on the previous result. A single
-    // combined prompt made FLUX bleed the countertop material onto the tile/floor; editing
-    // one surface at a time keeps each material distinct.
+    // Apply each surface as its OWN Kontext edit, chained on the previous result (a single
+    // combined prompt makes FLUX bleed one material onto every surface). One flaky surface
+    // must not sink the whole render, so each step is independently tolerant.
     let current = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
-    const applied = [];
+    const applied = [], failed = [];
     for (const step of steps) {
-      const keep = applied.length ? ` Also keep the ${applied.join(' and ')} exactly as they appear now.` : '';
-      const prompt = `In this ${roomType} photo, replace ONLY the ${step.surface} with ${step.desc}.${keep} `
-        + `Do not change anything else — keep the cabinets, appliances, walls, windows, lighting, layout, `
-        + `and camera angle exactly the same. Photorealistic, sharp focus, seamless, matching the original lighting and shadows.`;
-      const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, prompt, current);
-      const buf = Buffer.from(await (await fetch(outUrl)).arrayBuffer());
-      current = 'data:image/jpeg;base64,' + buf.toString('base64');
-      applied.push(step.surface);
+      try {
+        const keep = applied.length ? ` Also keep the ${applied.join(' and ')} exactly as they appear now.` : '';
+        const prompt = `In this ${room} photo, replace ONLY the ${step.surface} with ${step.desc}.${keep} `
+          + `Do not change anything else — keep the cabinets, appliances, walls, windows, lighting, layout, `
+          + `and camera angle exactly the same. Photorealistic, sharp focus, seamless, matching the original lighting and shadows.`;
+        const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, prompt, current);
+        const imgResp = await fetch(outUrl, { signal: AbortSignal.timeout(30000) });
+        if (!imgResp.ok) throw new Error(`image download ${imgResp.status}`);
+        current = 'data:image/jpeg;base64,' + Buffer.from(await imgResp.arrayBuffer()).toString('base64');
+        applied.push(step.surface);
+      } catch (stepErr) {
+        logger.warn(`[Room Visualize] ${step.surface} failed: ${stepErr.message}`);
+        failed.push(step.surface);
+      }
+    }
+
+    if (!applied.length) {
+      return res.status(502).json({ error: 'The visualizer could not complete this render. Please try again.' });
     }
     const b64 = current.replace(/^data:image\/\w+;base64,/, '');
-    logger.info(`[Room Visualize] success — ${steps.length} surface(s) sequentially in ${roomType}`);
-    return res.json({ image: b64, method: 'flux-kontext-seq', surfaces: steps.length });
+    logger.info(`[Room Visualize] applied ${applied.length}/${steps.length} in ${room}${failed.length ? ` (failed: ${failed.join(',')})` : ''}`);
+    return res.json({ image: b64, method: 'flux-kontext-seq', applied, failed });
   } catch (error) {
     logger.warn(`[Room Visualize] failed: ${error.message}`);
     return res.status(502).json({ error: 'The visualizer could not complete this render. Please try again.' });

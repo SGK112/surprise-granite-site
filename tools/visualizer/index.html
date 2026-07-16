@@ -81,6 +81,7 @@
     .spin{width:40px;height:40px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--sg-gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
     @keyframes spin{to{transform:rotate(360deg)}}
     .working{color:rgba(255,255,255,.75);font-size:13px;text-align:center;padding:40px 16px}
+    .warn{margin-top:10px;padding:9px 12px;border-radius:9px;background:rgba(249,203,0,.12);border:1px solid rgba(249,203,0,.35);color:var(--gold-lite);font-size:12px;line-height:1.4}
     /* Comparison */
     .cmp{position:relative;border-radius:13px;overflow:hidden;user-select:none;touch-action:none}
     .cmp>img{display:block;width:100%}
@@ -147,6 +148,7 @@
         <div class="stageview empty" id="stageview">
           <div class="dropinner"><div class="ic">📸</div><b>Drop your photo here or tap to browse</b><small>Straight-on kitchen or bathroom shots work best · JPEG/PNG</small></div>
         </div>
+        <div id="stagewarn" class="warn" hidden></div>
         <input type="file" id="file" accept="image/*" multiple hidden>
         <div class="stagebar">
           <button class="minibtn" id="addphoto" type="button">＋ Photo</button>
@@ -353,6 +355,7 @@ function stageEmptyHTML(){
 }
 function showActive(){
   resultB64 = null; $('acts').hidden = true;
+  var sw = $('stagewarn'); if (sw) sw.hidden = true;
   const sv = $('stageview'), im = images[active];
   if (im){ sv.classList.remove('empty','over'); sv.innerHTML = `<img src="${im.base64}" alt="Your space">`; }
   else { sv.classList.add('empty'); sv.classList.remove('over'); sv.innerHTML = stageEmptyHTML(); }
@@ -361,27 +364,36 @@ function showActive(){
 /* ---------- visualize ---------- */
 async function visualize(){
   if ($('vizbtn').disabled) return;
+  if (!images[active]) return;
   const selections = CATS.filter(c=>sel[c]).map(c=>({ surface:SURFACE[c], material:matPayload(sel[c]) }));
+  if (!selections.length) return;
+  $('stagewarn').hidden = true;
   $('stageview').classList.remove('empty');
   $('stageview').innerHTML = `<div class="working"><div class="spin"></div>Rendering your space…<br><small style="opacity:.6">this takes 20–40 seconds</small></div>`;
   $('vizbtn').disabled = true;
+  const ctrl = new AbortController();
+  const to = setTimeout(()=>ctrl.abort(), 150000);
   try {
     const resp = await fetch(API_BASE + '/api/ai/room-visualize', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ image: images[active].base64, roomType: $('room').value, selections })
+      body: JSON.stringify({ image: images[active].base64, roomType: $('room').value, selections }),
+      signal: ctrl.signal
     });
-    const text = await resp.text();
-    const data = text ? JSON.parse(text) : {};
+    const txt = await resp.text();
+    let data = {}; try { data = txt ? JSON.parse(txt) : {}; } catch(_){}
     if (!resp.ok || !data.image) throw new Error(data.error || 'Render failed — please try again.');
     resultB64 = data.image;
-    showComparison();
+    showComparison(data.failed);
   } catch(err){
     console.error(err);
-    $('stageview').innerHTML = `<div class="stageempty">⚠️ ${err.message}<br><br>Try a different photo or fewer surfaces.</div>`;
-  }
+    const msg = err.name === 'AbortError' ? 'This is taking longer than expected — please try again.' : (err.message || 'Render failed — please try again.');
+    $('stageview').innerHTML = `<div class="stageempty">⚠️ ${msg}<br><br>Try a different photo or fewer surfaces.</div>`;
+  } finally { clearTimeout(to); }
   updateBtn();
 }
-function showComparison(){
+function showComparison(failed){
+  if (failed && failed.length){ $('stagewarn').textContent = `Couldn't confidently apply: ${failed.join(', ')}. Try re-rendering or a clearer, straight-on photo.`; $('stagewarn').hidden = false; }
+  else $('stagewarn').hidden = true;
   const before = images[active].base64;
   const after = 'data:image/jpeg;base64,' + resultB64;
   const sv = $('stageview'); sv.classList.remove('empty');
