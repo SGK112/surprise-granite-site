@@ -3668,4 +3668,48 @@ router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) =>
   }
 });
 
+/**
+ * Room Visualize - swap multiple surfaces in one shot via Replicate FLUX Kontext.
+ * POST /api/ai/room-visualize
+ * body: { image, roomType, selections: [{ surface, material:{name,type,color,style} }] }
+ * Replicate-only (no OpenAI). Returns { image: <base64> }.
+ */
+router.post('/room-visualize', aiRateLimiter('ai_visualizer'), async (req, res) => {
+  try {
+    const { image, roomType = 'kitchen', selections = [] } = req.body;
+    if (!image || !Array.isArray(selections) || selections.length === 0) {
+      return res.status(400).json({ error: 'image and at least one selection are required' });
+    }
+
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+    if (!REPLICATE_API_TOKEN) {
+      return res.status(503).json({ error: 'AI service not configured. Add REPLICATE_API_TOKEN.' });
+    }
+
+    const parts = selections
+      .filter(s => s && s.surface && s.material)
+      .map(s => {
+        const m = s.material;
+        const desc = [m.name, m.type ? `(${m.type})` : '', m.color ? `- ${m.color}` : '']
+          .filter(Boolean).join(' ');
+        return `the ${s.surface} with ${desc}`;
+      });
+    if (!parts.length) return res.status(400).json({ error: 'No valid selections' });
+
+    const editPrompt = `In this ${roomType} photo, replace ${parts.join(', and ')}. `
+      + `Keep the cabinets, appliances, walls, windows, fixtures, lighting, layout, and camera `
+      + `perspective exactly the same. Photorealistic, seamless, matching the original lighting and shadows.`;
+
+    const inputImage = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
+    const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, editPrompt, inputImage);
+    const imgResp = await fetch(outUrl);
+    const b64 = Buffer.from(await imgResp.arrayBuffer()).toString('base64');
+    logger.info(`[Room Visualize] success — ${parts.length} surface(s) in ${roomType}`);
+    return res.json({ image: b64, method: 'flux-kontext-pro', surfaces: parts.length });
+  } catch (error) {
+    logger.warn(`[Room Visualize] failed: ${error.message}`);
+    return res.status(502).json({ error: 'The visualizer could not complete this render. Please try again.' });
+  }
+});
+
 module.exports = router;
