@@ -3529,7 +3529,53 @@ Respond ONLY in valid JSON with keys: surfaces (array), layoutDescription (strin
 });
 
 /**
- * Surface Swap - OpenAI gpt-image-1
+ * Run a FLUX Kontext instruction edit on Replicate and return the output image URL.
+ * Kontext edits the supplied photo in place (no mask needed) and leaves everything the
+ * prompt doesn't mention untouched — ideal for "replace only the countertop".
+ */
+async function replicateKontextEdit(token, prompt, inputImage) {
+  const create = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'wait'
+    },
+    body: JSON.stringify({
+      input: {
+        prompt,
+        input_image: inputImage,
+        output_format: 'jpg',
+        aspect_ratio: 'match_input_image',
+        safety_tolerance: 2
+      }
+    })
+  });
+
+  let pred = await create.json();
+  if (pred.error) {
+    throw new Error(typeof pred.error === 'string' ? pred.error : JSON.stringify(pred.error));
+  }
+
+  // Prefer: wait usually returns a terminal prediction; poll as a safety net.
+  const started = Date.now();
+  while (pred.status && !['succeeded', 'failed', 'canceled'].includes(pred.status)) {
+    if (Date.now() - started > 55000) break;
+    await new Promise(r => setTimeout(r, 2000));
+    const poll = await fetch(pred.urls.get, { headers: { 'Authorization': `Bearer ${token}` } });
+    pred = await poll.json();
+  }
+
+  if (pred.status !== 'succeeded') {
+    throw new Error(pred.error || `Replicate prediction ${pred.status || 'did not complete'}`);
+  }
+  const url = Array.isArray(pred.output) ? pred.output[0] : pred.output;
+  if (!url || typeof url !== 'string') throw new Error('Replicate returned no image');
+  return url;
+}
+
+/**
+ * Surface Swap - Replicate FLUX Kontext (primary), OpenAI gpt-image-1 (fallback)
  * POST /api/ai/surface-swap
  * Replaces a specific surface in the photo with a new material
  */
@@ -3541,9 +3587,10 @@ router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) =>
       return res.status(400).json({ error: 'image, surface, and material are required' });
     }
 
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) {
-      return res.status(503).json({ error: 'AI service not configured. Add OPENAI_API_KEY.' });
+    if (!REPLICATE_API_TOKEN && !OPENAI_API_KEY) {
+      return res.status(503).json({ error: 'AI service not configured. Add REPLICATE_API_TOKEN.' });
     }
 
     const materialDesc = [
@@ -3553,12 +3600,30 @@ router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) =>
       material.style ? `with ${material.style} pattern` : ''
     ].filter(Boolean).join(' ');
 
-    const prompt = `In this ${roomType} photo, replace ONLY the ${surface} surfaces with ${materialDesc}. The new material should have a polished, realistic finish. Keep everything else EXACTLY the same — cabinets, appliances, other surfaces, lighting, perspective, wall color. ${layoutDescription ? `Room context: ${layoutDescription}.` : ''} Realistic interior design photography, photorealistic material texture.`;
+    // Ensure a data URI for the input image (client sends "data:image/jpeg;base64,...").
+    const inputImage = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
 
-    // Strip data URI prefix if present for raw base64
-    const rawBase64 = image.replace(/^data:image\/\w+;base64,/, '');
+    // ---- Primary: Replicate FLUX Kontext (edits the photo in place, mask-free) ----
+    if (REPLICATE_API_TOKEN) {
+      try {
+        const editPrompt = `Replace only the ${surface} with ${materialDesc}. Keep the cabinets, appliances, walls, flooring, lighting, layout, and every other surface exactly the same. Photorealistic; match the original photo's perspective and lighting.`;
+        const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, editPrompt, inputImage);
+        const imgResp = await fetch(outUrl);
+        const b64 = Buffer.from(await imgResp.arrayBuffer()).toString('base64');
+        logger.info(`[Surface Swap] flux-kontext success for ${surface}`);
+        return res.json({ image: b64, method: 'flux-kontext-pro' });
+      } catch (repErr) {
+        logger.warn(`[Surface Swap] Replicate failed for ${surface}: ${repErr.message}`);
+        if (!OPENAI_API_KEY) {
+          return res.status(502).json({ error: 'The image editor could not complete this swap. Please try again.' });
+        }
+        // else fall through to the OpenAI fallback below
+      }
+    }
 
-    // Try gpt-image-1 edit first
+    // ---- Fallback: OpenAI gpt-image-1 edit ----
+    const prompt = `In this ${roomType} photo, replace ONLY the ${surface} surfaces with ${materialDesc}. Keep everything else EXACTLY the same — cabinets, appliances, other surfaces, lighting, perspective, wall color. ${layoutDescription ? `Room context: ${layoutDescription}.` : ''} Realistic interior design photography, photorealistic material texture.`;
+    const rawBase64 = inputImage.replace(/^data:image\/\w+;base64,/, '');
     try {
       const imageBuffer = Buffer.from(rawBase64, 'base64');
       const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
@@ -3581,88 +3646,21 @@ router.post('/surface-swap', aiRateLimiter('ai_visualizer'), async (req, res) =>
       if (editData.data && editData.data[0]) {
         const outputBase64 = editData.data[0].b64_json || null;
         const outputUrl = editData.data[0].url || null;
-
         if (outputBase64) {
-          logger.info(`[Surface Swap] gpt-image-1 edit success for ${surface}`);
+          logger.info(`[Surface Swap] gpt-image-1 fallback success for ${surface}`);
           return res.json({ image: outputBase64, method: 'gpt-image-1' });
         } else if (outputUrl) {
-          // Fetch the URL and convert to base64
           const imgResp = await fetch(outputUrl);
           const imgBuf = Buffer.from(await imgResp.arrayBuffer());
-          logger.info(`[Surface Swap] gpt-image-1 edit success (url) for ${surface}`);
           return res.json({ image: imgBuf.toString('base64'), method: 'gpt-image-1' });
         }
       }
-
-      // If we got an error, throw to fall through
       if (editData.error) throw new Error(editData.error.message);
-      throw new Error('No output from gpt-image-1 edit');
-
+      throw new Error('No output from gpt-image-1');
     } catch (editError) {
-      logger.warn(`gpt-image-1 edit failed for ${surface}, trying generate fallback:`, editError.message);
+      logger.warn(`[Surface Swap] gpt-image-1 fallback failed for ${surface}: ${editError.message}`);
+      return res.status(502).json({ error: 'The image editor could not complete this swap. Please try again.' });
     }
-
-    // Fallback: gpt-image-1 generate
-    try {
-      const genResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-image-1',
-          prompt: `Photorealistic interior ${roomType} photo. ${prompt}`,
-          n: 1,
-          size: '1024x1024',
-          quality: 'high',
-          response_format: 'b64_json'
-        })
-      });
-
-      const genData = await genResponse.json();
-
-      if (genData.data && genData.data[0]?.b64_json) {
-        logger.info(`[Surface Swap] gpt-image-1 generate fallback success for ${surface}`);
-        return res.json({ image: genData.data[0].b64_json, method: 'gpt-image-1-generate' });
-      }
-
-      if (genData.error) throw new Error(genData.error.message);
-      throw new Error('No output from gpt-image-1 generate');
-
-    } catch (genError) {
-      logger.warn(`gpt-image-1 generate failed for ${surface}, trying dall-e-3:`, genError.message);
-    }
-
-    // Final fallback: dall-e-3
-    const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: `Photorealistic interior ${roomType} photo showing ${materialDesc} on the ${surface}. ${layoutDescription}. Professional interior design photography.`,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-        response_format: 'b64_json'
-      })
-    });
-
-    const dalleData = await dalleResponse.json();
-
-    if (dalleData.data && dalleData.data[0]?.b64_json) {
-      logger.info(`[Surface Swap] dall-e-3 fallback success for ${surface}`);
-      return res.json({ image: dalleData.data[0].b64_json, method: 'dall-e-3-fallback' });
-    }
-
-    if (dalleData.error) {
-      return res.status(500).json({ error: dalleData.error.message || 'Image generation failed' });
-    }
-
-    return res.status(500).json({ error: 'All image generation methods failed' });
 
   } catch (error) {
     logger.error('Surface swap error:', error);
