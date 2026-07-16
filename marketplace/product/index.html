@@ -510,6 +510,9 @@
       font-size: 0.95rem;
       font-weight: 600;
       color: var(--text);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-width: 0;
     }
 
     /* CTA Buttons */
@@ -3985,7 +3988,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           if (product.specs && typeof product.specs === 'object') {
             // Customer-facing specs ONLY. Never render internal bookkeeping
             // (costs, margins, scrape dates, sync ids) — owner rule 2026-07-07.
-            var SPEC_DENY = /^_|(_at|_id)$|cost|margin|markup|wholesale|dealer|profit|source|scraped|synced|crawled|imported|published|shopify|odoo|handle|alfi_stock|ruvati|yard_|sample_pricing|no_pricing|brand_?tier|msrp|sqft_price|each_price|discontinued|slab_count/i;
+            var SPEC_DENY = /^_|(_at|_id)$|_url$|enriched|cost|margin|markup|wholesale|dealer|profit|source|scraped|synced|crawled|imported|published|shopify|odoo|handle|alfi_stock|ruvati|yard_|sample_pricing|no_pricing|brand_?tier|msrp|sqft_price|each_price|discontinued|slab_count/i;
             var SPEC_LABELS = { material: 'Material', thickness: 'Thickness', finish: 'Finish', slab_size: 'Slab Size', slab_sqft: 'Sqft / Slab', piece_size: 'Piece Size', piece_sqft: 'Sqft', sf_per_box: 'Sqft / Box', wear_layer: 'Wear Layer', collection: 'Collection', product_line: 'Product Line', available_sizes: 'Available Sizes', printed_quartz: 'Printed Quartz', closeout: 'Closeout' };
             Object.keys(product.specs).forEach(function(key) {
               var val = product.specs[key];
@@ -3999,6 +4002,14 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           if (product.originCountry && product.originFlag) {
             specsHtml2 += '<div class="spec-item"><span class="spec-label">Origin</span><span class="spec-value">' + product.originFlag + ' ' + product.originCountry + '</span></div>';
           }
+          // Vendor spec / cut sheets — render as a link (never the raw URL), restricted
+          // to the vendor domain so an unexpected value can't be injected as a link.
+          var sp2 = product.specs || {};
+          [['Spec Sheet (PDF)', sp2.spec_pdf_url], ['Install Guide (PDF)', sp2.install_pdf_url], ['Parts Diagram (PDF)', sp2.parts_pdf_url]].forEach(function (d) {
+            if (d[1] && /^https:\/\/(www\.)?alfitrade\.com\/[\w./-]+\.pdf$/i.test(d[1])) {
+              specsHtml2 += '<div class="spec-item"><span class="spec-label">Documents</span><span class="spec-value"><a href="' + d[1] + '" target="_blank" rel="noopener" style="color:#8a6d00;font-weight:700;text-decoration:underline">' + d[0] + '</a></span></div>';
+            }
+          });
           specsGrid2.innerHTML = specsHtml2;
         }
 
