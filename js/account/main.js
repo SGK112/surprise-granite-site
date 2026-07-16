@@ -1561,15 +1561,22 @@
         let session = null;
         let sessionError = null;
 
-        for (let retry = 0; retry < 2; retry++) {
+        for (let retry = 0; retry < 3; retry++) {
           const result = await supabaseClient.auth.getSession();
           session = result.data?.session;
           sessionError = result.error;
 
-          if (session || !sessionError) break;
+          // A valid, non-expired session ends the wait immediately.
+          if (session && (!session.expires_at || session.expires_at * 1000 > Date.now() + 5000)) break;
+          // An expired implicit session (no refresh token) counts as signed-out.
+          if (session) session = null;
+          // A hard refresh-token error won't resolve by waiting.
+          if (sessionError && sessionError.message?.includes('refresh_token')) break;
 
-          // Wait before retry
-          await new Promise(r => setTimeout(r, 500));
+          // Otherwise the client may still be restoring the session from storage on this
+          // fresh page load — give it a beat and retry instead of bouncing to /log-in/
+          // (which sees the session and bounces back = the redirect loop).
+          await new Promise(r => setTimeout(r, 400));
         }
 
         clearTimeout(fallbackTimer);

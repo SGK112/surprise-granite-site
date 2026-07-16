@@ -649,7 +649,14 @@
 
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
+      // Only treat as logged-in if the session is actually still valid. Implicit-flow
+      // sessions have no refresh token, so an expired one lingers in storage; bouncing it
+      // to /account/ (which then bounces back here) is what causes the login↔home loop.
+      const sessionValid = session && (!session.expires_at || session.expires_at * 1000 > Date.now() + 5000);
+      if (session && !sessionValid) {
+        try { await supabaseClient.auth.signOut(); } catch (e) {}
+      }
+      if (sessionValid) {
         // Already logged in - check for redirect URL (from param or stored)
         const storedRedirect = sessionStorage.getItem('auth_redirect');
         if (storedRedirect && storedRedirect !== '/account/') {
@@ -859,7 +866,10 @@
       try {
         // Check for stored redirect or use smart routing callback
         const storedRedirect = sessionStorage.getItem('auth_redirect');
-        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
+        // Always return to the callback page (an absolute URL Supabase can honor). The
+        // final destination lives in sessionStorage.auth_redirect and is applied by the
+        // callback — passing a bare path here makes Supabase fall back to the Site URL (home).
+        const redirectTo = window.location.origin + '/auth/callback/';
 
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
@@ -883,7 +893,10 @@
       try {
         // Use auth callback for smart routing
         const storedRedirect = sessionStorage.getItem('auth_redirect');
-        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
+        // Always return to the callback page (an absolute URL Supabase can honor). The
+        // final destination lives in sessionStorage.auth_redirect and is applied by the
+        // callback — passing a bare path here makes Supabase fall back to the Site URL (home).
+        const redirectTo = window.location.origin + '/auth/callback/';
 
         const options = {
           provider: 'google',
@@ -918,7 +931,10 @@
       try {
         // Use auth callback for smart routing
         const storedRedirect = sessionStorage.getItem('auth_redirect');
-        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
+        // Always return to the callback page (an absolute URL Supabase can honor). The
+        // final destination lives in sessionStorage.auth_redirect and is applied by the
+        // callback — passing a bare path here makes Supabase fall back to the Site URL (home).
+        const redirectTo = window.location.origin + '/auth/callback/';
 
         const options = {
           provider: 'azure',
