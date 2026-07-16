@@ -666,6 +666,10 @@
   <script src="/js/rate-limiter.js"></script>
 
   <script>
+  // Call the API service directly. The static site's /api/* proxy returns an empty body
+  // for these AI calls, so relative paths silently fail — every other page uses API_BASE.
+  const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+
   /* ═══════════════ STATE ═══════════════ */
   let S = {
     step: 1,
@@ -783,7 +787,7 @@
     }
 
     try {
-      const resp = await fetch('/api/ai/surface-detect', {
+      const resp = await fetch(API_BASE + '/api/ai/surface-detect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: 'data:image/jpeg;base64,' + S.originalBase64, roomType: S.roomType })
@@ -1022,7 +1026,7 @@
     const style = material.style || '';
 
     try {
-      const resp = await fetch('/api/ai/surface-swap', {
+      const resp = await fetch(API_BASE + '/api/ai/surface-swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
