@@ -55,9 +55,9 @@
     .rooprow{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
     .rooprow label{font-size:12px;color:var(--text-muted);font-weight:600}
     .roosel{font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--sg-darker);color:var(--text-primary)}
-    /* Layout */
-    .vgrid{display:grid;grid-template-columns:1fr 400px;gap:20px;align-items:start}
-    @media (max-width:900px){.vgrid{grid-template-columns:1fr}}
+    /* Layout — center = upload + render, right rail = material libraries */
+    .vgrid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+    @media (max-width:900px){.vgrid{grid-template-columns:1fr}.stage{position:static!important}}
     /* Library galleries */
     .search{width:100%;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--sg-darker);color:var(--text-primary);margin-bottom:10px}
     .search:focus{outline:none;border-color:var(--sg-gold)}
@@ -112,53 +112,33 @@
   <button class="themebtn" id="themebtn" type="button" title="Switch light / dark">◐ Theme</button>
   <div class="eyebrow">Design tools · visualizer</div>
   <h1 class="display">See our materials <span style="color:var(--gold-deep)">in your space</span></h1>
-  <p class="sub">Upload a photo of your kitchen or bath, pick a countertop color, a tile, and a flooring from our libraries, then let AI swap them into your room.</p>
-
-  <!-- Upload -->
-  <div class="panel">
-    <h2>📷 Your photo</h2>
-    <p class="hint">Add one or more photos — JPEG or PNG. Pick which one to visualize.</p>
-    <div class="drop" id="drop">
-      <div class="ic">📸</div>
-      <b>Drop a photo here or tap to browse</b>
-      <small>Straight-on kitchen or bathroom shots work best</small>
-    </div>
-    <input type="file" id="file" accept="image/*" multiple hidden>
-    <div class="thumbs" id="thumbs" style="display:none"></div>
-    <div class="rooprow">
-      <label for="room">Room</label>
-      <select class="roosel" id="room">
-        <option value="kitchen">Kitchen</option>
-        <option value="bathroom">Bathroom</option>
-        <option value="living room">Living room</option>
-        <option value="laundry room">Laundry</option>
-        <option value="outdoor kitchen">Outdoor</option>
-      </select>
-    </div>
-  </div>
+  <p class="sub">Upload a photo of your kitchen or bath, pick a countertop color, a tile, and a flooring from the library on the right, then let AI swap them into your room.</p>
 
   <div class="vgrid">
-    <!-- Libraries -->
-    <div>
+    <!-- Center: upload + render -->
+    <div class="main">
       <div class="panel">
-        <h2>🪨 Countertop <span class="pill" id="pill-countertops">Choose one</span></h2>
-        <input class="search" data-cat="countertops" placeholder="Search stone &amp; quartz colors…">
-        <div class="gallery" id="gallery-countertops"></div>
+        <h2>📷 Your photo</h2>
+        <p class="hint">Add one or more photos — JPEG or PNG. Pick which one to visualize.</p>
+        <div class="drop" id="drop">
+          <div class="ic">📸</div>
+          <b>Drop a photo here or tap to browse</b>
+          <small>Straight-on kitchen or bathroom shots work best</small>
+        </div>
+        <input type="file" id="file" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs" style="display:none"></div>
+        <div class="rooprow">
+          <label for="room">Room</label>
+          <select class="roosel" id="room">
+            <option value="kitchen">Kitchen</option>
+            <option value="bathroom">Bathroom</option>
+            <option value="living room">Living room</option>
+            <option value="laundry room">Laundry</option>
+            <option value="outdoor kitchen">Outdoor</option>
+          </select>
+        </div>
       </div>
-      <div class="panel">
-        <h2>🧱 Backsplash / Tile <span class="pill" id="pill-tile">Optional</span></h2>
-        <input class="search" data-cat="tile" placeholder="Search tile…">
-        <div class="gallery" id="gallery-tile"></div>
-      </div>
-      <div class="panel">
-        <h2>🪵 Flooring <span class="pill" id="pill-flooring">Optional</span></h2>
-        <input class="search" data-cat="flooring" placeholder="Search flooring…">
-        <div class="gallery" id="gallery-flooring"></div>
-      </div>
-    </div>
 
-    <!-- Stage -->
-    <div>
       <div class="stage">
         <div class="k">Your design</div>
         <div class="stageview" id="stageview">
@@ -174,6 +154,25 @@
       </div>
       <p class="foot">Powered by Surprise Granite · <a href="/tools/">More tools</a></p>
     </div>
+
+    <!-- Right rail: material libraries -->
+    <aside class="rail">
+      <div class="panel">
+        <h2>🪨 Countertop <span class="pill" id="pill-countertops">Choose one</span></h2>
+        <input class="search" data-cat="countertops" placeholder="Search stone &amp; quartz colors…">
+        <div class="gallery" id="gallery-countertops"></div>
+      </div>
+      <div class="panel">
+        <h2>🧱 Backsplash / Tile <span class="pill" id="pill-tile">Optional</span></h2>
+        <input class="search" data-cat="tile" placeholder="Search tile…">
+        <div class="gallery" id="gallery-tile"></div>
+      </div>
+      <div class="panel">
+        <h2>🪵 Flooring <span class="pill" id="pill-flooring">Optional</span></h2>
+        <input class="search" data-cat="flooring" placeholder="Search flooring…">
+        <div class="gallery" id="gallery-flooring"></div>
+      </div>
+    </aside>
   </div>
 </div>
 
