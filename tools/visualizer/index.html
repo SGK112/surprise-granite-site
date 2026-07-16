@@ -99,6 +99,29 @@
     .btn.ghost{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);font-size:14px;padding:12px}
     .stageacts{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
     .note{color:rgba(255,255,255,.5);font-size:11px;margin-top:12px;line-height:1.5}
+    /* Combined stage: upload built into the render area */
+    .stageview.empty{border:2px dashed rgba(255,255,255,.2);cursor:pointer}
+    .stageview.empty.over{border-color:var(--sg-gold);background:rgba(249,203,0,.06)}
+    .dropinner{color:rgba(255,255,255,.7);text-align:center;padding:34px 16px}
+    .dropinner .ic{font-size:34px}
+    .dropinner b{display:block;font-size:15px;margin:8px 0 3px;color:#fff}
+    .dropinner small{color:rgba(255,255,255,.45);font-size:12px}
+    .stagebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .minibtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff;font:inherit;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:9px;cursor:pointer;flex-shrink:0}
+    .minibtn:hover{border-color:var(--sg-gold)}
+    .roosel.sm{margin-left:auto;padding:8px 10px;font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff}
+    .roosel.sm option{color:#141207}
+    .stage .thumbs{margin-top:0}
+    .stage .thumb{width:44px;height:44px;border-color:rgba(255,255,255,.22)}
+    .stage .thumb.on{border-color:var(--sg-gold)}
+    /* Lead gen */
+    .leadgen h2{font-size:15px;font-weight:700;margin-bottom:3px}
+    .leadform{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+    .leadform input{font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--sg-darker);color:var(--text-primary)}
+    .leadform input:focus{outline:none;border-color:var(--sg-gold)}
+    .leadform button{grid-column:1/-1}
+    .leadok{color:#1a8f4a;font-weight:600;font-size:14px;padding:10px 2px}
+    @media (max-width:520px){.leadform{grid-template-columns:1fr}}
     .foot{margin-top:18px;font-size:12px;color:var(--text-muted);text-align:center}
     .foot a{color:var(--gold-deep)}
     html.sg-embed #unifiedNav,html.sg-embed .simple-footer,html.sg-embed #remodely-hub,html.sg-embed .themebtn{display:none!important}
@@ -117,19 +140,16 @@
   <div class="vgrid">
     <!-- Center: upload + render -->
     <div class="main">
-      <div class="panel">
-        <h2>📷 Your photo</h2>
-        <p class="hint">Add one or more photos — JPEG or PNG. Pick which one to visualize.</p>
-        <div class="drop" id="drop">
-          <div class="ic">📸</div>
-          <b>Drop a photo here or tap to browse</b>
-          <small>Straight-on kitchen or bathroom shots work best</small>
+      <div class="stage">
+        <div class="k">Your design</div>
+        <div class="stageview empty" id="stageview">
+          <div class="dropinner"><div class="ic">📸</div><b>Drop your photo here or tap to browse</b><small>Straight-on kitchen or bathroom shots work best · JPEG/PNG</small></div>
         </div>
         <input type="file" id="file" accept="image/*" multiple hidden>
-        <div class="thumbs" id="thumbs" style="display:none"></div>
-        <div class="rooprow">
-          <label for="room">Room</label>
-          <select class="roosel" id="room">
+        <div class="stagebar">
+          <button class="minibtn" id="addphoto" type="button">＋ Photo</button>
+          <div class="thumbs" id="thumbs"></div>
+          <select class="roosel sm" id="room" title="Room type">
             <option value="kitchen">Kitchen</option>
             <option value="bathroom">Bathroom</option>
             <option value="living room">Living room</option>
@@ -137,21 +157,29 @@
             <option value="outdoor kitchen">Outdoor</option>
           </select>
         </div>
-      </div>
-
-      <div class="stage">
-        <div class="k">Your design</div>
-        <div class="stageview" id="stageview">
-          <div class="stageempty">Add a photo and pick your materials — your AI render appears here.</div>
-        </div>
         <div class="chips" id="chips"></div>
         <button class="btn prime" id="vizbtn" disabled>Visualize my space →</button>
         <div class="stageacts" id="acts" hidden>
           <a class="btn ghost" id="dlbtn" download="my-space.jpg" href="#" style="margin-top:0">⬇ Download</a>
-          <a class="btn ghost" id="quotebtn" href="/get-a-free-estimate/?source=visualizer" style="margin-top:0">Get a quote →</a>
+          <button class="btn ghost" id="startover" type="button" style="margin-top:0">↺ New photo</button>
         </div>
         <p class="note">AI-generated preview for inspiration — actual materials, veining, and layout are confirmed on a free in-home measure.</p>
       </div>
+
+      <!-- Lead gen -->
+      <div class="panel leadgen">
+        <h2>Love your new look? Get a free quote</h2>
+        <p class="hint">We'll price your exact space — no obligation, we come to you.</p>
+        <form id="leadform" class="leadform">
+          <input id="lead-name" placeholder="Name" autocomplete="name" required>
+          <input id="lead-email" type="email" placeholder="Email" autocomplete="email" required>
+          <input id="lead-phone" type="tel" placeholder="Phone (optional)" autocomplete="tel">
+          <input id="lead-zip" placeholder="ZIP code" autocomplete="postal-code" inputmode="numeric" maxlength="10" required>
+          <button class="btn prime" type="submit" style="margin-top:0">Get my free estimate →</button>
+        </form>
+        <div class="leadok" id="leadok" hidden>✓ Thanks! A designer will reach out shortly.</div>
+      </div>
+
       <p class="foot">Powered by Surprise Granite · <a href="/tools/">More tools</a></p>
     </div>
 
@@ -300,23 +328,23 @@ function addFiles(files){
   });
 }
 function renderThumbs(){
-  const t = $('thumbs');
-  if (!images.length){ t.style.display='none'; t.innerHTML=''; return; }
-  t.style.display='flex';
-  t.innerHTML = images.map((im,i)=>`<div class="thumb${i===active?' on':''}" data-i="${i}"><img src="${im.base64}" alt=""><button class="x" data-del="${i}">✕</button></div>`).join('')
-    + `<button class="addthumb" id="addmore" title="Add another photo">+</button>`;
+  $('thumbs').innerHTML = images.map((im,i)=>`<div class="thumb${i===active?' on':''}" data-i="${i}"><img src="${im.base64}" alt=""><button class="x" data-del="${i}">✕</button></div>`).join('');
+}
+function stageEmptyHTML(){
+  return `<div class="dropinner"><div class="ic">📸</div><b>Drop your photo here or tap to browse</b><small>Straight-on kitchen or bathroom shots work best · JPEG/PNG</small></div>`;
 }
 function showActive(){
   resultB64 = null; $('acts').hidden = true;
-  const im = images[active];
-  $('stageview').innerHTML = im ? `<img src="${im.base64}" alt="Your space">`
-    : `<div class="stageempty">Add a photo and pick your materials — your AI render appears here.</div>`;
+  const sv = $('stageview'), im = images[active];
+  if (im){ sv.classList.remove('empty','over'); sv.innerHTML = `<img src="${im.base64}" alt="Your space">`; }
+  else { sv.classList.add('empty'); sv.classList.remove('over'); sv.innerHTML = stageEmptyHTML(); }
 }
 
 /* ---------- visualize ---------- */
 async function visualize(){
   if ($('vizbtn').disabled) return;
   const selections = CATS.filter(c=>sel[c]).map(c=>({ surface:SURFACE[c], material:matPayload(sel[c]) }));
+  $('stageview').classList.remove('empty');
   $('stageview').innerHTML = `<div class="working"><div class="spin"></div>Rendering your space…<br><small style="opacity:.6">this takes 10–20 seconds</small></div>`;
   $('vizbtn').disabled = true;
   try {
@@ -338,7 +366,8 @@ async function visualize(){
 function showComparison(){
   const before = images[active].base64;
   const after = 'data:image/jpeg;base64,' + resultB64;
-  $('stageview').innerHTML = `
+  const sv = $('stageview'); sv.classList.remove('empty');
+  sv.innerHTML = `
     <div class="cmp" id="cmp" style="--v:50%">
       <img src="${before}" alt="Before">
       <img class="after" src="${after}" alt="After">
@@ -348,22 +377,43 @@ function showComparison(){
   const cmp = $('cmp'), rng = $('cmprange');
   rng.addEventListener('input', ()=> cmp.style.setProperty('--v', rng.value + '%'));
   $('dlbtn').href = after;
-  const q = CATS.filter(c=>sel[c]).map(c=>`${c}=${encodeURIComponent(nameOf(sel[c]))}`).join('&');
-  $('quotebtn').href = '/get-a-free-estimate/?source=visualizer&' + q;
   $('acts').hidden = false;
 }
 
 /* ---------- wire ---------- */
-$('drop').addEventListener('click', ()=>$('file').click());
-$('drop').addEventListener('dragover', e=>{e.preventDefault();$('drop').classList.add('over');});
-$('drop').addEventListener('dragleave', ()=>$('drop').classList.remove('over'));
-$('drop').addEventListener('drop', e=>{e.preventDefault();$('drop').classList.remove('over');addFiles(e.dataTransfer.files);});
+const sv = $('stageview');
+sv.addEventListener('click', ()=>{ if(!images.length) $('file').click(); });
+sv.addEventListener('dragover', e=>{ e.preventDefault(); if(!images.length) sv.classList.add('over'); });
+sv.addEventListener('dragleave', ()=> sv.classList.remove('over'));
+sv.addEventListener('drop', e=>{ e.preventDefault(); sv.classList.remove('over'); addFiles(e.dataTransfer.files); });
+$('addphoto').addEventListener('click', ()=>$('file').click());
+$('startover').addEventListener('click', ()=>{ images=[]; active=0; renderThumbs(); showActive(); updateBtn(); });
 $('file').addEventListener('change', e=>{ addFiles(e.target.files); e.target.value=''; });
 $('thumbs').addEventListener('click', e=>{
-  const add = e.target.closest('#addmore'); const del = e.target.closest('[data-del]'); const th = e.target.closest('.thumb');
-  if (add){ $('file').click(); return; }
+  const del = e.target.closest('[data-del]'); const th = e.target.closest('.thumb');
   if (del){ e.stopPropagation(); images.splice(+del.dataset.del,1); if(active>=images.length)active=Math.max(0,images.length-1); renderThumbs(); showActive(); updateBtn(); return; }
   if (th){ active=+th.dataset.i; renderThumbs(); showActive(); }
+});
+$('leadform').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const name = $('lead-name').value.trim(), email = $('lead-email').value.trim(), zip = $('lead-zip').value.trim();
+  const phone = $('lead-phone').value.trim();
+  if (!name){ $('lead-name').focus(); return; }
+  if (!email.includes('@')){ $('lead-email').focus(); return; }
+  if (!zip){ $('lead-zip').focus(); return; }
+  const mats = CATS.filter(c=>sel[c]).map(c=>`${LABEL[c]}: ${nameOf(sel[c])}`).join(', ') || '(none selected yet)';
+  const btn = $('leadform').querySelector('button'); btn.disabled = true; btn.textContent = 'Sending…';
+  const body = {
+    homeowner_name: name, homeowner_email: email, project_zip: zip,
+    project_type: $('room').value, source: 'visualizer',
+    project_details: `Materials — ${mats}`,
+    message: `AI Visualizer lead. Room: ${$('room').value}. Materials: ${mats}.`,
+    page_url: location.href
+  };
+  if (phone.replace(/\D/g,'').length >= 10) body.homeowner_phone = phone;
+  try { await fetch(API_BASE + '/api/leads', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); }
+  catch(err){ console.error('lead submit', err); }
+  $('leadform').hidden = true; $('leadok').hidden = false;
 });
 document.querySelectorAll('.search').forEach(inp=> inp.addEventListener('input', ()=> renderGallery(inp.dataset.cat, inp.value)));
 CATS.forEach(cat=> $('gallery-'+cat).addEventListener('click', e=>{ const m=e.target.closest('.mat'); if(m) pick(cat, +m.dataset.i); }));
