@@ -26,16 +26,22 @@
 
     <style>
         :root {
+            /* Edge-visualizer design system (light) */
             --gold-primary: #f9cb00;
-            --gold-dark: #cca600;
-            --dark-primary: #1a1a2e;
-            --dark-deep: #0f0f18;
-            --dark-surface: #16161f;
-            --dark-elevated: #1e1e2d;
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.75);
-            --text-muted: rgba(255, 255, 255, 0.5);
-            --border-subtle: rgba(255, 255, 255, 0.1);
+            --gold-dark: #e5b800;
+            --gold-lite: #ffdf4a;
+            --gold-deep: #e5b800;
+            --dark-primary: #141207;              /* ink on gold buttons */
+            --dark-deep: #f4f1ea;                 /* page background (cream) */
+            --dark-surface: #ffffff;              /* cards / panels */
+            --dark-elevated: #ffffff;             /* nested cards */
+            --text-primary: #17181d;
+            --text-secondary: #6b6e78;
+            --text-muted: #9a9ca4;
+            --border-subtle: #e6e1d6;
+            --stage-a: #2a2c33;                   /* dark results stage */
+            --stage-b: #191a1f;
+            --shadow: 0 18px 44px -18px rgba(30,26,15,.35);
         }
 
         * {
@@ -1506,43 +1512,38 @@
         }
     </style>
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
+  <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
+  <style>
+    /* ---- edge-visualizer look: light page + dark results "stage" ---- */
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+    .page-content{max-width:900px}
+    .calc-hero{background:transparent;border-bottom:none;text-align:left;padding:28px 20px 8px}
+    .calc-hero h1{font-size:clamp(24px,4vw,36px);letter-spacing:-.02em;font-weight:800}
+    .calc-hero p{max-width:62ch;margin:0}
+    .calc-section-title .step,.calc-section-title svg{color:var(--gold-deep)}
+    /* input section cards: white panels on the cream page */
+    .countertop-section{background:var(--dark-surface);border:1px solid var(--border-subtle);border-radius:14px}
+    .calculator-card{background:transparent}
+    /* Dark results stage */
+    .results-panel{
+      position:relative;overflow:hidden;
+      background:linear-gradient(160deg,var(--stage-a),var(--stage-b));
+      border:1px solid rgba(255,255,255,.05);border-top:1px solid rgba(255,255,255,.05);
+      border-radius:20px;margin:8px 20px 24px;box-shadow:var(--shadow);
+    }
+    .results-panel::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 85% 6%,rgba(249,203,0,.13),transparent 55%);pointer-events:none}
+    .results-panel>*{position:relative}
+    .result-card{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+    .result-label{color:rgba(255,255,255,.5)}
+    .result-value{color:#fff}
+    .result-card.highlight .result-value{color:var(--dark-primary)}
+    .estimate-title{color:rgba(255,255,255,.6)}
+    .estimate-section{border-top-color:rgba(255,255,255,.1)}
+    @media (max-width:600px){.results-panel{margin:8px 12px 20px}}
+  </style>
 </head>
-<body>
-<!-- Secondary Header -->
-    <header class="header">
-        <div class="header-content">
-            <a href="/" class="logo-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 121.073 124.824" class="logo-icon">
-                    <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
-                    <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
-                    <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
-                    <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
-                </svg>
-                <span class="logo-text">Surprise Granite</span>
-            </a>
-            <nav class="header-nav">
-                <a href="/marketplace/slabs/">Countertops</a>
-                <a href="/materials/flooring">Flooring</a>
-                <a href="/shop">Shop</a>
-                <a href="/company/project-gallery">Gallery</a>
-                <a href="/contact-us">Contact</a>
-                <a href="/get-a-free-estimate" class="btn-estimate">Free Estimate</a>
-            </nav>
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-            </button>
-        </div>
-    </header>
-    <div class="mobile-nav" id="mobileNav">
-        <a href="/marketplace/slabs/">Countertops</a>
-        <a href="/materials/flooring">Flooring</a>
-        <a href="/shop">Shop</a>
-        <a href="/company/project-gallery">Gallery</a>
-        <a href="/contact-us">Contact</a>
-        <a href="/get-a-free-estimate" class="btn-estimate">Free Estimate</a>
-    </div>
-
+<body class="unified-nav-active">
     <!-- Page Content -->
     <div class="page-content">
         <!-- Breadcrumb -->
