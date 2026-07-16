@@ -316,16 +316,26 @@
     body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
     /* Hero → eyebrow + display headline, left aligned (nav adds top padding) */
     .visualizer-hero{background:transparent;border-bottom:none;text-align:left;padding:24px 20px 4px}
-    .hero-content{max-width:1140px;margin:0}
+    .hero-content{max-width:1140px;margin:0 auto}
     .hero-logo{display:none}
     .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);font-weight:700;margin-bottom:2px}
-    .hero-title{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:-.02em;font-weight:800;font-size:clamp(24px,4vw,36px)}
+    .hero-title{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:-.02em;font-weight:800;font-size:clamp(24px,4vw,36px);line-height:1.06}
     .hero-title .gold{color:var(--gold-deep)}
     .hero-subtitle{color:var(--text-secondary);max-width:62ch;margin:6px 0 0}
-    .visualizer-main{max-width:1140px;padding-top:24px}
+    .visualizer-main{max-width:1140px;padding:24px 20px 80px}
     /* Cards read as white panels on cream */
     .section-card{box-shadow:0 1px 2px rgba(30,26,15,.03)}
+    /* Step pills + readable number badges */
+    .steps-indicator{justify-content:flex-start;margin-bottom:28px}
     .step-pill{background:#fff}
+    .step-num{background:var(--border);color:var(--text-secondary)}
+    .step-pill.active .step-num{background:var(--sg-gold);color:#141207}
+    .step-pill.completed .step-num{background:#22c55e;color:#fff}
+    @media (max-width:640px){
+      .steps-indicator{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start;gap:6px;padding-bottom:4px}
+      .step-pill{flex-shrink:0;padding:8px 14px}
+      .section-card{padding:18px}
+    }
     /* Translucent-white surfaces → light equivalents */
     .upload-area{background:var(--sg-darker)}
     .surface-card{background:var(--sg-darker)}
@@ -364,7 +374,7 @@
 
     <!-- ===== STEP 1: Upload ===== -->
     <section id="step1" class="fade-in">
-      <div class="section-card" style="max-width:700px; margin:0 auto;">
+      <div class="section-card" style="max-width:760px; margin:0;">
         <h3 class="section-title"><span class="icon">📷</span> Upload Your Space</h3>
         <div class="upload-area" id="uploadArea">
           <div class="upload-placeholder">
