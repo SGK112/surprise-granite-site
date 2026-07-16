@@ -793,15 +793,39 @@
 
       if (window.RemodelyRateLimiter) window.RemodelyRateLimiter.recordUsage('ai_visualizer');
 
-      const data = await resp.json();
-      S.surfaces = data.surfaces || [];
-      S.layoutDescription = data.layoutDescription || '';
+      // The AI service can occasionally return an empty body (proxy timeout on the
+      // slow vision call) — tolerate it instead of throwing on resp.json().
+      const text = await resp.text();
+      const data = text ? JSON.parse(text) : {};
+      const detected = Array.isArray(data.surfaces) && data.surfaces.length ? data.surfaces : null;
+      S.surfaces = detected || DEFAULT_SURFACES.slice();
+      S.layoutDescription = data.layoutDescription
+        || (detected ? '' : 'Pick a material for each surface below — countertop, backsplash, and floor.');
       renderSurfaces();
     } catch (err) {
       console.error('Surface detection error:', err);
-      document.getElementById('detectLoading').classList.add('hidden');
-      document.getElementById('detectError').classList.remove('hidden');
+      // Auto-detect is unavailable — do NOT dead-end. Offer the standard surfaces so the
+      // stone / tile / flooring libraries are still browsable and selectable.
+      S.surfaces = DEFAULT_SURFACES.slice();
+      S.layoutDescription = "Auto-detect wasn't available — choose a material for each surface below.";
+      renderSurfaces();
     }
+  }
+
+  // Standard swappable surfaces, used when AI auto-detect returns nothing or fails so the
+  // material libraries are always reachable. `swappableWith` maps each to a library.
+  const DEFAULT_SURFACES = [
+    { id: 'countertop', label: 'Countertops', description: 'Kitchen or bathroom countertops', swappableWith: ['countertops'] },
+    { id: 'backsplash', label: 'Backsplash / Wall Tile', description: 'Tile behind the counters or on walls', swappableWith: ['tile'] },
+    { id: 'floor', label: 'Flooring', description: 'The floor surface', swappableWith: ['flooring'] }
+  ];
+
+  // Infer which library a detected surface should show when the AI omits swappableWith.
+  function inferCategories(surface) {
+    const s = ((surface?.id || '') + ' ' + (surface?.label || '') + ' ' + (surface?.description || '')).toLowerCase();
+    if (/floor|flooring|hardwood|vinyl|laminate|plank|lvt|lvp/.test(s)) return ['flooring'];
+    if (/backsplash|\bwall\b|\btile\b|shower|mosaic/.test(s)) return ['tile'];
+    return ['countertops'];
   }
 
   function renderSurfaces() {
@@ -880,7 +904,7 @@
   function getMaterialsForSurface(surfaceId) {
     const surface = S.surfaces.find(s => s.id === surfaceId);
     if (!surface) return S.products.countertops;
-    const cats = surface.swappableWith || ['countertops'];
+    const cats = (surface.swappableWith && surface.swappableWith.length) ? surface.swappableWith : inferCategories(surface);
     let items = [];
     cats.forEach(cat => {
       const list = S.products[cat] || [];
@@ -1014,7 +1038,9 @@
 
       if (window.RemodelyRateLimiter) window.RemodelyRateLimiter.recordUsage('ai_visualizer');
 
-      const data = await resp.json();
+      const text = await resp.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!data.image) throw new Error(data.error || 'The visualizer service timed out. Please try again.');
       S.swaps[surfaceId] = { material, imageBase64: data.image };
       S.currentBase64 = data.image;
 
