@@ -3686,26 +3686,32 @@ router.post('/room-visualize', aiRateLimiter('ai_visualizer'), async (req, res) 
       return res.status(503).json({ error: 'AI service not configured. Add REPLICATE_API_TOKEN.' });
     }
 
-    const parts = selections
+    const steps = selections
       .filter(s => s && s.surface && s.material)
       .map(s => {
         const m = s.material;
-        const desc = [m.name, m.type ? `(${m.type})` : '', m.color ? `- ${m.color}` : '']
+        const desc = [m.name, m.type ? `(${m.type})` : '', m.color ? `in ${m.color}` : '']
           .filter(Boolean).join(' ');
-        return `the ${s.surface} with ${desc}`;
+        return { surface: s.surface, desc };
       });
-    if (!parts.length) return res.status(400).json({ error: 'No valid selections' });
+    if (!steps.length) return res.status(400).json({ error: 'No valid selections' });
 
-    const editPrompt = `In this ${roomType} photo, replace ${parts.join(', and ')}. `
-      + `Keep the cabinets, appliances, walls, windows, fixtures, lighting, layout, and camera `
-      + `perspective exactly the same. Photorealistic, seamless, matching the original lighting and shadows.`;
-
-    const inputImage = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
-    const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, editPrompt, inputImage);
-    const imgResp = await fetch(outUrl);
-    const b64 = Buffer.from(await imgResp.arrayBuffer()).toString('base64');
-    logger.info(`[Room Visualize] success — ${parts.length} surface(s) in ${roomType}`);
-    return res.json({ image: b64, method: 'flux-kontext-pro', surfaces: parts.length });
+    // Apply each surface as its OWN Kontext edit, chained on the previous result. A single
+    // combined prompt made FLUX bleed the countertop material onto the tile/floor; editing
+    // one surface at a time keeps each material distinct.
+    let current = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
+    for (const step of steps) {
+      const prompt = `In this ${roomType} photo, replace ONLY the ${step.surface} with ${step.desc}. `
+        + `Do not change anything else — keep the cabinets, appliances, walls, windows, every other `
+        + `surface, lighting, layout, and camera perspective exactly as they are. Photorealistic, `
+        + `seamless, matching the original lighting and shadows.`;
+      const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, prompt, current);
+      const buf = Buffer.from(await (await fetch(outUrl)).arrayBuffer());
+      current = 'data:image/jpeg;base64,' + buf.toString('base64');
+    }
+    const b64 = current.replace(/^data:image\/\w+;base64,/, '');
+    logger.info(`[Room Visualize] success — ${steps.length} surface(s) sequentially in ${roomType}`);
+    return res.json({ image: b64, method: 'flux-kontext-seq', surfaces: steps.length });
   } catch (error) {
     logger.warn(`[Room Visualize] failed: ${error.message}`);
     return res.status(502).json({ error: 'The visualizer could not complete this render. Please try again.' });

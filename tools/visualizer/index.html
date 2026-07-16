@@ -68,6 +68,8 @@
     .mat img{width:100%;height:66px;object-fit:cover;display:block;background:var(--border)}
     .mat .nm{font-size:10.5px;font-weight:600;padding:5px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .more{grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:12px;padding:6px}
+    .loadmore{grid-column:1/-1;background:var(--sg-darker);border:1px solid var(--border);color:var(--gold-deep);font:inherit;font-weight:700;font-size:12.5px;padding:9px;border-radius:9px;cursor:pointer}
+    .loadmore:hover{border-color:var(--sg-gold)}
     /* Stage */
     .stage{background:linear-gradient(160deg,var(--stage-a),var(--stage-b));border-radius:18px;padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.05);margin-bottom:16px}
     .stage::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 85% 6%,rgba(249,203,0,.12),transparent 55%);pointer-events:none}
@@ -253,6 +255,8 @@ let images = [];        // { base64(dataURI), name }
 let active = 0;
 const sel = { countertops:null, tile:null, flooring:null };
 let resultB64 = null;
+const PAGE = 48;
+const shownCount = { countertops:PAGE, tile:PAGE, flooring:PAGE };
 
 /* ---------- data ---------- */
 function imgOf(p){ return p.primaryImage || (p.images && p.images[0]) || ''; }
@@ -281,13 +285,14 @@ function renderGallery(cat, q){
   q = (q||'').toLowerCase().trim();
   let list = PRODUCTS[cat];
   if (q) list = list.filter(p => (nameOf(p)+' '+(p.type||p.productType||'')+' '+(p.primaryColor||p.color||'')+' '+(p.brand||p.vendor||'')).toLowerCase().includes(q));
-  const shown = list.slice(0, 48);
+  const n = shownCount[cat];
+  const shown = list.slice(0, n);
   g.innerHTML = shown.map((p,i)=>{
     const on = sel[cat] && nameOf(sel[cat]) === nameOf(p);
     return `<div class="mat${on?' on':''}" data-i="${i}" title="${nameOf(p).replace(/"/g,'&quot;')}">
       <img src="${imgOf(p)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
       <div class="nm">${nameOf(p)}</div></div>`;
-  }).join('') + (list.length>48?`<div class="more">Showing 48 of ${list.length} — search to narrow</div>`:(list.length?'':`<div class="more">No matches</div>`));
+  }).join('') + (list.length>n ? `<button class="loadmore" type="button">Load more · ${list.length-n} left</button>` : (list.length?'':`<div class="more">No matches</div>`));
   g._list = shown;
 }
 function setPill(cat){
@@ -345,7 +350,7 @@ async function visualize(){
   if ($('vizbtn').disabled) return;
   const selections = CATS.filter(c=>sel[c]).map(c=>({ surface:SURFACE[c], material:matPayload(sel[c]) }));
   $('stageview').classList.remove('empty');
-  $('stageview').innerHTML = `<div class="working"><div class="spin"></div>Rendering your space…<br><small style="opacity:.6">this takes 10–20 seconds</small></div>`;
+  $('stageview').innerHTML = `<div class="working"><div class="spin"></div>Rendering your space…<br><small style="opacity:.6">this takes 20–40 seconds</small></div>`;
   $('vizbtn').disabled = true;
   try {
     const resp = await fetch(API_BASE + '/api/ai/room-visualize', {
@@ -415,8 +420,11 @@ $('leadform').addEventListener('submit', async e=>{
   catch(err){ console.error('lead submit', err); }
   $('leadform').hidden = true; $('leadok').hidden = false;
 });
-document.querySelectorAll('.search').forEach(inp=> inp.addEventListener('input', ()=> renderGallery(inp.dataset.cat, inp.value)));
-CATS.forEach(cat=> $('gallery-'+cat).addEventListener('click', e=>{ const m=e.target.closest('.mat'); if(m) pick(cat, +m.dataset.i); }));
+document.querySelectorAll('.search').forEach(inp=> inp.addEventListener('input', ()=>{ shownCount[inp.dataset.cat]=PAGE; renderGallery(inp.dataset.cat, inp.value); }));
+CATS.forEach(cat=> $('gallery-'+cat).addEventListener('click', e=>{
+  if (e.target.closest('.loadmore')){ shownCount[cat] += PAGE; renderGallery(cat, document.querySelector(`[data-cat="${cat}"]`).value); return; }
+  const m=e.target.closest('.mat'); if(m) pick(cat, +m.dataset.i);
+}));
 $('chips').addEventListener('click', e=>{ const r=e.target.closest('[data-clr]'); if(r) clearSel(r.dataset.clr); });
 $('vizbtn').addEventListener('click', visualize);
 $('themebtn').addEventListener('click', ()=>{ const r=document.documentElement, c=r.getAttribute('data-theme'); const n=c==='dark'?'light':c==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark'); r.setAttribute('data-theme',n); try{localStorage.setItem('sg-theme',n)}catch(e){} });
