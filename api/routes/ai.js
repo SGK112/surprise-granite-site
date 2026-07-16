@@ -3700,14 +3700,16 @@ router.post('/room-visualize', aiRateLimiter('ai_visualizer'), async (req, res) 
     // combined prompt made FLUX bleed the countertop material onto the tile/floor; editing
     // one surface at a time keeps each material distinct.
     let current = image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`;
+    const applied = [];
     for (const step of steps) {
-      const prompt = `In this ${roomType} photo, replace ONLY the ${step.surface} with ${step.desc}. `
-        + `Do not change anything else — keep the cabinets, appliances, walls, windows, every other `
-        + `surface, lighting, layout, and camera perspective exactly as they are. Photorealistic, `
-        + `seamless, matching the original lighting and shadows.`;
+      const keep = applied.length ? ` Also keep the ${applied.join(' and ')} exactly as they appear now.` : '';
+      const prompt = `In this ${roomType} photo, replace ONLY the ${step.surface} with ${step.desc}.${keep} `
+        + `Do not change anything else — keep the cabinets, appliances, walls, windows, lighting, layout, `
+        + `and camera angle exactly the same. Photorealistic, sharp focus, seamless, matching the original lighting and shadows.`;
       const outUrl = await replicateKontextEdit(REPLICATE_API_TOKEN, prompt, current);
       const buf = Buffer.from(await (await fetch(outUrl)).arrayBuffer());
       current = 'data:image/jpeg;base64,' + buf.toString('base64');
+      applied.push(step.surface);
     }
     const b64 = current.replace(/^data:image\/\w+;base64,/, '');
     logger.info(`[Room Visualize] success — ${steps.length} surface(s) sequentially in ${roomType}`);
