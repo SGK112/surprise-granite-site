@@ -593,10 +593,12 @@
 
         // Calculate dynamic pricing
         let priceHtml = '<div class="product-price">Call for Price</div>';
+        let cartPrice = 0;   // the exact price we put in the cart — never scraped from the DOM
 
         if (hasPricing) {
           const pricing = window.SG_PRICING.calculatePrice(product);
           if (pricing.yourPrice > 0) {
+            cartPrice = pricing.yourPrice;
             const showRetail = pricing.savings > 0.50;
             priceHtml = `
               <div class="product-price">
@@ -611,6 +613,7 @@
           // Fallback to static price
           const price = product.price ? parseFloat(product.price) : 0;
           if (price > 0) {
+            cartPrice = price;
             priceHtml = `<div class="product-price">$${price.toFixed(2)} <span style="font-size:12px;color:#888">/sq ft</span></div>`;
           }
         }
@@ -630,7 +633,7 @@
               <h3 class="product-title">${product.title}</h3>
               ${priceHtml}
               <span class="product-btn">View Details</span>
-              ${parseFloat(product.price) > 0 ? `<button class="add-to-cart-btn" onclick="event.preventDefault();event.stopPropagation();window.sgAddToCart && window.sgAddToCart('${product.handle || product.id}', this)">Add to Cart</button>` : ''}
+              ${cartPrice > 0 ? `<button class="add-to-cart-btn" onclick="event.preventDefault();event.stopPropagation();window.sgAddToCart && window.sgAddToCart({id:'${product.handle || product.id}',price:${cartPrice},category:'tile'}, this)">Add to Cart</button>` : ''}
               <button class="calc-project-btn" onclick="event.stopPropagation(); openCalcModal('${product.title.replace(/'/g, "\\'")}', ${parseFloat(product.price) || 0})">Calculate Your Project</button>
             </div>
           </div>
