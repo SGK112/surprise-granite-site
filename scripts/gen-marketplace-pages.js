@@ -28,6 +28,7 @@ const CAT = (process.argv[2] || 'sink').toLowerCase();
 const CFG = {
   sink:      { dir: 'sinks',               sing: 'Sink',             plural: 'Sinks' },
   faucet:    { dir: 'faucets',             sing: 'Faucet',           plural: 'Faucets' },
+  tile:      { dir: 'tile',                sing: 'Tile',             plural: 'Tile' },
   fixture:   { dir: 'bathroom',            sing: 'Bathroom Fixture', plural: 'Bathroom Fixtures' },
   accessory: { dir: 'kitchen-accessories', sing: 'Kitchen Accessory', plural: 'Kitchen Accessories' },
 }[CAT] || { dir: CAT + 's', sing: CAT, plural: CAT + 's' };
