@@ -486,7 +486,7 @@
   function card(p,cat){
     var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||p.category||'slabs');
     var pr=+p.retail_price||0;
-    var slab=/slab|countertop|material/i.test(cat||p.category||'');
+    var slab=/slab|countertop|material|remnant/i.test(cat||p.category||'');
     // Slabs quote INSTALLED $/sqft (material + $55/sqft fab&install), never raw material price.
     var inst=+p.installed_sqft||((slab&&pr>0&&pr<=500)?Math.round((pr+55)*100)/100:0);
     var priceBlock=slab
