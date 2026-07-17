@@ -31,6 +31,8 @@
         img:p.primary_image_url||(p.image_urls&&p.image_urls[0]), price:+p.retail_price||0, hasPrice:!!(+p.retail_price), brand:brandOf(p),
         sqft: sqftOf(p.size), _cat: ROUTE[cat] || C.cardCategory || cat || 'product' };
       (C.facets||[]).forEach(function(f){ x[f.key] = f.derive(p) || ''; });
+      // roomDefault needs x.room even when there is no room facet (e.g. the bathroom page)
+      if (!x.room && C.roomOf) x.room = C.roomOf(p) || '';
       ALL.push(x); bySlug[x.slug] = x;
     });
   }
