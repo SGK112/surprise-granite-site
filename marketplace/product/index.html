@@ -3208,6 +3208,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             // checkout (sinks and faucets are not sampleable).
             sample_eligible: p.sample_eligible === true,
             price: p.retail_price,
+            // Installed $/sqft (material + $55/sqft fab & install) computed by the
+            // catalog API's withInstalled(). Drives the Quick Price box so the detail
+            // page quotes the SAME number as the browse grid.
+            installed_sqft: p.installed_sqft,
             currency: 'USD',
             images: imgs,
             variants: [{
@@ -3389,6 +3393,37 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       })();
 
       renderSpecs(product);
+
+      // Quote the color's ACTUAL installed price in the Quick Price box — the SAME
+      // number the browse grid shows (material $/sqft + $55/sqft fab & install). A
+      // visitor who lands here directly (search, share, SEO) must see the price the
+      // grid promised, not a generic "$55". Priceless colors mirror the grid's
+      // "Call for pricing" fallback. Stone only; sinks/faucets hide this box.
+      (function applyInstalledPrice() {
+        if (category !== 'slabs' && category !== 'remnants') return;
+        const box = document.querySelector('.sg-price-preview');
+        if (!box) return;
+        const retail = Number(product.price != null ? product.price : product.retail_price) || 0;
+        let inst = Number(product.installed_sqft) || 0;
+        // Fallback for static-JSON slabs that never went through the API's
+        // withInstalled(): same formula + <=500 sanity gate as the grid.
+        if (!inst && category === 'slabs' && retail > 0 && retail <= 500) {
+          inst = Math.round((retail + 55) * 100) / 100;
+        }
+        const range = box.querySelector('.sg-price-range');
+        const note = box.querySelector('.sg-price-note');
+        if (inst > 0) {
+          const amt = box.querySelector('.sg-price-amount');
+          if (amt) amt.textContent = '$' + inst.toFixed(2);
+          // "From" + "per sqft installed" + "Includes material, fabrication &
+          // installation" are already correct for a real installed quote.
+        } else if (range) {
+          range.innerHTML = '<a href="tel:+16028333189" class="sg-price-amount" '
+            + 'style="font-size:26px;text-decoration:none;color:var(--gold-ink,#8a6d00)">Call for pricing</a>';
+          if (note) note.innerHTML = 'Every slab is unique — call <a href="tel:+16028333189" '
+            + 'style="color:inherit;font-weight:700">(602) 833-3189</a> for a quote &amp; free in-home measure';
+        }
+      })();
 
       document.getElementById('page-title').textContent = `${title} | ${material} Countertops | Surprise Granite`;
       document.getElementById('meta-description').content = description;
