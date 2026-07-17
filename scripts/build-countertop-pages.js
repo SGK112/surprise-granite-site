@@ -288,7 +288,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
     <div class="info">
       <div class="eyebrow">${esc(e.material)}${e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : ''}</div>
       <h1>${esc(e.name)} ${esc(e.material)} Countertops</h1>
-      ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : ''}
+      ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : `<div class="iprice"><b>Call for pricing</b><span> · <a href="tel:+16028333189" style="color:var(--gold-deep);font-weight:700">(602) 833-3189</a> · free in-home measure</span></div>`}
       <p class="lead">${esc(bodyDescription(e))}</p>
       <dl class="specs">${specRows(e)}</dl>
       <div class="cta">
