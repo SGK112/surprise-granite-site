@@ -486,10 +486,17 @@
   function card(p,cat){
     var url='/marketplace/product/?handle='+encodeURIComponent(p.slug||p.id)+'&category='+(cat||p.category||'slabs');
     var pr=+p.retail_price||0;
+    var slab=/slab|countertop|material/i.test(cat||p.category||'');
+    // Slabs quote INSTALLED $/sqft (material + $55/sqft fab&install), never raw material price.
+    var inst=+p.installed_sqft||((slab&&pr>0&&pr<=500)?Math.round((pr+55)*100)/100:0);
+    var priceBlock=slab
+      ?(inst?'<div class="pr">'+priceHtml(inst)+'<small> /sq ft</small></div><div class="ship" style="font-weight:600">installed \u00b7 free in-home measure</div>'
+            :'<div class="pr" style="font-size:15px">Free in-home estimate</div>')
+      :'<div class="pr">'+priceHtml(pr)+'</div>'+(pr>=500?'<div class="ship">Free shipping</div>':'');
     return '<a class="pc" href="'+url+'"><div class="im"><img loading="lazy" src="'+esc(imgOf(p))+'" alt="'+esc(p.name||'')+'" onerror="this.onerror=null;this.src=\'/images/placeholder-card.svg\';"/></div>'
       +'<div class="bd"><div class="br">'+esc(p.brand||'')+'</div><div class="nm">'+esc(p.name||'')+'</div>'
-      +'<div class="pr">'+priceHtml(pr)+'</div>'+(pr>=500?'<div class="ship">Free shipping</div>':'')
-      +'<button class="add" onclick="event.preventDefault();location.href=\''+url+'\'">Add to Cart</button></div></a>';
+      +priceBlock
+      +'<button class="add" onclick="event.preventDefault();location.href=\''+url+'\'">'+(slab?'View item':'Add to Cart')+'</button></div></a>';
   }
   function skels(el,n){var h='';for(var i=0;i<n;i++)h+='<div class="pc"><div class="im skel"></div><div class="bd"><div class="nm skel" style="height:34px;border-radius:4px"></div><div class="pr skel" style="height:20px;width:56px;border-radius:4px;margin-top:8px"></div></div></div>';el.innerHTML=h;}
 

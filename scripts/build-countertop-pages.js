@@ -16,10 +16,37 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const DIRS = path.join(ROOT, 'countertops');
 const ORIGIN = 'https://www.surprisegranite.com';
+const API = 'https://surprise-granite-email-api.onrender.com';
+const FAB_RATE = 55; // $/sqft fabrication + install — same rate as the calculator & The Yard
+
+// Live installed pricing from the catalog (master sheet): slug -> installed $/sqft.
+// retail_price for slabs is MATERIAL per sqft; installed = material + $55/sqft.
+// Fails soft: if the API is unreachable the pages build without prices.
+function fetchInstalledPrices() {
+  const out = {};
+  try {
+    for (let off = 0; off < 6000; off += 250) {
+      const raw = execFileSync('curl', ['-s', '-m', '30', `${API}/api/catalog?category=slab&limit=250&offset=${off}`], { maxBuffer: 1 << 26 }).toString();
+      let ps; try { ps = JSON.parse(raw).products || []; } catch { break; }
+      if (!ps.length) break;
+      for (const p of ps) {
+        const slug = p.slug || p.id;
+        const rp = Number(p.retail_price) || 0;
+        const inst = Number(p.installed_sqft) || ((rp > 0 && rp <= 500) ? Math.round((rp + FAB_RATE) * 100) / 100 : 0);
+        if (slug && inst) out[slug] = inst;
+      }
+      if (ps.length < 250) break;
+    }
+  } catch (e) { console.warn('price fetch failed (building without prices):', e.message); }
+  return out;
+}
+const INSTALLED = fetchInstalledPrices();
+console.log(`installed prices fetched for ${Object.keys(INSTALLED).length} slabs`);
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
@@ -139,6 +166,7 @@ function renderPage(e) {
   const imgs = e.images.slice(0, 6);
   const hero = imgs[0] || '';
   const heroAbs = hero.startsWith('http') ? hero : ORIGIN + hero;
+  const inst = INSTALLED[e.slug] || 0; // installed $/sqft (material + $55 fab&install)
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product',
     name: `${e.name} ${e.material}`,
@@ -149,7 +177,23 @@ function renderPage(e) {
     color: e.color || undefined,
     brand: e.vendor ? { '@type': 'Brand', name: prettyVendor(e.vendor) } : undefined,
     url,
-    manufacturer: e.vendor ? { '@type': 'Organization', name: prettyVendor(e.vendor) } : undefined
+    manufacturer: e.vendor ? { '@type': 'Organization', name: prettyVendor(e.vendor) } : undefined,
+    // Honest installed pricing: per-square-foot INSTALLED (material + fabrication + install).
+    // UnitPriceSpecification is only valid NESTED inside priceSpecification (schema gotcha).
+    offers: inst ? {
+      '@type': 'Offer',
+      priceCurrency: 'USD',
+      price: inst.toFixed(2),
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: inst.toFixed(2), priceCurrency: 'USD',
+        referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'FTK' }
+      },
+      availability: 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      url,
+      seller: { '@type': 'Organization', name: 'Surprise Granite' }
+    } : undefined
   };
   const matSlug = materialSlug(e.material);
   const crumbItems = [
@@ -204,6 +248,9 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
 h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:4px 0 12px}
 .lead{color:#33343a;font-size:15.5px;margin-bottom:18px}
+.iprice{margin:2px 0 12px;font-size:15px;color:#33343a}
+.iprice b{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.iprice span{display:block;font-size:12px;color:var(--mut);margin-top:2px}
 .specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:20px}
 .spec{background:var(--panel);padding:11px 14px}
 .spec dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}
@@ -241,6 +288,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
     <div class="info">
       <div class="eyebrow">${esc(e.material)}${e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : ''}</div>
       <h1>${esc(e.name)} ${esc(e.material)} Countertops</h1>
+      ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : ''}
       <p class="lead">${esc(bodyDescription(e))}</p>
       <dl class="specs">${specRows(e)}</dl>
       <div class="cta">
@@ -253,7 +301,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
   <section class="about">
     <h2>About ${esc(e.name)}</h2>
     <p>${esc(bodyDescription(e))}</p>
-    <p>Every ${esc(e.name)} installation includes digital templating, professional fabrication, and expert installation by our Arizona-based team. Pricing is per project and depends on square footage, edge profile, and cutouts — <a href="/tools/countertop-calculator/">estimate your project</a> or book a free in-home measure for exact numbers.</p>
+    <p>Every ${esc(e.name)} installation includes digital templating, professional fabrication, and expert installation by our Arizona-based team. ${inst ? `Installed pricing starts around $${inst.toFixed(2)} per square foot — material, fabrication, and installation included. ` : ''}Final pricing depends on square footage, edge profile, and cutouts — <a href="/tools/countertop-calculator/">estimate your project</a> or book a free in-home measure for exact numbers.</p>
   </section>
   ${related(e)}
 </div>

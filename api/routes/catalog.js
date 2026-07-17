@@ -206,22 +206,39 @@ function sqftFromSize(size) {
 // $26/sqft fab. Customer price is unchanged (margin absorbs the tax).
 const YARD_TAX = 1.091;
 function withInstalled(p, internal) {
-  if (!p || p.vendor_id !== 'the-yard-az') return p;
-  const sqft = sqftFromSize(p.size);
-  const raw = Number(p.retail_price) || 0;
-  if (!sqft || !raw) return p;
-  const pickup = p.category === 'remnant' ? 150 : 0;
-  const total = Math.round(raw + pickup + 55 * sqft); // customer installed price
-  const out = { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100,
-    price_note: 'installed (fab+install); retail_price is pre-tax Yard material' };
-  if (internal) {
-    const materialTaxed = raw * YARD_TAX;                 // Yard price + 9.1% AZ tax we pay
-    const ourCost = Math.round(materialTaxed + 26 * sqft); // + $26/sqft fab/install cost
-    out.material_cost_taxed = Math.round(materialTaxed);
-    out.installed_cost = ourCost;
-    out.margin_pct = total > 0 ? Math.round(((total - ourCost) / total) * 100) : null;
+  if (!p) return p;
+
+  // The Yard: retail_price is the WHOLE-PIECE raw price; installed = piece + pickup + $55/sqft.
+  if (p.vendor_id === 'the-yard-az') {
+    const sqft = sqftFromSize(p.size);
+    const raw = Number(p.retail_price) || 0;
+    if (!sqft || !raw) return p;
+    const pickup = p.category === 'remnant' ? 150 : 0;
+    const total = Math.round(raw + pickup + 55 * sqft); // customer installed price
+    const out = { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100,
+      price_note: 'installed (fab+install); retail_price is pre-tax Yard material' };
+    if (internal) {
+      const materialTaxed = raw * YARD_TAX;                 // Yard price + 9.1% AZ tax we pay
+      const ourCost = Math.round(materialTaxed + 26 * sqft); // + $26/sqft fab/install cost
+      out.material_cost_taxed = Math.round(materialTaxed);
+      out.installed_cost = ourCost;
+      out.margin_pct = total > 0 ? Math.round(((total - ourCost) / total) * 100) : null;
+    }
+    return out;
   }
-  return out;
+
+  // Distributor slabs: retail_price (from the master sheet) is the MATERIAL price PER SQFT.
+  // Installed = material + $55/sqft fab & install — the same rate as the countertop
+  // calculator and the Yard formula, so every surface quotes the same number. Sanity-gate
+  // to per-sqft-looking prices so a stray lump-sum row can't produce a nonsense quote.
+  if (p.category === 'slab') {
+    const perSqft = Number(p.retail_price) || 0;
+    if (perSqft > 0 && perSqft <= 500) {
+      return { ...p, installed_sqft: Math.round((perSqft + 55) * 100) / 100,
+        price_note: 'installed_sqft = material $/sqft + $55/sqft fab & install; retail_price is material per sqft' };
+    }
+  }
+  return p;
 }
 
 router.get('/', async (req, res) => {

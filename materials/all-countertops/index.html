@@ -219,7 +219,9 @@
       var scene=sceneOf(imgs), slab=slabOf(p);
       var lead=scene||slab;
       if(!notLogo(lead)) lead=slab||PH;              // never lead with a logo
-      ALL.push({slug:slug,name:p.name||'Countertop',mat:matOf(p),
+      var _rp=+p.retail_price||0;
+      var _inst=(+p.installed_sqft)||((_rp>0&&_rp<=500)?Math.round((_rp+55)*100)/100:0);
+      ALL.push({slug:slug,name:p.name||'Countertop',mat:matOf(p),inst:_inst,
         brand:p.brand||p.vendor||'',lead:lead,hover:(scene&&slab&&slab!==scene)?slab:null,hasScene:!!scene});
     });
   }
@@ -229,7 +231,9 @@
       +(t.hasScene?'<span class="badge">In a room</span>':'')
       +'<img class="a" loading="lazy" src="'+esc(t.lead)+'" alt="'+esc(t.name)+(t.hasScene?' countertop in a real space':' slab')+'" onerror="this.onerror=null;this.src=\''+PH+'\'">'
       +(t.hover?'<img class="b" loading="lazy" src="'+esc(t.hover)+'" alt="'+esc(t.name)+' slab">':'')
-      +'</div><div class="bd"><div class="nm">'+esc(t.name)+'</div><div class="mt">'+esc(t.mat)+(t.brand?' · '+esc(t.brand):'')+'</div></div></a>';
+      +'</div><div class="bd"><div class="nm">'+esc(t.name)+'</div><div class="mt">'+esc(t.mat)+(t.brand?' · '+esc(t.brand):'')+'</div>'
+      +(t.inst?'<div class="mt" style="margin-top:4px;color:var(--gold-ink,#8a6d00);font-weight:800">from $'+t.inst.toFixed(2)+'/sq ft <span style="font-weight:600;color:inherit">installed</span></div>':'')
+      +'</div></a>';
   }
   function passes(t){
     if(mat!=='all'&&t.mat!==mat)return false;
