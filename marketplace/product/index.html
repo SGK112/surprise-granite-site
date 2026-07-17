@@ -3399,14 +3399,29 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // visitor who lands here directly (search, share, SEO) must see the price the
       // grid promised, not a generic "$55". Priceless colors mirror the grid's
       // "Call for pricing" fallback. Stone only; sinks/faucets hide this box.
-      (function applyInstalledPrice() {
+      (async function applyInstalledPrice() {
         if (category !== 'slabs' && category !== 'remnants') return;
         const box = document.querySelector('.sg-price-preview');
         if (!box) return;
-        const retail = Number(product.price != null ? product.price : product.retail_price) || 0;
         let inst = Number(product.installed_sqft) || 0;
-        // Fallback for static-JSON slabs that never went through the API's
-        // withInstalled(): same formula + <=500 sanity gate as the grid.
+        let retail = Number(product.price != null ? product.price : product.retail_price) || 0;
+        // The slab render path returns the priceless static slabs.json entry and
+        // never consults the catalog API (see usablePrice), so installed_sqft is
+        // absent here. Ask the API directly for the authoritative installed price.
+        if (!inst) {
+          const amt0 = box.querySelector('.sg-price-amount');
+          if (amt0) amt0.textContent = '…';
+          try {
+            const r = await fetch('https://surprise-granite-email-api.onrender.com/api/catalog/' + encodeURIComponent(handle), { signal: AbortSignal.timeout(8000) });
+            if (r.ok) {
+              const d = await r.json();
+              const p = d.product || (Array.isArray(d.products) ? d.products[0] : null);
+              if (p) { inst = Number(p.installed_sqft) || 0; if (!retail) retail = Number(p.retail_price) || 0; }
+            }
+          } catch (e) { /* fall through to fallback / Call for pricing */ }
+        }
+        // Fallback (static-JSON slab the API also lacks): same formula + <=500
+        // sanity gate as the browse grid.
         if (!inst && category === 'slabs' && retail > 0 && retail <= 500) {
           inst = Math.round((retail + 55) * 100) / 100;
         }
