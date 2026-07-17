@@ -1,0 +1,303 @@
+#!/usr/bin/env node
+/**
+ * Build real, server-rendered, crawlable countertop detail pages at /countertops/{slug}/.
+ *
+ * Replaces the old client-side redirect "loader" stubs (which JS-redirected to
+ * /marketplace/product/?handle=... and were thin/invisible to search) with static pages
+ * that carry real content + Product/BreadcrumbList JSON-LD + crawlable internal links.
+ *
+ * Data: data/slabs.json (rich: material, vendor, images, size…) merged with
+ * data/countertops.json (color, accent, style). Slugs with NO data are left untouched
+ * and reported (handled separately: sitemap prune / noindex).
+ *
+ * Usage:  node scripts/build-countertop-pages.js          (write all)
+ *         node scripts/build-countertop-pages.js --dry     (report only)
+ *         node scripts/build-countertop-pages.js --limit 3 (first N, for testing)
+ */
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const DIRS = path.join(ROOT, 'countertops');
+const ORIGIN = 'https://www.surprisegranite.com';
+
+const args = process.argv.slice(2);
+const DRY = args.includes('--dry');
+const LIMIT = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') + 1], 10) : Infinity;
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const attr = s => esc(s);
+const jsonLd = o => JSON.stringify(o).replace(/</g, '\\u003c');
+
+// ---------- merge data by slug ----------
+function loadArr(file, keys) {
+  const d = JSON.parse(fs.readFileSync(path.join(ROOT, file)));
+  for (const k of keys) if (Array.isArray(d[k])) return d[k];
+  return Array.isArray(d) ? d : Object.values(d)[0];
+}
+const slabs = loadArr('data/slabs.json', ['slabs', 'countertops']);
+const ctops = loadArr('data/countertops.json', ['countertops']);
+
+const bySlug = {};
+for (const s of slabs) {
+  const slug = s.handle || s.slug;
+  if (!slug) continue;
+  bySlug[slug] = {
+    slug,
+    name: s.title || s.name,
+    material: s.material || s.productType || 'Stone',
+    vendor: s.brandDisplay || s.vendor || s.brand || '',
+    finish: s.finish || '', thickness: s.thickness || '', size: s.size || '',
+    slab_sqft: s.slab_sqft || '',
+    images: (s.images || []).filter(Boolean),
+    description: (s.description || '').trim(),
+    sample_eligible: !!s.sample_eligible, sample_price: s.sample_price || '',
+    color: '', accent: '', style: ''
+  };
+}
+for (const c of ctops) {
+  const slug = c.slug;
+  if (!slug) continue;
+  const e = bySlug[slug] || (bySlug[slug] = { slug, images: [] });
+  e.name = e.name || c.name;
+  e.material = e.material || c.type || 'Stone';
+  e.vendor = e.vendor || c.brand || '';
+  e.color = e.color || c.primaryColor || '';
+  e.accent = e.accent || c.accentColor || '';
+  e.style = e.style || c.style || '';
+  e.finish = e.finish || c.finish || '';
+  e.thickness = e.thickness || c.thickness || '';
+  e.size = e.size || c.size || '';
+  if (!e.images || !e.images.length) e.images = (c.images || [c.primaryImage]).filter(Boolean);
+  if (!e.sample_price && c.sample_price) { e.sample_price = c.sample_price; e.sample_eligible = true; }
+}
+
+// group by material for "related colors"
+const byMaterial = {};
+for (const slug in bySlug) {
+  const m = (bySlug[slug].material || 'Stone').toLowerCase();
+  (byMaterial[m] = byMaterial[m] || []).push(slug);
+}
+
+const prettyVendor = v => (v || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\bMsi\b/, 'MSI').replace(/\bAsg\b/, 'ASG');
+
+// Only these material category pages actually exist — link the breadcrumb to them; for any
+// other material (dolomite, travertine, onyx, quartz (quantra)…) fall back to all-countertops
+// so we never emit a 404 internal link.
+const MATERIAL_PAGES = new Set(['granite', 'quartz', 'marble', 'quartzite', 'porcelain', 'dekton']);
+function materialSlug(mat) {
+  const base = (mat || '').toLowerCase().replace(/\(.*?\)/g, '').trim().split(/\s+/)[0];
+  return MATERIAL_PAGES.has(base) ? base : null;
+}
+const titleCaseMat = m => /quartz|granite|marble|dekton|porcelain|quartzite|onyx|soapstone|travertine/i.test(m) ? m : m;
+
+function metaDescription(e) {
+  const color = e.color ? e.color + ' ' : '';
+  const mat = e.material || 'stone';
+  const style = e.style ? `, ${e.style.toLowerCase()},` : '';
+  return `${e.name} is a ${color}${mat} countertop slab${style} fabricated & installed by Surprise Granite across Phoenix & Arizona. Free in-home estimates — see it in your kitchen or order a sample.`.slice(0, 300);
+}
+function bodyDescription(e) {
+  if (e.description && e.description.length > 40) return e.description;
+  const color = e.color ? e.color.toLowerCase() + ' ' : '';
+  const mat = e.material || 'stone';
+  const vendor = e.vendor ? ` from ${prettyVendor(e.vendor)}` : '';
+  const style = e.style ? ` Its ${e.style.toLowerCase()} pattern` : ' Its look';
+  return `${e.name} is a ${color}${mat} countertop${vendor}.${style} suits kitchens, islands, bathroom vanities, and outdoor kitchens. Surprise Granite fabricates and installs ${e.name} throughout the Phoenix metro — Surprise, Scottsdale, Peoria, Glendale, and greater Arizona — with precise templating, a lifetime workmanship warranty, and free in-home estimates.`;
+}
+
+function specRows(e) {
+  const rows = [
+    ['Material', e.material],
+    ['Color', [e.color, e.accent && e.accent !== e.color ? e.accent : ''].filter(Boolean).join(' / ')],
+    ['Pattern', e.style],
+    ['Finish', e.finish],
+    ['Thickness', e.thickness],
+    ['Slab size', e.size],
+    ['Brand', prettyVendor(e.vendor)]
+  ].filter(r => r[1]);
+  return rows.map(r => `<div class="spec"><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join('');
+}
+
+function related(e) {
+  const m = (e.material || 'Stone').toLowerCase();
+  const pool = (byMaterial[m] || []).filter(s => s !== e.slug);
+  const pick = pool.slice(0, 8).map(s => bySlug[s]);
+  if (!pick.length) return '';
+  return `<section class="rel"><h2>More ${esc(e.material)} colors</h2><div class="rel-grid">` +
+    pick.map(p => `<a class="rel-card" href="/countertops/${attr(p.slug)}/"><img src="${attr((p.images[0]||''))}" alt="${attr(p.name)} ${attr(p.material)}" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(p.name)}</span></a>`).join('') +
+    `</div></section>`;
+}
+
+// ---------- page template ----------
+function renderPage(e) {
+  const url = `${ORIGIN}/countertops/${e.slug}/`;
+  const title = `${e.name} ${e.material} Countertops | Surprise Granite`;
+  const desc = metaDescription(e);
+  const imgs = e.images.slice(0, 6);
+  const hero = imgs[0] || '';
+  const heroAbs = hero.startsWith('http') ? hero : ORIGIN + hero;
+  const productLd = {
+    '@context': 'https://schema.org', '@type': 'Product',
+    name: `${e.name} ${e.material}`,
+    image: imgs.map(i => i.startsWith('http') ? i : ORIGIN + i),
+    description: bodyDescription(e).replace(/\s+/g, ' ').trim(),
+    category: 'Countertops',
+    material: e.material || undefined,
+    color: e.color || undefined,
+    brand: e.vendor ? { '@type': 'Brand', name: prettyVendor(e.vendor) } : undefined,
+    url,
+    manufacturer: e.vendor ? { '@type': 'Organization', name: prettyVendor(e.vendor) } : undefined
+  };
+  const matSlug = materialSlug(e.material);
+  const crumbItems = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: ORIGIN + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Countertops', item: ORIGIN + '/materials/all-countertops/' }
+  ];
+  if (matSlug) crumbItems.push({ '@type': 'ListItem', position: crumbItems.length + 1, name: `${e.material} Countertops`, item: `${ORIGIN}/materials/countertops/${matSlug}-countertops/` });
+  crumbItems.push({ '@type': 'ListItem', position: crumbItems.length + 1, name: e.name, item: url });
+  const crumbLd = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbItems };
+  const gallery = imgs.length > 1
+    ? `<div class="thumbs">${imgs.map((i, n) => `<img src="${attr(i)}" alt="${attr(e.name)} ${attr(e.material)} ${n ? 'scene ' + n : 'slab'}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>`
+    : '';
+  const sampleCta = e.sample_eligible ? `<a class="btn ghost" href="/marketplace/product/?handle=${attr(e.slug)}&category=slabs">Order a sample${e.sample_price ? ` · $${attr(e.sample_price)}` : ''}</a>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>${esc(title)}</title>
+<meta name="description" content="${attr(desc)}"/>
+<link rel="canonical" href="${url}"/>
+<meta name="robots" content="index, follow"/>
+<meta property="og:type" content="product"/>
+<meta property="og:title" content="${attr(e.name)} ${attr(e.material)} Countertops"/>
+<meta property="og:description" content="${attr(desc)}"/>
+<meta property="og:url" content="${url}"/>
+<meta property="og:image" content="${attr(heroAbs)}"/>
+<meta property="og:site_name" content="Surprise Granite"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${attr(e.name)} ${attr(e.material)} Countertops"/>
+<meta name="twitter:description" content="${attr(desc)}"/>
+<meta name="twitter:image" content="${attr(heroAbs)}"/>
+<link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260709c"/>
+<script defer src="/js/unified-nav.js?v=20260713c"></script>
+<link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
+<script type="application/ld+json">${jsonLd(productLd)}</script>
+<script type="application/ld+json">${jsonLd(crumbLd)}</script>
+<style>
+:root{--gold:#f9cb00;--gold-deep:#e5b800;--ink:#17181d;--mut:#6b6e78;--bg:#f4f1ea;--panel:#fff;--line:#e6e1d6;--shadow:0 18px 44px -18px rgba(30,26,15,.35)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 20px 56px}
+.crumb{font-size:12.5px;color:var(--mut);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px}
+.crumb a{color:var(--gold-deep);text-decoration:none}.crumb span{color:var(--mut)}
+.top{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:start}
+@media (max-width:820px){.top{grid-template-columns:1fr}}
+.gallery img.hero{width:100%;border-radius:16px;border:1px solid var(--line);display:block;background:#e9e3d6;aspect-ratio:4/3;object-fit:cover}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#e9e3d6}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
+h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:4px 0 12px}
+.lead{color:#33343a;font-size:15.5px;margin-bottom:18px}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.spec{background:var(--panel);padding:11px 14px}
+.spec dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}
+.spec dd{font-size:14.5px;font-weight:600;margin-top:2px}
+.cta{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:14.5px;border:none;border-radius:11px;padding:13px 18px;cursor:pointer;text-decoration:none;display:inline-flex;gap:8px;align-items:center;transition:transform .12s}
+.btn:hover{transform:translateY(-2px)}
+.btn.prime{background:linear-gradient(135deg,#ffdf4a,var(--gold),var(--gold-deep));color:#141207;box-shadow:0 10px 22px -8px rgba(249,203,0,.6)}
+.btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.about{margin-top:34px;max-width:74ch}
+.about h2{font-size:19px;font-weight:800;margin-bottom:8px}
+.about p{color:#33343a;font-size:15px;margin-bottom:10px}
+.rel{margin-top:38px}
+.rel h2{font-size:19px;font-weight:800;margin-bottom:14px}
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.rel-card{text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);transition:transform .12s,border-color .15s}
+.rel-card:hover{transform:translateY(-3px);border-color:var(--gold)}
+.rel-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e9e3d6}
+.rel-card span{display:block;padding:9px 10px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body class="unified-nav-active">
+<div class="wrap">
+  <nav class="crumb" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span>/</span>
+    <a href="/materials/all-countertops/">Countertops</a> <span>/</span>
+    ${matSlug ? `<a href="/materials/countertops/${matSlug}-countertops/">${esc(e.material)}</a> <span>/</span>` : ''}
+    <span>${esc(e.name)}</span>
+  </nav>
+  <div class="top">
+    <div class="gallery">
+      <img class="hero" src="${attr(hero)}" alt="${attr(e.name)} ${attr(e.material)} countertop slab" onerror="this.style.background='#e9e3d6'">
+      ${gallery}
+    </div>
+    <div class="info">
+      <div class="eyebrow">${esc(e.material)}${e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : ''}</div>
+      <h1>${esc(e.name)} ${esc(e.material)} Countertops</h1>
+      <p class="lead">${esc(bodyDescription(e))}</p>
+      <dl class="specs">${specRows(e)}</dl>
+      <div class="cta">
+        <a class="btn prime" href="/get-a-free-estimate/?source=countertop&color=${attr(encodeURIComponent(e.name))}">Get a free estimate →</a>
+        <a class="btn ghost" href="/tools/visualizer/">See it in your kitchen</a>
+        ${sampleCta}
+      </div>
+    </div>
+  </div>
+  <section class="about">
+    <h2>About ${esc(e.name)}</h2>
+    <p>${esc(bodyDescription(e))}</p>
+    <p>Every ${esc(e.name)} installation includes digital templating, professional fabrication, and expert installation by our Arizona-based team. Pricing is per project and depends on square footage, edge profile, and cutouts — <a href="/tools/countertop-calculator/">estimate your project</a> or book a free in-home measure for exact numbers.</p>
+  </section>
+  ${related(e)}
+</div>
+<footer class="simple-footer">
+  <div class="footer-cta">
+    <h2>Ready to Start Your Project?</h2>
+    <p>Free estimates for Phoenix metro homeowners</p>
+    <div class="footer-cta-btns">
+      <a href="/get-a-free-estimate/" class="footer-btn-primary">Get Free Estimate</a>
+      <a href="tel:+16028333189" class="footer-btn-secondary">(602) 833-3189</a>
+    </div>
+  </div>
+  <div class="footer-main"><div class="footer-grid">
+    <div class="footer-col"><h4>Products</h4><a href="/materials/all-countertops/">Countertops</a><a href="/materials/all-cabinets">Cabinets</a><a href="/materials/flooring">Flooring</a><a href="/materials/all-tile">Tile &amp; Backsplash</a><a href="/marketplace/">Online Store</a></div>
+    <div class="footer-col"><h4>Services</h4><a href="/services/home/kitchen-remodeling-arizona">Kitchen Remodeling</a><a href="/services/home/bathroom-remodeling-arizona">Bathroom Remodeling</a><a href="/get-a-free-estimate/">Free Estimate</a><a href="/tools/">Design Tools</a></div>
+    <div class="footer-col"><h4>Company</h4><a href="/company/about-us">About Us</a><a href="/company/project-gallery">Gallery</a><a href="/company/reviews">Reviews</a><a href="/blog">Blog</a><a href="/contact-us">Contact</a></div>
+    <div class="footer-col"><h4>Connect</h4><div class="footer-contact"><p><strong>Service Area:</strong><br>Greater Phoenix, AZ<br>We Come to You!</p><p><strong>Hours:</strong><br>Mon-Fri 8am-5pm<br>Sat 9am-2pm</p></div></div>
+  </div></div>
+  <div class="footer-bottom"><div class="footer-bottom-inner">
+    <div class="footer-legal"><a href="/legal/privacy-policy">Privacy</a><a href="/legal/terms-of-use">Terms</a><a href="/legal/lifetime-warranty">Warranty</a><a href="https://azroc.my.site.com/AZRoc/s/contractor-search?licenseId=a0o8y000000OAdvAAG" target="_blank">ROC #341113</a></div>
+    <div class="footer-copy">© 2026 Surprise Granite Marble &amp; Quartz</div>
+  </div></div>
+</footer>
+<script defer src="/js/remodely-hub.js?v=20260713c"></script>
+</body>
+</html>
+`;
+}
+
+// ---------- run ----------
+const dirs = fs.readdirSync(DIRS).filter(d => {
+  try { return fs.statSync(path.join(DIRS, d)).isDirectory(); } catch { return false; }
+});
+let written = 0, noData = [], count = 0;
+for (const slug of dirs) {
+  if (count >= LIMIT) break;
+  const e = bySlug[slug];
+  if (!e || !e.name || !(e.images && e.images.length)) { noData.push(slug); continue; }
+  count++;
+  if (DRY) { written++; continue; }
+  fs.writeFileSync(path.join(DIRS, slug, 'index.html'), renderPage(e));
+  written++;
+}
+console.log(`countertop dirs: ${dirs.length}`);
+console.log(`pages ${DRY ? 'would write' : 'written'}: ${written}`);
+console.log(`no-data (left as stubs): ${noData.length}`);
+if (noData.length) fs.writeFileSync(path.join(ROOT, 'scripts/.countertop-nodata-slugs.json'), JSON.stringify(noData, null, 0));
