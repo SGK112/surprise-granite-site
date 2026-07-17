@@ -28,6 +28,8 @@ const TARGETS = [
 const START = '<!--seo-links-->';
 const END = '<!--/seo-links-->';
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// H1/title text is already HTML-escaped in the source pages — decode first so we don't double-escape.
+const decode = s => String(s == null ? '' : s).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
 function localPathFor(url) {
   const p = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
@@ -37,9 +39,9 @@ function nameFor(url) {
   try {
     const h = fs.readFileSync(localPathFor(url), 'utf8');
     const h1 = h.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1) return h1[1].trim();
+    if (h1) return decode(h1[1].trim());
     const t = h.match(/<title>([^<|]+)/i);
-    if (t) return t[1].trim();
+    if (t) return decode(t[1].trim());
   } catch {}
   // fallback: prettify slug
   const slug = (url.match(/\/([^/]+)\/?$/) || [, ''])[1];
@@ -66,11 +68,13 @@ for (const t of TARGETS) {
 
   const block = `${START}
 <section class="seo-links" aria-label="All ${esc(t.label)}">
-<style>.seo-links{max-width:1180px;margin:0 auto;padding:22px 20px 40px;border-top:1px solid #e6e1d6}.seo-links h2{font-size:15px;font-weight:700;color:#17181d;margin:0 0 4px}.seo-links p{font-size:12px;color:#6b6e78;margin:0 0 12px}.seo-links .l{display:flex;flex-wrap:wrap;gap:6px 14px}.seo-links .l a{font-size:12.5px;color:#6b6e78;text-decoration:none}.seo-links .l a:hover{color:#e5b800;text-decoration:underline}.seo-links .cats{margin-bottom:12px}.seo-links .cats a{font-weight:700;color:#e5b800}</style>
-<h2>Browse all ${esc(t.label)}</h2>
+<style>.seo-links{max-width:1180px;margin:0 auto;padding:10px 20px 28px;border-top:1px solid #e6e1d6}.seo-links summary{font-size:13px;font-weight:700;color:#6b6e78;cursor:pointer;padding:8px 0;list-style-position:inside}.seo-links summary:hover{color:#e5b800}.seo-links p{font-size:12px;color:#6b6e78;margin:8px 0 12px}.seo-links .l{display:flex;flex-wrap:wrap;gap:6px 14px}.seo-links .l a{font-size:12.5px;color:#6b6e78;text-decoration:none}.seo-links .l a:hover{color:#e5b800;text-decoration:underline}.seo-links .cats{margin-bottom:12px}.seo-links .cats a{font-weight:700;color:#e5b800}</style>
+<details>
+<summary>Browse all ${esc(t.label)} (${items.length})</summary>
 <p>Every ${esc(t.label.replace(/s$/, ''))} option we carry — pick one to see details, pricing, and a free estimate.</p>
 ${extra.length ? `<div class="l cats">${extra.join('')}</div>` : ''}
 <div class="l">${items.join('')}</div>
+</details>
 </section>
 ${END}`;
 
