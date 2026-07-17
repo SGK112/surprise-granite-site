@@ -28,6 +28,7 @@ const FAB_RATE = 55; // $/sqft fabrication + install — same rate as the calcul
 // retail_price for slabs is MATERIAL per sqft; installed = material + $55/sqft.
 // Fails soft: if the API is unreachable the pages build without prices.
 const CATALOG_SLUGS = new Set(); // every slab slug the live shop can render
+const CATALOG = {};             // slug -> { vendor, name, inst, retail }
 function fetchInstalledPrices() {
   const out = {};
   try {
@@ -37,9 +38,9 @@ function fetchInstalledPrices() {
       if (!ps.length) break;
       for (const p of ps) {
         const slug = p.slug || p.id;
-        if (slug) CATALOG_SLUGS.add(slug);
         const rp = Number(p.retail_price) || 0;
         const inst = Number(p.installed_sqft) || ((rp > 0 && rp <= 500) ? Math.round((rp + FAB_RATE) * 100) / 100 : 0);
+        if (slug) { CATALOG_SLUGS.add(slug); CATALOG[slug] = { vendor: p.vendor_id || p.brand || '', name: p.name || '', inst, retail: rp }; }
         if (slug && inst) out[slug] = inst;
       }
       if (ps.length < 250) break;
@@ -49,6 +50,25 @@ function fetchInstalledPrices() {
 }
 const INSTALLED = fetchInstalledPrices();
 console.log(`installed prices fetched for ${Object.keys(INSTALLED).length} slabs`);
+
+// ---------- natural-stone color consolidation ----------
+// Same-name, same-material natural stone carried by 2+ vendors collapses to ONE canonical page
+// with a "Carried by" supplier table; the variant pages redirect in. Engineered stone (quartz/
+// porcelain/Dekton) is proprietary per brand and never merged.
+const C_FINISH = /\b(polished|honed|leather(?:ed)?|satin|soft|lux|matte|storm|brushed|suede|velvet|antiqued|caresse|premium)\b/gi;
+const C_MATWORD = /\b(granite|quartzite|marble|dolomite|travertine|onyx|limestone|soapstone|quartz)\b/gi;
+const normName = s => String(s || '').toLowerCase().replace(C_FINISH, '').replace(C_MATWORD, '').replace(/[^a-z0-9]+/g, '');
+function baseNatMat(m) {
+  const t = String(m || '').toLowerCase();
+  for (const k of ['granite', 'quartzite', 'marble', 'dolomite', 'travertine', 'onyx', 'limestone', 'soapstone']) if (t.includes(k)) return k;
+  if (/semi/.test(t)) return 'semi-precious';
+  return null;
+}
+const VENDTOK = /-(asg|monterrey|cactus|theyard|bolder|daltile|gila|arizona-tile|msi|cosentino|arc|classic|eclos|sensa|scalea|satin|soft|lux|matte|storm|leather(?:ed)?|polished|honed|brushed|caresse)(-\d+)?$/;
+function finishOf(name, canonicalName) {
+  const m = String(name || '').match(C_FINISH);
+  return m ? [...new Set(m.map(x => x[0].toUpperCase() + x.slice(1).toLowerCase()))].join(' / ') : 'Standard';
+}
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
@@ -103,14 +123,56 @@ for (const c of ctops) {
   if (!e.sample_price && c.sample_price) { e.sample_price = c.sample_price; e.sample_eligible = true; }
 }
 
-// group by material for "related colors"
+const prettyVendor = v => (v || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  .replace(/\bMsi\b/, 'MSI').replace(/\bAsg\b/, 'ASG').replace(/\bAz\b/i, 'AZ').replace(/\bArcsurfaces\b/i, 'Architectural Surfaces')
+  .replace(/The Yard Az/i, 'The Yard');
+
+// Build consolidation groups: natural stone, same normalized name + base material, 2+ vendors.
+const groups = {};
+for (const slug in bySlug) {
+  const e = bySlug[slug];
+  if (!e.name) continue;
+  const mat = baseNatMat(e.material) || baseNatMat(slug);
+  if (!mat) continue; // natural only
+  const cat = CATALOG[slug];
+  const vendor = (cat && cat.vendor) || e.vendor || '';
+  const key = normName(e.name) + '|' + mat;
+  (groups[key] = groups[key] || []).push({ slug, vendor, name: (cat && cat.name) || e.name, inst: (cat && cat.inst) || INSTALLED[slug] || 0, mat });
+}
+const canonicalOf = {};   // variantSlug -> canonicalSlug
+const membersOf = {};     // canonicalSlug -> [{vendor,name,slug,inst,finish}]
+for (const key in groups) {
+  const v = groups[key];
+  if (new Set(v.map(x => x.vendor)).size < 2 && v.length < 2) continue;
+  const nameSlug = key.split('|')[0].replace(/([a-z])([0-9])/g, '$1-$2');
+  const ideal = nameSlug + '-' + key.split('|')[1];
+  const generic = v.find(x => !VENDTOK.test(x.slug) && bySlug[x.slug] && bySlug[x.slug].name);
+  const canonical = (bySlug[ideal] && bySlug[ideal].name) ? ideal : (generic ? generic.slug : ideal);
+  // seed a canonical entry (richest member) if the canonical slug has no data yet
+  if (!bySlug[canonical] || !bySlug[canonical].name) {
+    const seedSlug = (v.find(x => bySlug[x.slug] && bySlug[x.slug].images && bySlug[x.slug].images.length) || v[0]).slug;
+    const seed = bySlug[seedSlug];
+    if (seed) bySlug[canonical] = Object.assign({}, seed, { slug: canonical, name: seed.name });
+  }
+  // display name = canonical listing's clean name (drop finish/material words)
+  const cName = ((bySlug[canonical] && bySlug[canonical].name) || v[0].name).replace(C_FINISH, '').replace(C_MATWORD, '').replace(/\s+/g, ' ').trim();
+  if (bySlug[canonical]) bySlug[canonical].name = cName || bySlug[canonical].name;
+  // pool images across members onto the canonical
+  const pooled = [];
+  for (const x of v) { const be = bySlug[x.slug]; if (be && be.images) for (const im of be.images) if (!pooled.includes(im)) pooled.push(im); }
+  if (bySlug[canonical] && pooled.length) bySlug[canonical].images = pooled;
+  membersOf[canonical] = v.slice().sort((a, b) => (a.inst || 1e9) - (b.inst || 1e9));
+  for (const x of v) if (x.slug !== canonical) canonicalOf[x.slug] = canonical;
+}
+console.log(`consolidation: ${Object.keys(membersOf).length} canonical color pages, ${Object.keys(canonicalOf).length} variants redirecting`);
+
+// group by material for "related colors" (built AFTER consolidation so variants are excluded)
 const byMaterial = {};
 for (const slug in bySlug) {
+  if (canonicalOf[slug]) continue;
   const m = (bySlug[slug].material || 'Stone').toLowerCase();
   (byMaterial[m] = byMaterial[m] || []).push(slug);
 }
-
-const prettyVendor = v => (v || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\bMsi\b/, 'MSI').replace(/\bAsg\b/, 'ASG');
 
 // Only these material category pages actually exist — link the breadcrumb to them; for any
 // other material (dolomite, travertine, onyx, quartz (quantra)…) fall back to all-countertops
@@ -150,6 +212,23 @@ function specRows(e) {
   return rows.map(r => `<div class="spec"><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join('');
 }
 
+// "Carried by" supplier table for a consolidated (multi-vendor) color.
+function supplierTable(members) {
+  if (!members || members.length < 2) return '';
+  const rows = members.map(m => {
+    const price = m.inst ? `$${m.inst.toFixed(2)}<small>/sq ft</small>` : '<span class="mut">Call</span>';
+    const shop = CATALOG_SLUGS.has(m.slug)
+      ? `<a href="/marketplace/product/?handle=${attr(m.slug)}&category=slabs">Shop &rarr;</a>`
+      : `<a href="/get-a-free-estimate/?source=countertop&color=${attr(encodeURIComponent(m.name))}">Quote &rarr;</a>`;
+    return `<tr><td class="v">${esc(prettyVendor(m.vendor))}</td><td class="f">${esc(finishOf(m.name))}</td><td class="p">${price}</td><td class="s">${shop}</td></tr>`;
+  }).join('');
+  return `<section class="suppliers">
+    <h2>Carried by ${members.length} suppliers</h2>
+    <p class="sup-note">We source this stone per job from whichever partner yard has the best slab. Installed price = material + $55/sq ft fabrication &amp; installation.</p>
+    <div class="tw"><table><thead><tr><th>Supplier</th><th>Finish</th><th>Installed</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  </section>`;
+}
+
 function related(e) {
   const m = (e.material || 'Stone').toLowerCase();
   const pool = (byMaterial[m] || []).filter(s => s !== e.slug);
@@ -168,7 +247,14 @@ function renderPage(e) {
   const imgs = e.images.slice(0, 6);
   const hero = imgs[0] || '';
   const heroAbs = hero.startsWith('http') ? hero : ORIGIN + hero;
-  const inst = INSTALLED[e.slug] || 0; // installed $/sqft (material + $55 fab&install)
+  const members = membersOf[e.slug] || null;               // consolidated multi-vendor page?
+  const memberPrices = members ? members.map(m => m.inst).filter(Boolean) : (INSTALLED[e.slug] ? [INSTALLED[e.slug]] : []);
+  const inst = memberPrices.length ? Math.min(...memberPrices) : 0; // "from" = lowest installed
+  const unitOffer = (price, u) => ({
+    '@type': 'Offer', priceCurrency: 'USD', price: price.toFixed(2),
+    priceSpecification: { '@type': 'UnitPriceSpecification', price: price.toFixed(2), priceCurrency: 'USD', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'FTK' } },
+    availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', url, seller: { '@type': 'Organization', name: u || 'Surprise Granite' }
+  });
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product',
     name: `${e.name} ${e.material}`,
@@ -177,25 +263,16 @@ function renderPage(e) {
     category: 'Countertops',
     material: e.material || undefined,
     color: e.color || undefined,
-    brand: e.vendor ? { '@type': 'Brand', name: prettyVendor(e.vendor) } : undefined,
+    brand: (!members && e.vendor) ? { '@type': 'Brand', name: prettyVendor(e.vendor) } : undefined,
     url,
-    manufacturer: e.vendor ? { '@type': 'Organization', name: prettyVendor(e.vendor) } : undefined,
-    // Honest installed pricing: per-square-foot INSTALLED (material + fabrication + install).
-    // UnitPriceSpecification is only valid NESTED inside priceSpecification (schema gotcha).
-    offers: inst ? {
-      '@type': 'Offer',
-      priceCurrency: 'USD',
-      price: inst.toFixed(2),
-      priceSpecification: {
-        '@type': 'UnitPriceSpecification',
-        price: inst.toFixed(2), priceCurrency: 'USD',
-        referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'FTK' }
-      },
-      availability: 'https://schema.org/InStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      url,
-      seller: { '@type': 'Organization', name: 'Surprise Granite' }
-    } : undefined
+    // Honest installed pricing (material + fabrication + install), per sqft.
+    // Multi-vendor colors use AggregateOffer (low–high across suppliers); single = Offer.
+    offers: !memberPrices.length ? undefined : (members && memberPrices.length > 1) ? {
+      '@type': 'AggregateOffer', priceCurrency: 'USD',
+      lowPrice: Math.min(...memberPrices).toFixed(2), highPrice: Math.max(...memberPrices).toFixed(2),
+      offerCount: members.length, availability: 'https://schema.org/InStock', url,
+      offers: members.filter(m => m.inst).map(m => unitOffer(m.inst, prettyVendor(m.vendor)))
+    } : unitOffer(memberPrices[0])
   };
   const matSlug = materialSlug(e.material);
   const crumbItems = [
@@ -263,6 +340,21 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
 .btn.prime{background:linear-gradient(135deg,#ffdf4a,var(--gold),var(--gold-deep));color:#141207;box-shadow:0 10px 22px -8px rgba(249,203,0,.6)}
 .btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
 .btn.shop{background:var(--ink);color:#fff;box-shadow:0 10px 22px -10px rgba(23,24,29,.5)}
+.suppliers{margin-top:30px}
+.suppliers h2{font-size:19px;font-weight:800;margin-bottom:4px}
+.sup-note{color:var(--mut);font-size:13px;margin-bottom:12px;max-width:70ch}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:13px}
+.suppliers table{width:100%;border-collapse:collapse;font-size:14px}
+.suppliers th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
+.suppliers td{padding:11px 14px;border-bottom:1px solid var(--line)}
+.suppliers tr:last-child td{border-bottom:none}
+.suppliers td.v{font-weight:700}
+.suppliers td.f{color:var(--mut)}
+.suppliers td.p{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.suppliers td.p small{font-weight:600;color:var(--mut)}
+.suppliers td.s{text-align:right;white-space:nowrap}
+.suppliers td.s a{color:var(--gold-deep);font-weight:700;text-decoration:none}
+.suppliers .mut{color:var(--mut)}
 .about{margin-top:34px;max-width:74ch}
 .about h2{font-size:19px;font-weight:800;margin-bottom:8px}
 .about p{color:#33343a;font-size:15px;margin-bottom:10px}
@@ -289,19 +381,20 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
       ${gallery}
     </div>
     <div class="info">
-      <div class="eyebrow">${esc(e.material)}${e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : ''}</div>
+      <div class="eyebrow">${esc(e.material)}${members ? ` · ${members.length} suppliers` : (e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : '')}</div>
       <h1>${esc(e.name)} ${esc(e.material)} Countertops</h1>
       ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : `<div class="iprice"><b>Call for pricing</b><span> · <a href="tel:+16028333189" style="color:var(--gold-deep);font-weight:700">(602) 833-3189</a> · free in-home measure</span></div>`}
       <p class="lead">${esc(bodyDescription(e))}</p>
       <dl class="specs">${specRows(e)}</dl>
       <div class="cta">
         <a class="btn prime" href="/get-a-free-estimate/?source=countertop&color=${attr(encodeURIComponent(e.name))}">Get a free estimate →</a>
-        ${CATALOG_SLUGS.has(e.slug) ? `<a class="btn shop" href="/marketplace/product/?handle=${attr(e.slug)}&category=slabs">Shop this color →</a>` : ''}
+        ${(() => { const shopSlug = members ? (members.find(m => CATALOG_SLUGS.has(m.slug)) || {}).slug : (CATALOG_SLUGS.has(e.slug) ? e.slug : null); return shopSlug ? `<a class="btn shop" href="/marketplace/product/?handle=${attr(shopSlug)}&category=slabs">Shop this color →</a>` : ''; })()}
         <a class="btn ghost" href="/tools/visualizer/">See it in your kitchen</a>
         ${sampleCta}
       </div>
     </div>
   </div>
+  ${supplierTable(members)}
   <section class="about">
     <h2>About ${esc(e.name)}</h2>
     <p>${esc(bodyDescription(e))}</p>
@@ -339,17 +432,48 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
 const dirs = fs.readdirSync(DIRS).filter(d => {
   try { return fs.statSync(path.join(DIRS, d)).isDirectory(); } catch { return false; }
 });
-let written = 0, noData = [], count = 0;
+const dirSet = new Set(dirs);
+function redirectPage(canonical) {
+  const to = `/countertops/${canonical}/`;
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(bySlug[canonical] ? bySlug[canonical].name + ' ' + bySlug[canonical].material : 'Countertops')} | Surprise Granite</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="${ORIGIN}${to}">
+<meta http-equiv="refresh" content="0; url=${to}">
+<script>location.replace("${to}");</script>
+</head><body>This color moved to <a href="${to}">its page</a>.</body></html>`;
+}
+
+let written = 0, redirected = 0, noData = [], count = 0, newCanon = 0;
+// pages to render: canonicals (may be new slugs) + non-variant slugs with data
+const renderSet = new Set(Object.keys(membersOf).filter(c => bySlug[c] && bySlug[c].name && bySlug[c].images && bySlug[c].images.length));
 for (const slug of dirs) {
-  if (count >= LIMIT) break;
+  if (canonicalOf[slug]) continue; // variant → redirect below
   const e = bySlug[slug];
   if (!e || !e.name || !(e.images && e.images.length)) { noData.push(slug); continue; }
+  renderSet.add(slug);
+}
+for (const slug of renderSet) {
+  if (count >= LIMIT) break;
   count++;
   if (DRY) { written++; continue; }
-  fs.writeFileSync(path.join(DIRS, slug, 'index.html'), renderPage(e));
+  const dir = path.join(DIRS, slug);
+  if (!dirSet.has(slug)) { fs.mkdirSync(dir, { recursive: true }); newCanon++; }
+  fs.writeFileSync(path.join(dir, 'index.html'), renderPage(bySlug[slug]));
   written++;
 }
+// redirect variant pages into their canonical
+for (const variant in canonicalOf) {
+  if (!dirSet.has(variant)) continue;
+  if (!DRY) fs.writeFileSync(path.join(DIRS, variant, 'index.html'), redirectPage(canonicalOf[variant]));
+  redirected++;
+}
 console.log(`countertop dirs: ${dirs.length}`);
-console.log(`pages ${DRY ? 'would write' : 'written'}: ${written}`);
+console.log(`pages ${DRY ? 'would write' : 'written'}: ${written} (new canonical dirs: ${newCanon})`);
+console.log(`variants redirected to canonical: ${redirected}`);
 console.log(`no-data (left as stubs): ${noData.length}`);
-if (noData.length) fs.writeFileSync(path.join(ROOT, 'scripts/.countertop-nodata-slugs.json'), JSON.stringify(noData, null, 0));
+if (!DRY) {
+  fs.writeFileSync(path.join(ROOT, 'scripts/.countertop-canonical-map.json'), JSON.stringify(canonicalOf, null, 0));
+  if (noData.length) fs.writeFileSync(path.join(ROOT, 'scripts/.countertop-nodata-slugs.json'), JSON.stringify(noData, null, 0));
+}
