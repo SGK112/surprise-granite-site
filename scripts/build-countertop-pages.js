@@ -27,6 +27,7 @@ const FAB_RATE = 55; // $/sqft fabrication + install — same rate as the calcul
 // Live installed pricing from the catalog (master sheet): slug -> installed $/sqft.
 // retail_price for slabs is MATERIAL per sqft; installed = material + $55/sqft.
 // Fails soft: if the API is unreachable the pages build without prices.
+const CATALOG_SLUGS = new Set(); // every slab slug the live shop can render
 function fetchInstalledPrices() {
   const out = {};
   try {
@@ -36,6 +37,7 @@ function fetchInstalledPrices() {
       if (!ps.length) break;
       for (const p of ps) {
         const slug = p.slug || p.id;
+        if (slug) CATALOG_SLUGS.add(slug);
         const rp = Number(p.retail_price) || 0;
         const inst = Number(p.installed_sqft) || ((rp > 0 && rp <= 500) ? Math.round((rp + FAB_RATE) * 100) / 100 : 0);
         if (slug && inst) out[slug] = inst;
@@ -260,6 +262,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
 .btn:hover{transform:translateY(-2px)}
 .btn.prime{background:linear-gradient(135deg,#ffdf4a,var(--gold),var(--gold-deep));color:#141207;box-shadow:0 10px 22px -8px rgba(249,203,0,.6)}
 .btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.btn.shop{background:var(--ink);color:#fff;box-shadow:0 10px 22px -10px rgba(23,24,29,.5)}
 .about{margin-top:34px;max-width:74ch}
 .about h2{font-size:19px;font-weight:800;margin-bottom:8px}
 .about p{color:#33343a;font-size:15px;margin-bottom:10px}
@@ -293,6 +296,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
       <dl class="specs">${specRows(e)}</dl>
       <div class="cta">
         <a class="btn prime" href="/get-a-free-estimate/?source=countertop&color=${attr(encodeURIComponent(e.name))}">Get a free estimate →</a>
+        ${CATALOG_SLUGS.has(e.slug) ? `<a class="btn shop" href="/marketplace/product/?handle=${attr(e.slug)}&category=slabs">Shop this color →</a>` : ''}
         <a class="btn ghost" href="/tools/visualizer/">See it in your kitchen</a>
         ${sampleCta}
       </div>
