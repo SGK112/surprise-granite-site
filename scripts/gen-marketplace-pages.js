@@ -59,6 +59,9 @@ function page(p) {
   const price = Number(p.retail_price);
   const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
   const img = imgs[0] || `${SITE}/images/placeholder.svg`;
+  // An image-less product can't be a valid Merchant listing (GSC "Missing field image") and shows a
+  // placeholder — noindex it so it's not surfaced/flagged. Still renders for direct visitors.
+  const robots = imgs.length ? 'index, follow' : 'noindex, follow';
   const desc = (p.short_description || `${name}${brand ? ' by ' + brand : ''} — available at Surprise Granite with fast shipping. Quality ${CAT}s for your kitchen or bath remodel.`).replace(/\s+/g, ' ').trim();
   // Meta/OG description: clamp to <=160 on a word boundary (Google's snippet limit). The full `desc`
   // is kept for the Product schema + visible body — only the meta tag needs to be short.
@@ -113,7 +116,7 @@ function page(p) {
   <title>${esc(name)} | Surprise Granite</title>
   <meta name="description" content="${esc(metaDesc)}"/>
   <link rel="canonical" href="${url}"/>
-  <meta name="robots" content="index, follow"/>
+  <meta name="robots" content="${robots}"/>
   <meta property="og:type" content="product"/>
   <meta property="og:url" content="${url}"/>
   <meta property="og:title" content="${esc(name)}"/>
@@ -198,7 +201,7 @@ function page(p) {
 // --- run ---
 const all = fetchAll();
 console.log(`fetched ${all.length} ${CAT} products`);
-let made = 0, skipOOS = 0, skipNoPrice = 0;
+let made = 0, skipOOS = 0, skipNoPrice = 0, skipNoImg = 0;
 const urls = [];
 for (const p of all) {
   const handle = p.slug || p.id;
@@ -208,10 +211,13 @@ for (const p of all) {
   const dir = path.join(OUTDIR, handle);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), page(p));
-  urls.push(`${SITE}/marketplace/${DIR}/${handle}/`);
+  // Only sitemap products with a real image (imageless ones are noindexed in page()).
+  const hasImg = (Array.isArray(p.image_urls) && p.image_urls.filter(Boolean).length) || !!p.primary_image_url;
+  if (hasImg) urls.push(`${SITE}/marketplace/${DIR}/${handle}/`);
+  else skipNoImg++;
   made++;
 }
-console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNoPrice}`);
+console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNoPrice}, noindex no-image ${skipNoImg}`);
 
 // sitemap
 const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
