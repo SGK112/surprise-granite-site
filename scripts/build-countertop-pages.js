@@ -206,8 +206,7 @@ function clampDesc(s) {
   return s.slice(0, s.lastIndexOf(' ', 160)).replace(/[\s,;—-]+$/, '');
 }
 
-function metaDescription(e) {
-  const dn = nameWithMaterial(titleCaseName(e.name), e.material || 'stone');
+function metaDescription(dn) {
   return clampDesc(`${dn} countertops — fabricated & installed across metro Phoenix by Surprise Granite. Free in-home estimate or order a $12.99 sample.`);
 }
 function bodyDescription(e) {
@@ -264,8 +263,12 @@ function renderPage(e) {
   const url = `${ORIGIN}/countertops/${e.slug}/`;
   e.name = titleCaseName(e.name);                   // clean ALL-CAPS names once for every use below
   const dn = nameWithMaterial(e.name, e.material);  // "Name Material", material de-duplicated
-  const title = `${dn} Countertops | Surprise Granite`;
-  const desc = metaDescription(e);
+  // Engineered colors that share a name across vendors (e.g. Snow White Quartz from MSI, Bolder,
+  // Monterrey) aren't merged — differentiate their titles by vendor so they don't cannibalize.
+  const brandBit = e._brandTag ? ` by ${e._brandTag}` : '';
+  const dnB = dn + brandBit;
+  const title = `${dn} Countertops${brandBit} | Surprise Granite`;
+  const desc = metaDescription(dnB);
   const imgs = e.images.slice(0, 6);
   const hero = imgs[0] || '';
   const heroAbs = hero.startsWith('http') ? hero : ORIGIN + hero;
@@ -279,7 +282,7 @@ function renderPage(e) {
   });
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product',
-    name: dn,
+    name: dnB,
     image: imgs.map(i => i.startsWith('http') ? i : ORIGIN + i),
     description: bodyDescription(e).replace(/\s+/g, ' ').trim(),
     category: 'Countertops',
@@ -319,13 +322,13 @@ function renderPage(e) {
 <link rel="canonical" href="${url}"/>
 <meta name="robots" content="index, follow"/>
 <meta property="og:type" content="product"/>
-<meta property="og:title" content="${attr(dn)} Countertops"/>
+<meta property="og:title" content="${attr(dn)} Countertops${attr(brandBit)}"/>
 <meta property="og:description" content="${attr(desc)}"/>
 <meta property="og:url" content="${url}"/>
 <meta property="og:image" content="${attr(heroAbs)}"/>
 <meta property="og:site_name" content="Surprise Granite"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="${attr(dn)} Countertops"/>
+<meta name="twitter:title" content="${attr(dn)} Countertops${attr(brandBit)}"/>
 <meta name="twitter:description" content="${attr(desc)}"/>
 <meta name="twitter:image" content="${attr(heroAbs)}"/>
 <link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
@@ -404,7 +407,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
     </div>
     <div class="info">
       <div class="eyebrow">${esc(e.material)}${members ? ` · ${members.length} suppliers` : (e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : '')}</div>
-      <h1>${esc(dn)} Countertops</h1>
+      <h1>${esc(dn)} Countertops${esc(brandBit)}</h1>
       ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : `<div class="iprice"><b>Call for pricing</b><span> · <a href="tel:+16028333189" style="color:var(--gold-deep);font-weight:700">(602) 833-3189</a> · free in-home measure</span></div>`}
       <p class="lead">${esc(bodyDescription(e))}</p>
       <dl class="specs">${specRows(e)}</dl>
@@ -475,6 +478,27 @@ for (const slug of dirs) {
   const e = bySlug[slug];
   if (!e || !e.name || !(e.images && e.images.length)) { noData.push(slug); continue; }
   renderSet.add(slug);
+}
+// Differentiate engineered colors that share a name across vendors (not consolidated): tag each
+// with its vendor so "Snow White Quartz" from MSI / Bolder / Monterrey get distinct titles. Only
+// when the collision spans 2+ vendors (same-vendor exact dupes can't be told apart this way).
+{
+  const byDn = {};
+  for (const slug of renderSet) {
+    const e = bySlug[slug];
+    if (!e || membersOf[slug]) continue;             // skip consolidated canonicals (already 1/name)
+    const dn = nameWithMaterial(titleCaseName(e.name), e.material);
+    (byDn[dn] = byDn[dn] || []).push(slug);
+  }
+  let tagged = 0, sameVendorDupes = 0;
+  for (const dn in byDn) {
+    const slugs = byDn[dn];
+    if (slugs.length < 2) continue;
+    const vendors = new Set(slugs.map(s => (bySlug[s].vendor || '').toLowerCase()).filter(Boolean));
+    if (vendors.size < 2) { sameVendorDupes += slugs.length; continue; }
+    for (const s of slugs) if (bySlug[s].vendor) { bySlug[s]._brandTag = prettyVendor(bySlug[s].vendor); tagged++; }
+  }
+  console.log(`title differentiation: tagged ${tagged} same-name pages with vendor; ${sameVendorDupes} same-vendor dupes left for review`);
 }
 for (const slug of renderSet) {
   if (count >= LIMIT) break;
