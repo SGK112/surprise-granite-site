@@ -225,3 +225,29 @@ const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.si
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(ROOT, `sitemap-${DIR}.xml`), sm);
 console.log(`wrote sitemap-${DIR}.xml (${urls.length} urls)`);
+
+// Noindex orphan pages: dirs for products no longer returned by the catalog (removed or long-term
+// out-of-stock — the API only returns active in-stock rows). Their files linger with stale schema
+// and would otherwise stay indexed. Flip them to noindex (reversible: they re-index when the product
+// returns and is regenerated). Keeps the crawl clean without deleting anything.
+const liveHandles = new Set(all.map(p => p.slug || p.id).filter(Boolean));
+let orphaned = 0;
+if (liveHandles.size >= 50) { // safety: never sweep on a failed/partial API fetch
+  try {
+    for (const d of fs.readdirSync(OUTDIR)) {
+      if (liveHandles.has(d)) continue;
+      const file = path.join(OUTDIR, d, 'index.html');
+      if (!fs.existsSync(file)) continue;
+      const html = fs.readFileSync(file, 'utf8');
+      if (/content="noindex/i.test(html)) continue; // already noindexed
+      // Replace an existing robots meta (any format) or insert one after </title>.
+      const nu = /<meta name="robots"/i.test(html)
+        ? html.replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex, follow"/>')
+        : html.replace(/<\/title>/i, '</title>\n<meta name="robots" content="noindex, follow"/>');
+      if (nu !== html) { fs.writeFileSync(file, nu); orphaned++; }
+    }
+  } catch (e) { console.warn('orphan sweep failed:', e.message); }
+} else {
+  console.warn(`orphan sweep SKIPPED — only ${liveHandles.size} live products fetched (possible API issue)`);
+}
+console.log(`noindexed ${orphaned} orphan pages (product no longer in catalog)`);
