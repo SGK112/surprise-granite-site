@@ -60,7 +60,9 @@ function page(p) {
   const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
   const img = imgs[0] || `${SITE}/images/placeholder.svg`;
   const desc = (p.short_description || `${name}${brand ? ' by ' + brand : ''} — available at Surprise Granite with fast shipping. Quality ${CAT}s for your kitchen or bath remodel.`).replace(/\s+/g, ' ').trim();
-  const metaDesc = desc.length > 300 ? desc.slice(0, 297) + '…' : desc;
+  // Meta/OG description: clamp to <=160 on a word boundary (Google's snippet limit). The full `desc`
+  // is kept for the Product schema + visible body — only the meta tag needs to be short.
+  const metaDesc = desc.length <= 160 ? desc : desc.slice(0, desc.lastIndexOf(' ', 158)).replace(/[\s,;:—-]+$/, '') + '…';
   const catLabel = CAT.charAt(0).toUpperCase() + CAT.slice(1);
   // Single-item freight for this product, per the checkout's per-vendor tiers
   // (api/validators/price-validator.js): <$100 → $15, <$500 → $25, else free.
