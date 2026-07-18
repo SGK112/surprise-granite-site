@@ -30,6 +30,30 @@ for (const it of items) {
   if (it.slug && p > 0) priceBySlug[it.slug] = p;
 }
 
+const SITE = 'https://www.surprisegranite.com';
+const priceValidUntil = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10);
+// Full merchant Offer: price + shipping (with delivery time) + 30-day return policy,
+// matching the sinks/faucets pages so flooring is a complete Merchant-listings item.
+function buildOffer(price, slug) {
+  const shipVal = price >= 500 ? 0 : price >= 100 ? 25 : 15;
+  return {
+    '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD', priceValidUntil,
+    availability: 'https://schema.org/InStock', url: `${SITE}/flooring/${slug}/`,
+    seller: { '@type': 'Organization', name: 'Surprise Granite', url: SITE },
+    hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
+      returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+      merchantReturnLink: `${SITE}/legal/refund-policy/` },
+    shippingDetails: { '@type': 'OfferShippingDetails',
+      shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },
+      shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US' },
+      deliveryTime: { '@type': 'ShippingDeliveryTime',
+        handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'DAY' },
+        transitTime: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' } } },
+  };
+}
+
 const dir = path.join(ROOT, 'flooring');
 const slugs = fs.readdirSync(dir).filter((d) => fs.existsSync(path.join(dir, d, 'index.html')));
 
@@ -41,25 +65,22 @@ for (const slug of slugs) {
   if (!m) { stats.noSchema++; continue; }
   let obj;
   try { obj = JSON.parse(m[2]); } catch { stats.noSchema++; continue; }
-  if (obj['@type'] !== 'Product' || obj.offers) { stats.unchanged++; continue; }
+  if (obj['@type'] !== 'Product') { stats.unchanged++; continue; }
   stats.total++;
 
-  const price = priceBySlug[slug];
+  const existingOffer = (obj.offers && typeof obj.offers === 'object' && !Array.isArray(obj.offers)) ? obj.offers : null;
+  const price = priceBySlug[slug] || (existingOffer && Number(existingOffer.price)) || 0;
   if (price > 0) {
-    obj.offers = {
-      '@type': 'Offer',
-      price: price.toFixed(2),
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: 'Surprise Granite', url: 'https://www.surprisegranite.com' },
-    };
+    // Add the Offer, or upgrade an earlier minimal one to the full merchant Offer
+    // (shipping + delivery time + return policy). Idempotent — safe to re-run.
+    obj.offers = buildOffer(price, slug);
     stats.priced++;
-  } else {
+  } else if (!existingOffer) {
     // No price to justify a Product — make it a plain Thing so it's still valid
     // structured data but no longer subject to the Product-snippet requirement.
     obj['@type'] = 'Thing';
     stats.downgraded++;
-  }
+  } else { stats.unchanged++; continue; }
 
   if (write) {
     const rebuilt = m[1] + JSON.stringify(obj) + m[3];

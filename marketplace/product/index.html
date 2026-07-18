@@ -3488,10 +3488,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         // Single-item freight per the checkout's per-vendor tiers: <$100 $15,
         // <$500 $25, else free. 30-day free returns (site refund policy).
         const shipVal = sdPrice >= 500 ? 0 : sdPrice >= 100 ? 25 : 15;
+        const priceValidUntil = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10);
         structuredData.offers = {
           "@type": "Offer",
           "price": sdPrice.toFixed(2),
           "priceCurrency": "USD",
+          "priceValidUntil": priceValidUntil,
           "availability": "https://schema.org/InStock",
           "url": canonicalUrl,
           "seller": { "@type": "Organization", "name": "Surprise Granite", "url": "https://www.surprisegranite.com" },
@@ -3500,10 +3502,15 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "applicableCountry": "US",
             "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
             "merchantReturnDays": 30, "returnMethod": "https://schema.org/ReturnByMail",
-            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility" },
+            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
+            "merchantReturnLink": "https://www.surprisegranite.com/legal/refund-policy/" },
           "shippingDetails": { "@type": "OfferShippingDetails",
             "shippingRate": { "@type": "MonetaryAmount", "value": shipVal.toFixed(2), "currency": "USD" },
-            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US" } }
+            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US" },
+            // Drop-ship estimate: 0–2 business days handling, 3–7 days transit.
+            "deliveryTime": { "@type": "ShippingDeliveryTime",
+              "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 2, "unitCode": "DAY" },
+              "transitTime": { "@type": "QuantitativeValue", "minValue": 3, "maxValue": 7, "unitCode": "DAY" } } }
         };
       }
       // Google requires one of offers/review/aggregateRating on Product schema.

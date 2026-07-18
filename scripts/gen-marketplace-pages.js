@@ -67,23 +67,29 @@ function page(p) {
   // Single-item freight for this product, per the checkout's per-vendor tiers
   // (api/validators/price-validator.js): <$100 → $15, <$500 → $25, else free.
   const shipVal = price >= 500 ? 0 : price >= 100 ? 25 : 15;
+  const priceValidUntil = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10);
 
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product', name, description: desc, image: imgs,
     sku: p.sku || handle, brand: { '@type': 'Brand', name: brand || 'Surprise Granite' },
     category: `${PLURAL}`, url,
-    offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD',
+    offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD', priceValidUntil,
       availability: 'https://schema.org/InStock', url,
       seller: { '@type': 'Organization', name: 'Surprise Granite' },
-      // Blanket store policy: 30-day returns, customer pays return shipping,
-      // restocking may apply (varies by vendor, so not asserted as a fixed fee).
+      // Blanket store policy: 30-day returns, customer pays return shipping (per
+      // /legal/refund-policy). restocking varies by vendor, so not asserted.
       hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
         returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
         merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility' },
+        returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+        merchantReturnLink: `${SITE}/legal/refund-policy/` },
       shippingDetails: { '@type': 'OfferShippingDetails',
         shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },
-        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US' } } }
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US' },
+        // Drop-ship estimate: 0–2 business days to process, 3–7 days transit.
+        deliveryTime: { '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' } } } }
   };
   const crumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
