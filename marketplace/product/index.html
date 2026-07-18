@@ -6,6 +6,28 @@
   <title id="page-title">Loading... | Surprise Granite</title>
   <meta name="description" id="meta-description" content="Premium countertop surface from Surprise Granite."/>
   <link rel="canonical" id="canonical-url" href=""/>
+  <script>
+  /* Set the canonical SYNCHRONOUSLY from the URL so crawlers never see this ?handle= page as a
+     "duplicate without user-selected canonical". Every category has a clean indexable URL that this
+     param page mirrors; point the canonical there (remnants have no clean URL → self-canonical).
+     The main app JS refines this after the product loads. */
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search);
+      var h = q.get('handle'); if (!h) return;
+      var cat = (q.get('category') || 'slabs').toLowerCase();
+      var base = { slabs: '/countertops/', slab: '/countertops/', sinks: '/marketplace/sinks/',
+        sink: '/marketplace/sinks/', faucets: '/marketplace/faucets/', faucet: '/marketplace/faucets/',
+        tile: '/marketplace/tile/', bathroom: '/marketplace/bathroom/', fixture: '/marketplace/bathroom/',
+        'bath-fixtures': '/marketplace/bathroom/', accessory: '/marketplace/kitchen-accessories/',
+        'kitchen-accessories': '/marketplace/kitchen-accessories/', flooring: '/flooring/' }[cat];
+      var url = base ? ('https://www.surprisegranite.com' + base + encodeURIComponent(h) + '/')
+                     : (location.origin + location.pathname + location.search);
+      var el = document.getElementById('canonical-url'); if (el) el.setAttribute('href', url);
+      var og = document.getElementById('og-url'); if (og) og.setAttribute('content', url);
+    } catch (e) {}
+  })();
+  </script>
 
   <!-- Open Graph -->
   <meta property="og:type" content="product"/>
