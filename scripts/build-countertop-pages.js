@@ -490,15 +490,37 @@ for (const slug of dirs) {
     const dn = nameWithMaterial(titleCaseName(e.name), e.material);
     (byDn[dn] = byDn[dn] || []).push(slug);
   }
-  let tagged = 0, sameVendorDupes = 0;
+  // Prefer the material-suffixed, non-vendor-tokened, in-catalog slug as the survivor.
+  const MATSUF = /-(quartz|granite|marble|quartzite|dekton|porcelain|onyx|soapstone|travertine)$/;
+  const pickPrimary = slugs => slugs.slice().sort((a, b) => {
+    const sc = s => (MATSUF.test(s) ? 4 : 0) + (!VENDTOK.test(s) ? 2 : 0) + (CATALOG_SLUGS.has(s) ? 1 : 0);
+    return sc(b) - sc(a) || a.length - b.length;
+  })[0];
+  let tagged = 0, deduped = 0;
   for (const dn in byDn) {
     const slugs = byDn[dn];
     if (slugs.length < 2) continue;
-    const vendors = new Set(slugs.map(s => (bySlug[s].vendor || '').toLowerCase()).filter(Boolean));
-    if (vendors.size < 2) { sameVendorDupes += slugs.length; continue; }
-    for (const s of slugs) if (bySlug[s].vendor) { bySlug[s]._brandTag = prettyVendor(bySlug[s].vendor); tagged++; }
+    // 1) Same name + same vendor = the SAME product under two slugs → canonicalize the extras to a
+    //    primary so they redirect + drop from the sitemap (no vendor => keyed unique, never merged).
+    const byVendor = {};
+    for (const s of slugs) {
+      // Normalise vendor so "arizona-tile" / "Arizona Tile" / "arizonatile" collapse to one key;
+      // empty vendor stays unique (never merge two brand-unknown pages).
+      const vk = (bySlug[s].vendor || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '\0' + s;
+      (byVendor[vk] = byVendor[vk] || []).push(s);
+    }
+    const survivors = [];
+    for (const v in byVendor) {
+      const grp = byVendor[v];
+      const primary = pickPrimary(grp);
+      survivors.push(primary);
+      for (const s of grp) if (s !== primary) { canonicalOf[s] = primary; renderSet.delete(s); deduped++; }
+    }
+    // 2) Distinct-vendor survivors of the same name → differentiate their titles by vendor.
+    const vendors = new Set(survivors.map(s => (bySlug[s].vendor || '').toLowerCase()).filter(Boolean));
+    if (vendors.size >= 2) for (const s of survivors) if (bySlug[s].vendor) { bySlug[s]._brandTag = prettyVendor(bySlug[s].vendor); tagged++; }
   }
-  console.log(`title differentiation: tagged ${tagged} same-name pages with vendor; ${sameVendorDupes} same-vendor dupes left for review`);
+  console.log(`title dedup: ${deduped} same-vendor dup slugs → canonical redirect; ${tagged} differentiated by vendor`);
 }
 for (const slug of renderSet) {
   if (count >= LIMIT) break;
