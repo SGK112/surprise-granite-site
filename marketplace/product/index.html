@@ -3199,7 +3199,10 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             // prefer whichever description column actually has content — most
             // slabs have `description` filled and `short_description` empty,
             // which used to leave the Description tab on generic filler text
-            description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0] || '',
+            // Never emit an empty schema/OG description (GSC "Missing field description"): fall back
+            // to a name-led line when the catalog row has no description.
+            description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0]
+              || `${p.name} — available at Surprise Granite with fast shipping, 30-day returns, and pro installation across metro Phoenix.`,
             tags: p.tags || [],
             available: p.in_stock !== false,
             // Discontinued colours are kept live for SEO but must never read as
