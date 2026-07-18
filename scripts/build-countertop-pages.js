@@ -184,11 +184,31 @@ function materialSlug(mat) {
 }
 const titleCaseMat = m => /quartz|granite|marble|dekton|porcelain|quartzite|onyx|soapstone|travertine/i.test(m) ? m : m;
 
+// Title-case ALL-CAPS color-name words ("ALBA TRAMONTO" → "Alba Tramonto") while leaving
+// mixed-case names, SKU tokens with digits (BST151), and roman numerals (II, III, IV…) alone.
+const ROMAN = /^(I{1,3}|IV|VI{0,3}|IX|XI{0,3})$/;
+function titleCaseName(s) {
+  return String(s || '').replace(/\b[A-Za-z]+\b/g, w =>
+    (w === w.toUpperCase() && w.length > 1 && !ROMAN.test(w))
+      ? w.charAt(0) + w.slice(1).toLowerCase()
+      : w);
+}
+// "Name" + "Material" without repeating the material word already at the end of the name
+// ("Agate Quartz" + "Quartz" → "Agate Quartz", not "Agate Quartz Quartz").
+function nameWithMaterial(name, mat) {
+  if (!mat) return name;
+  const re = new RegExp('\\b' + mat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i');
+  return re.test(name) ? name : `${name} ${mat}`;
+}
+// Clamp a meta description to <=160 chars on a word boundary (Google's snippet limit).
+function clampDesc(s) {
+  if (s.length <= 160) return s;
+  return s.slice(0, s.lastIndexOf(' ', 160)).replace(/[\s,;—-]+$/, '');
+}
+
 function metaDescription(e) {
-  const color = e.color ? e.color + ' ' : '';
-  const mat = e.material || 'stone';
-  const style = e.style ? `, ${e.style.toLowerCase()},` : '';
-  return `${e.name} is a ${color}${mat} countertop slab${style} fabricated & installed by Surprise Granite across Phoenix & Arizona. Free in-home estimates — see it in your kitchen or order a sample.`.slice(0, 300);
+  const dn = nameWithMaterial(titleCaseName(e.name), e.material || 'stone');
+  return clampDesc(`${dn} countertops — fabricated & installed across metro Phoenix by Surprise Granite. Free in-home estimate or order a $12.99 sample.`);
 }
 function bodyDescription(e) {
   if (e.description && e.description.length > 40) return e.description;
@@ -242,7 +262,9 @@ function related(e) {
 // ---------- page template ----------
 function renderPage(e) {
   const url = `${ORIGIN}/countertops/${e.slug}/`;
-  const title = `${e.name} ${e.material} Countertops | Surprise Granite`;
+  e.name = titleCaseName(e.name);                   // clean ALL-CAPS names once for every use below
+  const dn = nameWithMaterial(e.name, e.material);  // "Name Material", material de-duplicated
+  const title = `${dn} Countertops | Surprise Granite`;
   const desc = metaDescription(e);
   const imgs = e.images.slice(0, 6);
   const hero = imgs[0] || '';
@@ -257,7 +279,7 @@ function renderPage(e) {
   });
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product',
-    name: `${e.name} ${e.material}`,
+    name: dn,
     image: imgs.map(i => i.startsWith('http') ? i : ORIGIN + i),
     description: bodyDescription(e).replace(/\s+/g, ' ').trim(),
     category: 'Countertops',
@@ -283,7 +305,7 @@ function renderPage(e) {
   crumbItems.push({ '@type': 'ListItem', position: crumbItems.length + 1, name: e.name, item: url });
   const crumbLd = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbItems };
   const gallery = imgs.length > 1
-    ? `<div class="thumbs">${imgs.map((i, n) => `<img src="${attr(i)}" alt="${attr(e.name)} ${attr(e.material)} ${n ? 'scene ' + n : 'slab'}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>`
+    ? `<div class="thumbs">${imgs.map((i, n) => `<img src="${attr(i)}" alt="${attr(dn)} ${n ? 'scene ' + n : 'slab'}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>`
     : '';
   const sampleCta = e.sample_eligible ? `<a class="btn ghost" href="/marketplace/product/?handle=${attr(e.slug)}&category=slabs">Order a sample${e.sample_price ? ` · $${attr(e.sample_price)}` : ''}</a>` : '';
 
@@ -297,13 +319,13 @@ function renderPage(e) {
 <link rel="canonical" href="${url}"/>
 <meta name="robots" content="index, follow"/>
 <meta property="og:type" content="product"/>
-<meta property="og:title" content="${attr(e.name)} ${attr(e.material)} Countertops"/>
+<meta property="og:title" content="${attr(dn)} Countertops"/>
 <meta property="og:description" content="${attr(desc)}"/>
 <meta property="og:url" content="${url}"/>
 <meta property="og:image" content="${attr(heroAbs)}"/>
 <meta property="og:site_name" content="Surprise Granite"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="${attr(e.name)} ${attr(e.material)} Countertops"/>
+<meta name="twitter:title" content="${attr(dn)} Countertops"/>
 <meta name="twitter:description" content="${attr(desc)}"/>
 <meta name="twitter:image" content="${attr(heroAbs)}"/>
 <link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
@@ -377,12 +399,12 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
   </nav>
   <div class="top">
     <div class="gallery">
-      <img class="hero" src="${attr(hero)}" alt="${attr(e.name)} ${attr(e.material)} countertop slab" onerror="this.style.background='#e9e3d6'">
+      <img class="hero" src="${attr(hero)}" alt="${attr(dn)} countertop slab" onerror="this.style.background='#e9e3d6'">
       ${gallery}
     </div>
     <div class="info">
       <div class="eyebrow">${esc(e.material)}${members ? ` · ${members.length} suppliers` : (e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : '')}</div>
-      <h1>${esc(e.name)} ${esc(e.material)} Countertops</h1>
+      <h1>${esc(dn)} Countertops</h1>
       ${inst ? `<div class="iprice"><b>from $${inst.toFixed(2)}</b>/sq ft installed<span> · includes fabrication &amp; installation · free in-home measure</span></div>` : `<div class="iprice"><b>Call for pricing</b><span> · <a href="tel:+16028333189" style="color:var(--gold-deep);font-weight:700">(602) 833-3189</a> · free in-home measure</span></div>`}
       <p class="lead">${esc(bodyDescription(e))}</p>
       <dl class="specs">${specRows(e)}</dl>
