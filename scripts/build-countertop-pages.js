@@ -23,6 +23,10 @@ const DIRS = path.join(ROOT, 'countertops');
 const ORIGIN = 'https://www.surprisegranite.com';
 const API = 'https://surprise-granite-email-api.onrender.com';
 const FAB_RATE = 55; // $/sqft fabrication + install — same rate as the calculator & The Yard
+// Custom-fabricated, cut-to-template countertops are final sale (industry standard) — a valid,
+// accurate MerchantReturnPolicy so the installed-price Offer is a complete Merchant listing.
+const CT_RETURN_POLICY = { '@type': 'MerchantReturnPolicy', applicableCountry: 'US', returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted' };
+const PRICE_VALID_UNTIL = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10);
 
 // Live installed pricing from the catalog (master sheet): slug -> installed $/sqft.
 // retail_price for slabs is MATERIAL per sqft; installed = material + $55/sqft.
@@ -276,9 +280,10 @@ function renderPage(e) {
   const memberPrices = members ? members.map(m => m.inst).filter(Boolean) : (INSTALLED[e.slug] ? [INSTALLED[e.slug]] : []);
   const inst = memberPrices.length ? Math.min(...memberPrices) : 0; // "from" = lowest installed
   const unitOffer = (price, u) => ({
-    '@type': 'Offer', priceCurrency: 'USD', price: price.toFixed(2),
+    '@type': 'Offer', priceCurrency: 'USD', price: price.toFixed(2), priceValidUntil: PRICE_VALID_UNTIL,
     priceSpecification: { '@type': 'UnitPriceSpecification', price: price.toFixed(2), priceCurrency: 'USD', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'FTK' } },
-    availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', url, seller: { '@type': 'Organization', name: u || 'Surprise Granite' }
+    availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', url,
+    seller: { '@type': 'Organization', name: u || 'Surprise Granite' }, hasMerchantReturnPolicy: CT_RETURN_POLICY
   });
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product',
@@ -296,6 +301,7 @@ function renderPage(e) {
       '@type': 'AggregateOffer', priceCurrency: 'USD',
       lowPrice: Math.min(...memberPrices).toFixed(2), highPrice: Math.max(...memberPrices).toFixed(2),
       offerCount: members.length, availability: 'https://schema.org/InStock', url,
+      priceValidUntil: PRICE_VALID_UNTIL, hasMerchantReturnPolicy: CT_RETURN_POLICY,
       offers: members.filter(m => m.inst).map(m => unitOffer(m.inst, prettyVendor(m.vendor)))
     } : unitOffer(memberPrices[0])
   };
