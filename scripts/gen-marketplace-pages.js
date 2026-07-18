@@ -74,7 +74,7 @@ function page(p) {
 
   const productLd = {
     '@context': 'https://schema.org', '@type': 'Product', name, description: desc, image: imgs,
-    sku: p.sku || handle, brand: { '@type': 'Brand', name: brand || 'Surprise Granite' },
+    sku: (p.sku || handle).slice(0, 50), brand: { '@type': 'Brand', name: brand || 'Surprise Granite' },
     category: `${PLURAL}`, url,
     offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD', priceValidUntil,
       availability: 'https://schema.org/InStock', url,
