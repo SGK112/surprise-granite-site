@@ -83,6 +83,11 @@ const esc = s => String(s == null ? '' : s)
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const attr = s => esc(s);
 const jsonLd = o => JSON.stringify(o).replace(/</g, '\\u003c');
+// Preconnect to an external image CDN (skip our own origin — already connected).
+function preconnectFor(u) {
+  try { if (/^https?:\/\//.test(u)) { const o = new URL(u).origin; if (!o.includes('surprisegranite.com')) return `<link rel="preconnect" href="${o}" crossorigin/>`; } } catch (e) {}
+  return '';
+}
 
 // ---------- merge data by slug ----------
 function loadArr(file, keys) {
@@ -323,6 +328,7 @@ function renderPage(e) {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+${hero ? `<link rel="preload" as="image" href="${attr(hero)}" fetchpriority="high"/>${preconnectFor(hero)}` : ''}
 <title>${esc(title)}</title>
 <meta name="description" content="${attr(desc)}"/>
 <link rel="canonical" href="${url}"/>

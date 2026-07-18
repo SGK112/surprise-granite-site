@@ -37,6 +37,10 @@ const OUTDIR = path.join(ROOT, 'marketplace', DIR);
 
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const jsonAttr = o => JSON.stringify(o).replace(/</g, '\\u003c');
+function preconnectFor(u) {
+  try { if (/^https?:\/\//.test(u)) { const o = new URL(u).origin; if (!o.includes('surprisegranite.com')) return `<link rel="preconnect" href="${o}" crossorigin/>`; } } catch (e) {}
+  return '';
+}
 const money = n => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function fetchAll() {
@@ -113,6 +117,7 @@ function page(p) {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  ${imgs.length ? `<link rel="preload" as="image" href="${esc(img)}" fetchpriority="high"/>${preconnectFor(img)}` : ''}
   <title>${esc(name)} | Surprise Granite</title>
   <meta name="description" content="${esc(metaDesc)}"/>
   <link rel="canonical" href="${url}"/>
