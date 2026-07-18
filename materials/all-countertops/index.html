@@ -235,7 +235,8 @@
   }
   function tile(t){
     var url='/marketplace/product/?handle='+enc(t.slug)+'&category=slabs';
-    return '<a class="pc" href="'+url+'"><div class="im">'
+    // data-slug lets favorites.js attach a heart button (same as the remnant cards).
+    return '<a class="pc" data-slug="'+esc(t.slug)+'" href="'+url+'"><div class="im">'
       +(t.hasScene?'<span class="badge">In a room</span>':'')
       +'<img class="a" loading="lazy" src="'+esc(t.lead)+'" alt="'+esc(t.name)+(t.hasScene?' countertop in a real space':' slab')+'" onerror="this.onerror=null;this.src=\''+PH+'\'">'
       +(t.hover?'<img class="b" loading="lazy" src="'+esc(t.hover)+'" alt="'+esc(t.name)+' slab">':'')
@@ -260,6 +261,8 @@
     f.innerHTML=slice.map(tile).join('');
     while(f.firstChild)grid.appendChild(f.firstChild);
     shown+=slice.length; moreBtn.style.display=shown<view.length?'block':'none';
+    // Cards are injected async, so ask favorites.js to (re)attach heart buttons.
+    if(window.SGFavorites&&window.SGFavorites.refresh)window.SGFavorites.refresh();
   }
   moreBtn.addEventListener('click',render);
   document.querySelectorAll('.pill[data-mat]').forEach(function(p){
