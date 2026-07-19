@@ -13,7 +13,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
 const TEMPLATE = path.join(ROOT, 'marketplace/faucets/index.html');
-const GRID_VER = '20260719a'; // bump when marketplace-grid.js changes
+const GRID_VER = '20260719b'; // bump when marketplace-grid.js changes
 
 const PAGES = [
   {
@@ -81,7 +81,7 @@ for (const p of PAGES) {
     `<section class="mp-hero"><div class="mp-wrap"><div class="k">${p.kicker}</div><h1>${p.h1}</h1><p>${p.heroP}</p></div></section>`, 'hero');
   html = rep(html, 'placeholder="Search kitchen & bathroom faucets…"', `placeholder="${p.searchPh}"`, 'search');
   html = rep(html, /window\.MP_CONFIG=\{category:'faucet'[\s\S]*?\}\]\};/, p.helpers + '\n' + p.config, 'mp-config');
-  html = rep(html, 'marketplace-grid.js?v=20260716b', `marketplace-grid.js?v=${GRID_VER}`, 'grid-ver');
+  html = rep(html, /marketplace-grid\.js\?v=[a-z0-9]+/, `marketplace-grid.js?v=${GRID_VER}`, 'grid-ver');
 
   const dir = path.join(ROOT, p.out);
   fs.mkdirSync(dir, { recursive: true });

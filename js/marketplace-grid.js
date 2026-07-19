@@ -17,7 +17,11 @@
   function sellable(p){
     var pr = +p.retail_price || 0;
     var img = p.primary_image_url || (p.image_urls && p.image_urls[0]);
-    if (!(pr >= (C.priceMin||1) && pr <= (C.priceMax||100000) && img)) return false;
+    // Honor an explicit priceMin:0 — `C.priceMin||1` turned 0 into 1, hiding every
+    // unpriced-but-real product (e.g. flooring lines shown as "See price →"). Default
+    // stays 1 when unset so faucets/sinks still drop $0 junk.
+    var minP = (C.priceMin != null) ? C.priceMin : 1;
+    if (!(pr >= minP && pr <= (C.priceMax||100000) && img)) return false;
     if (C.accRegex && C.accRegex.test(p.name||'')) return false;
     return true;
   }
