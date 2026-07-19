@@ -951,14 +951,17 @@
     .lightbox-close:hover { background: rgba(255,255,255,0.2); }
 
     .lightbox-image-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
+      /* Absolute-fill so the image is centered — a flex child + the image's
+         max-width:100% otherwise form a circular size dependency that shrink-wraps
+         the box to ~84% and shoves it left. */
+      position: absolute;
+      inset: 0;
       overflow: hidden;
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0 10px;
     }
 
     .lightbox-image-container.dragging { cursor: grabbing; }
