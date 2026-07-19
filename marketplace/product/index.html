@@ -3487,8 +3487,15 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         } else if (range) {
           range.innerHTML = '<a href="tel:+16028333189" class="sg-price-amount" '
             + 'style="font-size:26px;text-decoration:none;color:var(--gold-ink,#8a6d00)">Call for pricing</a>';
-          if (note) note.innerHTML = 'Every slab is unique — call <a href="tel:+16028333189" '
-            + 'style="color:inherit;font-weight:700">(602) 833-3189</a> for a quote &amp; free in-home measure';
+          if (note) {
+            // .sg-price-note is display:flex (icon + label). This message is plain
+            // prose with an inline <a>, so flex would split it into ragged columns —
+            // force normal text flow just for this variant.
+            note.style.display = 'block';
+            note.style.lineHeight = '1.5';
+            note.innerHTML = 'Every slab is unique — call <a href="tel:+16028333189" '
+              + 'style="color:inherit;font-weight:700">(602) 833-3189</a> for a quote &amp; free in-home measure';
+          }
         }
       })();
 
