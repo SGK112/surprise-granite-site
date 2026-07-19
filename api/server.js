@@ -4299,6 +4299,14 @@ try {
   logger.warn('Catalog API not available:', err.message);
 }
 
+// ============ Product reviews (real customer reviews → compliant product schema) ============
+try {
+  const reviewsRouter = require('./routes/reviews');
+  app.use('/api/reviews', reviewsRouter);
+} catch (err) {
+  logger.warn('Reviews API not available:', err.message);
+}
+
 try {
   app.use('/api/quote', require('./routes/quote'));
 } catch (err) {

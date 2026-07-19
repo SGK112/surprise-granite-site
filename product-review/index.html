@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Rate Your Purchase · Surprise Granite</title>
+<meta name="description" content="Tell us how your Surprise Granite purchase is working out. A quick star rating helps other shoppers choose with confidence."/>
+<!-- Post-purchase utility page, not a search landing page. -->
+<meta name="robots" content="noindex, follow"/>
+<link rel="canonical" href="https://www.surprisegranite.com/product-review/"/>
+<link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
+<style>
+  :root{
+    --gold:#f9cb00; --gold-deep:#e0b400; --navy:#16222e; --green:#0a7d3f;
+    --ink:#1b2530; --ink-2:#5a6675; --line:#e4e8ec; --card:#fff; --bg:#f4f6f8; --field:#f7f9fb;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --ink:#eef2f6; --ink-2:#9aa6b2; --line:#26313d; --card:#16202b; --bg:#0c1218; --field:#0f1a24; }
+  }
+  :root[data-theme="light"]{ --ink:#1b2530; --ink-2:#5a6675; --line:#e4e8ec; --card:#fff; --bg:#f4f6f8; --field:#f7f9fb; }
+  :root[data-theme="dark"]{ --ink:#eef2f6; --ink-2:#9aa6b2; --line:#26313d; --card:#16202b; --bg:#0c1218; --field:#0f1a24; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;max-width:460px;width:100%;padding:28px 24px 24px;box-shadow:0 24px 60px -30px rgba(9,14,20,.4);}
+  .logo{height:30px;margin:0 auto 20px;display:block}
+  .prod{display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:20px}
+  .prod img{width:52px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--line)}
+  .prod .pn{font-size:14.5px;font-weight:800;line-height:1.25}
+  .prod .pm{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  h1{font-size:21px;font-weight:850;letter-spacing:-.02em;line-height:1.2;text-wrap:balance;margin-bottom:6px;text-align:center}
+  .sub{color:var(--ink-2);font-size:14.5px;margin-bottom:20px;text-align:center;text-wrap:balance}
+  .rate{display:flex;justify-content:center;gap:8px;margin-bottom:6px}
+  .rate button{background:none;border:0;font-size:40px;line-height:1;cursor:pointer;color:var(--line);padding:2px;transition:transform .1s,color .1s;-webkit-tap-highlight-color:transparent}
+  .rate button.on{color:var(--gold)}
+  .rate button:active{transform:scale(1.15)}
+  .ratelbl{text-align:center;font-size:13px;font-weight:800;color:var(--ink-2);min-height:18px;margin-bottom:18px}
+  label{display:block;font-size:12.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px 2px}
+  input,textarea{width:100%;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:15.5px;font-family:inherit;color:var(--ink);margin-bottom:14px;-webkit-appearance:none}
+  input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  textarea{resize:vertical;min-height:88px;line-height:1.5}
+  .submit{width:100%;background:var(--navy);color:#fff;border:0;border-radius:14px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;min-height:56px;box-shadow:0 12px 26px -14px rgba(22,34,46,.7);transition:transform .12s,opacity .12s}
+  .submit:active{transform:scale(.985)}
+  .submit:disabled{opacity:.5;cursor:not-allowed}
+  .fine{color:var(--ink-2);font-size:12.5px;text-align:center;margin-top:14px;line-height:1.5}
+  /* success / recovery states */
+  .state{text-align:center;display:none}
+  .state.show{display:block}
+  .state .big{font-size:44px;line-height:1;margin-bottom:12px}
+  .state h2{font-size:22px;font-weight:850;letter-spacing:-.01em;margin-bottom:8px;text-wrap:balance}
+  .state p{color:var(--ink-2);font-size:15px;margin-bottom:20px;text-wrap:balance}
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;background:var(--navy);color:#fff;border:0;border-radius:14px;padding:15px 18px;font-size:16px;font-weight:800;text-decoration:none;min-height:54px}
+  .g-mark{width:22px;height:22px;flex-shrink:0;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .g-mark svg{width:15px;height:15px}
+  .btn-line{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:4px;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:13px;padding:14px;font-size:15px;font-weight:700;text-decoration:none;min-height:52px}
+  .err{color:#c0392b;font-size:13.5px;text-align:center;margin-top:10px;min-height:16px}
+</style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite"/>
+
+    <!-- FORM -->
+    <form id="form" autocomplete="on">
+      <div class="prod" id="prodBox" style="display:none">
+        <img id="prodImg" alt="" src="" onerror="this.style.display='none'"/>
+        <div>
+          <div class="pn" id="prodName">Your purchase</div>
+          <div class="pm" id="prodMeta">Surprise Granite</div>
+        </div>
+      </div>
+
+      <h1 id="headline">How's your new purchase?</h1>
+      <p class="sub">Your honest rating helps other shoppers — and it only takes a moment.</p>
+
+      <div class="rate" id="stars" role="radiogroup" aria-label="Star rating">
+        <button type="button" data-v="1" aria-label="1 star">★</button>
+        <button type="button" data-v="2" aria-label="2 stars">★</button>
+        <button type="button" data-v="3" aria-label="3 stars">★</button>
+        <button type="button" data-v="4" aria-label="4 stars">★</button>
+        <button type="button" data-v="5" aria-label="5 stars">★</button>
+      </div>
+      <div class="ratelbl" id="rateLbl"></div>
+
+      <label for="rvName">Your name</label>
+      <input id="rvName" name="name" type="text" maxlength="80" placeholder="First name (or first + last initial)"/>
+
+      <label for="rvTitle">Headline <span style="text-transform:none;font-weight:600">(optional)</span></label>
+      <input id="rvTitle" name="title" type="text" maxlength="140" placeholder="e.g. Exactly what our kitchen needed"/>
+
+      <label for="rvBody">Your review <span style="text-transform:none;font-weight:600">(optional)</span></label>
+      <textarea id="rvBody" name="body" maxlength="4000" placeholder="What do you love about it? How was delivery and quality?"></textarea>
+
+      <button class="submit" id="submitBtn" type="submit" disabled>Submit rating</button>
+      <div class="err" id="err"></div>
+      <p class="fine">Reviews are checked before they publish. We never edit or fake ratings.</p>
+    </form>
+
+    <!-- SUCCESS (4–5★): thank + cross-promote Google -->
+    <div class="state" id="okHigh">
+      <div class="big">🎉</div>
+      <h2>Thank you<span id="okName"></span>!</h2>
+      <p>That means a lot to our small Arizona team. Since you're happy, would you share it where it helps most?</p>
+      <a class="btn-google" id="googleBtn" target="_blank" rel="noopener">
+        <span class="g-mark"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg></span>
+        Review us on Google
+      </a>
+      <a class="btn-line" href="/marketplace/">Keep shopping →</a>
+    </div>
+
+    <!-- SUCCESS (1–3★): thank + recovery path -->
+    <div class="state" id="okLow">
+      <div class="big">🤝</div>
+      <h2>Thank you for the honesty<span id="okName2"></span></h2>
+      <p>We take this seriously and want to make it right. A team member will be glad to help.</p>
+      <a class="btn-google" href="tel:+16028333189" style="background:var(--green)">Call us: (602) 833-3189</a>
+      <a class="btn-line" href="mailto:info@surprisegranite.com?subject=About%20my%20order">Email us instead</a>
+    </div>
+  </main>
+
+  <script>
+  (function(){
+    var API='https://surprise-granite-email-api.onrender.com';
+    var q=new URLSearchParams(location.search);
+    var g=function(k){return (q.get(k)||'').trim().replace(/[<>]/g,'');};
+    var sku=g('sku'), slug=g('slug'), category=g('category'), order=g('order'),
+        name=g('name'), product=g('product')||g('name_product'), img=g('img');
+    var rating=0;
+    var LBL={1:'Poor',2:'Fair',3:'Good',4:'Great',5:'Excellent — love it!'};
+
+    // Product context (from the emailed link)
+    if(product){
+      document.getElementById('prodBox').style.display='flex';
+      document.getElementById('prodName').textContent=product;
+      document.getElementById('headline').textContent='How’s your '+product+'?';
+      if(img){var pi=document.getElementById('prodImg');pi.src=img;}
+    }
+    if(name){ document.getElementById('rvName').value=name; }
+
+    // Star picker
+    var btns=[].slice.call(document.querySelectorAll('#stars button'));
+    var lbl=document.getElementById('rateLbl'), submit=document.getElementById('submitBtn');
+    function paint(v){ btns.forEach(function(b){ b.classList.toggle('on', (+b.dataset.v)<=v); }); }
+    btns.forEach(function(b){
+      b.addEventListener('mouseenter',function(){ paint(+b.dataset.v); });
+      b.addEventListener('click',function(){ rating=+b.dataset.v; paint(rating); lbl.textContent=LBL[rating]; submit.disabled=false; });
+    });
+    document.getElementById('stars').addEventListener('mouseleave',function(){ paint(rating); });
+
+    function show(id, nm){
+      document.getElementById('form').style.display='none';
+      if(nm){ var el=document.getElementById(id==='okHigh'?'okName':'okName2'); if(el) el.textContent=', '+nm; }
+      document.getElementById(id).classList.add('show');
+    }
+
+    document.getElementById('form').addEventListener('submit',function(e){
+      e.preventDefault();
+      if(!rating) return;
+      var err=document.getElementById('err'); err.textContent='';
+      submit.disabled=true; submit.textContent='Sending…';
+      var body={ sku:sku, slug:slug, category:category, order:order, rating:rating,
+                 name:document.getElementById('rvName').value.trim(),
+                 title:document.getElementById('rvTitle').value.trim(),
+                 body:document.getElementById('rvBody').value.trim() };
+      fetch(API+'/api/reviews',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+        .then(function(res){
+          if(!res.ok){ throw new Error(res.j&&res.j.error||'Could not submit'); }
+          // Prefill the Google deep link with the reviewer's name for the /review/ handoff
+          var nm=body.name||'';
+          var gb=document.getElementById('googleBtn');
+          gb.href='https://www.surprisegranite.com/review/'+(nm?('?name='+encodeURIComponent(nm.split(' ')[0])):'');
+          if(rating>=4){ show('okHigh', nm.split(' ')[0]); } else { show('okLow', nm.split(' ')[0]); }
+        })
+        .catch(function(ex){
+          submit.disabled=false; submit.textContent='Submit rating';
+          err.textContent=ex.message||'Something went wrong — please try again.';
+        });
+    });
+  })();
+  </script>
+</body>
+</html>

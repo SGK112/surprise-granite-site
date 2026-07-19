@@ -55,6 +55,26 @@ function fetchAll() {
   return out;
 }
 
+// Approved customer reviews, keyed by sku. Only products with real approved reviews get
+// aggregateRating/review schema — never fabricated. Empty when none exist yet (safe).
+let REVIEWS = {};
+function fetchReviewData() {
+  const map = {};
+  try {
+    const raw = execFileSync('curl', ['-s', `${API}/api/reviews/summary`], { maxBuffer: 1 << 24 }).toString();
+    const products = (JSON.parse(raw).products) || {};
+    for (const sku of Object.keys(products)) {
+      const s = products[sku];
+      if (!s || !s.count) continue;
+      let reviews = [];
+      try { reviews = (JSON.parse(execFileSync('curl', ['-s', `${API}/api/reviews?sku=${encodeURIComponent(sku)}`], { maxBuffer: 1 << 22 }).toString()).reviews) || []; } catch (e) {}
+      map[sku] = { count: s.count, average: s.average, reviews };
+    }
+    console.log(`fetched reviews for ${Object.keys(map).length} products`);
+  } catch (e) { console.warn('reviews summary unavailable — skipping review schema'); }
+  return map;
+}
+
 function page(p) {
   const handle = p.slug || p.id;
   const url = `${SITE}/marketplace/${DIR}/${handle}/`;
@@ -98,6 +118,34 @@ function page(p) {
           handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'DAY' },
           transitTime: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' } } } }
   };
+  // Real approved reviews → aggregateRating + review (Google-compliant product stars).
+  const skuKey = p.sku || handle;
+  const rd = REVIEWS[skuKey];
+  const stars = n => '★★★★★☆☆☆☆☆'.slice(5 - Math.round(n), 10 - Math.round(n));
+  const rateLink = `<a class="rv-cta" href="/product-review/?sku=${encodeURIComponent(skuKey)}&amp;product=${encodeURIComponent(name)}&amp;slug=${encodeURIComponent(handle)}&amp;category=${CAT}&amp;img=${encodeURIComponent(img)}">✍️ Write a review</a>`;
+  let reviewsHtml = '';
+  if (rd && rd.count > 0) {
+    productLd.aggregateRating = { '@type': 'AggregateRating', ratingValue: rd.average.toFixed(1),
+      reviewCount: String(rd.count), bestRating: '5', worstRating: '1' };
+    if (rd.reviews && rd.reviews.length) {
+      productLd.review = rd.reviews.slice(0, 20).map(r => {
+        const o = { '@type': 'Review',
+          reviewRating: { '@type': 'Rating', ratingValue: String(r.rating), bestRating: '5', worstRating: '1' },
+          author: { '@type': 'Person', name: r.author_name || 'Verified Customer' } };
+        if (r.created_at) o.datePublished = String(r.created_at).slice(0, 10);
+        if (r.title) o.name = r.title;
+        if (r.body) o.reviewBody = r.body;
+        return o;
+      });
+    }
+    const items = (rd.reviews || []).slice(0, 12).map(r =>
+      `<li class="rv"><div class="rv-top"><span class="rv-stars">${stars(r.rating)}</span>${r.verified ? '<span class="rv-vb">Verified buyer</span>' : ''}</div>${r.title ? `<div class="rv-h">${esc(r.title)}</div>` : ''}${r.body ? `<p class="rv-b">${esc(r.body)}</p>` : ''}<div class="rv-a">${esc(r.author_name || 'Verified Customer')}</div></li>`).join('');
+    reviewsHtml = `<section class="pdp-reviews"><h2>Customer reviews</h2>
+      <div class="rv-sum"><span class="rv-avg">${rd.average.toFixed(1)}</span><span class="rv-stars rv-big">${stars(rd.average)}</span><span class="rv-ct">${rd.count} review${rd.count === 1 ? '' : 's'}</span></div>
+      <ul class="rv-list">${items}</ul>${rateLink}</section>`;
+  } else {
+    reviewsHtml = `<section class="pdp-reviews pdp-reviews-empty"><h2>Reviews</h2><p>Own this ${SING}? Be the first to share your experience.</p>${rateLink}</section>`;
+  }
   const crumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
@@ -166,6 +214,22 @@ function page(p) {
     .footer-links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
     .footer-links a{color:#fff;opacity:.85;text-decoration:none;font-size:14px}.footer-links a:hover{opacity:1}
     .footer-copyright{opacity:.6;font-size:13px}
+    .pdp-reviews{grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:28px}
+    .pdp-reviews h2{font-size:1.3rem;font-weight:800;margin:0 0 16px}
+    .pdp-reviews-empty p{color:var(--text-secondary);font-size:15px;margin:0 0 16px}
+    .rv-sum{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+    .rv-avg{font-size:2.2rem;font-weight:800;color:var(--navy);line-height:1}
+    .rv-stars{color:var(--gold);letter-spacing:2px;font-size:16px}
+    .rv-big{font-size:20px}
+    .rv-ct{color:var(--text-muted);font-size:14px}
+    .rv-list{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:18px}
+    .rv{border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+    .rv-top{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+    .rv-vb{font-size:11px;font-weight:800;color:#16a34a;background:#eafaf0;border-radius:6px;padding:2px 7px;text-transform:uppercase;letter-spacing:.03em}
+    .rv-h{font-weight:800;font-size:15px;margin-bottom:4px}
+    .rv-b{margin:0 0 8px;color:var(--text-secondary);font-size:14.5px;line-height:1.6}
+    .rv-a{font-size:13px;color:var(--text-muted);font-weight:600}
+    .rv-cta{display:inline-block;background:var(--navy);color:#fff;text-decoration:none;font-weight:800;font-size:14px;border-radius:10px;padding:12px 22px}
     @media(max-width:760px){.pdp{grid-template-columns:1fr;gap:24px}.pdp-gallery{position:static}}
   </style>
 </head>
@@ -186,6 +250,7 @@ function page(p) {
       <ul class="pdp-specs">${specs}</ul>
       <a class="pdp-back" href="/marketplace/${DIR}/">← Browse all ${PLURAL}</a>
     </div>
+    ${reviewsHtml}
   </main>
   <footer class="footer"><div class="footer-inner">
     <div class="footer-links"><a href="/">Home</a><a href="/marketplace/">Marketplace</a><a href="/marketplace/${DIR}/">${PLURAL}</a><a href="/cart/">Cart</a><a href="/contact-us/">Contact</a></div>
@@ -206,6 +271,7 @@ function page(p) {
 // --- run ---
 const all = fetchAll();
 console.log(`fetched ${all.length} ${CAT} products`);
+REVIEWS = fetchReviewData();
 let made = 0, skipOOS = 0, skipNoPrice = 0, skipNoImg = 0;
 const urls = [];
 for (const p of all) {
