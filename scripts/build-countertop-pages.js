@@ -352,6 +352,7 @@ ${productLd.offers ? `<script type="application/ld+json">${jsonLd(productLd)}</s
 <style>
 :root{--gold:#f9cb00;--gold-deep:#e5b800;--ink:#17181d;--mut:#6b6e78;--bg:#f4f1ea;--panel:#fff;--line:#e6e1d6;--shadow:0 18px 44px -18px rgba(30,26,15,.35)}
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
 body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1120px;margin:0 auto;padding:20px 20px 56px}
 .crumb{font-size:12.5px;color:var(--mut);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px}
