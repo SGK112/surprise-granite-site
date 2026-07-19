@@ -290,9 +290,10 @@ for (const p of all) {
 }
 console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNoPrice}, noindex no-image ${skipNoImg}`);
 
-// sitemap
+// sitemap (with <lastmod> — a freshness signal Bing uses; regenerated each run)
+const LASTMOD = new Date().toISOString().slice(0, 10);
 const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-  urls.map(u => `<url>\n<loc>${u}</loc>\n<changefreq>weekly</changefreq>\n<priority>0.6</priority>\n</url>`).join('\n') +
+  urls.map(u => `<url>\n<loc>${u}</loc>\n<lastmod>${LASTMOD}</lastmod>\n<changefreq>weekly</changefreq>\n<priority>0.6</priority>\n</url>`).join('\n') +
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(ROOT, `sitemap-${DIR}.xml`), sm);
 console.log(`wrote sitemap-${DIR}.xml (${urls.length} urls)`);

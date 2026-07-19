@@ -1,0 +1,56 @@
+name: indexnow
+
+# Auto-pings IndexNow (Bing / Yandex / Seznam / Naver) with the pages changed in each
+# push to main, so those engines re-crawl edited content within minutes. Google ignores
+# IndexNow (it recrawls via the sitemap/GSC), so nothing to do there.
+#
+# No secrets needed — the IndexNow key is public by design (hosted at /<key>.txt in the repo).
+# Only index.html-derived URLs are submitted (scripts/changed-to-urls.js) to avoid 404 pings.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+      - 'sitemap-*.xml'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:  # manual "re-ping everything" from the Actions tab
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # need the previous commit to diff against
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compute changed public URLs
+        id: diff
+        run: |
+          BEFORE='${{ github.event.before }}'
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            # first push / forced / unknown base — use just this commit's files
+            git show --name-only --pretty=format: "${{ github.sha }}" > /tmp/changed.txt
+          else
+            git diff --name-only "$BEFORE" "${{ github.sha }}" > /tmp/changed.txt
+          fi
+          node scripts/changed-to-urls.js /tmp/changed.txt > /tmp/urls.txt
+          echo "count=$(grep -c . /tmp/urls.txt || echo 0)" >> "$GITHUB_OUTPUT"
+          echo "Changed URLs to submit:"; cat /tmp/urls.txt
+
+      - name: Wait for Render to publish the deploy
+        if: steps.diff.outputs.count != '0'
+        run: sleep 150  # give the static-site deploy time to go live before we invite a crawl
+
+      - name: Submit to IndexNow
+        if: steps.diff.outputs.count != '0'
+        run: node scripts/indexnow-submit.js --file /tmp/urls.txt

@@ -39,8 +39,11 @@ function fromSitemap(file) {
 const args = process.argv.slice(2);
 let urls;
 if (args[0] === '--sitemap') urls = fromSitemap(args[1]);
+else if (args[0] === '--file') urls = fs.readFileSync(args[1], 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
 else if (args.length) urls = args.map(u => (u.startsWith('http') ? u : SITE + u));
 else urls = DEFAULT.map(u => SITE + u);
+
+if (!urls.length) { console.log('no URLs to submit — nothing to do'); process.exit(0); }
 
 // IndexNow accepts up to 10,000 URLs per request.
 const batches = [];
