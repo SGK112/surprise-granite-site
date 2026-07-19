@@ -107,6 +107,10 @@
     if (s==='price-asc') view.sort(function(a,b){return a.price-b.price;});
     else if (s==='price-desc') view.sort(function(a,b){return b.price-a.price;});
     else if (s==='name') view.sort(function(a,b){return a.name.localeCompare(b.name);});
+    // Featured: lead with priced items so the grid doesn't open on a wall of "See price →"
+    // (matters for flooring, where the catalog returns unpriced lines first). Stable sort
+    // preserves catalog order within each group; a no-op where everything is priced.
+    else view.sort(function(a,b){return (b.hasPrice?1:0)-(a.hasPrice?1:0);});
     shown = 0; grid.innerHTML = '';
     if (!view.length){ grid.innerHTML='<div class="mp-empty">Nothing matches these filters. <button class="mp-clr" id="mpClr2" type="button">Clear filters</button></div>'; var c2=document.getElementById('mpClr2'); if(c2)c2.addEventListener('click',clearAll); countEl.textContent=''; moreBtn.style.display='none'; return; }
     render(); countEl.textContent = view.length.toLocaleString('en-US')+' '+(C.noun||'items');

@@ -13,7 +13,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
 const TEMPLATE = path.join(ROOT, 'marketplace/faucets/index.html');
-const GRID_VER = '20260719b'; // bump when marketplace-grid.js changes
+const GRID_VER = '20260719c'; // bump when marketplace-grid.js changes
 
 const PAGES = [
   {
