@@ -80,7 +80,13 @@
           + '<div class="ship" style="color:var(--ink-3);font-weight:600">installed · '+(x.sqft?'~'+x.sqft.toFixed(1)+' sq ft piece · ':'')+'free in-home measure</div>'
         : '<div class="pr">Free measure</div><div class="ship" style="color:var(--ink-3);font-weight:600">installed price quoted in-home</div>';
     } else if (x.hasPrice) {
-      priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
+      if (C.unit) {
+        // Per-unit goods (tile/flooring sold by the sq ft): keep cents and show the unit —
+        // never round (Math.round turns $6.63 into "$7") and never imply a lump-sum total.
+        priceHtml = '<div class="pr">$'+x.price.toFixed(2)+'<span style="font-size:.62em;font-weight:700">'+C.unit+'</span></div>';
+      } else {
+        priceHtml = '<div class="pr">$'+Math.round(x.price).toLocaleString('en-US')+'</div>' + (x.price>=500?'<div class="ship">Free shipping</div>':'');
+      }
     } else {
       // No price on file (e.g. tile lines) — never render "$0"; invite the click.
       priceHtml = '<div class="pr" style="font-size:15px;color:var(--ink-3,#8b96a3)">See price &rarr;</div>';

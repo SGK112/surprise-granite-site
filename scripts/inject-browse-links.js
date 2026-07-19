@@ -23,6 +23,8 @@ const TARGETS = [
   { file: 'marketplace/tile/index.html', sitemap: 'sitemap-tile.xml', label: 'tile' },
   { file: 'marketplace/bathroom/index.html', sitemap: 'sitemap-bathroom.xml', label: 'bathroom fixtures' },
   { file: 'marketplace/kitchen-accessories/index.html', sitemap: 'sitemap-kitchen-accessories.xml', label: 'kitchen accessories' },
+  { file: 'materials/all-tile/index.html', sitemap: 'sitemap-tile.xml', label: 'tile' },
+  { file: 'materials/flooring/index.html', sitemap: 'sitemap-flooring.xml', label: 'flooring' },
 ];
 
 const START = '<!--seo-links-->';
