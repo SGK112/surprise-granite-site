@@ -136,7 +136,7 @@ function page(p) {
   <meta property="product:price:currency" content="USD"/>
   <script type="application/ld+json">${jsonAttr(productLd)}</script>
   <script type="application/ld+json">${jsonAttr(crumbLd)}</script>
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260703a"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260718n"/>
   <link rel="stylesheet" href="/css/marketplace-cards.css?v=20260426a"/>
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/unified-nav.js?v=20260713c"></script>

@@ -344,7 +344,7 @@ ${hero ? `<link rel="preload" as="image" href="${attr(hero)}" fetchpriority="hig
 <meta name="twitter:description" content="${attr(desc)}"/>
 <meta name="twitter:image" content="${attr(heroAbs)}"/>
 <link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260709c"/>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260718n"/>
 <script defer src="/js/unified-nav.js?v=20260713c"></script>
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
 ${productLd.offers ? `<script type="application/ld+json">${jsonLd(productLd)}</script>` : '<!-- no Product schema: priceless (quote-based) color has no offer; a bare Product spikes GSC Product-snippet errors -->'}

@@ -413,7 +413,7 @@ function generatePage(tile) {
     .footer-copy { color: rgba(255,255,255,0.4); font-size: 12px; }
   </style>
 
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260718n">
 <script defer src="/js/unified-nav.js?v=20260713c"></script>
 
 </head>
