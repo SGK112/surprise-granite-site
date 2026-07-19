@@ -37,7 +37,8 @@
   .m-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .pill{border:1px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:22px;padding:8px 15px;font-weight:700;font-size:13px;cursor:pointer;min-height:38px;transition:.15s;}
   .pill:hover{border-color:var(--gold);} .pill.on{background:var(--navy);color:#fff;border-color:var(--navy);}
-  .m-count{margin-left:auto;color:var(--ink-3);font-size:13px;font-weight:600;align-self:center;}
+  .m-sort{margin-left:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:22px;padding:8px 14px;font-weight:700;font-size:13px;min-height:38px;cursor:pointer;}
+  .m-count{color:var(--ink-3);font-size:13px;font-weight:600;align-self:center;}
   /* grid */
   .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:16px 0 30px;}
   @media(max-width:1100px){.grid{grid-template-columns:repeat(4,1fr);}}
@@ -89,6 +90,12 @@
       <button class="pill" data-mat="Marble">Marble</button>
       <button class="pill" data-mat="Porcelain">Porcelain</button>
       <button class="pill" data-mat="Dekton">Dekton</button>
+      <select class="m-sort" id="sortBy" aria-label="Sort colors">
+        <option value="featured">Sort: Featured</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+        <option value="name">Name: A–Z</option>
+      </select>
       <span class="m-count" id="mCount"></span>
     </div>
   </div>
@@ -205,7 +212,7 @@
   var LOGO=/logo|icon|watermark|sprite|placeholder|brandmark|_web_logo|-logo/i;
   var PH='/images/placeholder-card.svg';
   var grid=document.getElementById('grid'), moreBtn=document.getElementById('moreBtn'), mCount=document.getElementById('mCount');
-  var ALL=[], view=[], shown=0, BATCH=60, mat='all', q='';
+  var ALL=[], view=[], shown=0, BATCH=60, mat='all', q='', sort='featured';
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
   function enc(s){return encodeURIComponent(s);}
@@ -225,23 +232,25 @@
       var slug=p.slug||p.id; if(!slug)return;
       var imgs=(p.image_urls||[]).filter(Boolean);
       var scene=sceneOf(imgs), slab=slabOf(p);
-      var lead=scene||slab;
-      if(!notLogo(lead)) lead=slab||PH;              // never lead with a logo
+      // Lead with the actual SLAB colour — accurate + comparable, and (unlike the room scene) it's
+      // what mobile shoppers see with no hover. Lifestyle scene becomes the desktop hover/detail reveal.
+      var lead=slab||scene;
+      if(!notLogo(lead)) lead=scene||PH;             // never lead with a logo
       var _rp=+p.retail_price||0;
       var _inst=(+p.installed_sqft)||((_rp>0&&_rp<=500)?Math.round((_rp+55)*100)/100:0);
       ALL.push({slug:slug,name:p.name||'Countertop',mat:matOf(p),inst:_inst,
-        brand:p.brand||p.vendor||'',lead:lead,hover:(scene&&slab&&slab!==scene)?slab:null,hasScene:!!scene});
+        brand:p.brand||p.vendor||'',lead:lead,hover:(scene&&slab&&scene!==slab)?scene:null,hasScene:!!scene});
     });
   }
   function tile(t){
     var url='/marketplace/product/?handle='+enc(t.slug)+'&category=slabs';
     // data-slug lets favorites.js attach a heart button (same as the remnant cards).
     return '<a class="pc" data-slug="'+esc(t.slug)+'" href="'+url+'"><div class="im">'
-      +(t.hasScene?'<span class="badge">In a room</span>':'')
-      +'<img class="a" loading="lazy" src="'+esc(t.lead)+'" alt="'+esc(t.name)+(t.hasScene?' countertop in a real space':' slab')+'" onerror="this.onerror=null;this.src=\''+PH+'\'">'
-      +(t.hover?'<img class="b" loading="lazy" src="'+esc(t.hover)+'" alt="'+esc(t.name)+' slab">':'')
+      +(t.hasScene?'<span class="badge">See in a room</span>':'')
+      +'<img class="a" loading="lazy" src="'+esc(t.lead)+'" alt="'+esc(t.name)+' '+esc(t.mat)+' countertop slab" onerror="this.onerror=null;this.src=\''+PH+'\'">'
+      +(t.hover?'<img class="b" loading="lazy" src="'+esc(t.hover)+'" alt="'+esc(t.name)+' countertop in a real kitchen">':'')
       +'</div><div class="bd"><div class="nm">'+esc(t.name)+'</div><div class="mt">'+esc(t.mat)+(t.brand?' · '+esc(t.brand):'')+'</div>'
-      +(t.inst?'<div class="pr">from $'+t.inst.toFixed(2)+'<span class="u">/sq ft</span></div><div class="subpr">installed · free in-home measure</div>':'<div class="pr np">Call for pricing</div><div class="subpr">(602) 833-3189 · free in-home measure</div>')
+      +(t.inst?'<div class="pr">from $'+t.inst.toFixed(2)+'<span class="u">/sq ft</span></div><div class="subpr">installed · Phoenix metro · free measure</div>':'<div class="pr np">Call for pricing</div><div class="subpr">(602) 833-3189 · Phoenix metro</div>')
       +'</div></a>';
   }
   function passes(t){
@@ -251,6 +260,10 @@
   }
   function apply(){
     view=ALL.filter(passes); shown=0; grid.innerHTML='';
+    // Shoppers compare by price — offer explicit price sorting (priceless colors sink to the bottom).
+    if(sort==='price-asc') view.sort(function(a,b){return (a.inst||1e9)-(b.inst||1e9);});
+    else if(sort==='price-desc') view.sort(function(a,b){return (b.inst||0)-(a.inst||0);});
+    else if(sort==='name') view.sort(function(a,b){return a.name.localeCompare(b.name);});
     if(!view.length){grid.innerHTML='<div class="m-empty">No colors match. Try another material or search — or <a href="/get-a-free-estimate/" style="color:var(--gold-ink);font-weight:700">book a free estimate</a>.</div>';mCount.textContent='';moreBtn.style.display='none';return;}
     render();
     mCount.textContent=view.length.toLocaleString('en-US')+' colors';
@@ -270,6 +283,7 @@
   });
   document.getElementById('searchForm').addEventListener('submit',function(e){e.preventDefault();q=document.getElementById('q').value.trim().toLowerCase();apply();});
   document.getElementById('q').addEventListener('input',function(e){q=e.target.value.trim().toLowerCase();apply();});
+  document.getElementById('sortBy').addEventListener('change',function(e){sort=e.target.value;apply();window.scrollTo({top:0,behavior:'smooth'});});
 
   // load: skeletons, fetch all slab pages, lifestyle-first sort, render
   grid.innerHTML=Array.from({length:15}).map(function(){return '<div class="skel"></div>';}).join('');
@@ -277,8 +291,9 @@
   Promise.all(offs.map(function(o){return fetch(API+'/api/catalog?category=slab&limit=250&offset='+o,{signal:AbortSignal.timeout(12000)}).then(function(r){return r.ok?r.json():{};}).then(function(j){return j.products||[];}).catch(function(){return[];});}))
    .then(function(pages){
      pages.forEach(build);
-     // lifestyle-first: colors shown in a real room lead the grid
-     ALL.sort(function(a,b){return (b.hasScene?1:0)-(a.hasScene?1:0);});
+     // Featured default: colors WITH a posted installed price lead (shoppers want to buy), then those
+     // with a room photo, so the top of the grid is both priced and visually rich.
+     ALL.sort(function(a,b){return (b.inst?1:0)-(a.inst?1:0) || (b.hasScene?1:0)-(a.hasScene?1:0);});
      if(!ALL.length){grid.innerHTML='<div class="m-empty">Colors are loading — <a href="/get-a-free-estimate/" style="color:var(--gold-ink);font-weight:700">book a free estimate</a>.</div>';return;}
      apply();
      // reflect a starting q from ?q=
