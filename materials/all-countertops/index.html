@@ -30,15 +30,20 @@
   .m-hero .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);}
   .m-hero h1{font-size:28px;font-weight:800;margin:8px 0 0;} .m-hero p{color:#b9c4cd;margin:9px 0 0;font-size:14.5px;max-width:60ch;}
   /* toolbar */
-  .m-tools{position:sticky;top:0;z-index:8;background:var(--bg);padding:12px 0 6px;}
-  .m-search{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;max-width:520px;margin-bottom:12px;}
-  .m-search input{flex:1;border:0;padding:13px 15px;font-size:16px;background:transparent;color:var(--ink);outline:none;}
-  .m-search button{border:0;background:var(--gold);color:var(--navy);font-weight:800;padding:0 18px;cursor:pointer;}
-  .m-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  .pill{border:1px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:22px;padding:8px 15px;font-weight:700;font-size:13px;cursor:pointer;min-height:38px;transition:.15s;}
+  /* z-index 30 sits ABOVE the card favorite hearts (z-index 10) so they don't bleed through the
+     sticky bar; opaque bg + a soft bottom edge so cards clearly pass UNDER it as you scroll. */
+  .m-tools{position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 0 8px;box-shadow:0 6px 8px -8px rgba(0,0,0,.25);}
+  .m-toprow{display:flex;gap:8px;align-items:center;margin-bottom:9px;}
+  .m-search{display:flex;flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .m-search input{flex:1;min-width:0;border:0;padding:12px 14px;font-size:16px;background:transparent;color:var(--ink);outline:none;}
+  .m-search button{border:0;background:var(--gold);color:var(--navy);font-weight:800;padding:0 16px;cursor:pointer;}
+  /* Single scrollable row of pills — no more 2–3 wrapping rows eating the grid. */
+  .m-filters{display:flex;gap:7px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
+  .m-filters::-webkit-scrollbar{display:none;}
+  .pill{flex-shrink:0;border:1px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:22px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;min-height:38px;white-space:nowrap;transition:.15s;}
   .pill:hover{border-color:var(--gold);} .pill.on{background:var(--navy);color:#fff;border-color:var(--navy);}
-  .m-sort{margin-left:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:22px;padding:8px 14px;font-weight:700;font-size:13px;min-height:38px;cursor:pointer;}
-  .m-count{color:var(--ink-3);font-size:13px;font-weight:600;align-self:center;}
+  .m-sort{flex-shrink:0;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:0 10px;font-weight:700;font-size:13px;height:44px;cursor:pointer;}
+  .m-count{flex-shrink:0;margin-left:auto;padding-left:8px;color:var(--ink-3);font-size:12.5px;font-weight:600;white-space:nowrap;}
   /* grid */
   .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:16px 0 30px;}
   @media(max-width:1100px){.grid{grid-template-columns:repeat(4,1fr);}}
@@ -78,10 +83,18 @@
 
 <div class="wrap">
   <div class="m-tools">
-    <form class="m-search" id="searchForm" role="search">
-      <input id="q" type="search" placeholder="Search colors, brands, materials…" autocomplete="off" aria-label="Search countertops"/>
-      <button type="submit" aria-label="Search">Search</button>
-    </form>
+    <div class="m-toprow">
+      <form class="m-search" id="searchForm" role="search">
+        <input id="q" type="search" placeholder="Search colors, brands…" autocomplete="off" aria-label="Search countertops"/>
+        <button type="submit" aria-label="Search">Search</button>
+      </form>
+      <select class="m-sort" id="sortBy" aria-label="Sort colors">
+        <option value="featured">Featured</option>
+        <option value="price-asc">$ Low–High</option>
+        <option value="price-desc">$ High–Low</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </div>
     <div class="m-filters" id="mats">
       <button class="pill on" data-mat="all">All</button>
       <button class="pill" data-mat="Quartz">Quartz</button>
@@ -90,12 +103,6 @@
       <button class="pill" data-mat="Marble">Marble</button>
       <button class="pill" data-mat="Porcelain">Porcelain</button>
       <button class="pill" data-mat="Dekton">Dekton</button>
-      <select class="m-sort" id="sortBy" aria-label="Sort colors">
-        <option value="featured">Sort: Featured</option>
-        <option value="price-asc">Price: Low to High</option>
-        <option value="price-desc">Price: High to Low</option>
-        <option value="name">Name: A–Z</option>
-      </select>
       <span class="m-count" id="mCount"></span>
     </div>
   </div>
