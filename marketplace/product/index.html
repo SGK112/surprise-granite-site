@@ -1153,13 +1153,21 @@
     .lightbox-image-container.zoomed { cursor: move; }
 
     .lightbox-image {
-      max-width: 90%;
-      max-height: 85vh;
+      max-width: 96%;
+      max-height: 88vh;
       object-fit: contain;
       transition: transform 0.1s ease-out;
       user-select: none;
       -webkit-user-drag: none;
     }
+
+    /* Single-image products: hide the nav arrows, thumbnail strip and "1/1"
+       counter — they're pure clutter when there's nothing to page through. */
+    .lightbox.single-image .lightbox-nav,
+    .lightbox.single-image .lightbox-thumbnails,
+    .lightbox.single-image .lightbox-counter { display: none; }
+    /* Hint auto-fades a few seconds after open (JS adds .hint-hidden). */
+    .lightbox.hint-hidden .zoom-hint-text { opacity: 0; }
 
     .lightbox-nav {
       position: absolute;
@@ -1270,14 +1278,20 @@
     .lightbox.zoomed-in .zoom-hint-text { opacity: 0; }
 
     @media (max-width: 768px) {
+      .lightbox-image { max-width: 100%; max-height: 80vh; }
+      .lightbox-header { padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); }
       .lightbox-nav { width: 40px; height: 40px; font-size: 16px; }
       .lightbox-prev { left: 10px; }
       .lightbox-next { right: 10px; }
-      .lightbox-zoom-controls { bottom: 90px; padding: 6px 12px; }
+      /* Controls sit just above the thumbnail strip, lifted clear of the home indicator. */
+      .lightbox-zoom-controls { bottom: calc(84px + env(safe-area-inset-bottom)); padding: 6px 12px; }
       .zoom-btn { width: 36px; height: 36px; font-size: 18px; }
-      .lightbox-thumbnails { bottom: 15px; padding: 6px; gap: 6px; }
+      .lightbox-thumbnails { bottom: calc(14px + env(safe-area-inset-bottom)); padding: 6px; gap: 6px; }
       .lightbox-thumb { width: 50px; height: 50px; }
-      .zoom-hint-text { bottom: 160px; font-size: 0.75rem; }
+      .zoom-hint-text { bottom: calc(150px + env(safe-area-inset-bottom)); font-size: 0.75rem; }
+      /* No thumbnail strip on single-image → drop the zoom bar to the bottom. */
+      .lightbox.single-image .lightbox-zoom-controls { bottom: calc(16px + env(safe-area-inset-bottom)); }
+      .lightbox.single-image .zoom-hint-text { bottom: calc(80px + env(safe-area-inset-bottom)); }
     }
 
     /* Mobile Responsive */
@@ -2279,7 +2293,18 @@
       currentImageIndex = index;
       resetZoom();
       updateLightboxImage();
-      document.getElementById('lightbox').classList.add('active');
+      const lb = document.getElementById('lightbox');
+      lb.classList.add('active');
+      // Single-image products hide nav/thumbnails/counter (see CSS .single-image).
+      lb.classList.toggle('single-image', images.length <= 1);
+      lb.classList.remove('hint-hidden');
+      // Touch-appropriate instructions; the desktop copy said "Scroll to zoom".
+      const hint = lb.querySelector('.zoom-hint-text');
+      if (hint) hint.innerHTML = ('ontouchstart' in window)
+        ? 'Pinch or double-tap to zoom &bull; Drag to pan'
+        : 'Scroll or double-tap to zoom &bull; Drag to pan';
+      clearTimeout(window._lbHintTimer);
+      window._lbHintTimer = setTimeout(() => lb.classList.add('hint-hidden'), 3500);
       document.body.style.overflow = 'hidden';
       initThumbnails();
       updateThumbnailActive();
