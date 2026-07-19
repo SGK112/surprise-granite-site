@@ -44,8 +44,10 @@ jobs:
             git diff --name-only "$BEFORE" "${{ github.sha }}" > /tmp/changed.txt
           fi
           node scripts/changed-to-urls.js /tmp/changed.txt > /tmp/urls.txt
-          echo "count=$(grep -c . /tmp/urls.txt || echo 0)" >> "$GITHUB_OUTPUT"
-          echo "Changed URLs to submit:"; cat /tmp/urls.txt
+          # grep -c prints "0" AND exits 1 on no match — capture just its stdout, one clean line.
+          COUNT=$(grep -c . /tmp/urls.txt || true)
+          echo "count=${COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "Changed URLs to submit (${COUNT:-0}):"; cat /tmp/urls.txt
 
       - name: Wait for Render to publish the deploy
         if: steps.diff.outputs.count != '0'
