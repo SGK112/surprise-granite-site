@@ -1088,10 +1088,14 @@
     /* Enhanced Lightbox with Zoom */
     .lightbox {
       position: fixed;
-      /* Pin all four edges (inset:0) rather than width/height:100% — the latter
-         resolved ~24px short of the viewport, so the overlay opened inset from the
-         right and the page showed through ("opens from the side"). */
-      inset: 0;
+      top: 0;
+      left: 0;
+      /* 100vw/100dvh reference the TRUE viewport. width:100% (and even inset:0)
+         resolved ~24px short — the overlay opened inset from the right and the page
+         showed through ("opens from the side"). 100vw is edge-to-edge everywhere. */
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       background: rgba(0,0,0,0.95);
       z-index: 10000;
       display: none;
