@@ -97,3 +97,61 @@ proven. If these values reappear, start there.
   but render "Call for pricing", because `withInstalled()` only quotes per-sqft
   material at or under $500. Showing "$1,210.63 per slab" would need a
   whole-piece display path that does not exist yet.
+
+---
+
+# Follow-up sweep — same day
+
+## 5. Sample parity: client button vs checkout (2 real 400s fixed)
+
+`js/sampleable.js` decides whether the "Order Sample" button renders;
+`api/validators/price-validator.js` (wired into Stripe checkout at
+`api/routes/stripe.js:204`) decides whether checkout accepts it. Two Arizona Tile
+quartz colours — `glisten` and `statuary-nebula` — were OFFERED by the client but
+had `sample_eligible=false`, so a buyer who clicked Order Sample got
+"We don't offer samples of ...". 64 of their 66 Arizona Tile quartz siblings are
+eligible at $12.99 and nothing marked these two discontinued or out of stock, so
+it was a data gap. Set eligible + $12.99.
+
+Also set `sample_price=12.99` on `soapstone-metropolis-concrete` (eligible, no
+display price). Checkout never failed on it — the validator uses the
+`SAMPLE_PRICE_CENTS` constant, not the DB column — but the PDP had nothing to show.
+
+Verified afterwards by running the REAL `isSampleable()` over all 2,421 active
+slabs: 0 offered-but-refused, 0 eligible-but-hidden.
+
+Backup: `~/sg-backups/sample_flags_before.txt`
+
+## Three things that looked broken and are NOT — do not "fix" these
+
+1. **`/materials/all-cabinets/`** renders fine (3,821px: 3 cabinet brands, 14 door
+   styles). An early check called it empty; that was measuring before Webflow's
+   tab component rendered and looking for `.pc`/`.product-card` selectors this
+   page does not use. The `/data/cabinets.json` reference in
+   `js/swipe-cards-universal.js` is unreachable dead code — the branch keys off
+   `path.includes('cabinet')` and no page that loads that script has 'cabinet' in
+   its URL. No request for the missing file is ever made.
+
+2. **`price-validator.js` reading `data/countertops.json`** is not a stale-data
+   bug. `resolveSampleableProduct()` queries `catalog_products` FIRST and treats
+   `sample_eligible` as the verdict either way; the static list is only a fallback
+   for carts carrying slugs that no longer exist in the catalog. 388 catalog
+   sample-eligible slabs are absent from countertops.json and all of them resolve
+   correctly through the catalog path.
+
+3. **63 LX Viatera slabs under `vendor_id='monterrey-tile'`** are NOT a parity
+   break. `monterrey-tile` is absent from `SAMPLE_VENDOR_IDS`, but
+   `fromSampleableVendor()` checks `SAMPLE_SUB_BRANDS` (['lx-viatera','lx-hausys'])
+   against the BRAND before it ever reads `vendor_id`. Confirmed by calling
+   `isSampleable()` directly: true.
+
+Lesson for the next sweep: test candidate rules by CALLING the shipped function,
+not by re-implementing them in SQL. Both false alarms above came from an
+approximation that dropped a branch the real code has.
+
+## Remaining known-stale, deliberately left alone
+
+`marketplace/slabs/detail/` and `marketplace/tile/product.html` still read static
+JSON, but both are orphaned: not linked from any page (the only reference to
+`MARKETPLACE_DETAIL` is its own definition in `js/config.js`) and absent from
+every sitemap. Converting them is low value; deleting them is a separate call.
