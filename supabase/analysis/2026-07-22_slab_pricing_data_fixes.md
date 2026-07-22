@@ -200,3 +200,59 @@ rows respectively site-wide), so they quote rather than publish a wrong price.
 
 The price library has no dimensions either — `description` holds only the ESI SKUs
 (`MV531J`, `BG884J`), and neither appears anywhere in the catalog.
+
+---
+
+# HanStone retirement + the discontinued plumbing — 2026-07-22
+
+## 6. HanStone retired (owner call)
+
+ESI no longer carries HanStone. Worth recording that every public signal
+CONTRADICTED this at the time: ESI's own site listed HanStone on both its
+homepage and /products/ with no discontinuation notice, and their price sheet in
+the CRM was updated Jul 1-3 still containing Hanstone colours. A rep's word
+precedes a website update by months. Do not let a vendor sync "correct" this back
+on the strength of the website.
+
+  - 59 hanstone rows: `specs.discontinued` + `discontinued_reason`
+  - 19 stay `active=true` on purpose -- the colour pages keep their SEO value and
+    the PDP renders the DISCONTINUED banner; 40 were already inactive
+  - hanstone `scraper_enabled=false`; vendor_config notes updated on hanstone AND
+    esi (ESI still drop-ships sinks -- only the HanStone half is gone)
+  - `data/stone-yards.json`: hanstone dropped from ESI's brandKeys -> ESI yard
+    page 74 -> 55 products
+  - No sample exposure to close: `hanstone` is absent from `SAMPLE_VENDOR_IDS`
+    (js/sampleable.js) and from the price validator, so the Order Sample button
+    never rendered for it. The "Hanstone quartz samples" line that was in
+    vendor_config.notes was stale, not live behaviour.
+
+Backup: `~/sg-backups/hanstone_before_retire.txt`
+
+## 7. `discontinued` was stripped from every public response
+
+`api/routes/catalog.js` filters `specs` through `PUBLIC_SPEC_KEYS`, and
+`discontinued` was NOT on the list. `marketplace/product/index.html:3281` renders
+its banner from `p.active === false || specs.discontinued`, so a colour marked
+discontinued while still ACTIVE -- exactly the keep-it-live-for-SEO pattern --
+showed NO banner and read as fully orderable.
+
+This was already broken for 35 products before HanStone came up; without the fix,
+retiring HanStone would have changed nothing a customer could see. Whitelisted
+`discontinued` and `discontinued_reason` (not sensitive -- they are meant to be
+shown). `publicSpecs` tests still pass.
+
+## 8. Three conventions marked "discontinued"; only two did anything
+
+| convention | rows | drives the banner? |
+|---|---|---|
+| `active = false` | 3522 | yes |
+| `specs.discontinued` | 204 | yes (after §7) |
+| `'discontinued'` in `tags` | 107 | **no** |
+
+Nothing READS the tag -- `scripts/audit-catalog-vs-vendors.js:165` only writes it.
+In practice exactly ONE row was tagged-only AND active (`shenno-quartz`,
+bolder-image-stone), so it rendered as a normal orderable product. Reconciled the
+tag into `specs.discontinued` with a rule rather than by slug, so future audit
+runs that add the tag are caught too. All three conventions now agree.
+
+Backup: `~/sg-backups/tagged_discontinued_before.txt`
