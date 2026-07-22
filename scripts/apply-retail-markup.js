@@ -25,6 +25,18 @@ const WRITE = process.argv.includes('--write');
 const vArg = process.argv.indexOf('--vendor');
 const ONLY = vArg > -1 ? process.argv[vArg + 1] : null;
 
+// --only-unpriced restricts the run to rows that have NO price at all
+// (retail_price IS NULL or 0). Use it when the job is "publish the missing
+// prices", not "re-derive every price from cost".
+//
+// Why this exists: on 2026-07-22 a full slab run wanted to change 150 rows, but
+// only 82 were actually unpriced. Among the rest it would have CUT Calacatta
+// Gold from $110.50 to $18.58 (-83%) and Lincoln White from $89.64 to $23.14,
+// because their vendor_cost is wrong — $14.29 is a repeated bad cost shared by
+// 21 rows, not a real Calacatta Gold price. Marking up a bad cost publishes a
+// bad price, and a price CUT is the failure mode you notice last.
+const ONLY_UNPRICED = process.argv.includes('--only-unpriced');
+
 // --scope dropship reprices the non-slab rows that also publish dealer cost.
 // It is a different problem: those categories already have correctly-priced
 // siblings, so the risk is RE-pricing them, not leaving them alone.
@@ -131,7 +143,8 @@ const where = ALL ? `
 
 const agreeing = DROPSHIP ? agreeingVendors() : [];
 if (DROPSHIP && !agreeing.length) { console.error('no vendor agrees with its configured markup — refusing to guess.'); process.exit(1); }
-const whereSql = where.replace('$AGREEING$', `ARRAY[${agreeing.map((v) => `'${v}'`).join(',')}]`);
+const whereSql = where.replace('$AGREEING$', `ARRAY[${agreeing.map((v) => `'${v}'`).join(',')}]`)
+  + (ONLY_UNPRICED ? ' AND (c.retail_price IS NULL OR c.retail_price = 0)' : '');
 
 const rows = q(`
   SELECT c.id, c.slug, c.vendor_id, c.category, c.vendor_cost, c.retail_price, v.default_markup_pct
@@ -166,7 +179,7 @@ const priced = rows.filter(inBand)
   .map((r) => ({ ...r, next: markedUp(r.cost, r.markup) }));
 const changing = priced.filter((r) => r.retail === null || Math.abs(r.next - r.retail) >= 0.01);
 
-console.log(`mode: ${WRITE ? 'WRITE' : 'DRY RUN'}${ONLY ? `   vendor=${ONLY}` : ''}\n`);
+console.log(`mode: ${WRITE ? "WRITE" : "DRY RUN"}${ONLY ? `   vendor=${ONLY}` : ""}${ONLY_UNPRICED ? "   scope=ONLY-UNPRICED" : ""}\n`);
 console.log(`repriceable ${DROPSHIP ? 'drop-ship rows' : 'slabs'}: ${rows.length}`);
 if (!DROPSHIP) console.log(`  excluded per-slab vendors: ${PER_SLAB_VENDORS.join(', ')}  (cost is per slab, not per sqft)`);
 console.log(`  cost outside $${LO}-$${HI}: ${outOfBand.length}  (skipped, not published)`);
