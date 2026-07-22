@@ -2735,7 +2735,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
 <script src="/js/site-search.js?v=5"></script>
-<script src="/js/related-products.js"></script>
+<script src="/js/related-products.js?v=20260721a"></script>
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
@@ -2781,8 +2781,41 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     return colorHex[name.toLowerCase()] || '#cccccc';
   }
 
-  // Fetch product data - try slabs.json first, then countertops.json
+  // Fetch product data — the master catalog (catalog_products) is the source of
+  // truth. /data/{slabs,countertops}.json are stale Shopify-era exports kept
+  // only as a last resort if the catalog is unreachable or genuinely lacks the
+  // handle, so an API blip degrades to old data instead of "Product Not Found".
   async function findProduct() {
+    try {
+      const API = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+      const res = await fetch(API + '/api/catalog/' + encodeURIComponent(handle), { signal: AbortSignal.timeout(12000) });
+      if (res.ok) {
+        const data = await res.json();
+        const p = data.product || (Array.isArray(data.products) ? data.products[0] : null);
+        if (p) {
+          const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
+          return {
+            handle: p.slug || handle,
+            title: p.name,
+            vendor: p.brand || p.vendor_id || '',
+            brandDisplay: p.brand || p.vendor_id || '',
+            productType: p.subcategory || p.category || '',
+            images: imgs,
+            primaryColor: p.color_family || '',
+            style: p.finish || '',
+            price: p.retail_price,
+            installed_sqft: p.installed_sqft,
+            size: p.size || null,
+            finish: p.finish || null,
+            // Discontinued colors stay live for SEO but must not read as orderable.
+            discontinued: p.active === false || !!(p.specs && p.specs.discontinued),
+            description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0]
+              || `${p.name} — available at Surprise Granite with pro installation across metro Phoenix.`
+          };
+        }
+      }
+    } catch (e) { console.log('Catalog lookup failed, falling back to static:', e); }
+
     // Try slabs.json first
     try {
       const slabsRes = await fetch('/data/slabs.json');

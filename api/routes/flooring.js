@@ -223,18 +223,47 @@ router.get('/products', optionalAuth, async (req, res) => {
 
     const tier = getUserTier(req);
 
-    // Load products from JSON (or database if available)
-    const dataPath = path.join(__dirname, '../../data/flooring.json');
-    let products = [];
-
-    if (fs.existsSync(dataPath)) {
-      try {
-        const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-        products = data.flooring || [];
-      } catch (parseErr) {
-        logger.error('[Flooring] Failed to parse data file:', parseErr.message);
-      }
+    // Read the master catalog (catalog_products), not data/flooring.json — that
+    // file is a stale Shopify-era export, so this route was serving discontinued
+    // SKUs and old names while the storefront grid showed the live catalog.
+    const supabase = req.app.get('supabase');
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Catalog unavailable' });
     }
+
+    const { data: rows, error: catErr } = await supabase
+      .from('catalog_products')
+      .select('id, sku, slug, name, brand, subcategory, short_description, description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, in_stock, vendor_url, tags')
+      .eq('category', 'flooring')
+      .eq('active', true)
+      .limit(1000);
+
+    if (catErr) {
+      logger.error('[Flooring] catalog read failed:', catErr.message);
+      return res.status(500).json({ success: false, error: 'Failed to list products' });
+    }
+
+    // Map catalog columns onto the field names this route's filters/sorts and
+    // its existing consumers already expect.
+    let products = (rows || []).map(r => ({
+      id: r.id,
+      sku: r.sku,
+      slug: r.slug,
+      name: r.name,
+      brand: r.brand,
+      type: r.subcategory || '',
+      primaryColor: r.color_family || '',
+      primaryImage: r.primary_image_url || '',
+      images: Array.isArray(r.image_urls) ? r.image_urls : [],
+      description: r.description || r.short_description || '',
+      retail_price: r.retail_price,
+      price_unit: r.price_unit,
+      size: r.size,
+      finish: r.finish,
+      in_stock: r.in_stock,
+      vendor_url: r.vendor_url,
+      tags: r.tags
+    }));
 
     // Enrich with pricing
     products = products.map(p => {
@@ -320,28 +349,52 @@ router.get('/products/:slug', optionalAuth, async (req, res) => {
     const { slug } = req.params;
     const tier = getUserTier(req);
 
-    // Load products from JSON
-    const dataPath = path.join(__dirname, '../../data/flooring.json');
-
-    if (!fs.existsSync(dataPath)) {
-      return res.status(404).json({
-        success: false,
-        error: 'Flooring data not found'
-      });
+    // Read from the master catalog (catalog_products) rather than the stale
+    // data/flooring.json export — see the /products route above.
+    const supabase = req.app.get('supabase');
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Catalog unavailable' });
     }
 
-    let data;
-    try { data = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch (e) { return res.status(500).json({ error: 'Data file corrupted' }); }
-    const products = data.flooring || [];
+    const { data: row, error: catErr } = await supabase
+      .from('catalog_products')
+      .select('id, sku, slug, name, brand, subcategory, short_description, description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, in_stock, vendor_url, tags')
+      .eq('category', 'flooring')
+      .eq('active', true)
+      .eq('slug', slug)
+      .maybeSingle();
 
-    const product = products.find(p => p.slug === slug);
+    if (catErr) {
+      logger.error('[Flooring] catalog read failed:', catErr.message);
+      return res.status(500).json({ success: false, error: 'Failed to get product' });
+    }
 
-    if (!product) {
+    if (!row) {
       return res.status(404).json({
         success: false,
         error: 'Product not found'
       });
     }
+
+    const product = {
+      id: row.id,
+      sku: row.sku,
+      slug: row.slug,
+      name: row.name,
+      brand: row.brand,
+      type: row.subcategory || '',
+      primaryColor: row.color_family || '',
+      primaryImage: row.primary_image_url || '',
+      images: Array.isArray(row.image_urls) ? row.image_urls : [],
+      description: row.description || row.short_description || '',
+      retail_price: row.retail_price,
+      price_unit: row.price_unit,
+      size: row.size,
+      finish: row.finish,
+      in_stock: row.in_stock,
+      vendor_url: row.vendor_url,
+      tags: row.tags
+    };
 
     // Enrich with pricing
     const pricing = flooringPricing.getFlooringPricing(product.name, tier);
@@ -504,12 +557,18 @@ router.post('/apply-prices',
       // Save updated data
       fs.writeFileSync(dataPath, JSON.stringify({ flooring: products }, null, 2));
 
-      logger.info(`Updated ${updated} flooring product prices by user ${req.user.id}`);
+      // data/flooring.json is no longer what the site serves — GET /products and
+      // the storefront both read catalog_products now. This write still happens
+      // so the price-sheet workflow isn't silently broken, but it does NOT change
+      // any customer-facing price. Say so explicitly rather than reporting a bare
+      // success that reads as "prices are live".
+      logger.warn(`[Flooring] apply-prices wrote ${updated} rows to data/flooring.json — NOT reflected on the site; catalog_products is the source of truth`);
 
       res.json({
         success: true,
         updated,
-        total: prices.length
+        total: prices.length,
+        warning: 'Written to data/flooring.json only. The storefront reads catalog_products — these prices are NOT live until synced to the catalog.'
       });
     } catch (error) {
       logger.error('Error applying flooring prices:', error);

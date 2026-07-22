@@ -10465,6 +10465,35 @@
       renderProductsTable();
     }
 
+    // Cost/retail come straight from catalog_products (vendor_cost / retail_price).
+    // A missing cost renders as an em-dash, NEVER $0.00 — a gap in the master sheet
+    // would otherwise read as a free product and show a bogus 100% margin.
+    function fmtMoney(v) {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n <= 0) return '<span style="color: var(--text-muted);">&mdash;</span>';
+      return '$' + n.toFixed(2);
+    }
+
+    // Margin comes from the SERVER (api/lib/installedPricing.js), never recomputed
+    // here. For The Yard, retail_price is a pre-tax material basis and vendor_cost
+    // is the same figure +9.1% tax, so a naive (retail-cost)/retail shows -9% on
+    // all 570 remnants when the real margin is in fabrication. margin_basis tells
+    // us which economics produced the number so the tooltip can say so.
+    function marginCell(p) {
+      const pct = p._raw && p._raw.margin_pct;
+      if (pct === null || pct === undefined || !Number.isFinite(Number(pct))) {
+        return '<span style="color: var(--text-muted);" title="Needs vendor cost in the master sheet">&mdash;</span>';
+      }
+      const n = Number(pct);
+      const color = n < 0 ? 'var(--error)' : n < 20 ? 'var(--warning)' : 'var(--success)';
+      const installed = p._raw.margin_basis === 'installed';
+      const tip = installed
+        ? `Installed margin: quote $${p._raw.installed_total} − our cost $${p._raw.installed_cost} (material +9.1% tax + $26/sqft fab)`
+        : 'Retail vs vendor cost';
+      const mark = installed ? '<span style="opacity:.6;font-size:11px;" title="Installed basis"> ⓘ</span>' : '';
+      return `<span style="font-weight: 600; color: ${color};" title="${tip}">${n}%${mark}</span>`;
+    }
+
     function renderProductsTable() {
       const tbody = document.getElementById('products-table-body');
       const emptyEl = document.getElementById('products-empty');
@@ -10494,17 +10523,24 @@
                 ${selectedProducts.has(p.id) ? 'checked' : ''}
                 onchange="toggleProductSelect('${p.id}')"
                 style="accent-color: var(--gold-primary); width: 20px; height: 20px; margin-right: 8px;">
-              <img src="${p.image_url || 'https://via.placeholder.com/60x60?text=No+Image'}"
-                   class="product-card-mobile-image"
-                   onerror="this.src='https://via.placeholder.com/60x60?text=No+Image'">
+              <img src="${p.image_url || '/images/placeholder-card.svg'}"
+                   class="product-card-mobile-image" alt="">
               <div class="product-card-mobile-info">
                 <div class="product-card-mobile-name">${escapeHtml(p.name || '')}</div>
                 <div class="product-card-mobile-meta">${escapeHtml(p.vendor || 'No vendor')} ${p.sku ? '• ' + escapeHtml(p.sku) : ''}</div>
               </div>
             </div>
             <div class="product-card-mobile-row">
-              <span class="product-card-mobile-label">Price</span>
-              <span class="product-card-mobile-value" style="color: var(--gold-primary);">$${parseFloat(p.price || 0).toFixed(2)}</span>
+              <span class="product-card-mobile-label">Cost</span>
+              <span class="product-card-mobile-value" style="color: var(--text-secondary);">${fmtMoney(p.cost_price)}</span>
+            </div>
+            <div class="product-card-mobile-row">
+              <span class="product-card-mobile-label">Retail</span>
+              <span class="product-card-mobile-value" style="color: var(--gold-primary);">${fmtMoney(p.price)}</span>
+            </div>
+            <div class="product-card-mobile-row">
+              <span class="product-card-mobile-label">Margin</span>
+              <span class="product-card-mobile-value">${marginCell(p)}</span>
             </div>
             <div class="product-card-mobile-row">
               <span class="product-card-mobile-label">Stock</span>
@@ -10550,16 +10586,17 @@
                 style="accent-color: var(--gold-primary);">
             </td>
             <td style="padding: 12px 16px;">
-              <img src="${p.image_url || 'https://via.placeholder.com/50x50?text=No+Image'}"
-                   alt="" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: var(--dark-surface);"
-                   onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'">
+              <img src="${p.image_url || '/images/placeholder-card.svg'}"
+                   alt="" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: var(--dark-surface);">
             </td>
             <td style="padding: 12px 16px;">
               <div style="font-weight: 600; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.name || '')}</div>
               <div style="font-size: 13px; color: var(--text-muted);">${escapeHtml(p.vendor || '-')}</div>
             </td>
             <td style="padding: 12px 16px; font-family: monospace; font-size: 13px; color: var(--text-secondary);">${escapeHtml(p.sku || '-')}</td>
-            <td style="padding: 12px 16px; font-weight: 600;">$${parseFloat(p.price || 0).toFixed(2)}</td>
+            <td style="padding: 12px 16px; color: var(--text-secondary);">${fmtMoney(p.cost_price)}</td>
+            <td style="padding: 12px 16px; font-weight: 600;">${fmtMoney(p.price)}</td>
+            <td style="padding: 12px 16px;">${marginCell(p)}</td>
             <td style="padding: 12px 16px;">
               <span style="font-weight: 600; color: ${p.inventory_quantity !== null && p.inventory_quantity <= 5 ? 'var(--error)' : 'var(--success)'};">
                 ${p.inventory_quantity !== null ? p.inventory_quantity : '-'}
@@ -10852,13 +10889,16 @@
       }
 
       const csv = [
-        ['Name', 'SKU', 'Vendor', 'Type', 'Price', 'Stock', 'Status', 'Dropship', 'Shopify ID'].join(','),
+        ['Name', 'SKU', 'Vendor', 'Type', 'Cost', 'Retail', 'Margin %', 'Stock', 'Status', 'Dropship', 'Shopify ID'].join(','),
         ...filteredProducts.map(p => [
           `"${(p.name || '').replace(/"/g, '""')}"`,
           p.sku || '',
           `"${(p.vendor || '').replace(/"/g, '""')}"`,
           `"${(p.product_type || '').replace(/"/g, '""')}"`,
+          p.cost_price || '',
           p.price || 0,
+          // Server-computed margin (installed basis where it applies) — see marginCell().
+          (p._raw && Number.isFinite(Number(p._raw.margin_pct))) ? Number(p._raw.margin_pct) : '',
           p.inventory_quantity || 0,
           p.status || '',
           p.is_dropship ? 'Yes' : 'No',

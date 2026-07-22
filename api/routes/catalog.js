@@ -191,55 +191,10 @@ function isInternal(req) {
   return !!(k && req.get('x-aria-service-key') === k);
 }
 
-// The Yard stores the raw slab price (= our material cost); the customer price adds
-// fabrication + install ($55/sqft, +$150 pickup on remnants). This is the SAME formula
-// the storefront grid + Aria's find_products already apply — computed here so a direct
-// /api/catalog caller (Aria) gets the real quote in installed_total / installed_sqft
-// instead of the raw material price. retail_price is left as the material cost basis.
-function sqftFromSize(size) {
-  if (!size) return 0;
-  const m = String(size).match(/(\d+(?:\.\d+)?)\D+?(\d+(?:\.\d+)?)/);
-  return m ? (parseFloat(m[1]) * parseFloat(m[2])) / 144 : 0;
-}
-// The Yard charges us 9.1% AZ sales tax on the material (we're not tax-exempt with them —
-// see order #67349: $295 + $26.85 tax). That tax is a real cost, so our cost = raw*1.091 +
-// $26/sqft fab. Customer price is unchanged (margin absorbs the tax).
-const YARD_TAX = 1.091;
-function withInstalled(p, internal) {
-  if (!p) return p;
-
-  // The Yard: retail_price is the WHOLE-PIECE raw price; installed = piece + pickup + $55/sqft.
-  if (p.vendor_id === 'the-yard-az') {
-    const sqft = sqftFromSize(p.size);
-    const raw = Number(p.retail_price) || 0;
-    if (!sqft || !raw) return p;
-    const pickup = p.category === 'remnant' ? 150 : 0;
-    const total = Math.round(raw + pickup + 55 * sqft); // customer installed price
-    const out = { ...p, installed_total: total, installed_sqft: Math.round((total / sqft) * 100) / 100,
-      price_note: 'installed (fab+install); retail_price is pre-tax Yard material' };
-    if (internal) {
-      const materialTaxed = raw * YARD_TAX;                 // Yard price + 9.1% AZ tax we pay
-      const ourCost = Math.round(materialTaxed + 26 * sqft); // + $26/sqft fab/install cost
-      out.material_cost_taxed = Math.round(materialTaxed);
-      out.installed_cost = ourCost;
-      out.margin_pct = total > 0 ? Math.round(((total - ourCost) / total) * 100) : null;
-    }
-    return out;
-  }
-
-  // Distributor slabs: retail_price (from the master sheet) is the MATERIAL price PER SQFT.
-  // Installed = material + $55/sqft fab & install — the same rate as the countertop
-  // calculator and the Yard formula, so every surface quotes the same number. Sanity-gate
-  // to per-sqft-looking prices so a stray lump-sum row can't produce a nonsense quote.
-  if (p.category === 'slab') {
-    const perSqft = Number(p.retail_price) || 0;
-    if (perSqft > 0 && perSqft <= 500) {
-      return { ...p, installed_sqft: Math.round((perSqft + 55) * 100) / 100,
-        price_note: 'installed_sqft = material $/sqft + $55/sqft fab & install; retail_price is material per sqft' };
-    }
-  }
-  return p;
-}
+// Installed-price math lives in api/lib/installedPricing.js so the public catalog,
+// the admin catalog and every margin renderer share ONE copy of the formula.
+// A second copy drifts, and a drifted copy reports margin that doesn't exist.
+const { withInstalled, simpleMarginPct } = require('../lib/installedPricing');
 
 router.get('/', async (req, res) => {
   try {
@@ -285,8 +240,9 @@ router.get('/', async (req, res) => {
     const internal = isInternal(req);
     const products = (data || []).map(p => {
       if (internal) {
-        const cost = Number(p.vendor_cost) || 0, price = Number(p.retail_price) || 0;
-        return withInstalled({ ...p, margin_pct: (cost > 0 && price > 0) ? Math.round((price - cost) / price * 100) : null }, true);
+        // Naive margin is correct for drop-ship goods; withInstalled() overrides
+        // margin_pct for The Yard, where retail_price is a pre-tax material basis.
+        return withInstalled({ ...p, margin_pct: simpleMarginPct(p) }, true);
       }
       const { vendor_cost, ...pub } = p; // public: retail only
       return withInstalled(pub, false);

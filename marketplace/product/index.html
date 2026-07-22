@@ -3038,7 +3038,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/shop-cart-integration.js?v=20260628e"></script>
 <script src="/js/sample-cart.js?v=20260713a"></script>
 <script src="/js/site-search.js?v=5"></script>
-<script src="/js/related-products.js"></script>
+<script src="/js/related-products.js?v=20260721a"></script>
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
@@ -3140,13 +3140,14 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     // PURCHASABLE product: treat it as a miss so we fall through to the live
     // catalog API. Keep it as a last-resort fallback in case the API also misses.
     //
-    // Slabs are the exception: they are quote-based and data/slabs.json carries
-    // no price by design, so a slab hit is authoritative. It used to carry one
-    // (really the sample price), which is why every slab returned here before
-    // the catalog was ever consulted.
+    // Slabs used to be exempted here ("quote-based, so a slabs.json hit is
+    // authoritative"), but that made every slab PDP render from a stale Shopify
+    // -era export and never consult the catalog — so discontinued colors, old
+    // names, dead images and missing installed_sqft all survived. Slabs now fall
+    // through like everything else: catalog_products is the source of truth, and
+    // the static hit is kept only as a last resort if the API misses entirely.
     let staleProduct = null;
-    const usablePrice = (p) => category === 'slabs'
-      || Number(p && p.price) > 0
+    const usablePrice = (p) => Number(p && p.price) > 0
       || (Array.isArray(p && p.variants) && p.variants.some(v => Number(v && v.price) > 0));
     // Try the specified category first
     try {
@@ -3480,9 +3481,9 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         if (!box) return;
         let inst = Number(product.installed_sqft) || 0;
         let retail = Number(product.price != null ? product.price : product.retail_price) || 0;
-        // The slab render path returns the priceless static slabs.json entry and
-        // never consults the catalog API (see usablePrice), so installed_sqft is
-        // absent here. Ask the API directly for the authoritative installed price.
+        // Normally installed_sqft already arrived with the catalog row. This only
+        // fires when findProduct() fell back to a static entry (API miss/outage),
+        // which has no price — ask the API directly for the authoritative number.
         if (!inst) {
           const amt0 = box.querySelector('.sg-price-amount');
           if (amt0) amt0.textContent = '…';

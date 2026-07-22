@@ -592,9 +592,9 @@
 
   // State
   let vendor = null;
-  let products = { countertops: [], slabs: [], flooring: [] };
+  let products = { slabs: [], flooring: [], tile: [] };
   let activeTab = '';
-  let currentPage = { countertops: 1, slabs: 1, flooring: 1 };
+  let currentPage = { slabs: 1, flooring: 1, tile: 1 };
 
   // ============ SHOW LOADING ============
   container.innerHTML = `
@@ -605,15 +605,44 @@
   `;
 
   // ============ FETCH DATA ============
+  const API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+  const PAGE = 250;             // API hard cap per request
+  const MAX_PAGES = 12;         // 3,000 products — well past any single vendor
+
+  // catalog_products.category -> which tab it lands in.
+  const TAB_OF = { slab: 'slabs', remnant: 'slabs', flooring: 'flooring', tile: 'tile' };
+  // catalog_products.category -> the PDP's ?category= route token.
+  const ROUTE = { slab: 'slabs', remnant: 'remnants', flooring: 'flooring', tile: 'tile' };
+
+  // Pull every catalog row for one vendor_id, paging past the 250 cap.
+  async function fetchVendorProducts(vendorId) {
+    const url = (offset) => API_BASE + '/api/catalog?vendor=' + encodeURIComponent(vendorId) +
+      '&limit=' + PAGE + '&offset=' + offset;
+    const first = await fetch(url(0), { signal: AbortSignal.timeout(12000) });
+    if (!first.ok) throw new Error('HTTP ' + first.status);
+    const firstData = await first.json();
+    let rows = (firstData.products || []).slice();
+    const total = firstData.total || rows.length;
+    const pages = Math.min(MAX_PAGES, Math.ceil(total / PAGE));
+    if (pages > 1) {
+      const rest = await Promise.all(
+        Array.from({ length: pages - 1 }, (_, i) => i + 1).map(pg =>
+          fetch(url(pg * PAGE), { signal: AbortSignal.timeout(12000) })
+            .then(r => r.ok ? r.json() : { products: [] })
+            .then(j => j.products || [])
+            .catch(() => [])
+        )
+      );
+      rest.forEach(chunk => { rows = rows.concat(chunk); });
+    }
+    return rows;
+  }
+
   async function loadData() {
     try {
-      const [vendorsRes, countertopsRes, slabsRes, flooringRes] = await Promise.all([
-        fetch('/data/stone-yards.json'),
-        fetch('/data/countertops.json'),
-        fetch('/data/slabs.json'),
-        fetch('/data/flooring.json')
-      ]);
-
+      // stone-yards.json is the yard DIRECTORY (address, hours, phone, brandKeys)
+      // — business info we curate by hand, not product data. It stays static.
+      const vendorsRes = await fetch('/data/stone-yards.json');
       const vendors = await vendorsRes.json();
       vendor = vendors.find(v => v.slug === SLUG);
       if (!vendor) {
@@ -621,35 +650,65 @@
         return;
       }
 
-      const countertopsData = await countertopsRes.json();
-      const slabsData = await slabsRes.json();
-      const flooringData = await flooringRes.json();
+      // Products now come from the master catalog (catalog_products) keyed on
+      // vendor_id — previously /data/{countertops,slabs,flooring}.json filtered
+      // by brand string, which showed discontinued colors and stale names.
+      //
+      // A yard's catalog vendor_ids are derived by slugifying every brandKey it
+      // lists (plus its own slug): "PentalQuartz" -> pentalquartz, "Cactus Stone
+      // & Tile" -> cactus-stone-tile, etc. Candidates are then validated against
+      // the live vendor list so a rename shows up as a missing tab rather than a
+      // silent wrong-yard grid. ALIAS covers the one brand whose display name
+      // doesn't slugify to its id.
+      const ALIAS = { 'architectural-surfaces': 'arcsurfaces' };
+      const slugify = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-      // Extract arrays
-      const allCountertops = countertopsData.countertops || [];
-      const allSlabs = Array.isArray(slabsData) ? slabsData : [];
-      const allFlooring = flooringData.flooring || [];
+      const bk = vendor.brandKeys || {};
+      let candidates = Array.from(new Set(
+        [SLUG]
+          .concat(bk.countertops || [], bk.slabs || [], bk.flooring || [])
+          .map(slugify)
+          .filter(Boolean)
+          .map(id => ALIAS[id] || id)
+      ));
 
-      // Filter by brand keys
-      const bk = vendor.brandKeys;
+      // Drop ids the catalog doesn't know, so we don't fire dead requests.
+      try {
+        const vres = await fetch(API_BASE + '/api/catalog/vendors', { signal: AbortSignal.timeout(8000) });
+        if (vres.ok) {
+          const vdata = await vres.json();
+          const list = Array.isArray(vdata) ? vdata : (vdata.vendors || []);
+          const known = new Set(list.map(v => v && v.vendor_id).filter(Boolean));
+          if (known.size) {
+            const kept = candidates.filter(id => known.has(id));
+            if (kept.length) candidates = kept;
+          }
+        }
+      } catch (e) { /* validation is an optimization; fall through with all candidates */ }
 
-      if (bk.countertops && bk.countertops.length > 0) {
-        products.countertops = allCountertops.filter(p =>
-          bk.countertops.includes(p.brand)
-        );
-      }
+      const perVendor = await Promise.all(
+        candidates.map(id => fetchVendorProducts(id).catch(err => {
+          console.warn('[VendorProfile] vendor', id, 'failed:', err.message);
+          return [];
+        }))
+      );
 
-      if (bk.slabs && bk.slabs.length > 0) {
-        products.slabs = allSlabs.filter(p =>
-          bk.slabs.includes(p.vendor)
-        );
-      }
-
-      if (bk.flooring && bk.flooring.length > 0) {
-        products.flooring = allFlooring.filter(p =>
-          bk.flooring.includes(p.brand)
-        );
-      }
+      // Normalize to one shape so buildCard doesn't branch per tab, and dedupe
+      // by slug (a product can match more than one vendor_id).
+      const seen = new Set();
+      perVendor.flat().forEach(p => {
+        const tab = TAB_OF[p.category];
+        if (!tab || !p.slug || seen.has(p.slug)) return;
+        seen.add(p.slug);
+        products[tab].push({
+          slug: p.slug,
+          name: p.name,
+          img: p.primary_image_url || (Array.isArray(p.image_urls) && p.image_urls[0]) || '',
+          type: p.subcategory || '',
+          color: p.color_family || '',
+          route: ROUTE[p.category] || 'slabs'
+        });
+      });
 
       render();
     } catch (err) {
@@ -660,13 +719,15 @@
 
   // ============ RENDER ============
   function render() {
-    const totalProducts = products.countertops.length + products.slabs.length + products.flooring.length;
+    const totalProducts = products.slabs.length + products.flooring.length + products.tile.length;
 
-    // Determine which tabs to show
+    // Determine which tabs to show. The old build had separate Countertops and
+    // Slabs tabs because it read two different stale files that both described
+    // the same stone; the catalog has one `slab` category, so there's one tab.
     const tabs = [];
-    if (products.countertops.length > 0) tabs.push({ key: 'countertops', label: 'Countertops', count: products.countertops.length });
     if (products.slabs.length > 0) tabs.push({ key: 'slabs', label: 'Slabs', count: products.slabs.length });
     if (products.flooring.length > 0) tabs.push({ key: 'flooring', label: 'Flooring', count: products.flooring.length });
+    if (products.tile.length > 0) tabs.push({ key: 'tile', label: 'Tile', count: products.tile.length });
 
     activeTab = tabs.length > 0 ? tabs[0].key : '';
 
@@ -873,7 +934,7 @@
 
     let html = '';
     visible.forEach(item => {
-      const card = buildCard(item, tab);
+      const card = buildCard(item);
       html += card;
     });
 
@@ -886,34 +947,18 @@
   }
 
   // ============ BUILD CARD ============
-  function buildCard(item, tab) {
-    let href = '#';
-    let img = '';
-    let name = '';
-    let meta = '';
-
-    if (tab === 'countertops') {
-      href = '/countertops/' + item.slug + '/';
-      img = item.primaryImage || '';
-      name = item.name;
-      meta = [item.type, item.primaryColor].filter(Boolean).join(' &middot; ');
-    } else if (tab === 'slabs') {
-      href = '/marketplace/product/?handle=' + encodeURIComponent(item.handle) + '&category=slabs';
-      img = (item.images && item.images[0]) || '';
-      name = item.title;
-      meta = [item.productType, item.primaryColor].filter(Boolean).join(' &middot; ');
-    } else if (tab === 'flooring') {
-      href = '/marketplace/product/?handle=' + encodeURIComponent(item.slug) + '&category=flooring';
-      img = item.primaryImage || '';
-      name = item.name;
-      meta = [item.type, item.primaryColor].filter(Boolean).join(' &middot; ');
-    }
+  function buildCard(item) {
+    // Every item arrives pre-normalized from loadData(), so there's no per-tab
+    // branching left — one shape, one canonical PDP URL.
+    const href = '/marketplace/product/?handle=' + encodeURIComponent(item.slug) +
+      '&category=' + item.route;
+    const meta = [item.type, item.color].filter(Boolean).join(' &middot; ');
 
     return `
       <a href="${esc(href)}" class="vp-card">
-        <img class="vp-card-img" src="${esc(img)}" alt="${esc(name)}" loading="lazy" onerror="this.style.display='none'">
+        <img class="vp-card-img" src="${esc(item.img || '/images/placeholder-card.svg')}" alt="${esc(item.name)}" loading="lazy">
         <div class="vp-card-body">
-          <div class="vp-card-name">${esc(name)}</div>
+          <div class="vp-card-name">${esc(item.name)}</div>
           <div class="vp-card-meta">${meta}</div>
         </div>
       </a>

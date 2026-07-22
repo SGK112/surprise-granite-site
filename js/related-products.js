@@ -52,24 +52,54 @@
     return null;
   }
 
-  // Load products data
-  async function loadProducts(category) {
+  // Load products from the master catalog (catalog_products via /api/catalog).
+  // Previously read /data/{countertops,tile,flooring}.json — stale Shopify-era
+  // exports that drifted from what the marketplace actually sells. There is
+  // deliberately NO static fallback: a related-products rail is decorative, and
+  // showing discontinued colors at wrong prices is worse than showing nothing.
+  const API_CATEGORY = {
+    countertops: 'slab',
+    tile: 'tile',
+    flooring: 'flooring'
+  };
+
+  // catalog_products.category -> the PDP's ?category= route token.
+  // Mirrors ROUTE in marketplace/product/index.html.
+  const ROUTE = {
+    slab: 'slabs', remnant: 'remnants', sink: 'sinks', faucet: 'faucets',
+    accessory: 'kitchen-accessories', tile: 'tile', flooring: 'flooring',
+    bathroom: 'bathroom'
+  };
+
+  // `material` narrows the candidate pool via ?material= (matches subcategory).
+  // The API caps limit at 250 but there are 2,300+ slabs, so an unfiltered fetch
+  // would only ever recommend from the first 250 alphabetically. Filtering by
+  // material means all 250 candidates are at least the right stone type.
+  async function loadProducts(category, material) {
     if (allProducts) return allProducts;
 
-    const jsonPaths = {
-      countertops: '/data/countertops.json',
-      tile: '/data/tile.json',
-      flooring: '/data/flooring.json'
-    };
-
+    const apiCat = API_CATEGORY[category] || 'slab';
+    const base = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+    const matParam = (apiCat === 'slab' && material) ? '&material=' + encodeURIComponent(material) : '';
     try {
-      const response = await fetch(jsonPaths[category] || jsonPaths.countertops);
-      if (!response.ok) throw new Error('Failed to load');
+      const response = await fetch(base + '/api/catalog?category=' + apiCat + '&limit=250' + matParam);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
       const data = await response.json();
-      allProducts = data.countertops || data.products || data.tiles || data.flooring || [];
+      // Normalize catalog field names to the shape the scorer/renderer expect.
+      allProducts = (data.products || []).map(p => ({
+        name: p.name,
+        slug: p.slug,
+        brand: p.brand,
+        type: p.subcategory || category,
+        primaryColor: p.color_family,
+        primaryImage: p.primary_image_url,
+        _cat: p.category
+      }));
       return allProducts;
     } catch (e) {
-      return [];
+      console.warn('[RelatedProducts] catalog unavailable, skipping rail:', e.message);
+      allProducts = [];
+      return allProducts;
     }
   }
 
@@ -168,8 +198,10 @@
 
     for (const product of products) {
       const slug = product.slug || product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const url = `/${category}/${slug}/`;
-      const img = product.primaryImage || product.image || '/images/placeholder.svg';
+      // Canonical PDP route — same pattern marketplace-grid.js builds, so a
+      // related card and a grid card for the same product land on one URL.
+      const url = `/marketplace/product/?handle=${encodeURIComponent(slug)}&category=${ROUTE[product._cat] || 'slabs'}`;
+      const img = product.primaryImage || product.image || '/images/placeholder-card.svg';
       const type = product.type || category;
 
       html += `
@@ -371,7 +403,7 @@
     const current = getCurrentProduct();
     if (!current.name) return;
 
-    const products = await loadProducts(category);
+    const products = await loadProducts(category, current.material);
     if (!products.length) return;
 
     const related = findRelatedProducts(products, current, 8);

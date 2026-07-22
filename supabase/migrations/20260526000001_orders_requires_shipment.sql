@@ -53,7 +53,11 @@ CREATE INDEX IF NOT EXISTS idx_orders_needs_shipment
   WHERE requires_shipment = true;
 
 -- 4. Verification view — useful for spot-checks post-migration.
-CREATE OR REPLACE VIEW public.orders_shipment_summary AS
+-- security_invoker: without it the view runs with the owner's rights and
+-- bypasses RLS on `orders`, exposing order counts + revenue totals to anon
+-- (flagged 2026-07-20; see 20260721000001_product_reviews_rls.sql).
+CREATE OR REPLACE VIEW public.orders_shipment_summary
+WITH (security_invoker = true) AS
 SELECT
   requires_shipment,
   status,

@@ -18,6 +18,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+const { withInstalled, simpleMarginPct } = require('../lib/installedPricing');
 const { spawn } = require('child_process');
 const path = require('path');
 const { adminAccess } = require('../middleware/adminAuth');
@@ -236,7 +237,14 @@ router.get('/products', async (req, res) => {
     if (category) q = q.eq('category', category);
     const { data, error, count } = await q;
     if (error) return res.status(500).json({ error: error.message });
-    return res.json({ success: true, products: data || [], total: count, limit, offset });
+    // Attach the SAME margin math the public catalog uses. Without this the admin
+    // table computed (retail - cost) / retail itself, which is wrong for The Yard:
+    // retail_price there is the pre-tax material basis and vendor_cost is that
+    // same figure +9.1% AZ tax, so every one of the 570 remnants read as exactly
+    // -9% margin. The real margin is in fabrication and withInstalled() knows it.
+    const products = (data || []).map(p =>
+      withInstalled({ ...p, margin_pct: simpleMarginPct(p) }, true));
+    return res.json({ success: true, products, total: count, limit, offset });
   } catch (e) {
     return res.status(500).json({ error: 'Internal error' });
   }
