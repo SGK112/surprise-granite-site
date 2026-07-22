@@ -3807,7 +3807,12 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // the catalog's answer, and slabs.json never has it.
       // Always enrich slabs from the live catalog: it carries the full image
       // gallery + specs + sample flag that static slabs.json lacks.
-      if (category === 'slabs') {
+      // Runs for EVERY category, not just slabs. It used to be slab-only, so a
+      // discontinued tile/flooring/sink whose static entry carried a price won
+      // the static-first lookup and never learned the catalog's retired flag —
+      // artista-glass-interlocking-tile rendered no DISCONTINUED banner and still
+      // offered an Order Sample button while catalog_products said discontinued.
+      {
         (async () => {
           const h = product.handle || handle;
           // catalog slugs are inconsistent about the -sample suffix — try both
@@ -3835,7 +3840,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
               if (p.sample_eligible !== undefined) product.sample_eligible = p.sample_eligible;
               if (p.vendor_id) product.vendor_id = p.vendor_id;
               if (p.active === false || (p.specs && p.specs.discontinued)) product.discontinued = true;
-              renderSlabSpecs(product);
+              if (category === 'slabs') renderSlabSpecs(product);
               if (typeof window.__sgApplySampleButton === 'function') window.__sgApplySampleButton(product);
               if (typeof window.__sgMarkDiscontinued === 'function') window.__sgMarkDiscontinued(product);
               return;
@@ -3844,7 +3849,11 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
           // No active catalog record on any try: retired/unavailable colour that
           // only survives in the curated countertops.json. Keep it up for SEO but
           // flag it so the sample button stays hidden and the banner shows.
-          if (cleanMiss) {
+          // Slabs only. For slabs the catalog IS the master list, so "no active
+          // record" genuinely means retired. Other categories still have
+          // static-only entries that are legitimately sold, and flagging those
+          // discontinued on a miss would retire live products.
+          if (cleanMiss && category === 'slabs') {
             product.discontinued = true;
             product.sample_eligible = false;
             if (typeof window.__sgApplySampleButton === 'function') window.__sgApplySampleButton(product);
