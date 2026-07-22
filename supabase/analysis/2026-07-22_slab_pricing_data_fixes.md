@@ -256,3 +256,47 @@ tag into `specs.discontinued` with a rule rather than by slug, so future audit
 runs that add the tag are caught too. All three conventions now agree.
 
 Backup: `~/sg-backups/tagged_discontinued_before.txt`
+
+## 9. The PDP ignored the discontinued flag on 4 of 5 categories
+
+Marking a colour discontinued in the database changed nothing a customer could
+see, for two stacked reasons. §7 was only the first.
+
+The async catalog enrichment in `marketplace/product/index.html` was guarded by
+`if (category === 'slabs')`. Every other category resolves static-first, so a
+discontinued tile / flooring / sink whose static entry carried a price won the
+lookup and never learned the catalog's flag.
+
+Caught by rendering the page rather than trusting the API: the API correctly
+returned `specs.discontinued=true` for `artista-glass-interlocking-tile` while
+the PDP showed no `#discontinued-banner` and a live "Order Sample" button.
+
+Fix: enrichment runs for every category. Two things stay slab-only on purpose --
+`renderSlabSpecs()`, and the "no active catalog record => discontinued" fallback
+(for slabs the catalog IS the master list; other categories still have
+legitimately-sold static-only entries a miss would wrongly retire).
+
+Verified in a real browser, positives AND negatives:
+
+| product | category | banner | CTAs | |
+|---|---|---|---|---|
+| hanstone-aramis-quartz | slab | yes | 0 | pass |
+| shenno-quartz | slab | yes | 0 | pass |
+| akaya-copper-glass-interlocking-tile | tile | yes | 0 | pass |
+| artista-glass-interlocking-tile | tile | yes | 0 | pass |
+| alfi ... bath sink (control) | sink | no | 1 | pass |
+| 3d-white-blade-matte-arizona-tile (control) | tile | no | 1 | pass |
+
+## Verification lesson, stated plainly
+
+Three times today a check passed against a PROXY for the thing instead of the
+thing, and each time it hid a real bug:
+
+  - re-implemented `isSampleable` in SQL -> 65 phantom mismatches, 2 real
+  - grepped the raw API response for the word "discontinued" -> matched the
+    `tags` array, reported a deploy that had not happened
+  - matched "DISCONTINUED" as a text substring in the page body -> the negative
+    control "passed", because the word is in the page chrome
+
+Assert on the artifact: call the shipped function, parse the JSON field, locate
+the DOM element by id. Never on text that merely correlates with it.
