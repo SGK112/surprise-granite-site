@@ -155,3 +155,48 @@ approximation that dropped a branch the real code has.
 JSON, but both are orphaned: not linked from any page (the only reference to
 `MARKETPLACE_DETAIL` is its own definition in `js/config.js`) and absent from
 every sitemap. Converting them is low value; deleting them is a separate call.
+
+---
+
+# Correction to §4 — one cost was cleared wrongly
+
+`hanstone-aura-quartz` should NOT have had its `vendor_cost` cleared. Restored to
+1305.04.
+
+The clearing rule was "price-library vendor != catalog vendor". The library says
+`Aura -> vendor ESI`; the catalog row says `vendor_id=hanstone`, so the rule fired.
+But ESI is the stone YARD that carries the Hanstone BRAND
+(`data/stone-yards.json`: `esi -> [esi, hanstone]`) — the exact supplier-vs-brand
+relationship §4 itself flags as legitimate for Aramis Quartz and Bavaria Quartz.
+The rule and the caveat contradicted each other and the rule won.
+
+Proof it belongs there: `retail_price` is 1696.55 = 1305.04 x 1.30, i.e. the row
+was priced FROM that cost. And every other hanstone whole-slab row sits at ratio
+exactly 1.3000 — Aura Quartz was the sole outlier while the cost was missing.
+
+The other four clears stand: Cosentino and Monterrey Tile are not ESI-supplied,
+and Classic Surfaces is not ESI, so those really are name collisions.
+
+## Dimensions for the still-unpriced rows
+
+Asked whether dimensions could convert the whole-slab cost to per-sqft. Two of the
+four have dimensions, recorded in `specs` with provenance:
+
+| row | slab_size | sqft | source |
+|---|---|---|---|
+| `aura-dekton` (cosentino) | 126" x 57" | 49.9 | Dekton technical manual |
+| `aura-quartz-monterrey` | 126" x 63" (typ.) | 55.1 | LX Viatera pamphlet |
+| `calacattaextra-quartz-classic` | — | — | none |
+| `crescent-veil` (cosentino) | — | — | none |
+
+Dimensions do NOT unlock these. The $1,305.04 is ESI/Hanstone's cost for a
+DIFFERENT product that happens to also be called "Aura"; dividing it by Cosentino's
+or Monterrey's slab area would just launder one vendor's price into another's.
+These four need a real cost from their own vendor.
+
+They are already handled correctly in the meantime: all four carry
+`specs.needs_quote = true` and `specs.priced_from = "no-cost-in-crm"` (774 and 596
+rows respectively site-wide), so they quote rather than publish a wrong price.
+
+The price library has no dimensions either — `description` holds only the ESI SKUs
+(`MV531J`, `BG884J`), and neither appears anywhere in the catalog.
