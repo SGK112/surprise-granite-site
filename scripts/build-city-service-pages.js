@@ -39,6 +39,7 @@ const SERVICES = {
   'countertop-replacement': {
     label: 'Countertop Replacement',
     parent: '/services/countertop-replacement/',
+    img: '/migrated/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif',
     title: (c) => `Countertop Replacement in ${c}, AZ | Surprise Granite`,
     desc: (c) => `Replace old, cracked, or dated countertops in ${c}, AZ. We tear out and haul away your existing tops, then fabricate and install new granite or quartz — tear-out included, free estimates, lifetime warranty.`,
     intro: (c, hook) => `Ready to replace the countertops in your ${c} kitchen or bath? Whether your current tops are cracked, stained, hard-water-etched, or just dated, we remove and haul them away, then fabricate and install new <a href="/materials/countertops/granite-countertops/">granite</a> or <a href="/materials/countertops/quartz-countertops/">quartz</a> — protecting your existing cabinets and backsplash. We serve homeowners throughout ${c} (${hook}) with tear-out included in every quote.`,
@@ -51,6 +52,7 @@ const SERVICES = {
   'kitchen-remodeling': {
     label: 'Kitchen Remodeling',
     parent: '/services/home/kitchen-remodeling-arizona/',
+    img: '/migrated/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg',
     title: (c) => `Kitchen Remodeling in ${c}, AZ | Surprise Granite`,
     desc: (c) => `Kitchen remodeling in ${c}, AZ — new countertops, custom cabinets & refacing, tile backsplash, islands, sinks, and flooring. Family-owned, licensed, free estimates.`,
     intro: (c, hook) => `Remodeling your ${c} kitchen? From a countertop-and-backsplash refresh to a full gut renovation, we handle <a href="/materials/all-countertops/">countertops</a>, <a href="/services/cabinets/">cabinets</a>, <a href="/materials/all-tile/">tile backsplash</a>, islands, <a href="/marketplace/sinks/">sinks</a>, and <a href="/materials/flooring/">flooring</a> for homeowners across ${c} (${hook}).`,
@@ -63,6 +65,7 @@ const SERVICES = {
   'bathroom-remodeling': {
     label: 'Bathroom Remodeling',
     parent: '/services/home/bathroom-remodeling-arizona/',
+    img: '/migrated/6456ce4476abb2d4f9fbad10/66b931ef6d79a7516cf2f759_66b931d2bd1fb04907a007d8_bathroom-renovation-interior.avif',
     title: (c) => `Bathroom Remodeling in ${c}, AZ | Surprise Granite`,
     desc: (c) => `Bathroom remodeling in ${c}, AZ — vanities, custom showers, tile, and countertops. Family-owned, licensed, free in-home estimates.`,
     intro: (c, hook) => `Updating a bathroom in ${c}? We remodel bathrooms across ${c} (${hook}) — <a href="/services/vanity-installation/">vanities</a> with new stone tops, <a href="/services/custom-showers/">custom tile showers</a>, <a href="/materials/all-tile/">tile</a>, flooring, and <a href="/marketplace/faucets/">fixtures</a> — from a shower refresh to a full renovation.`,
@@ -93,6 +96,7 @@ function page(citySlug, city, lat, lon, hook, svcSlug, svc) {
   <meta property="og:title" content="${svc.label} in ${city} | Surprise Granite"/>
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="${url}"/>
+  <meta property="og:image" content="${SITE}${svc.img}"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260718o"/>
@@ -108,6 +112,8 @@ function page(citySlug, city, lat, lon, hook, svcSlug, svc) {
     <p>${svc.intro(city, hook)}</p>
     <a class="btn" href="/get-a-free-estimate?service=${svcSlug}&city=${citySlug}">Get a Free ${city} Estimate</a>
   </div></section>
+
+  <img src="${svc.img}" alt="${svc.label} in ${city}, AZ by Surprise Granite" width="1200" height="420" loading="lazy" style="width:100%;max-height:420px;object-fit:cover;display:block;"/>
 
   <section class="sec"><div class="wrap">
     <h2>What's Included</h2>
