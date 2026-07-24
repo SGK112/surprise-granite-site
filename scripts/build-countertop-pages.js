@@ -56,6 +56,26 @@ function fetchInstalledPrices() {
 const INSTALLED = fetchInstalledPrices();
 console.log(`installed prices fetched for ${Object.keys(INSTALLED).length} slabs`);
 
+// Approved customer reviews, keyed by sku. Countertop reviews are submitted with sku=<slug>
+// (slabs have no real SKU), so we look these up by page slug. Only products with real approved
+// reviews ever get aggregateRating/review schema — never fabricated. Empty until reviews exist.
+const REVIEWS = (function fetchReviewData() {
+  const map = {};
+  try {
+    const raw = execFileSync('curl', ['-s', '-m', '30', `${API}/api/reviews/summary`], { maxBuffer: 1 << 24 }).toString();
+    const products = (JSON.parse(raw).products) || {};
+    for (const sku of Object.keys(products)) {
+      const s = products[sku];
+      if (!s || !s.count) continue;
+      let reviews = [];
+      try { reviews = (JSON.parse(execFileSync('curl', ['-s', '-m', '30', `${API}/api/reviews?sku=${encodeURIComponent(sku)}`], { maxBuffer: 1 << 22 }).toString()).reviews) || []; } catch (e) {}
+      map[sku] = { count: s.count, average: s.average, reviews };
+    }
+    console.log(`fetched reviews for ${Object.keys(map).length} products`);
+  } catch (e) { console.warn('reviews summary unavailable — building without review schema'); }
+  return map;
+})();
+
 // ---------- natural-stone color consolidation ----------
 // Same-name, same-material natural stone carried by 2+ vendors collapses to ONE canonical page
 // with a "Carried by" supplier table; the variant pages redirect in. Engineered stone (quartz/
@@ -258,6 +278,23 @@ function supplierTable(members) {
   </section>`;
 }
 
+// 5-char star string for a 0–5 rating (filled/empty).
+const starStr = n => '★★★★★☆☆☆☆☆'.slice(5 - Math.round(n), 10 - Math.round(n));
+
+// Real approved customer reviews for a color → visible section + (in renderPage) Product schema.
+// Always renders a "Write a review" CTA; shows the rating summary + cards only when reviews exist.
+function reviewsSection(e, rd) {
+  const rateLink = `<a class="rv-cta" href="/product-review/?sku=${encodeURIComponent(e.slug)}&amp;product=${encodeURIComponent(e.name)}&amp;slug=${encodeURIComponent(e.slug)}&amp;category=countertop&amp;img=${encodeURIComponent(e.images[0] || '')}">✍️ Write a review</a>`;
+  if (rd && rd.count > 0) {
+    const items = (rd.reviews || []).slice(0, 12).map(r =>
+      `<li class="rv"><div class="rv-top"><span class="rv-stars">${starStr(r.rating)}</span>${r.verified ? '<span class="rv-vb">Verified buyer</span>' : ''}</div>${r.title ? `<div class="rv-h">${esc(r.title)}</div>` : ''}${r.body ? `<p class="rv-b">${esc(r.body)}</p>` : ''}<div class="rv-a">${esc(r.author_name || 'Verified Customer')}</div></li>`).join('');
+    return `<section class="reviews"><h2>Customer reviews</h2>
+      <div class="rv-sum"><span class="rv-avg">${rd.average.toFixed(1)}</span><span class="rv-stars rv-big">${starStr(rd.average)}</span><span class="rv-ct">${rd.count} review${rd.count === 1 ? '' : 's'} for ${esc(e.name)}</span></div>
+      <ul class="rv-list">${items}</ul>${rateLink}</section>`;
+  }
+  return `<section class="reviews reviews-empty"><h2>Reviews</h2><p>Had ${esc(e.name)} installed by our team? Be the first to share your experience.</p>${rateLink}</section>`;
+}
+
 function related(e) {
   const m = (e.material || 'Stone').toLowerCase();
   const pool = (byMaterial[m] || []).filter(s => s !== e.slug);
@@ -311,6 +348,23 @@ function renderPage(e) {
       offers: members.filter(m => m.inst).map(m => unitOffer(m.inst, prettyVendor(m.vendor)))
     } : unitOffer(memberPrices[0])
   };
+  // Real approved reviews (keyed by slug) → aggregateRating + review = Google-compliant stars.
+  const rd = REVIEWS[e.slug];
+  if (rd && rd.count > 0) {
+    productLd.aggregateRating = { '@type': 'AggregateRating', ratingValue: rd.average.toFixed(1),
+      reviewCount: String(rd.count), bestRating: '5', worstRating: '1' };
+    if (rd.reviews && rd.reviews.length) {
+      productLd.review = rd.reviews.slice(0, 20).map(r => {
+        const o = { '@type': 'Review',
+          reviewRating: { '@type': 'Rating', ratingValue: String(r.rating), bestRating: '5', worstRating: '1' },
+          author: { '@type': 'Person', name: r.author_name || 'Verified Customer' } };
+        if (r.created_at) o.datePublished = String(r.created_at).slice(0, 10);
+        if (r.title) o.name = r.title;
+        if (r.body) o.reviewBody = r.body;
+        return o;
+      });
+    }
+  }
   const matSlug = materialSlug(e.material);
   const crumbItems = [
     { '@type': 'ListItem', position: 1, name: 'Home', item: ORIGIN + '/' },
@@ -348,7 +402,7 @@ ${hero ? `<link rel="preload" as="image" href="${attr(hero)}" fetchpriority="hig
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260718o"/>
 <script defer src="/js/unified-nav.js?v=20260713c"></script>
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260426a"/>
-${productLd.offers ? `<script type="application/ld+json">${jsonLd(productLd)}</script>` : '<!-- no Product schema: priceless (quote-based) color has no offer; a bare Product spikes GSC Product-snippet errors -->'}
+${(productLd.offers || productLd.aggregateRating) ? `<script type="application/ld+json">${jsonLd(productLd)}</script>` : '<!-- no Product schema: priceless (quote-based) color with no reviews has neither offer nor rating; a bare Product spikes GSC Product-snippet errors -->'}
 <script type="application/ld+json">${jsonLd(crumbLd)}</script>
 <style>
 :root{--gold:#f9cb00;--gold-deep:#e5b800;--ink:#17181d;--mut:#6b6e78;--bg:#f4f1ea;--panel:#fff;--line:#e6e1d6;--shadow:0 18px 44px -18px rgba(30,26,15,.35)}
@@ -404,6 +458,24 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
 .rel-card:hover{transform:translateY(-3px);border-color:var(--gold)}
 .rel-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e9e3d6}
 .rel-card span{display:block;padding:9px 10px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reviews{margin-top:38px;max-width:74ch}
+.reviews h2{font-size:19px;font-weight:800;margin-bottom:14px}
+.reviews-empty p{color:var(--mut);font-size:15px;margin-bottom:14px}
+.rv-sum{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.rv-avg{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.rv-stars{color:var(--gold);letter-spacing:2px}
+.rv-big{font-size:20px}
+.rv-ct{color:var(--mut);font-size:13.5px}
+.rv-list{list-style:none;display:grid;gap:12px;margin:0 0 16px}
+.rv{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px 17px}
+.rv-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.rv-top .rv-stars{font-size:15px}
+.rv-vb{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#1a7a3c;background:#e7f6ec;border-radius:20px;padding:2px 9px}
+.rv-h{font-weight:800;font-size:14.5px;margin-bottom:3px}
+.rv-b{color:#33343a;font-size:14.5px;margin-bottom:8px}
+.rv-a{color:var(--mut);font-size:12.5px;font-weight:600}
+.rv-cta{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 16px}
+.rv-cta:hover{border-color:var(--gold)}
 </style>
 </head>
 <body class="unified-nav-active">
@@ -439,6 +511,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
     <p>${esc(bodyDescription(e))}</p>
     <p>Every ${esc(e.name)} installation includes digital templating, professional fabrication, and expert installation by our Arizona-based team. ${inst ? `Installed pricing starts around $${inst.toFixed(2)} per square foot — material, fabrication, and installation included. ` : ''}Final pricing depends on square footage, edge profile, and cutouts — <a href="/tools/countertop-calculator/">estimate your project</a> or book a free in-home measure for exact numbers.</p>
   </section>
+  ${reviewsSection(e, rd)}
   ${related(e)}
 </div>
 ${serviceStrip}
