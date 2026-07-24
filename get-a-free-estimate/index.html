@@ -524,7 +524,7 @@
           </div>
           <div class="image-upload-grid" id="image-upload-grid">
             <div class="image-upload-slot" id="image-slot-1" onclick="triggerImageUpload(1)">
-              <input type="file" id="image-file-1" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(1, this)">
+              <input type="file" id="image-file-1" accept="image/*" style="display: none;" onchange="handleImageUpload(1, this)">
               <input type="hidden" name="image1" id="image-data-1">
               <div class="upload-placeholder" id="upload-placeholder-1">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -538,7 +538,7 @@
               <button type="button" class="remove-image-btn" id="remove-btn-1" onclick="removeImage(event, 1)" style="display: none;">&times;</button>
             </div>
             <div class="image-upload-slot" id="image-slot-2" onclick="triggerImageUpload(2)">
-              <input type="file" id="image-file-2" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(2, this)">
+              <input type="file" id="image-file-2" accept="image/*" style="display: none;" onchange="handleImageUpload(2, this)">
               <input type="hidden" name="image2" id="image-data-2">
               <div class="upload-placeholder" id="upload-placeholder-2">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -552,7 +552,7 @@
               <button type="button" class="remove-image-btn" id="remove-btn-2" onclick="removeImage(event, 2)" style="display: none;">&times;</button>
             </div>
             <div class="image-upload-slot" id="image-slot-3" onclick="triggerImageUpload(3)">
-              <input type="file" id="image-file-3" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(3, this)">
+              <input type="file" id="image-file-3" accept="image/*" style="display: none;" onchange="handleImageUpload(3, this)">
               <input type="hidden" name="image3" id="image-data-3">
               <div class="upload-placeholder" id="upload-placeholder-3">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -566,7 +566,7 @@
               <button type="button" class="remove-image-btn" id="remove-btn-3" onclick="removeImage(event, 3)" style="display: none;">&times;</button>
             </div>
             <div class="image-upload-slot" id="image-slot-4" onclick="triggerImageUpload(4)">
-              <input type="file" id="image-file-4" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(4, this)">
+              <input type="file" id="image-file-4" accept="image/*" style="display: none;" onchange="handleImageUpload(4, this)">
               <input type="hidden" name="image4" id="image-data-4">
               <div class="upload-placeholder" id="upload-placeholder-4">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -830,9 +830,10 @@
         return;
       }
 
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Image must be less than 10MB');
+      // Validate file size (max 25MB). We compress everything down anyway, so
+      // this only guards against a truly huge file crashing an old phone.
+      if (file.size > 25 * 1024 * 1024) {
+        alert('That photo is very large (over 25MB). Please choose a smaller one or take a new photo.');
         return;
       }
 
@@ -858,40 +859,51 @@
     }
 
     function compressImage(file, callback) {
+      var UPLOAD_ERR = "We couldn't add that photo. It may be an unsupported format (some iPhone HEIC photos don't work in every browser). Please try a JPG or PNG, take a new photo, or just describe your project — we'll follow up. You can also text photos to (602) 833-3189.";
       const reader = new FileReader();
+      reader.onerror = function() { alert(UPLOAD_ERR); };
       reader.onload = function(e) {
         const img = new Image();
+        // CRITICAL: without onerror, a photo the browser can't decode (HEIC on
+        // Android/Chrome, corrupt file) made img.onload never fire and the upload
+        // silently did nothing — no preview, no error. Now the user is told.
+        img.onerror = function() { alert(UPLOAD_ERR); };
         img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
-          // Max dimensions
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
+            // Max dimensions
+            const MAX_WIDTH = 1200;
+            const MAX_HEIGHT = 1200;
 
-          let width = img.width;
-          let height = img.height;
+            let width = img.width;
+            let height = img.height;
 
-          // Calculate new dimensions
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
+            // Calculate new dimensions
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
             }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress to JPEG with quality 0.7
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            if (!compressedDataUrl || compressedDataUrl.length < 100) { alert(UPLOAD_ERR); return; }
+            callback(compressedDataUrl);
+          } catch (err) {
+            alert(UPLOAD_ERR);
           }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Compress to JPEG with quality 0.7
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          callback(compressedDataUrl);
         };
         img.src = e.target.result;
       };
