@@ -24,7 +24,7 @@ const MARKER = '<!--reviews-->';
 
 const REVIEWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'google-reviews.json'), 'utf8'))
   .filter((r) => r.text && r.text.length >= 40 && r.text.length <= 320); // punchy, real
-const GOOGLE_WRITE = 'https://www.google.com/local/writereview?placeid=ChIJnZJT_rdFK4cRewskJW1QXzg';
+const GOOGLE_WRITE = 'https://g.page/r/CXsLJCVtUF84EAE/review';
 const G_ICON = '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb2afc2fbb0ae_google_g_icon.png';
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -60,7 +60,7 @@ ${MARKER}
     <div style="text-align:center;margin-bottom:26px;">
       <div style="margin-bottom:6px;">${STARS}</div>
       <h2 style="color:#1a2b3c;font-size:clamp(22px,4vw,30px);margin:6px 0 6px;">What Phoenix Homeowners Say</h2>
-      <p style="color:#555;margin:0;">Rated <strong>4.5 on Google</strong> across <strong>400+ reviews</strong> from real Surprise Granite customers.</p>
+      <p style="color:#555;margin:0;">Rated <strong>4.5 on Google</strong> across <strong>157 reviews</strong> from real Surprise Granite customers.</p>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">${cards}
     </div>
