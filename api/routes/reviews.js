@@ -13,11 +13,42 @@
 const express = require('express');
 const router = express.Router();
 
+// Two keys open the moderation endpoints:
+//  - ARIA_SERVICE_KEY  (x-aria-service-key): the full staff/Aria key (also unlocks catalog cost).
+//  - REVIEW_MODERATION_KEY (x-review-key): a NARROW key for the /staff/reviews/ browser UI. It is
+//    accepted ONLY here, never by the catalog cost-gate, so exposing it in a staff browser can't
+//    leak dealer pricing/margin. Set it on the email-api Render service.
 const isInternal = (req) => {
-  const k = process.env.ARIA_SERVICE_KEY;
-  return !!(k && req.get('x-aria-service-key') === k);
+  const aria = process.env.ARIA_SERVICE_KEY;
+  const mod = process.env.REVIEW_MODERATION_KEY;
+  if (aria && req.get('x-aria-service-key') === aria) return true;
+  if (mod && req.get('x-review-key') === mod) return true;
+  return false;
 };
 const clean = (s, max) => String(s == null ? "" : s).replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, max);
+
+// Fire the site's refresh-reviews GitHub Action so approved reviews roll onto the static product
+// pages (~3 min). Debounced: a burst of approvals coalesces into ONE rebuild 60s after the last,
+// so approving 10 reviews triggers a single regenerate. No-ops when GITHUB_DISPATCH_TOKEN is unset
+// — the nightly scheduled run still covers it, so instant publish is an enhancement, not a hard dep.
+const GH_REPO = process.env.GITHUB_DISPATCH_REPO || 'SGK112/surprise-granite-site';
+let rebuildTimer = null;
+function dispatchRebuild() {
+  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  if (!token || typeof fetch !== 'function') return false;
+  fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/refresh-reviews.yml/dispatches`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'sg-review-moderation' },
+    body: JSON.stringify({ ref: 'main' }),
+  }).then((r) => { if (!r.ok) console.error('[reviews] rebuild dispatch HTTP', r.status); })
+    .catch((e) => console.error('[reviews] rebuild dispatch error', e.message));
+  return true;
+}
+function scheduleRebuild() {
+  if (!process.env.GITHUB_DISPATCH_TOKEN) return;
+  if (rebuildTimer) clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(() => { rebuildTimer = null; dispatchRebuild(); }, 60000);
+}
 
 // Light per-IP throttle so the public submit endpoint can't be spammed.
 const hits = new Map();
@@ -106,7 +137,17 @@ router.post('/:id/moderate', async (req, res) => {
   const patch = { status: approve ? 'approved' : 'rejected', approved_at: approve ? new Date().toISOString() : null };
   const { error } = await supabase.from('product_reviews').update(patch).eq('id', req.params.id);
   if (error) return res.status(500).json({ error: 'update failed' });
+  if (approve) scheduleRebuild(); // roll the new star rating onto the product pages
   return res.json({ success: true, id: req.params.id, status: patch.status });
+});
+
+// ---- manual "publish now" (staff): fire the rebuild immediately (the UI's Refresh button) ----
+router.post('/publish', (req, res) => {
+  if (!isInternal(req)) return res.status(403).json({ error: 'forbidden' });
+  const triggered = dispatchRebuild();
+  return res.json({ success: true, triggered,
+    message: triggered ? 'rebuild triggered — stars live in ~3 min'
+      : 'instant rebuild not configured (GITHUB_DISPATCH_TOKEN unset); the nightly run will refresh' });
 });
 
 module.exports = router;

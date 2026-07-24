@@ -1,0 +1,47 @@
+name: refresh-reviews
+
+# Rolls newly-APPROVED customer reviews onto the static product pages by regenerating them
+# (aggregateRating/review schema + visible stars). Two triggers:
+#   - schedule: nightly safety net at 11:00 America/Phoenix (18:00 UTC, AZ has no DST).
+#   - workflow_dispatch / repository_dispatch: fired instantly by the email-api when staff
+#     approve a review in /staff/reviews/ (see api/routes/reviews.js dispatchRebuild).
+#
+# scripts/refresh-reviews.js reads /api/reviews/summary first and SKIPS the rebuild entirely
+# when there are no approved reviews, so an empty nightly run does nothing and commits nothing.
+# Real-reviews-only: it just re-runs the generators, which read the live approved-reviews API.
+
+on:
+  schedule:
+    - cron: '0 18 * * *'      # 11:00 AZ nightly
+  workflow_dispatch: {}       # manual "publish now" from the Actions tab
+  repository_dispatch:
+    types: [refresh-reviews]  # alt trigger path
+
+concurrency:
+  group: refresh-reviews      # never two regenerates racing to push main
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # commit + push regenerated pages
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Refresh reviews onto product pages (commit + push if any approved)
+        run: npm run refresh-reviews:commit

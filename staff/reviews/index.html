@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Review Moderation · Surprise Granite (Staff)</title>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="shortcut icon" href="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" type="image/x-icon"/>
+<style>
+  :root{--gold:#f9cb00;--gold-deep:#cca600;--navy:#1a2b3c;--ink:#17181d;--mut:#6b6e78;--bg:#f4f1ea;--panel:#fff;--line:#e6e1d6;--ok:#1a7a3c;--okbg:#e7f6ec;--bad:#b3261e;--badbg:#fdeceb}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:22px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  h1 small{display:block;font-size:12px;font-weight:600;color:var(--mut);letter-spacing:.02em;text-transform:uppercase;margin-top:2px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input[type=password],input[type=text]{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;min-width:200px}
+  .btn{font:inherit;font-weight:700;font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:9px 14px;cursor:pointer;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--gold)}
+  .btn.dark{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .btn.approve{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .btn.reject{background:#fff;color:var(--bad);border-color:var(--badbg)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .note{font-size:12.5px;color:var(--mut);margin:2px 0 14px}
+  #status{min-height:20px;font-size:13.5px;font-weight:600;margin-bottom:12px}
+  #status.ok{color:var(--ok)}#status.err{color:var(--bad)}
+  .empty{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:34px 20px;text-align:center;color:var(--mut)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:12px}
+  .card.gone{opacity:.45;pointer-events:none}
+  .rtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+  .stars{color:var(--gold);letter-spacing:2px;font-size:17px}
+  .vb{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ok);background:var(--okbg);border-radius:20px;padding:2px 9px}
+  .prod{font-size:12px;font-weight:700;color:var(--gold-deep);background:#fbf6df;border-radius:20px;padding:2px 10px}
+  .rtitle{font-weight:800;font-size:15px;margin:2px 0 4px}
+  .rbody{font-size:14.5px;color:#33343a;margin-bottom:8px;white-space:pre-wrap}
+  .meta{font-size:12.5px;color:var(--mut);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .meta b{color:var(--ink)}
+  .actions{display:flex;gap:8px}
+  .count{font-size:13px;color:var(--mut);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Review Moderation <small>Surprise Granite · Staff</small></h1>
+    <div class="bar">
+      <input id="key" type="password" placeholder="Moderation key" autocomplete="off" spellcheck="false"/>
+      <button class="btn dark" id="load">Load queue</button>
+      <button class="btn" id="publish" title="Regenerate product pages now">Refresh site ↻</button>
+    </div>
+  </header>
+  <p class="note">Only <b>real, approved</b> reviews ever appear on the site. Approving publishes a customer's rating to that product's page (stars go live in ~3&nbsp;min). Rejecting hides it permanently. The key is stored in this tab only.</p>
+  <div id="status"></div>
+  <div id="queue"></div>
+</div>
+
+<script>
+(function () {
+  var API = 'https://surprise-granite-email-api.onrender.com';
+  var KEY_STORE = 'sg_review_mod_key';
+  var $ = function (id) { return document.getElementById(id); };
+  var keyEl = $('key'), statusEl = $('status'), queueEl = $('queue');
+
+  // restore key for this tab
+  var saved = sessionStorage.getItem(KEY_STORE);
+  if (saved) keyEl.value = saved;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function stars(n) { n = Math.max(0, Math.min(5, Math.round(n))); return '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n); }
+  function setStatus(msg, kind) { statusEl.textContent = msg || ''; statusEl.className = kind || ''; }
+  function headers() { return { 'x-review-key': keyEl.value.trim(), 'Content-Type': 'application/json' }; }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign(headers(), opts.headers || {});
+    return fetch(API + path, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (body) {
+        if (r.status === 403) throw new Error('Forbidden — check the moderation key.');
+        if (!r.ok) throw new Error(body.error || ('HTTP ' + r.status));
+        return body;
+      });
+    });
+  }
+
+  function card(r) {
+    var el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.id = r.id;
+    var prod = r.sku || r.slug || '—';
+    el.innerHTML =
+      '<div class="rtop">' +
+        '<span class="stars">' + stars(r.rating) + '</span>' +
+        (r.verified ? '<span class="vb">Verified buyer</span>' : '') +
+        '<span class="prod">' + esc(prod) + (r.category ? ' · ' + esc(r.category) : '') + '</span>' +
+      '</div>' +
+      (r.title ? '<div class="rtitle">' + esc(r.title) + '</div>' : '') +
+      (r.body ? '<div class="rbody">' + esc(r.body) + '</div>' : '<div class="rbody" style="color:#999">(no written review)</div>') +
+      '<div class="meta">' +
+        '<span><b>' + esc(r.author_name || 'Customer') + '</b></span>' +
+        (r.order_id ? '<span>Order ' + esc(r.order_id) + '</span>' : '') +
+        (r.created_at ? '<span>' + esc(String(r.created_at).slice(0, 10)) + '</span>' : '') +
+      '</div>' +
+      '<div class="actions">' +
+        '<button class="btn approve" data-act="approve">✓ Approve</button>' +
+        '<button class="btn reject" data-act="reject">✕ Reject</button>' +
+      '</div>';
+    el.querySelector('[data-act=approve]').addEventListener('click', function () { moderate(el, r.id, 'approve'); });
+    el.querySelector('[data-act=reject]').addEventListener('click', function () { moderate(el, r.id, 'reject'); });
+    return el;
+  }
+
+  function moderate(el, id, action) {
+    var btns = el.querySelectorAll('button');
+    btns.forEach(function (b) { b.disabled = true; });
+    api('/api/reviews/' + encodeURIComponent(id) + '/moderate', { method: 'POST', body: JSON.stringify({ action: action }) })
+      .then(function () {
+        el.classList.add('gone');
+        setTimeout(function () { el.remove(); updateCount(); }, 250);
+        setStatus(action === 'approve' ? 'Approved — publishing to the site (~3 min).' : 'Rejected.', 'ok');
+      })
+      .catch(function (e) { btns.forEach(function (b) { b.disabled = false; }); setStatus(e.message, 'err'); });
+  }
+
+  function updateCount() {
+    var n = queueEl.querySelectorAll('.card:not(.gone)').length;
+    if (!n) queueEl.innerHTML = '<div class="empty">No pending reviews. 🎉<br>Approved reviews are already live on their product pages.</div>';
+  }
+
+  function load() {
+    var k = keyEl.value.trim();
+    if (!k) { setStatus('Enter the moderation key first.', 'err'); return; }
+    sessionStorage.setItem(KEY_STORE, k);
+    setStatus('Loading…');
+    queueEl.innerHTML = '';
+    api('/api/reviews/pending')
+      .then(function (body) {
+        var list = body.pending || [];
+        setStatus(list.length ? '' : '', '');
+        if (!list.length) { updateCount(); setStatus('Queue is empty.', 'ok'); return; }
+        var head = document.createElement('div');
+        head.className = 'count';
+        head.style.margin = '0 0 12px';
+        head.textContent = list.length + ' pending review' + (list.length === 1 ? '' : 's') + ' · verified buyers first';
+        queueEl.appendChild(head);
+        list.forEach(function (r) { queueEl.appendChild(card(r)); });
+        setStatus('', '');
+      })
+      .catch(function (e) { setStatus(e.message, 'err'); });
+  }
+
+  function publish() {
+    if (!keyEl.value.trim()) { setStatus('Enter the moderation key first.', 'err'); return; }
+    setStatus('Triggering site refresh…');
+    api('/api/reviews/publish', { method: 'POST' })
+      .then(function (body) { setStatus(body.message || 'Refresh triggered.', 'ok'); })
+      .catch(function (e) { setStatus(e.message, 'err'); });
+  }
+
+  $('load').addEventListener('click', load);
+  $('publish').addEventListener('click', publish);
+  keyEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') load(); });
+  if (saved) load(); // auto-load if the key is already in this tab
+})();
+</script>
+</body>
+</html>
