@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { serviceStrip } = require('./lib/cross-sell');
 
 const ROOT = path.join(__dirname, '..');
 const DIRS = path.join(ROOT, 'countertops');
@@ -440,6 +441,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
   </section>
   ${related(e)}
 </div>
+${serviceStrip}
 <footer class="simple-footer">
   <div class="footer-cta">
     <h2>Ready to Start Your Project?</h2>

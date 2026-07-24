@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { serviceStrip } = require('./lib/cross-sell');
 
 const ROOT = path.resolve(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
@@ -252,6 +253,7 @@ function page(p) {
     </div>
     ${reviewsHtml}
   </main>
+  ${serviceStrip}
   <footer class="footer"><div class="footer-inner">
     <div class="footer-links"><a href="/">Home</a><a href="/marketplace/">Marketplace</a><a href="/marketplace/${DIR}/">${PLURAL}</a><a href="/cart/">Cart</a><a href="/contact-us/">Contact</a></div>
     <div class="footer-copyright">&copy; 2026 Surprise Granite. All rights reserved.</div>
