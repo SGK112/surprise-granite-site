@@ -34,7 +34,9 @@ const clean = (s, max) => String(s == null ? "" : s).replace(/[\x00-\x1f\x7f]/g,
 const GH_REPO = process.env.GITHUB_DISPATCH_REPO || 'SGK112/surprise-granite-site';
 let rebuildTimer = null;
 function dispatchRebuild() {
-  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  // Sanitize: strip whitespace, wrapping quotes, and any non-printable-ASCII (a pasted token can
+  // carry a smart quote / BOM / newline that makes the Authorization header throw a ByteString error).
+  const token = String(process.env.GITHUB_DISPATCH_TOKEN || '').trim().replace(/^["']|["']$/g, '').replace(/[^\x21-\x7e]/g, '');
   if (!token || typeof fetch !== 'function') return false;
   fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/refresh-reviews.yml/dispatches`, {
     method: 'POST',
