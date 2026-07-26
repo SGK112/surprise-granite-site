@@ -217,6 +217,47 @@ function isValidPhone(phone) {
 }
 
 /**
+ * Lightweight intake read for the admin notification email — replaces the
+ * legacy "Lead Value: $X" (which is actually the lead-marketplace RESALE price,
+ * not a quality signal). This is a display heuristic only; the authoritative
+ * 0-100 intake score lives in the CRM (leadScoringService.scoreIntake) and is
+ * what orders Aria's outbound queue. Kept intentionally simple to avoid drift.
+ */
+function intakeReadForEmail({ project_type, project_timeline, project_budget, project_zip, homeowner_phone, project_details }) {
+  const text = `${project_type || ''} ${project_details || ''}`.toLowerCase();
+  const when = `${project_timeline || ''} ${text}`.toLowerCase();
+  const hasPhone = String(homeowner_phone || '').replace(/\D/g, '').length >= 10;
+  const signals = [];
+
+  // Job type
+  if (/kitchen.*(remodel|reno)|(remodel|reno).*kitchen|full|whole.?home|complete remodel/.test(text)) signals.push('Kitchen/full remodel');
+  else if (/\b(repair|chip|crack|seam|reseal|patch)\b/.test(text)) signals.push('Repair');
+  else if (/countertop|counter top|quartz|granite|marble|quartzite|slab|island/.test(text)) signals.push('Countertops');
+  else if (/bath|vanity|shower|tub/.test(text)) signals.push('Bathroom');
+  else if (/backsplash|tile|floor/.test(text)) signals.push('Tile/backsplash');
+  else if (/installer|contractor|wholesale|fabricat|trade|bid/.test(text)) signals.push('Trade inquiry');
+
+  // Urgency
+  let urgent = false;
+  if (/asap|immediately|urgent|this week|ready to go|as soon as|next week|1.?2 weeks/.test(when)) { signals.push('Wants to start ASAP'); urgent = true; }
+  else if (/this month|30 days|within a month|1 month|soon/.test(when)) signals.push('Within a month');
+  else if (/just (looking|exploring|browsing)|research|someday|no rush|next year|planning ahead/.test(when)) signals.push('Just exploring');
+
+  signals.push(hasPhone ? '📞 Callable' : '✉️ Email only');
+  if (String(project_budget || '').trim()) signals.push(`Budget: ${project_budget}`);
+  if (/^853\d\d$/.test(String(project_zip || ''))) signals.push('West Valley');
+
+  // Temperature — kitchen/countertop + urgency + phone = hot; repair/exploring/email-only = cooler.
+  const hot = hasPhone && (urgent || /kitchen|remodel|countertop|quartz|granite|full/.test(text));
+  const cold = !hasPhone || /just (looking|exploring)|research|someday|no rush|repair|chip|crack/.test(when);
+  const temp = hot ? 'hot' : cold ? 'cold' : 'warm';
+  const badge = { hot: { label: '🔥 HOT LEAD', bg: '#dcfce7', border: '#22c55e', color: '#166534' },
+                  warm: { label: '🌤️ WARM LEAD', bg: '#fef9c3', border: '#eab308', color: '#854d0e' },
+                  cold: { label: '❄️ COLD LEAD', bg: '#e0f2fe', border: '#38bdf8', color: '#075985' } }[temp];
+  return { temp, badge, signals };
+}
+
+/**
  * Sanitize string input
  */
 function sanitizeString(str, maxLength = 1000) {
@@ -7056,9 +7097,12 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
       ? `APPOINTMENT: ${homeowner_name} - ${appointment_date || 'Date TBD'} at ${appointment_time || 'Time TBD'}`
       : `New Lead - ${project_type} in ${project_zip}`;
 
+    // Quality read for the admin badge (replaces the legacy resale-$ "Lead Value").
+    const intake = intakeReadForEmail({ project_type, project_timeline, project_budget, project_zip, homeowner_phone, project_details });
+
     // Send notification to admin
     const adminEmail = {
-      subject: dbInsertFailed ? `⚠️ DB SAVE FAILED — enter manually: ${emailSubject}` : emailSubject,
+      subject: dbInsertFailed ? `⚠️ DB SAVE FAILED — enter manually: ${emailSubject}` : `${intake.badge.label.replace(/[^\x00-\x7F]/g, '').trim()} · ${emailSubject}`,
       html: `
 <!DOCTYPE html>
 <html>
@@ -7076,8 +7120,9 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
         ${project_address ? `<p style="margin: 8px 0 0; color: #166534; font-size: 14px;">📍 ${project_address}</p>` : ''}
       </div>
       ` : `
-      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
-        <p style="margin: 0; color: #2e7d32; font-weight: 600;">Lead Value: $${lead_price}</p>
+      <div style="background: ${intake.badge.bg}; border-left: 4px solid ${intake.badge.border}; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0 0 6px; color: ${intake.badge.color}; font-weight: 700; font-size: 15px;">${intake.badge.label}</p>
+        <p style="margin: 0; color: ${intake.badge.color}; font-size: 13px;">${intake.signals.join(' &nbsp;·&nbsp; ')}</p>
       </div>
       `}
       <table style="width: 100%; border-collapse: collapse;">
@@ -7704,8 +7749,12 @@ app.post('/api/leads/with-images', leadRateLimiter, async (req, res) => {
       </div>
     ` : '';
 
+    // Photos in hand → this path is inherently more qualified; reflect that in the read.
+    const intake = intakeReadForEmail({ project_type, project_timeline, project_budget, project_zip, homeowner_phone, project_details: `${project_details || ''} (photos attached)` });
+    intake.signals.unshift(`📷 ${image_urls.length} photo${image_urls.length !== 1 ? 's' : ''}`);
+
     const adminEmail = {
-      subject: `New Lead with ${image_urls.length} Photo${image_urls.length !== 1 ? 's' : ''} - ${project_type} in ${project_zip}`,
+      subject: `${intake.badge.label.replace(/[^\x00-\x7F]/g, '').trim()} · New Lead with ${image_urls.length} Photo${image_urls.length !== 1 ? 's' : ''} - ${project_type} in ${project_zip}`,
       html: `
 <!DOCTYPE html>
 <html>
@@ -7715,8 +7764,9 @@ app.post('/api/leads/with-images', leadRateLimiter, async (req, res) => {
       <h1 style="color: #f9cb00; margin: 0; font-size: 20px;">New Lead with Project Photos!</h1>
     </div>
     <div style="padding: 25px;">
-      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
-        <p style="margin: 0; color: #2e7d32; font-weight: 600;">Lead Value: $${lead_price} | Quality Score: ${leadData.quality_score}</p>
+      <div style="background: ${intake.badge.bg}; border-left: 4px solid ${intake.badge.border}; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0 0 6px; color: ${intake.badge.color}; font-weight: 700; font-size: 15px;">${intake.badge.label}</p>
+        <p style="margin: 0; color: ${intake.badge.color}; font-size: 13px;">${intake.signals.join(' &nbsp;·&nbsp; ')}</p>
       </div>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
