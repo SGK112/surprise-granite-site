@@ -42,6 +42,13 @@
 .mp-count{color:var(--ink-3);font-size:13px;font-weight:600;margin-left:auto;}
 /* floating boxless cards */
 .mp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px 20px;}
+/* CLS fix (GSC 2026-07-28, desktop CLS 0.12 on /marketplace/sinks/): the grid is
+   filled client-side, so it paints truly :empty with ~200KB of SSR content below
+   it (seo-links, cross-sell, footer) that gets shoved down when the cards land.
+   Reserving roughly a viewport keeps that shift out of the fold. :empty stops
+   applying the instant the first card is inserted, so this self-clears and can
+   never leave dead space on a populated grid. */
+.mp-grid:empty{min-height:80vh;}
 @media(max-width:1100px){.mp-grid{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:680px){.mp-grid{grid-template-columns:repeat(2,1fr);gap:22px 14px;}}
 .pc{display:flex;flex-direction:column;position:relative;}
