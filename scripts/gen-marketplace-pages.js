@@ -123,7 +123,9 @@ function page(p) {
   const skuKey = p.sku || handle;
   const rd = REVIEWS[skuKey];
   const stars = n => '★★★★★☆☆☆☆☆'.slice(5 - Math.round(n), 10 - Math.round(n));
-  const rateLink = `<a class="rv-cta" href="/product-review/?sku=${encodeURIComponent(skuKey)}&amp;product=${encodeURIComponent(name)}&amp;slug=${encodeURIComponent(handle)}&amp;category=${CAT}&amp;img=${encodeURIComponent(img)}">✍️ Write a review</a>`;
+  // nofollow: every product page emits a unique query string onto one noindexed
+  // form, so leaving these crawlable burns crawl budget (GSC 2026-07: ~1,500 found).
+  const rateLink = `<a class="rv-cta" rel="nofollow" href="/product-review/?sku=${encodeURIComponent(skuKey)}&amp;product=${encodeURIComponent(name)}&amp;slug=${encodeURIComponent(handle)}&amp;category=${CAT}&amp;img=${encodeURIComponent(img)}">✍️ Write a review</a>`;
   let reviewsHtml = '';
   if (rd && rd.count > 0) {
     productLd.aggregateRating = { '@type': 'AggregateRating', ratingValue: rd.average.toFixed(1),
