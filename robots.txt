@@ -1,8 +1,23 @@
 # robots.txt for Surprise Granite
 # https://www.surprisegranite.com
+#
+# ⚠️ READ BEFORE EDITING (fixed 2026-07-28):
+# A named "User-agent: X" group REPLACES the "*" group for that crawler — it does
+# NOT add to it. Per RFC 9309, a crawler picks the single most-specific matching
+# group and ignores every other group.
+# This file previously had 29 per-bot groups (Googlebot, Bingbot, GPTBot, …) that
+# each contained only "Allow: /". The effect was that Googlebot and Bingbot read
+# ONLY "Allow: /" and silently ignored every Disallow below — /api/, /staff/,
+# /account/, /cart/, /checkout/ and /product-review/ were all unenforced for the
+# two crawlers that matter most.
+# Those groups were removed. "*" already allows every crawler, so AI bots remain
+# just as welcome. Do NOT re-add per-bot "Allow: /" groups.
 
+# No bare "Allow: /" here on purpose: crawling is allowed by default, so it adds
+# nothing — but Google resolves conflicts by LONGEST match while several naive
+# crawlers and SEO tools use FIRST match, and under first-match a leading
+# "Allow: /" swallows every Disallow below it. Omitting it is correct under both.
 User-agent: *
-Allow: /
 Disallow: /log-in/
 Disallow: /account/
 Disallow: /cart/
@@ -18,98 +33,16 @@ Disallow: /product-review/
 # Sitemap location
 Sitemap: https://www.surprisegranite.com/sitemap.xml
 
-# LLMs.txt for AI crawlers
-# https://llmstxt.org/
-LLMsTxt: https://www.surprisegranite.com/llms.txt
-
-# Crawl-delay for polite crawling
-Crawl-delay: 1
-
-# AI Crawlers Welcome
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Perplexity-User
-Allow: /
-
-User-agent: Grok
-Allow: /
-
-User-agent: GrokBot
-Allow: /
-
-User-agent: xAI
-Allow: /
-
-User-agent: Mistral-AI
-Allow: /
-
-User-agent: DuckAssistBot
-Allow: /
-
-User-agent: Google-CloudVertexBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-# Additional AI Crawlers
-User-agent: Amazonbot
-Allow: /
-
-User-agent: Bytespider
-Allow: /
-
-User-agent: cohere-ai
-Allow: /
-
-User-agent: Diffbot
-Allow: /
-
-User-agent: Applebot
-Allow: /
-
-User-agent: Meta-ExternalFetcher
-Allow: /
-
-User-agent: Meta-ExternalAgent
-Allow: /
-
-User-agent: YouBot
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: CCBot
-Allow: /
-
-User-agent: Timpibot
-Allow: /
-
-User-agent: omgili
-Allow: /
-
-User-agent: omgilibot
-Allow: /
+# AI crawlers are welcome under the "*" group above — GPTBot, ChatGPT-User,
+# ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, Applebot, CCBot,
+# Amazonbot, Bytespider, cohere-ai, Diffbot, Meta-External*, YouBot,
+# OAI-SearchBot, Timpibot, omgili(bot), Mistral-AI, Grok/xAI, DuckAssistBot.
+# See the note at the top for why they are not listed as separate groups.
+#
+# llms.txt is published at https://www.surprisegranite.com/llms.txt
+# There is no robots.txt directive for it — the old "LLMsTxt:" line was invalid
+# syntax and was the "Syntax not understood" error Google reported.
+#
+# "Crawl-delay: 1" was also removed: Google ignores it (it was the reported
+# warning) while Bing and Yandex honour it, so it was throttling the crawlers
+# that DO obey it to one request per second across a ~40k-URL catalogue.
