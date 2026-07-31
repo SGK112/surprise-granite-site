@@ -8,6 +8,7 @@ require('dotenv').config({ path: __dirname + '/.env', override: true });
 
 // Structured logging
 const logger = require('./utils/logger');
+const { notifyCrmOrder, lineItemsForCrm } = require('./notifyCrmOrder');
 
 // ============================================
 // REMODELY.AI RATE LIMITER (SERVER-SIDE)
@@ -2387,6 +2388,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Set inside the supabase block from the session line items; defaults
         // to [] so the email simply omits the itemized list if unavailable.
         let orderItems = [];
+        // Hoisted for the same reason: the CRM notification below sits outside
+        // the `if (supabase)` block, and the raw Stripe line items are fetched
+        // inside it. Referencing them directly threw a ReferenceError that
+        // would have taken down the whole checkout webhook.
+        let crmLineItems = [];
         if (supabase) {
           try {
             // Retrieve line items from Stripe session
@@ -2396,6 +2402,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 expand: ['line_items']
               });
               lineItems = sessionWithItems.line_items?.data || [];
+              crmLineItems = lineItems;
             } catch (lineItemErr) {
               logger.error('Error fetching line items:', lineItemErr.message);
             }
@@ -2846,6 +2853,32 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         } catch (custEmailErr) {
           logger.warn('Customer order confirmation email failed:', custEmailErr.message);
         }
+
+        // Tell the CRM. Emailing Josh was the ONLY record of a sale, so an
+        // order could be paid for and never ordered from the vendor -- which
+        // is exactly what happened to Lee Ann McMurry's Dekton samples. Fires
+        // for the same charge as payment_intent.succeeded below; the CRM keys
+        // on the payment intent and merges them.
+        notifyCrmOrder({
+          orderId: `SG-${safeOrderNum}`,
+          checkoutSessionId: session.id,
+          paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
+          customer: {
+            name: session.customer_details?.name || '',
+            email: session.customer_details?.email || '',
+            phone: session.customer_details?.phone || '',
+          },
+          shippingAddress: session.shipping_details?.address ? {
+            street: session.shipping_details.address.line1,
+            city: session.shipping_details.address.city,
+            state: session.shipping_details.address.state,
+            zip: session.shipping_details.address.postal_code,
+          } : undefined,
+          items: lineItemsForCrm(crmLineItems),
+          amount_total: session.amount_total,
+          currency: session.currency,
+          payment_status: session.payment_status,
+        }, logger);
 
         // Admin notification
         try {
@@ -3542,6 +3575,29 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           await sendNotification(receiptEmail, orderEmail.subject, orderEmail.html);
         } catch (emailErr) { logger.warn('Payment receipt email failed:', emailErr.message); }
         }
+
+        // Tell the CRM -- this is the event that carries the line items and
+        // the shipping address, so it is the one that lets a purchase order be
+        // raised against the right vendor.
+        notifyCrmOrder({
+          orderId: `SG-${paymentIntent.id.slice(-8).toUpperCase()}`,
+          paymentIntentId: paymentIntent.id,
+          customer: {
+            name: shipping?.name || '',
+            email: receiptEmail || '',
+            phone: paymentIntent.shipping?.phone || '',
+          },
+          shippingAddress: shipping?.address ? {
+            street: shipping.address.line1,
+            city: shipping.address.city,
+            state: shipping.address.state,
+            zip: shipping.address.postal_code,
+          } : undefined,
+          items: lineItemsForCrm(piLineItems),
+          amount_total: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          payment_status: paymentIntent.status,
+        }, logger);
 
         // Notify admin
         try {
