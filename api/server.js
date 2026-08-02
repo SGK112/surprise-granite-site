@@ -4599,6 +4599,12 @@ if (supabase) {
 app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
   try {
     const { name, email, phone, form_name, source, project_type, message, details } = req.body;
+    // Photos the form uploaded to the lead-images bucket. This is the payload
+    // the CRM actually creates the lead from, so without them Aria sees a
+    // photo-less lead until the 30-minute catch-up sync fills them in.
+    const image_urls = Array.isArray(req.body.image_urls)
+      ? req.body.image_urls.filter((u) => typeof u === 'string' && /^https?:\/\//i.test(u))
+      : [];
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -4627,7 +4633,8 @@ app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
             source: 'website',
             form_name: form_name || 'website',
             page_url: source || null,
-            status: 'new'
+            status: 'new',
+            ...(image_urls.length ? { image_urls } : {})
           }]);
           logger.info('[notify-lead] Lead saved to Supabase (safety net)');
         }
@@ -4644,7 +4651,8 @@ app.post('/api/notify-lead', leadRateLimiter, async (req, res) => {
       project_type,
       message: message || details,
       source: source || 'website',
-      form_name
+      form_name,
+      image_urls
     });
 
     // Send admin email notification

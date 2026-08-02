@@ -45,7 +45,13 @@
       form_name: data.form_name || 'website',
       source: data.source || window.location.pathname,
       project_type: data.project_type || '',
-      message: data.message || data.project_details || data.details || ''
+      message: data.message || data.project_details || data.details || '',
+      // Public Storage URLs only — /api/notify-lead is what creates the lead in
+      // the CRM, so photos have to ride along here or Aria sees none. Never
+      // base64: this goes out over sendBeacon, which is capped at ~64KB.
+      image_urls: Array.isArray(data.image_urls)
+        ? data.image_urls.filter(function(u) { return typeof u === 'string' && /^https?:\/\//i.test(u); })
+        : []
     });
   };
 

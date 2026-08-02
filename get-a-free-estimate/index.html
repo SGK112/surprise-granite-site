@@ -792,7 +792,8 @@
           if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(crmPayload);
           if (window.SG_notifyNewLead) SG_notifyNewLead({
             name: formData.name, email: formData.email, phone: formData.phone,
-            form_name: 'estimate-form-folder', project_type: formData.projectType, message: formData.message
+            form_name: 'estimate-form-folder', project_type: formData.projectType, message: formData.message,
+            image_urls: photoResult.urls
           });
         } catch (notifyErr) { console.warn('Lead notify failed:', notifyErr); }
 
@@ -1509,5 +1510,5 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script defer src="/js/remodely-hub.js?v=20260713c"></script>
 <script src="/js/instant-quote.js"></script>
 <!-- Staff/CRM notification helper — defines SG_notifyNewLead + SG_syncLeadToCRM -->
-<script src="/js/lead-notify.js"></script>
+<script src="/js/lead-notify.js?v=20260802a"></script>
 </body></html>
