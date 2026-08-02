@@ -602,6 +602,7 @@
         </div>
         <h2>Thank You!</h2>
         <p>We've received your request and will contact you within 24 hours. We've also emailed you a secure link to track your project — no password needed. For immediate assistance, call us directly.</p>
+        <p id="photoWarning" style="display: none; color: #f9cb00;">One note: we couldn't attach your photos. Please text them to (602) 833-3189 and we'll add them to your project file.</p>
         <a href="tel:+16028333189" class="phone-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -654,6 +655,10 @@
       } catch (e) { return {}; }
     })();
 
+    const SG_SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SG_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const SG_LEAD_BUCKET = 'lead-images';
+
     document.getElementById('estimateForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -661,14 +666,26 @@
       const submitBtn = document.getElementById('submitBtn');
       const errorMessage = document.getElementById('errorMessage');
       const successMessage = document.getElementById('successMessage');
+      const photoWarning = document.getElementById('photoWarning');
 
       // Disable button and show loading
       submitBtn.disabled = true;
       submitBtn.textContent = 'Sending...';
       errorMessage.style.display = 'none';
 
-      // Gather form data
+      // Gather form data. Photos go to Supabase Storage FIRST so the lead row
+      // carries real https URLs in image_urls (the column every downstream
+      // consumer — CRM, /account, Aria — actually reads). Base64 in raw_data is
+      // only a last-resort fallback when the upload fails; see uploadPhotos().
       const images = getImageData();
+      let photoResult = { urls: [], errors: [] };
+      if (images.length > 0) {
+        submitBtn.textContent = 'Uploading photos...';
+        photoResult = await uploadPhotos(images);
+        submitBtn.textContent = 'Sending...';
+      }
+      const photosFailed = photoResult.urls.length < images.length;
+
       const formData = {
         firstName: form.firstName.value.trim(),
         lastName: form.lastName.value.trim(),
@@ -678,7 +695,7 @@
         projectType: form.projectType.value,
         contactMethod: form.contactMethod.value,
         message: form.message.value.trim(),
-        images: images,
+        image_urls: photoResult.urls,
         imageCount: images.length,
         source: 'website-estimate-form',
         timestamp: new Date().toISOString(),
@@ -686,10 +703,19 @@
         _attribution: SG_LEAD_ATTRIBUTION
       };
 
+      // Fallback ONLY when a photo didn't reach Storage. VoiceNow already
+      // recovers photos from raw_data.images, so this stays as a safety net —
+      // but it never fires on the happy path, which is what was bloating every
+      // lead row with megabytes of base64.
+      if (photosFailed) {
+        formData.images = images;
+        formData.image_upload_errors = photoResult.errors;
+      }
+
       try {
         // Check for existing lead with same email (dedup)
-        var supabaseUrl = 'https://ypeypgwsycxcagncgdur.supabase.co';
-        var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        var supabaseUrl = SG_SUPABASE_URL;
+        var supabaseKey = SG_SUPABASE_KEY;
         var existingResp = await fetch(supabaseUrl + '/rest/v1/leads?email=eq.' + encodeURIComponent(formData.email.toLowerCase().trim()) + '&order=created_at.desc&limit=1', {
           headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey }
         });
@@ -710,6 +736,10 @@
           page_url: window.location.href,
           raw_data: formData
         };
+        // image_urls is the real column downstream consumers read. Only set it
+        // when we have URLs — an empty array would wipe photos off an existing
+        // lead that was PATCHed by a later photo-less submission.
+        if (photoResult.urls.length > 0) sgLeadPayload.image_urls = photoResult.urls;
 
         if (existing && existing.length > 0) {
           // Update existing lead — merge new form data
@@ -729,7 +759,8 @@
               project_type: formData.projectType || existing[0].project_type,
               message: (existing[0].message ? existing[0].message + '\n\n---\n' : '') + '[Estimate Form] ' + formData.message,
               updated_at: new Date().toISOString(),
-              raw_data: formData
+              raw_data: formData,
+              ...(photoResult.urls.length > 0 ? { image_urls: photoResult.urls } : {})
             })
           });
           if (!updateResp.ok) throw new Error('Lead update failed: HTTP ' + updateResp.status);
@@ -750,7 +781,15 @@
         // Notify staff + sync to CRM so the lead actually reaches someone
         // (mirrors contact-us.html). Best-effort — never blocks the success UI.
         try {
-          if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(sgLeadPayload);
+          // Send the CRM the photo URLs, not the photos. SG_syncLeadToCRM goes
+          // out over sendBeacon/fetch-keepalive, both of which are capped at
+          // ~64KB — a base64 payload silently never leaves the browser, so the
+          // fallback copy of the images is stripped from what we hand over.
+          var crmPayload = Object.assign({}, sgLeadPayload, {
+            image_urls: photoResult.urls,
+            raw_data: Object.assign({}, formData, { images: undefined })
+          });
+          if (window.SG_syncLeadToCRM) SG_syncLeadToCRM(crmPayload);
           if (window.SG_notifyNewLead) SG_notifyNewLead({
             name: formData.name, email: formData.email, phone: formData.phone,
             form_name: 'estimate-form-folder', project_type: formData.projectType, message: formData.message
@@ -775,14 +814,17 @@
           }).catch(function () { /* provisioning is best-effort */ });
         } catch (provErr) { /* never block the estimate on account provisioning */ }
 
-        // Show success
+        // Show success. The lead is saved at this point — nothing below may
+        // throw into the catch, or the customer sees "Thank You!" and "we
+        // couldn't submit your request" stacked on the same screen.
         form.style.display = 'none';
+        errorMessage.style.display = 'none';
         successMessage.classList.add('show');
+        if (photoWarning) {
+          photoWarning.style.display = photosFailed ? 'block' : 'none';
+        }
 
-        // Also store locally as backup
-        const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
-        leads.push(formData);
-        localStorage.setItem('sg_leads', JSON.stringify(leads));
+        backupLeadLocally(formData);
 
       } catch (error) {
         console.error('Submission error:', error);
@@ -790,12 +832,11 @@
         // Keep a local backup, but do NOT pretend it succeeded — show the
         // error so the customer can retry or call us instead of assuming we
         // received a submission that never landed.
-        try {
-          const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
-          leads.push(formData);
-          localStorage.setItem('sg_leads', JSON.stringify(leads));
-        } catch (_) { /* ignore storage errors */ }
+        backupLeadLocally(formData);
 
+        // Never let the two states co-render (see the success branch above).
+        successMessage.classList.remove('show');
+        form.style.display = '';
         errorMessage.innerHTML = 'Sorry — we couldn\'t submit your request. Please try again, or call us at <a href="tel:+16028333189">(602) 833-3189</a>.';
         errorMessage.style.display = 'block';
         submitBtn.disabled = false;
@@ -941,6 +982,92 @@
         }
       }
       return images;
+    }
+
+    // The slots hold compressed data URLs (needed for the previews). Storage
+    // wants bytes, so convert back before uploading.
+    function dataUrlToBlob(dataUrl) {
+      const parts = String(dataUrl).split(',');
+      const mime = (parts[0].match(/:(.*?);/) || [null, 'image/jpeg'])[1];
+      const binary = atob(parts[1] || '');
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+
+    // Upload each photo to the public lead-images bucket and return public URLs.
+    // Failures are LOGGED WITH THE SERVER'S ACTUAL RESPONSE (Supabase Storage
+    // returns a JSON body naming the real cause — RLS denial, missing bucket,
+    // payload too large) so this never has to be diagnosed by guessing again.
+    async function uploadPhotos(dataUrls) {
+      const urls = [];
+      const errors = [];
+
+      for (let i = 0; i < dataUrls.length; i++) {
+        const filePath = 'uploads/' + new Date().toISOString().split('T')[0] +
+          '/lead_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11) + '.jpg';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+
+        try {
+          const blob = dataUrlToBlob(dataUrls[i]);
+          const resp = await fetch(
+            SG_SUPABASE_URL + '/storage/v1/object/' + SG_LEAD_BUCKET + '/' + filePath,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + SG_SUPABASE_KEY,
+                'apikey': SG_SUPABASE_KEY,
+                'Content-Type': blob.type || 'image/jpeg',
+                'x-upsert': 'true'
+              },
+              body: blob,
+              signal: controller.signal
+            }
+          );
+
+          if (!resp.ok) {
+            const detail = await resp.text().catch(function() { return ''; });
+            console.error('[estimate] photo upload failed', {
+              bucket: SG_LEAD_BUCKET, path: filePath,
+              status: resp.status, statusText: resp.statusText, response: detail
+            });
+            errors.push('HTTP ' + resp.status + ': ' + detail.slice(0, 300));
+            continue;
+          }
+
+          urls.push(SG_SUPABASE_URL + '/storage/v1/object/public/' + SG_LEAD_BUCKET + '/' + filePath);
+        } catch (err) {
+          console.error('[estimate] photo upload threw', {
+            bucket: SG_LEAD_BUCKET, path: filePath,
+            name: err && err.name, message: err && err.message, error: err
+          });
+          errors.push(err && err.name === 'AbortError'
+            ? 'Upload timed out after 60s'
+            : (err && err.message) || String(err));
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      return { urls: urls, errors: errors };
+    }
+
+    // Local backup of the submission. Deliberately NOT inside the submit
+    // try/catch: this used to run right after the success panel was shown, so
+    // once sg_leads filled up with base64 photos every setItem threw
+    // QuotaExceededError into the catch and the customer saw the success AND
+    // the error message at once. Photos are excluded and the list is capped so
+    // the quota can't be hit again.
+    function backupLeadLocally(formData) {
+      try {
+        const slim = Object.assign({}, formData, { images: undefined });
+        const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
+        leads.push(slim);
+        localStorage.setItem('sg_leads', JSON.stringify(leads.slice(-20)));
+      } catch (err) {
+        console.warn('Local lead backup skipped:', err && err.message);
+      }
     }
 
     // URL Parameter Pre-population
