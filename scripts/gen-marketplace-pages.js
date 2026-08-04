@@ -76,6 +76,28 @@ function fetchReviewData() {
   return map;
 }
 
+/**
+ * The availability line, from what we actually know.
+ *
+ * This was the hardcoded string "In stock · ships to your door" on EVERY page
+ * the generator produced, regardless of any stock figure. That is the sentence
+ * the customer read before phoning about a vanity nobody could supply.
+ *
+ * A product only reaches here after surviving the out-of-stock checks, so the
+ * claim is now earned rather than printed by default — and where the vendor
+ * gives a low count we say so instead of implying depth we do not have.
+ */
+function stockLine(p) {
+  const vs = VENDOR_STOCK.get(String(p.sku || '').trim().toUpperCase());
+  if (vs && vs.qty > 0 && vs.qty <= 3) {
+    return `<div class="pdp-ship">✓ In stock · only ${vs.qty} left · ships to your door</div>`;
+  }
+  if (vs && vs.qty > 0) return '<div class="pdp-ship">✓ In stock · ships to your door</div>';
+  // No vendor line for this SKU: the catalog said in_stock and that is all we
+  // have. Ship without asserting a quantity we cannot see.
+  return '<div class="pdp-ship">✓ Available · ships to your door</div>';
+}
+
 function page(p) {
   const handle = p.slug || p.id;
   const url = `${SITE}/marketplace/${DIR}/${handle}/`;
@@ -247,7 +269,7 @@ function page(p) {
       ${brand ? `<div class="pdp-brand">${esc(brand)}</div>` : ''}
       <h1 class="pdp-title">${esc(name)}</h1>
       <div class="pdp-price">$${money(price)}</div>
-      <div class="pdp-ship">✓ In stock · ships to your door</div>
+      ${stockLine(p)}
       <button class="add-to-cart-btn" onclick="sgAdd(this)">Add to Cart</button>
       <div class="pdp-desc">${esc(desc)}</div>
       <ul class="pdp-specs">${specs}</ul>
@@ -272,16 +294,79 @@ function page(p) {
 </html>`;
 }
 
+/**
+ * ALFI Trade's published stock list, as a second opinion on /api/catalog.
+ *
+ * A customer called about a vanity this site showed as available. ALFI had
+ * discontinued it. Comparing the catalog against ALFI's own file found 18 sinks
+ * advertised in stock that ALFI reports as ZERO — among them
+ * "WHCS4322-1H Whitehaus 43in Countertop Vanity".
+ *
+ * The catalog's in_stock is not wrong on purpose; nothing feeds it for these
+ * brands. ALFI publishes the truth openly and refreshes it Mon/Wed/Fri, and it
+ * covers Whitehaus, ALFI and EAGO — 1,822 SKUs, the bulk of what we list.
+ *
+ * Advisory ONLY in one direction: it can take a product DOWN, never put one up.
+ * If the file is unreachable we generate exactly as before rather than blocking
+ * a release on a third party being awake.
+ */
+const ALFI_CSV = 'https://www.alfitrade.com/media/pdf/alfitrade-inventory.csv';
+function fetchVendorStock() {
+  const map = new Map();
+  try {
+    const raw = execFileSync('curl', ['-sL', '--max-time', '30', '-A',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0 Safari/537.36',
+      ALFI_CSV], { maxBuffer: 1 << 24 }).toString();
+    const lines = raw.split(/\r?\n/).filter(Boolean);
+    const head = (lines[0] || '').split(',').map((h) => h.trim().toUpperCase());
+    const iSku = head.indexOf('SKU'); const iQty = head.indexOf('QTY'); const iEta = head.indexOf('ETA');
+    if (iSku < 0 || iQty < 0) {
+      // Say it. A silently empty map would let every out-of-stock product
+      // through and look exactly like a healthy run.
+      console.warn('vendor stock: ALFI header changed — skipping the cross-check');
+      return map;
+    }
+    for (const line of lines.slice(1)) {
+      const c = line.split(',');
+      const sku = (c[iSku] || '').trim().toUpperCase();
+      if (!sku) continue;
+      const q = (c[iQty] || '').trim();
+      map.set(sku, { qty: /^\d+$/.test(q) ? parseInt(q, 10) : 0, eta: (c[iEta] || '').trim() || null });
+    }
+    console.log(`vendor stock: ${map.size} ALFI/Whitehaus/EAGO SKUs cross-checked`);
+  } catch (e) {
+    console.warn(`vendor stock: ALFI list unreachable (${e.message}) — generating without the cross-check`);
+  }
+  return map;
+}
+
 // --- run ---
+const VENDOR_STOCK = fetchVendorStock();
 const all = fetchAll();
 console.log(`fetched ${all.length} ${CAT} products`);
 REVIEWS = fetchReviewData();
-let made = 0, skipOOS = 0, skipNoPrice = 0, skipNoImg = 0;
+let made = 0, skipOOS = 0, skipNoPrice = 0, skipNoImg = 0, skipVendorOOS = 0;
+const oosList = [];
+const pulled = [];
 const urls = [];
 for (const p of all) {
   const handle = p.slug || p.id;
   if (!handle) continue;
   if (p.in_stock === false) { skipOOS++; continue; }            // decision: skip OOS
+  // The vendor's own file overrules the catalog when it says zero. It never
+  // overrules in the other direction — a SKU the file does not mention is left
+  // exactly as the catalog had it.
+  const vs = VENDOR_STOCK.get(String(p.sku || '').trim().toUpperCase());
+  if (vs && vs.qty === 0) {
+    skipVendorOOS++;
+    oosList.push(`${p.sku} ${vs.eta ? `(ETA ${vs.eta})` : '(no ETA)'}`);
+    // Record the handle so the page ALREADY on disk gets corrected below.
+    // Skipping regeneration on its own leaves the old page live, still saying
+    // "In stock · ships to your door" — which is exactly the sentence that put
+    // a customer on the phone about a vanity nobody could supply.
+    pulled.push({ handle, eta: vs.eta });
+    continue;
+  }
   if (!(Number(p.retail_price) > 0)) { skipNoPrice++; continue; } // need a real price to sell
   const dir = path.join(OUTDIR, handle);
   fs.mkdirSync(dir, { recursive: true });
@@ -292,7 +377,13 @@ for (const p of all) {
   else skipNoImg++;
   made++;
 }
-console.log(`generated ${made} pages | skipped OOS ${skipOOS}, no-price ${skipNoPrice}, noindex no-image ${skipNoImg}`);
+console.log(`generated ${made} pages | skipped OOS ${skipOOS}, vendor-OOS ${skipVendorOOS}, no-price ${skipNoPrice}, noindex no-image ${skipNoImg}`);
+if (oosList.length) {
+  // Name them. "skipped 18" tells nobody which customer request will now come
+  // up empty, and these are products we were advertising an hour ago.
+  console.log(`\nPULLED — the vendor reports zero on these ${oosList.length}:`);
+  for (const l of oosList) console.log(`  ${l}`);
+}
 
 // sitemap (with <lastmod> — a freshness signal Bing uses; regenerated each run)
 const LASTMOD = new Date().toISOString().slice(0, 10);
@@ -302,11 +393,59 @@ const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.si
 fs.writeFileSync(path.join(ROOT, `sitemap-${DIR}.xml`), sm);
 console.log(`wrote sitemap-${DIR}.xml (${urls.length} urls)`);
 
+/**
+ * Correct the pages of products the vendor has pulled.
+ *
+ * These stay in the catalog, so the orphan sweep below never touches them, and
+ * simply not regenerating leaves the previous page live and still claiming
+ * availability. Anyone arriving from a bookmark, an old link or a search result
+ * that has not been recrawled reads the same promise as before.
+ *
+ * The page is kept rather than deleted — the URL still resolves, the product is
+ * still described, and it re-generates normally the moment the vendor restocks.
+ * What changes is that it stops claiming to be buyable: noindex, an honest
+ * availability line with the restock date when the vendor gives one, and no
+ * Add to Cart.
+ */
+let corrected = 0;
+for (const { handle, eta } of pulled) {
+  const file = path.join(OUTDIR, handle, 'index.html');
+  if (!fs.existsSync(file)) continue;
+  let html = fs.readFileSync(file, 'utf8');
+  const before = html;
+
+  html = /<meta name="robots"/i.test(html)
+    ? html.replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex, follow"/>')
+    : html.replace(/<\/title>/i, '</title>\n<meta name="robots" content="noindex, follow"/>');
+
+  html = html.replace(
+    /<div class="pdp-ship">[\s\S]*?<\/div>/i,
+    eta
+      ? `<div class="pdp-ship pdp-oos">Currently unavailable · expected back ${esc(eta)}</div>`
+      : '<div class="pdp-ship pdp-oos">Currently unavailable from the manufacturer</div>',
+  );
+
+  // A disabled button, not a removed one: the page keeps its shape, and a
+  // customer sees why rather than wondering where the button went.
+  html = html.replace(
+    /<button class="add-to-cart-btn"[^>]*>[\s\S]*?<\/button>/i,
+    '<button class="add-to-cart-btn" disabled style="opacity:.5;cursor:not-allowed">Currently unavailable</button>',
+  );
+
+  // Schema must agree with the page, or Google keeps showing it as in stock.
+  html = html.replace(/"availability"\s*:\s*"https:\/\/schema\.org\/InStock"/gi,
+    '"availability": "https://schema.org/OutOfStock"');
+
+  if (html !== before) { fs.writeFileSync(file, html); corrected++; }
+}
+if (pulled.length) console.log(`corrected ${corrected} of ${pulled.length} already-published page(s) to say unavailable`);
+
 // Noindex orphan pages: dirs for products no longer returned by the catalog (removed or long-term
 // out-of-stock — the API only returns active in-stock rows). Their files linger with stale schema
 // and would otherwise stay indexed. Flip them to noindex (reversible: they re-index when the product
 // returns and is regenerated). Keeps the crawl clean without deleting anything.
-const liveHandles = new Set(all.map(p => p.slug || p.id).filter(Boolean));
+const pulledHandles = new Set(pulled.map((x) => x.handle));
+const liveHandles = new Set(all.map(p => p.slug || p.id).filter(Boolean).filter((h) => !pulledHandles.has(h)));
 let orphaned = 0;
 if (liveHandles.size >= 50) { // safety: never sweep on a failed/partial API fetch
   try {
