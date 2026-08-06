@@ -415,6 +415,13 @@
 
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
+  <style>
+    /* Service-address block — shown only when "Free On-Site Estimate" is picked. */
+    #serviceAddressFields[hidden] { display: none; }
+    .sg-addr-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: .5rem; margin-top: .5rem; }
+    @media (max-width: 480px) { .sg-addr-row { grid-template-columns: 1fr; } }
+    .sg-addr-hint { font-size: .8rem; opacity: .75; margin: .4rem 0 0; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -504,11 +511,30 @@
 
         <div class="form-group">
           <label class="form-label">Preferred Contact Method</label>
-          <select class="form-select" name="contactMethod" aria-label="Contact Method">
+          <select class="form-select" name="contactMethod" id="contactMethod" aria-label="Contact Method">
             <option value="phone">Phone Call</option>
             <option value="text">Text Message</option>
             <option value="email">Email</option>
+            <option value="onsite">Free On-Site Estimate</option>
           </select>
+        </div>
+
+        <!-- Shown only for an on-site estimate. Somebody has to drive there, so
+             the address is required in that case and absent in every other. -->
+        <div class="form-group" id="serviceAddressFields" hidden>
+          <label class="form-label" for="street">Service Address <span aria-hidden="true">*</span></label>
+          <input class="form-input" type="text" name="street" id="street"
+                 placeholder="18044 W Sandhills Dr" autocomplete="street-address" aria-required="true"/>
+          <div class="sg-addr-row">
+            <input class="form-input" type="text" name="city" id="city"
+                   placeholder="City" autocomplete="address-level2" aria-label="City"/>
+            <input class="form-input" type="text" name="state" id="state"
+                   placeholder="AZ" autocomplete="address-level1" aria-label="State" maxlength="20"/>
+            <input class="form-input" type="text" name="zipCode" id="zipCode"
+                   placeholder="85387" autocomplete="postal-code" aria-label="ZIP code"
+                   inputmode="numeric" pattern="[0-9-]{5,10}"/>
+          </div>
+          <p class="sg-addr-hint">Where should we come out to? We only use this to schedule the visit.</p>
         </div>
 
         <div class="form-group">
@@ -686,6 +712,18 @@
       }
       const photosFailed = photoResult.urls.length < images.length;
 
+      // Composed once so every consumer gets the same string. VoiceNow parses
+      // "street, city, ST 12345" into structured parts; Supabase stores it as
+      // given. Empty when they did not ask for a visit.
+      var _onsite = form.contactMethod.value === 'onsite';
+      var _addrParts = _onsite ? [
+        form.street && form.street.value.trim(),
+        form.city && form.city.value.trim(),
+        [form.state && form.state.value.trim(), form.zipCode && form.zipCode.value.trim()]
+          .filter(Boolean).join(' ')
+      ].filter(Boolean) : [];
+      var _serviceAddress = _addrParts.join(', ');
+
       const formData = {
         firstName: form.firstName.value.trim(),
         lastName: form.lastName.value.trim(),
@@ -694,6 +732,12 @@
         phone: form.phone.value.trim(),
         projectType: form.projectType.value,
         contactMethod: form.contactMethod.value,
+        inHomeEstimate: _onsite,
+        serviceAddress: _serviceAddress,
+        street: _onsite && form.street ? form.street.value.trim() : '',
+        city: _onsite && form.city ? form.city.value.trim() : '',
+        state: _onsite && form.state ? form.state.value.trim() : '',
+        zipCode: _onsite && form.zipCode ? form.zipCode.value.trim() : '',
         message: form.message.value.trim(),
         image_urls: photoResult.urls,
         imageCount: images.length,
@@ -736,6 +780,10 @@
           page_url: window.location.href,
           raw_data: formData
         };
+        // The column VoiceNow reads for "where is the job". Only set when they
+        // asked for a visit — an empty string would overwrite a good address on
+        // an existing lead that a later, photo-only submission PATCHes.
+        if (_serviceAddress) sgLeadPayload.service_address = _serviceAddress;
         // image_urls is the real column downstream consumers read. Only set it
         // when we have URLs — an empty array would wipe photos off an existing
         // lead that was PATCHed by a later photo-less submission.
@@ -1511,4 +1559,23 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/instant-quote.js"></script>
 <!-- Staff/CRM notification helper — defines SG_notifyNewLead + SG_syncLeadToCRM -->
 <script src="/js/lead-notify.js?v=20260802a"></script>
+  <script>
+  // Show the service address only when they ask us to come out, and make the
+  // street required in that case. A visit with no address is the one lead we
+  // cannot act on at all.
+  (function () {
+    var sel = document.getElementById('contactMethod');
+    var block = document.getElementById('serviceAddressFields');
+    var street = document.getElementById('street');
+    if (!sel || !block || !street) return;
+    function sync() {
+      var onsite = sel.value === 'onsite';
+      block.hidden = !onsite;
+      street.required = onsite;
+      if (!onsite) street.setCustomValidity('');
+    }
+    sel.addEventListener('change', sync);
+    sync();
+  })();
+  </script>
 </body></html>
