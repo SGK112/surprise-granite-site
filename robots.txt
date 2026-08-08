@@ -29,6 +29,14 @@ Disallow: /api/
 # Review form: one noindexed page reached via ~4,900 unique query strings.
 # Blocking it keeps crawl budget on the real product pages.
 Disallow: /product-review/
+# Finsweet/Webflow CMS pagination params. These were ~30% of the "Crawled - currently
+# not indexed" bucket (GSC 2026-08-07): every page carried a hidden paginator emitting
+# ?xxxxxxxx_page=2, and Google then COMBINED the params across widgets
+# (?017144ac_page=4&5dd91d68_page=4), so the URL space exploded. The widgets are gone
+# (scripts/strip-webflow-pagination.js) — this covers the thousands of legacy URLs
+# Google already knows, which still return 200. None of them are indexed, so blocking
+# costs no canonical signal.
+Disallow: /*_page=
 
 # Sitemap location
 Sitemap: https://www.surprisegranite.com/sitemap.xml
