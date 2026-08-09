@@ -10917,11 +10917,127 @@
     }
 
     // Load products when showing products page
+    // ── Vendors ──────────────────────────────────────────────────────────
+    // Every supplier in one place. Reads the same admin API Aria uses
+    // (/api/admin/catalog/vendors, service-key or admin-bearer), so what the
+    // team sees here and what Aria acts on can never drift apart.
+    let vendorsLoaded = false;
+
+    async function loadVendors(opts = {}) {
+      if (vendorsLoaded && !opts.force) return;
+      const loadingEl = document.getElementById('vendors-loading');
+      const emptyEl = document.getElementById('vendors-empty');
+      const tableEl = document.getElementById('vendors-table-container');
+      const statsEl = document.getElementById('vendors-stats');
+      if (!loadingEl) return;
+      loadingEl.style.display = 'block';
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (tableEl) tableEl.style.display = 'none';
+
+      try {
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const resp = await fetch(SG_API_BASE + '/api/admin/catalog/vendors', {
+          headers: token ? { Authorization: 'Bearer ' + token } : {}
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const body = await resp.json();
+        const vendors = body.vendors || [];
+
+        const totalProducts = vendors.reduce((n, v) => n + (v.product_count || 0), 0);
+        const noOrderEmail = vendors.filter(v => !v.dropship_email).length;
+        if (statsEl) {
+          statsEl.innerHTML =
+            statCard('Vendors', vendors.length) +
+            statCard('Active products', totalProducts.toLocaleString()) +
+            statCard('Missing an order address', noOrderEmail, noOrderEmail ? '#b45309' : null);
+        }
+
+        const tbody = document.getElementById('vendors-tbody');
+        if (!vendors.length) {
+          loadingEl.style.display = 'none';
+          if (emptyEl) emptyEl.style.display = 'block';
+          vendorsLoaded = true;
+          return;
+        }
+        tbody.innerHTML = vendors.map(v => {
+          const email = v.dropship_email
+            ? escapeHtmlSafe(v.dropship_email)
+            : '<span style="color:#b45309">not set — a PO would go to the sales rep</span>';
+          const scraped = v.last_scraped_at
+            ? new Date(v.last_scraped_at).toLocaleDateString()
+            : '<span style="color:var(--text-muted,#6b7280)">never</span>';
+          return '<tr>' +
+            '<td style="padding:10px;font-weight:600">' + escapeHtmlSafe(v.vendor_name || v.vendor_id) +
+              '<div style="font-weight:400;font-size:12px;color:var(--text-muted,#6b7280)">' + escapeHtmlSafe(v.vendor_id) + '</div></td>' +
+            '<td style="padding:10px;text-align:right">' + (v.product_count || 0).toLocaleString() + '</td>' +
+            '<td style="padding:10px">' + email + '</td>' +
+            '<td style="padding:10px">' + escapeHtmlSafe(v.dropship_method || 'manual') + '</td>' +
+            '<td style="padding:10px">' + scraped + '</td>' +
+            '<td style="padding:10px;text-align:right">' +
+              '<button class="btn-modern secondary" style="padding:4px 10px;font-size:12px" ' +
+              'onclick="editVendor(\'' + escapeAttrSafe(v.vendor_id) + '\')">Edit</button></td>' +
+          '</tr>';
+        }).join('');
+
+        loadingEl.style.display = 'none';
+        if (tableEl) tableEl.style.display = 'block';
+        vendorsLoaded = true;
+      } catch (e) {
+        console.error('[vendors] load failed:', e.message);
+        loadingEl.innerHTML = 'Could not load vendors: ' + escapeHtmlSafe(e.message);
+      }
+    }
+
+    function statCard(label, value, color) {
+      return '<div class="stat-card" style="padding:14px 16px;border:1px solid var(--border,#e5e7eb);border-radius:10px">' +
+        '<div style="font-size:12px;color:var(--text-muted,#6b7280)">' + label + '</div>' +
+        '<div style="font-size:22px;font-weight:700' + (color ? ';color:' + color : '') + '">' + value + '</div></div>';
+    }
+    function escapeHtmlSafe(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function escapeAttrSafe(s) { return escapeHtmlSafe(s).replace(/`/g, '&#96;'); }
+
+    // Only the order address is editable here on purpose — it is the field that
+    // silently misroutes real POs, and it is the one we most often learn from a
+    // vendor email. Pricing multipliers stay in the per-vendor import scripts.
+    async function editVendor(vendorId) {
+      const current = prompt('Where should purchase orders for "' + vendorId + '" be emailed?\n\n' +
+        'This is the order desk, not the sales rep.');
+      if (current === null) return;
+      const email = current.trim();
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        alert('That does not look like an email address.');
+        return;
+      }
+      try {
+        const session = await supabaseClient.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const resp = await fetch(SG_API_BASE + '/api/admin/catalog/vendors/' + encodeURIComponent(vendorId), {
+          method: 'PATCH',
+          headers: Object.assign({ 'Content-Type': 'application/json' },
+            token ? { Authorization: 'Bearer ' + token } : {}),
+          body: JSON.stringify({ dropship_email: email })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        await loadVendors({ force: true });
+      } catch (e) {
+        alert('Could not save: ' + e.message);
+      }
+    }
+    window.loadVendors = loadVendors;
+    window.editVendor = editVendor;
+
     const originalShowPage = showPage;
     showPage = async function(page) {
       await originalShowPage(page);
       if (page === 'products') {
         await loadProducts();
+      }
+      if (page === 'vendors') {
+        await loadVendors();
       }
     };
 
