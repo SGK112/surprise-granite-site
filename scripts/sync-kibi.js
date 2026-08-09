@@ -13,10 +13,10 @@
  * Our real cost is on the order confirmations: "DEALER 72% OFF (-$129.60) $180.00 -> $50.40".
  * So cost = list x 0.28. Verified against order Web #1972 (2025-11-25).
  *
- * Retail is NOT touched here. Applying cost x 1.085 x 1.35 would price KFF501BG at $73.83
- * against KIBI's own $180 — competitive, but we do not know KIBI's MAP terms and undercutting
- * a manufacturer by 59% is how a dealer account gets cancelled. That is an owner decision;
- * --with-retail applies the formula when they have made it.
+ * Retail (--with-retail) is KIBI's list less 10%, floored at the standard cost x 1.085 x 1.35.
+ * The owner chose that over the raw formula: the formula would put KFF501BG at $73.83 against
+ * KIBI's own $180, and undercutting a manufacturer by 59% is how a dealer account gets
+ * cancelled if a MAP exists. 10% under keeps us cheapest with nothing to renegotiate.
  *
  * Usage: node scripts/sync-kibi.js [--write] [--with-retail]
  */
@@ -27,6 +27,12 @@ const { execFileSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const WRITE = process.argv.includes('--write');
 const WITH_RETAIL = process.argv.includes('--with-retail');
+// Owner decision 2026-08-09: price 10% under KIBI's own list. That keeps us the cheapest
+// place to buy their product while staying under their price rather than undercutting the
+// manufacturer by 59%, which is how a dealer account gets cancelled when a MAP exists.
+// Floored at the standard formula so a product whose list sits close to cost can never end
+// up thin.
+const UNDERCUT = 0.90;
 
 const DEALER_MULT = 0.28;   // "DEALER 72% OFF" on every KIBI order confirmation
 const TAX = 1.085;
@@ -79,7 +85,9 @@ for (const r of rows) {
   const hit = live.get(String(r.sku).trim().toUpperCase());
   if (!hit) { notAtKibi.push(r); continue; }
   const cost = round2(hit.list * DEALER_MULT);
-  const retail = WITH_RETAIL ? round2(cost * TAX * MARGIN) : r.retail_price;
+  const retail = WITH_RETAIL
+    ? round2(Math.max(hit.list * UNDERCUT, cost * TAX * MARGIN))
+    : r.retail_price;
   updates.push({ ...r, cost, retail, list: hit.list, available: hit.available });
 }
 
@@ -100,7 +108,7 @@ if (!WITH_RETAIL) console.log('\n(retail left alone — pass --with-retail once 
 if (!WRITE) { console.log('\nDry run — nothing written.'); process.exit(0); }
 if (!updates.length) { console.log('nothing to write'); process.exit(0); }
 
-const vals = updates.map((u) => `('${u.id}'::uuid, ${u.cost}, ${u.retail}, ${u.available})`).join(',\n    ');
+const vals = updates.map((u) => `('${u.id}'::uuid, ${u.cost}, ${u.retail}, ${u.available}, ${u.list})`).join(',\n    ');
 const f = path.join(require('os').tmpdir(), `kibi-${Date.now()}.sql`);
 fs.writeFileSync(f, `begin;
 update catalog_products c
@@ -108,11 +116,11 @@ update catalog_products c
        retail_price = v.retail,
        in_stock = v.available,
        specs = coalesce(c.specs,'{}'::jsonb) || jsonb_build_object(
-         'kibi_list', v.retail, 'kibi_synced_at', '${new Date().toISOString().slice(0, 10)}'),
+         'kibi_list', v.list, 'kibi_synced_at', '${new Date().toISOString().slice(0, 10)}'),
        updated_at = now()
   from (values
     ${vals}
-  ) as v(id, cost, retail, available)
+  ) as v(id, cost, retail, available, list)
  where c.id = v.id;
 commit;`);
 execFileSync('psql', [DATABASE_URL, '-v', 'ON_ERROR_STOP=1', '-f', f], { stdio: 'inherit' });
