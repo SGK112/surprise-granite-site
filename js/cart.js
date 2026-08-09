@@ -326,6 +326,40 @@
     }
   }
 
+  // Oversized/LTL items and what their delivery actually costs, keyed by slug and by SKU.
+  // Loaded once; the SERVER (price-validator.js) is authoritative for what Stripe charges, so
+  // if this table hasn't landed yet the cart under-shows and the server corrects it — it can
+  // never cause an undercharge.
+  let FREIGHT_TABLE = null;
+  let PARCEL_TABLE = null;
+  function loadFreightTable() {
+    if (FREIGHT_TABLE) return;
+    fetch('/data/shipping-freight.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!d || !d.freight) return;
+        FREIGHT_TABLE = d.freight;
+        PARCEL_TABLE = d.parcel || {};
+        updateCartBadge();
+        document.dispatchEvent(new CustomEvent('sg:cart-updated'));
+      })
+      .catch(() => {});
+  }
+
+  function lookupFee(table, item) {
+    if (!table) return 0;
+    for (const k of [item.id, item.sku, item.slug, item.handle]) {
+      if (!k) continue;
+      const hit = table[String(k).toLowerCase()] ?? table[String(k).toUpperCase()];
+      if (hit) return Number(hit) || 0;
+    }
+    return 0;
+  }
+  // Oversized/LTL — always billed, never free.
+  function freightFeeFor(item) { return lookupFee(FREIGHT_TABLE, item); }
+  // Normal ground — only used to floor the tier below the free-shipping threshold.
+  function parcelFeeFor(item) { return lookupFee(PARCEL_TABLE, item); }
+
   /**
    * Get cart totals with tier info
    */
@@ -354,19 +388,39 @@
     // tier (<$100 → $15, $100–$500 → $25, free > $500) PER vendor and sum.
     // Group by the item's vendor/brand — the same key the server falls back to —
     // so a multi-vendor cart shows the real (higher) shipping, not a flat fee.
+    //
+    // FREIGHT ITEMS ARE EXCLUDED FROM THAT TIER. Tubs, toilets and shower panels cost
+    // $460–$890 to ship, and because the pricey items are also the heavy ones they all
+    // cleared the $500 "free shipping" threshold — so the threshold guaranteed we ate the
+    // freight. 48 of 301 audited products lost money on a single-item order, worst -$326.
+    // Those SKUs now carry their real freight (data/shipping-freight.json) as its own line,
+    // and their price is kept out of the parcel subtotal so they cannot buy free shipping
+    // for the rest of the cart. Everything that ships parcel keeps free-over-$500.
     const tierFor = sub => (sub > 0 && sub < 500) ? (sub < 100 ? 15 : 25) : 0;
     const vendorSubtotals = {};
+    const parcelFreight = {};
+    let freight = 0;
     cart.forEach(item => {
+      const fee = freightFeeFor(item);
+      if (fee > 0) { freight += fee * (item.quantity || 1); return; }
       const key = (item.vendor || item.vendorId || item.variant || item.brand || 'default')
         .toString().toLowerCase().trim() || 'default';
       vendorSubtotals[key] = (vendorSubtotals[key] || 0) + (item.price * item.quantity);
+      parcelFreight[key] = (parcelFreight[key] || 0) + parcelFeeFor(item) * (item.quantity || 1);
     });
-    const shipping = Object.values(vendorSubtotals).reduce((sum, sub) => sum + tierFor(sub), 0);
+    // Over the free-shipping line the margin absorbs ground freight and the promise holds.
+    // Under it, never collect less than the shipment costs.
+    const shipping = Object.keys(vendorSubtotals).reduce((sum, k) => {
+      const sub = vendorSubtotals[k];
+      const tier = tierFor(sub);
+      return sum + (sub >= 500 ? tier : Math.max(tier, parcelFreight[k] || 0));
+    }, 0) + freight;
 
     return {
       subtotal,
       itemCount,
       shipping,
+      freight,
       tax: 0, // Calculated at checkout
       total: subtotal + shipping,
       guestTotal,
@@ -941,6 +995,7 @@
   // Initialize
   function init() {
     addStyles();
+    loadFreightTable();
     updateCartBadge();
     initCartPage();
     // Subscribe to pricing tier changes for real-time updates

@@ -76,6 +76,46 @@ function calculateShipping(subtotalCents) {
   return 0; // Free shipping
 }
 
+// Oversized/LTL items, and what delivery actually costs us, keyed by slug and SKU.
+// The tiers above are fine for parcel goods but catastrophic for freight: a tub costs
+// $460–$890 to ship and, being expensive, always cleared the $500 "free shipping" line —
+// so the threshold guaranteed we ate the freight. An audit against the JAN 2026 vendor
+// datasheets found 48 of 301 products losing money on a single-item order, worst -$326.
+// Freight SKUs are billed their real freight and kept OUT of the tier subtotal, so they
+// can't buy free shipping for the rest of the cart. Regenerate with
+// scripts/build-freight-table.js when a vendor sends a new datasheet.
+let FREIGHT_TABLE = {};
+let PARCEL_TABLE = {};
+try {
+  // eslint-disable-next-line global-require
+  const loaded = require('../../data/shipping-freight.json');
+  FREIGHT_TABLE = (loaded && loaded.freight) || {};
+  PARCEL_TABLE = (loaded && loaded.parcel) || {};
+} catch (err) {
+  // Missing table must never take checkout down — it degrades to the old tier behaviour.
+  console.warn('[price-validator] shipping-freight.json not loaded:', err.message);
+}
+
+function lookupCents(table, item, matchedSlug) {
+  for (const raw of [matchedSlug, item && item.id, item && item.sku, item && item.slug, item && item.handle]) {
+    if (!raw) continue;
+    const k = String(raw).trim();
+    const hit = table[k.toLowerCase()] ?? table[k.toUpperCase()];
+    if (hit) return Math.round(Number(hit) * 100);
+  }
+  return 0;
+}
+
+/** Real freight for an OVERSIZED/LTL item, in cents. 0 means it ships parcel. */
+function freightCentsFor(item, matchedSlug) {
+  return lookupCents(FREIGHT_TABLE, item, matchedSlug);
+}
+
+/** Real ground cost for a PARCEL item, in cents. Used to floor the tier, never to replace it. */
+function parcelCentsFor(item, matchedSlug) {
+  return lookupCents(PARCEL_TABLE, item, matchedSlug);
+}
+
 /**
  * Calculate tax based on shipping state
  * @param {number} subtotalCents - Subtotal in cents
@@ -124,6 +164,8 @@ async function validateCartPrices(items, supabase, shippingState) {
   // Validate each product item, bucketing line totals by vendor so shipping
   // can be charged per vendor (each vendor drop-ships + bills freight separately).
   const vendorSubtotals = {};
+  let freightTotal = 0;         // real LTL/oversize freight, in cents, billed per item
+  const parcelFreight = {};     // real ground cost per vendor, in cents — floors the tier
   for (const item of productItems) {
     const validation = await validateSingleItem(item, supabase);
 
@@ -146,11 +188,21 @@ async function validateCartPrices(items, supabase, shippingState) {
     const lineTotal = validatedItem.validatedPrice * (item.quantity || 1);
     result.calculatedTotals.subtotal += lineTotal;
 
+    // Freight-class items bill their own real freight and stay out of the tier subtotal —
+    // otherwise a $1,200 tub would push the cart over $500 and make the whole order ship free
+    // while costing us $500 to deliver.
+    const unitFreight = freightCentsFor(item, validation.slug);
+    if (unitFreight > 0) {
+      freightTotal += unitFreight * (item.quantity || 1);
+      continue;
+    }
+
     // Group by vendor (matched catalog vendor_id; else the item's brand/variant; else one bucket)
     const vKey = validation.vendorId
       || (item.vendor_id || item.vendor || item.variant || item.brand || '').toString().toLowerCase().trim()
       || 'default';
     vendorSubtotals[vKey] = (vendorSubtotals[vKey] || 0) + lineTotal;
+    parcelFreight[vKey] = (parcelFreight[vKey] || 0) + parcelCentsFor(item, validation.slug) * (item.quantity || 1);
   }
 
   // Calculate server-side totals (never trust client for these).
@@ -160,11 +212,18 @@ async function validateCartPrices(items, supabase, shippingState) {
   const shippingByVendor = {};
   let shippingTotal = 0;
   for (const vKey of Object.keys(vendorSubtotals)) {
-    const s = calculateShipping(vendorSubtotals[vKey]);
+    const sub = vendorSubtotals[vKey];
+    const tier = calculateShipping(sub);
+    // Above the free-shipping threshold the margin absorbs ground freight, and keeping that
+    // promise is what earns repeat orders. Below it, never collect less than the shipment
+    // actually costs — a $60 ground charge must not hide behind a $15 tier.
+    const FREE_AT_CENTS = 50000;
+    const s = sub >= FREE_AT_CENTS ? tier : Math.max(tier, parcelFreight[vKey] || 0);
     shippingByVendor[vKey] = s;
     shippingTotal += s;
   }
-  result.calculatedTotals.shipping = shippingTotal;
+  result.calculatedTotals.shipping = shippingTotal + freightTotal;
+  result.calculatedTotals.freight = freightTotal;
   result.calculatedTotals.shippingByVendor = shippingByVendor;
   result.calculatedTotals.vendorCount = Object.keys(vendorSubtotals).length;
   result.calculatedTotals.tax = calculateTax(result.calculatedTotals.subtotal, shippingState);
