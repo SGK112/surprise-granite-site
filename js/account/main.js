@@ -10945,12 +10945,13 @@
         const vendors = body.vendors || [];
 
         const totalProducts = vendors.reduce((n, v) => n + (v.product_count || 0), 0);
-        const noOrderEmail = vendors.filter(v => !v.dropship_email).length;
+        const stocked = vendors.filter(v => (v.product_count || 0) > 0).length;
+        const empty = vendors.length - stocked;
         if (statsEl) {
           statsEl.innerHTML =
             statCard('Vendors', vendors.length) +
             statCard('Active products', totalProducts.toLocaleString()) +
-            statCard('Missing an order address', noOrderEmail, noOrderEmail ? '#b45309' : null);
+            statCard('Carrying nothing', empty, empty ? '#b45309' : null);
         }
 
         const tbody = document.getElementById('vendors-tbody');
@@ -10961,9 +10962,13 @@
           return;
         }
         tbody.innerHTML = vendors.map(v => {
+          // NOTE: this is vendor_config.dropship_email, used by the storefront
+          // drop-ship handoff. Purchase orders are sent from the CRM, which
+          // resolves its own Vendor.orderEmail — so blank here does NOT mean a
+          // PO is broken. Do not word it as if it does.
           const email = v.dropship_email
             ? escapeHtmlSafe(v.dropship_email)
-            : '<span style="color:#b45309">not set — a PO would go to the sales rep</span>';
+            : '<span style="color:var(--text-muted,#6b7280)">— (PO uses the CRM address)</span>';
           const scraped = v.last_scraped_at
             ? new Date(v.last_scraped_at).toLocaleDateString()
             : '<span style="color:var(--text-muted,#6b7280)">never</span>';
