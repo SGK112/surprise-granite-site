@@ -10,6 +10,42 @@ require('dotenv').config({ path: __dirname + '/.env', override: true });
 const logger = require('./utils/logger');
 const { notifyCrmOrder, lineItemsForCrm } = require('./notifyCrmOrder');
 
+// Resolve each sold line to the supplier we have to order it from, and our cost. An order
+// notification that only says "you got $43.08" is useless — it does not say what sold or who
+// supplies it, so nobody can act on it without going digging.
+async function describeOrderLines(items, logger) {
+  const out = (items || []).map((li) => ({
+    name: li.name || li.description || 'Item',
+    quantity: li.quantity || 1,
+    sku: li.sku || null,
+    vendor: null,
+    cost: null,
+    sample: /\(\s*sample\s*\)|\bsample\b/i.test(String(li.name || li.description || '')),
+  }));
+  try {
+    // `supabase` is declared further down at module scope; this function only runs at
+    // request time, long after it is initialised.
+    if (!supabase) return out;
+    for (const line of out) {
+      const bare = String(line.name).replace(/\(\s*sample\s*\)/ig, '').trim();
+      let q = supabase.from('catalog_products')
+        .select('name, vendor_id, vendor_sku, vendor_cost, sample_price')
+        .limit(1);
+      q = line.sku ? q.eq('sku', line.sku) : q.ilike('name', bare);
+      const { data } = await q;
+      if (data && data[0]) {
+        line.vendor = data[0].vendor_id;
+        line.sku = line.sku || data[0].vendor_sku;
+        line.cost = line.sample ? 0 : data[0].vendor_cost;
+      }
+    }
+  } catch (e) {
+    logger?.warn?.('order line vendor lookup failed:', e.message);
+  }
+  return out;
+}
+
+
 // ============================================
 // REMODELY.AI RATE LIMITER (SERVER-SIDE)
 // ============================================
@@ -2882,8 +2918,16 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
         // Admin notification
         try {
+          const soldLines = await describeOrderLines(lineItemsForCrm(crmLineItems), logger);
+          const vendorsInOrder = [...new Set(soldLines.map((l) => l.vendor).filter(Boolean))];
+          const linesHtml = soldLines.map((l) =>
+            `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">${l.quantity}× ${l.name}</td>` +
+            `<td style="padding:6px 10px;border-bottom:1px solid #eee"><strong>${l.vendor || '⚠ no vendor on file'}</strong></td>` +
+            `<td style="padding:6px 10px;border-bottom:1px solid #eee">${l.sku || '—'}</td>` +
+            `<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${l.sample ? 'sample · no charge' : (l.cost != null ? '$' + Number(l.cost).toFixed(2) : '⚠ no cost')}</td></tr>`
+          ).join('');
           const adminOrderEmail = {
-            subject: `New Order Received - #SG-${safeOrderNum} - $${safeTotal}`,
+            subject: `New Order #SG-${safeOrderNum} — ${soldLines.map((l) => `${l.quantity}× ${l.name}`).join(', ').slice(0, 90)}${vendorsInOrder.length ? ' — order from ' + vendorsInOrder.join(', ') : ''}`,
             html: `
 <!DOCTYPE html>
 <html>
@@ -2897,6 +2941,17 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
     <p><strong>Amount:</strong> $${safeTotal}</p>
     <p><strong>Payment Status:</strong> ${session.payment_status}</p>
   </div>
+  <h3 style="color:#1a1a2e;margin:20px 0 8px">What sold — and who to order it from</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="background:#f1f1f1">
+      <th style="padding:6px 10px;text-align:left">Item</th>
+      <th style="padding:6px 10px;text-align:left">Order from</th>
+      <th style="padding:6px 10px;text-align:left">Vendor SKU</th>
+      <th style="padding:6px 10px;text-align:right">Our cost</th>
+    </tr></thead>
+    <tbody>${linesHtml}</tbody>
+  </table>
+  ${soldLines.some((l) => !l.vendor) ? '<p style="color:#b45309"><strong>⚠ Some lines have no vendor on file — the PO cannot be routed until that is fixed.</strong></p>' : ''}
   <p>View details in your <a href="https://dashboard.stripe.com/payments/${session.payment_intent}">Stripe Dashboard</a></p>
 </body>
 </html>`
