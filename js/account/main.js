@@ -3724,10 +3724,10 @@
               <span style="flex:1;"></span>
               ${unassigned ? '' : `
                 <button onclick="printVendorPO('${orderId}', '${escapeHtml(vid)}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;cursor:pointer;">Print PO</button>
-                <button onclick="sendVendorPO('${orderId}', '${escapeHtml(vid)}', this)" ${f.vendor_email ? '' : 'disabled'}
-                  title="${f.vendor_email ? 'Email this vendor their PO' : 'No order email on file for this vendor'}"
-                  style="padding:6px 12px;border-radius:6px;border:none;background:${f.vendor_email ? 'var(--gold-primary,#f9cb00)' : '#555'};color:${f.vendor_email ? 'var(--dark-surface,#1a1a2e)' : '#999'};font-size:12px;font-weight:600;cursor:${f.vendor_email ? 'pointer' : 'not-allowed'};">
-                  ${f.po_number ? 'Re-send PO' : 'Email PO'}
+                <button onclick="generateVendorPO('${orderId}', '${escapeHtml(vid)}', this)"
+                  title="Generate this vendor's PO and review it before sending"
+                  style="padding:6px 12px;border-radius:6px;border:none;background:var(--gold-primary,#f9cb00);color:var(--dark-surface,#1a1a2e);font-size:12px;font-weight:600;cursor:pointer;">
+                  ${f.po_number ? 'Re-generate PO' : 'Generate PO'}
                 </button>`}
             </div>
 
@@ -3759,48 +3759,127 @@
           </div>`;
         }).join('')}
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+          Generate PO opens the exact email for review — nothing is sent until you approve it there.
           The order's overall status follows the slowest vendor. "Notify" emails the customer only that vendor's lines —
           on Ordered ("being processed"), Shipped, or Delivered. Tracking is optional.
         </div>`;
     }
 
-    // Emailing a PO is a promise to a supplier and cannot be unsent, so it is a
-    // deliberate click with the destination shown — never automatic on payment.
-    async function sendVendorPO(orderId, vendorId, btn) {
-      const msg = document.getElementById(`ff-msg-${orderId}-${vendorId}`);
-      const say = (t, ok) => {
-        showToast(t, ok ? 'success' : 'error');
-        if (msg) { msg.textContent = t; msg.style.color = ok ? 'var(--success,#22c55e)' : 'var(--danger,#ef4444)'; }
-      };
-      const resend = (btn?.textContent || '').includes('Re-send');
-      const note = prompt(resend
-        ? 'Re-sending this PO. Anything to add for the vendor? (blank for none)'
-        : 'Anything to add to this PO for the vendor? (blank for none)', '');
-      if (note === null) return;
+    // ── PO: generate, approve, send ───────────────────────────────────────
+    // Two clicks, on purpose. Click one renders the exact email; click two
+    // sends it. A PO is a promise to a supplier and cannot be unsent, so the
+    // approval step is the safeguard — never auto-send on payment.
 
+    async function generateVendorPO(orderId, vendorId, btn) {
+      const msg = document.getElementById(`ff-msg-${orderId}-${vendorId}`);
+      const label = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+      try {
+        const po = await orderAction_apiCall('POST',
+          `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/po/preview`, {});
+        showPOApproval(orderId, vendorId, po, '');
+      } catch (err) {
+        showToast('Could not generate PO: ' + err.message, 'error');
+        if (msg) { msg.textContent = 'Could not generate PO: ' + err.message; msg.style.color = 'var(--danger,#ef4444)'; }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+      }
+    }
+
+    function showPOApproval(orderId, vendorId, po, note) {
+      document.querySelector('.po-approval-modal')?.remove();
+      const modal = document.createElement('div');
+      modal.className = 'po-approval-modal';
+      // Above the order modal (100001), below the toast (2147483000).
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:flex-start;justify-content:center;z-index:100002;padding:32px 20px;overflow-y:auto;';
+
+      const blocked = po.blocked;
+      modal.innerHTML = `
+        <div style="background:var(--dark-surface,#1a1a2e);border:1px solid var(--border-subtle);border-radius:12px;max-width:820px;width:100%;overflow:hidden;">
+          <div style="padding:18px 22px;border-bottom:1px solid var(--border-subtle);">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <strong style="font-size:16px;">${escapeHtml(po.po_number)}</strong>
+              <span style="font-size:13px;color:var(--text-muted);">${po.item_count} line${po.item_count === 1 ? '' : 's'} · ${escapeHtml(po.vendor_name)}</span>
+              <span style="flex:1;"></span>
+              <button onclick="this.closest('.po-approval-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <div style="margin-top:10px;font-size:13px;">
+              ${blocked
+                ? `<span style="color:var(--danger,#ef4444);">${escapeHtml(blocked)}</span>`
+                : `<span style="color:var(--text-muted);">To:</span> <strong>${escapeHtml(po.to)}</strong>`}
+            </div>
+            <div style="margin-top:4px;font-size:12px;color:var(--text-muted);">Subject: ${escapeHtml(po.subject)}</div>
+            ${po.already_sent ? `<div style="margin-top:8px;font-size:12px;color:var(--warning,#f59e0b);">⚠ This PO has already been sent once. Sending again may make the vendor ship twice.</div>` : ''}
+          </div>
+
+          <div style="padding:14px 22px;border-bottom:1px solid var(--border-subtle);">
+            <label style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600;">Note to vendor (optional)</label>
+            <div style="display:flex;gap:8px;margin-top:6px;">
+              <input id="po-note-${orderId}-${vendorId}" value="${escapeHtml(note || '')}" placeholder="e.g. please ship to the customer directly, no invoice in the box"
+                style="flex:1;padding:9px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-elevated);color:var(--text-primary);font-size:13px;">
+              <button onclick="regeneratePO('${orderId}','${escapeHtml(vendorId)}')" style="padding:9px 14px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-elevated);color:var(--text-primary);font-size:12px;cursor:pointer;white-space:nowrap;">Update preview</button>
+            </div>
+          </div>
+
+          <!-- The vendor's own view. srcdoc + sandbox: this HTML is ours, but it
+               must not inherit or touch the admin page's styles or scripts. -->
+          <iframe sandbox srcdoc="${escapeHtml(po.html)}" style="width:100%;height:52vh;border:none;background:#fff;display:block;"></iframe>
+
+          <div style="padding:16px 22px;display:flex;gap:10px;align-items:center;justify-content:flex-end;border-top:1px solid var(--border-subtle);flex-wrap:wrap;">
+            <span id="po-msg-${orderId}-${vendorId}" style="font-size:12px;flex:1;text-align:left;"></span>
+            <button onclick="printPOFromPreview('${orderId}','${escapeHtml(vendorId)}')" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-elevated);color:var(--text-primary);font-size:13px;cursor:pointer;">Print instead</button>
+            <button onclick="this.closest('.po-approval-modal').remove()" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-elevated);color:var(--text-primary);font-size:13px;cursor:pointer;">Cancel</button>
+            <button id="po-send-${orderId}-${vendorId}" onclick="approveAndSendPO('${orderId}','${escapeHtml(vendorId)}',${po.already_sent},this)" ${blocked ? 'disabled' : ''}
+              style="padding:10px 22px;border-radius:6px;border:none;background:${blocked ? '#555' : 'var(--gold-primary,#f9cb00)'};color:${blocked ? '#999' : 'var(--dark-surface,#1a1a2e)'};font-size:13px;font-weight:700;cursor:${blocked ? 'not-allowed' : 'pointer'};">
+              ${blocked ? 'Cannot send' : (po.already_sent ? 'Approve & re-send' : 'Approve & send')}
+            </button>
+          </div>
+        </div>`;
+
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+      document.body.appendChild(modal);
+    }
+
+    async function regeneratePO(orderId, vendorId) {
+      const note = document.getElementById(`po-note-${orderId}-${vendorId}`)?.value || '';
+      try {
+        const po = await orderAction_apiCall('POST',
+          `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/po/preview`, { note });
+        showPOApproval(orderId, vendorId, po, note);
+      } catch (err) {
+        showToast('Could not update the preview: ' + err.message, 'error');
+      }
+    }
+
+    function printPOFromPreview(orderId, vendorId) {
+      const frame = document.querySelector('.po-approval-modal iframe');
+      if (!frame) return;
+      const w = window.open('', '_blank');
+      if (!w) { showToast('Allow pop-ups to print', 'error'); return; }
+      w.document.write(frame.getAttribute('srcdoc'));
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 400);
+    }
+
+    async function approveAndSendPO(orderId, vendorId, alreadySent, btn) {
+      if (alreadySent && !confirm('This PO was already sent. Send it again? The vendor may ship twice.')) return;
+      const note = document.getElementById(`po-note-${orderId}-${vendorId}`)?.value || '';
+      const msg = document.getElementById(`po-msg-${orderId}-${vendorId}`);
       const label = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
       try {
-        const r = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/send-po`,
-          { note: note || undefined, resend });
-        say(`${r.po_number} emailed to ${r.to} (${r.items} line${r.items === 1 ? '' : 's'})`, true);
+        const r = await orderAction_apiCall('POST',
+          `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/send-po`,
+          { note: note || undefined, resend: !!alreadySent });
+        showToast(`${r.po_number} sent to ${r.to}`, 'success');
+        document.querySelector('.po-approval-modal')?.remove();
         ordersLoaded = false;
         await loadOrders();
         await loadFulfillments(orderId);
       } catch (err) {
-        // The server refuses a second send unless asked twice — surface that as
-        // a choice instead of an error the user can do nothing about.
-        if (/already sent/i.test(err.message) && confirm(err.message + '\n\nSend it again anyway?')) {
-          try {
-            const r = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/send-po`,
-              { note: note || undefined, resend: true });
-            say(`${r.po_number} re-sent to ${r.to}`, true);
-            await loadFulfillments(orderId);
-          } catch (e2) { say('Failed: ' + e2.message, false); }
-        } else {
-          say('Failed: ' + err.message, false);
-        }
-      } finally {
+        showToast('Failed: ' + err.message, 'error');
+        if (msg) { msg.textContent = 'Failed: ' + err.message; msg.style.color = 'var(--danger,#ef4444)'; }
         if (btn) { btn.disabled = false; btn.textContent = label; }
       }
     }
