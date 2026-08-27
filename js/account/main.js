@@ -3532,6 +3532,11 @@
           <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
             <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 14px;">Order Management</div>
 
+            <!-- Per-vendor fulfillment; filled in by loadFulfillments() below -->
+            <div id="fulfillments-${orderId}" style="margin-bottom: 14px;">
+              <div style="font-size:12px;color:var(--text-muted);padding:10px 0;">Loading vendors…</div>
+            </div>
+
             <!-- Quick Actions Row -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
               <button onclick="printVendorPO('${orderId}')" style="padding:10px 16px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
@@ -3672,6 +3677,117 @@
         if (e.target === modal) modal.remove();
       });
       document.body.appendChild(modal);
+      if (isStore) loadFulfillments(orderId);
+    }
+
+    // ── Per-vendor fulfillment ────────────────────────────────────────────
+    // An order can span several vendors, each with its own PO, its own status
+    // and its own tracking. The single orders.status / orders.tracking_number
+    // pair could not express "Daltile phoned in, MSI not sent yet", so each
+    // vendor gets its own leg (order_fulfillments) and the order-level status
+    // rolls up to the slowest of them.
+
+    async function loadFulfillments(orderId) {
+      const box = document.getElementById('fulfillments-' + orderId);
+      if (!box) return;
+      try {
+        const data = await orderAction_apiCall('GET', `/api/admin/orders/${orderId}/fulfillments`);
+        renderFulfillments(orderId, data.fulfillments || []);
+      } catch (err) {
+        box.innerHTML = `<div style="font-size:12px;color:var(--danger,#ef4444);">Could not load vendors: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderFulfillments(orderId, legs) {
+      const box = document.getElementById('fulfillments-' + orderId);
+      if (!box) return;
+      if (!legs.length) { box.innerHTML = ''; return; }
+
+      const STATUSES = ['pending', 'ordered', 'shipped', 'delivered', 'cancelled'];
+      const DOT = { pending: '#6b7280', ordered: '#3b82f6', shipped: '#f59e0b', delivered: '#22c55e', cancelled: '#ef4444' };
+
+      box.innerHTML = `
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:10px;">
+          Fulfillment by vendor (${legs.length})
+        </div>
+        ${legs.map(f => {
+          const vid = f.vendor_id;
+          const unassigned = vid === 'unassigned';
+          return `
+          <div style="background:var(--dark-elevated);border:1px solid var(--border-subtle);border-radius:8px;padding:14px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:${DOT[f.status] || '#6b7280'};flex:none;"></span>
+              <strong style="font-size:14px;">${escapeHtml(f.vendor_name || vid)}</strong>
+              ${f.vendor_email
+                ? `<a href="mailto:${escapeHtml(f.vendor_email)}" style="font-size:12px;color:var(--text-muted);">${escapeHtml(f.vendor_email)}</a>`
+                : `<span style="font-size:12px;color:var(--warning,#f59e0b);">no order email on file</span>`}
+              <span style="flex:1;"></span>
+              ${unassigned ? '' : `<button onclick="printVendorPO('${orderId}', '${escapeHtml(vid)}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;cursor:pointer;">Print this vendor's PO</button>`}
+            </div>
+
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;padding-left:16px;">
+              ${f.items.map(i => `• ${i.quantity || 1} × ${escapeHtml(i.name || 'Item')}${i.sku ? ` <span style="opacity:.6">(${escapeHtml(i.sku)})</span>` : ''}`).join('<br>')}
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <select id="ff-status-${orderId}-${vid}" style="padding:8px 10px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;">
+                ${STATUSES.map(st => `<option value="${st}" ${st === f.status ? 'selected' : ''}>${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('')}
+              </select>
+              <input id="ff-ref-${orderId}-${vid}" value="${escapeHtml(f.vendor_order_ref || '')}" placeholder="Their order #"
+                style="width:130px;padding:8px 10px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;">
+              <select id="ff-carrier-${orderId}-${vid}" style="padding:8px 10px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;">
+                <option value="">Carrier</option>
+                ${['UPS','FedEx','USPS','DHL','Freight','Other'].map(c => `<option value="${c}" ${f.tracking_carrier === c ? 'selected' : ''}>${c}</option>`).join('')}
+              </select>
+              <input id="ff-track-${orderId}-${vid}" value="${escapeHtml(f.tracking_number || '')}" placeholder="Tracking number"
+                style="flex:1;min-width:140px;padding:8px 10px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;">
+              <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap;">
+                <input type="checkbox" id="ff-notify-${orderId}-${vid}"> Notify
+              </label>
+              <button onclick="saveFulfillment('${orderId}', '${escapeHtml(vid)}', this)"
+                style="padding:8px 16px;border-radius:6px;border:none;background:var(--info,#3b82f6);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Save</button>
+            </div>
+            <div id="ff-msg-${orderId}-${vid}" style="font-size:12px;margin-top:8px;"></div>
+          </div>`;
+        }).join('')}
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+          The order's overall status follows the slowest vendor. "Notify" emails the customer only the lines that vendor is shipping.
+        </div>`;
+    }
+
+    async function saveFulfillment(orderId, vendorId, btn) {
+      const val = (p) => document.getElementById(`ff-${p}-${orderId}-${vendorId}`)?.value?.trim() || '';
+      const status = val('status');
+      const tracking_number = val('track');
+      const notify = document.getElementById(`ff-notify-${orderId}-${vendorId}`)?.checked || false;
+      const msg = document.getElementById(`ff-msg-${orderId}-${vendorId}`);
+      const say = (t, ok) => {
+        showToast(t, ok ? 'success' : 'error');
+        if (msg) { msg.textContent = t; msg.style.color = ok ? 'var(--success,#22c55e)' : 'var(--danger,#ef4444)'; }
+      };
+
+      if (status === 'shipped' && !tracking_number) { say('Add a tracking number before marking shipped', false); return; }
+      if (notify && status !== 'shipped') { say('"Notify" only sends on a shipped status', false); return; }
+
+      const label = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+      try {
+        const r = await orderAction_apiCall('PATCH', `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}`, {
+          status,
+          vendor_order_ref: val('ref'),
+          tracking_carrier: val('carrier'),
+          tracking_number,
+          notify_customer: notify
+        });
+        say(`Saved — order is now "${r.order_status}"${r.email_sent ? ', customer notified' : ''}`, true);
+        ordersLoaded = false;
+        await loadOrders();
+        await loadFulfillments(orderId);
+      } catch (err) {
+        say('Failed: ' + err.message, false);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+      }
     }
 
     // Order management action functions
@@ -3847,15 +3963,25 @@
     }
 
     // Open a printable Vendor Purchase Order in a new window — drop-ship to the customer
-    async function printVendorPO(orderId) {
+    // vendorId scopes the PO to ONE vendor's lines. A 3-sample order split
+    // between MSI and Daltile must not show MSI the Daltile sample — it is not
+    // theirs to see, and it invites them to ship something we bought elsewhere.
+    // Omitting vendorId prints every line (single-vendor orders, legacy orders
+    // whose items carry no vendor_id).
+    async function printVendorPO(orderId, vendorId) {
       const order = allOrders.find(o => o.id === orderId);
       if (!order) { showToast('Order not found', 'error'); return; }
 
-      const items = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+      const allItems = Array.isArray(order.items) ? order.items : (Array.isArray(order.line_items) ? order.line_items : []);
+      const items = vendorId ? allItems.filter(it => it.vendor_id === vendorId) : allItems;
+      if (vendorId && !items.length) { showToast('No items for that vendor on this order', 'error'); return; }
       const orderDate = order.created_at
         ? new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      const poNumber = 'PO-' + (order.order_number || order.id || '').toString().replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+      // Suffix per vendor: two POs from one order need different numbers, or the
+      // vendors' AP departments see a duplicate.
+      const poNumber = 'PO-' + (order.order_number || order.id || '').toString().replace(/[^A-Za-z0-9-]/g, '').toUpperCase()
+        + (vendorId ? '-' + vendorId.toUpperCase().replace(/[^A-Z0-9]/g, '') : '');
 
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -3869,7 +3995,7 @@
       // order — including sample orders, where the vendor is the whole point.
       let vendorHtml = '<strong>Vendor</strong><br><em>Confirm vendor before sending.</em>';
       try {
-        const vids = [...new Set(items.map(it => it.vendor_id).filter(Boolean))];
+        const vids = vendorId ? [vendorId] : [...new Set(items.map(it => it.vendor_id).filter(Boolean))];
         const brandByVid = {};
         const skus = [...new Set(items.map(it => it.product_sku || it.sku).filter(Boolean))];
         if (skus.length) {

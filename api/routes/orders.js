@@ -239,6 +239,205 @@ router.put('/:id/tracking', adminAccess, async (req, res) => {
 });
 
 /**
+ * Which vendors does this order involve, and how many lines each?
+ *
+ * Source of truth is orders.items[].vendor_id, written by the price validator
+ * at checkout. Older orders (pre 2026-08-27) have no vendor on their items and
+ * come back as a single 'unassigned' bucket rather than silently vanishing.
+ */
+function vendorsOnOrder(order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const byVendor = new Map();
+  for (const it of items) {
+    const vid = it.vendor_id || 'unassigned';
+    if (!byVendor.has(vid)) byVendor.set(vid, []);
+    byVendor.get(vid).push(it);
+  }
+  return byVendor;
+}
+
+/**
+ * Roll the per-vendor legs up into the one order-level status the customer and
+ * the orders list still read. The order is only as far along as its slowest
+ * vendor: two shipped legs and one still pending is NOT a shipped order.
+ */
+function rollUpStatus(fulfillments, currentStatus) {
+  const live = fulfillments.filter(f => f.status !== 'cancelled');
+  if (!live.length) return currentStatus;
+  const rank = { pending: 0, ordered: 1, shipped: 2, delivered: 3 };
+  const lowest = live.reduce((min, f) => Math.min(min, rank[f.status] ?? 0), 99);
+  return ['confirmed', 'processing', 'shipped', 'delivered'][lowest] || currentStatus;
+}
+
+/**
+ * GET /api/admin/orders/:id/fulfillments — the per-vendor legs of one order.
+ *
+ * Seeds a row per vendor on first read so staff never have to create them by
+ * hand, and returns each leg WITH its own line items so the UI (and the vendor
+ * PO) can show one vendor exactly its own goods and nothing else.
+ */
+router.get('/:id/fulfillments', adminAccess, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { id } = req.params;
+
+    const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
+    if (error || !order) return res.status(404).json({ error: 'Order not found' });
+
+    const byVendor = vendorsOnOrder(order);
+
+    const { data: existing } = await supabase
+      .from('order_fulfillments').select('*').eq('order_id', id);
+    const have = new Set((existing || []).map(f => f.vendor_id));
+
+    const missing = [...byVendor.keys()].filter(v => !have.has(v));
+    if (missing.length) {
+      const { error: insErr } = await supabase.from('order_fulfillments')
+        .insert(missing.map(vendor_id => ({ order_id: id, vendor_id })));
+      // A concurrent seed from a second tab hits the unique constraint; that is
+      // the constraint doing its job, so re-read rather than fail the request.
+      if (insErr && insErr.code !== '23505') {
+        logger.error('Could not seed fulfillments:', insErr.message);
+      }
+    }
+
+    const { data: rows } = await supabase
+      .from('order_fulfillments').select('*').eq('order_id', id).order('vendor_id');
+
+    // Vendor names + where their PO goes, so the UI needn't look it up again.
+    const vids = [...new Set((rows || []).map(r => r.vendor_id))].filter(v => v !== 'unassigned');
+    let vendorInfo = {};
+    if (vids.length) {
+      const { data: vc } = await supabase
+        .from('vendor_config').select('vendor_id, vendor_name, dropship_email').in('vendor_id', vids);
+      (vc || []).forEach(v => { vendorInfo[v.vendor_id] = v; });
+    }
+
+    res.json({
+      order_id: id,
+      order_number: order.order_number,
+      fulfillments: (rows || []).map(f => ({
+        ...f,
+        vendor_name: vendorInfo[f.vendor_id]?.vendor_name || f.vendor_id,
+        vendor_email: vendorInfo[f.vendor_id]?.dropship_email || null,
+        items: byVendor.get(f.vendor_id) || []
+      }))
+    });
+  } catch (err) {
+    logger.error('Error listing fulfillments:', err.message);
+    res.status(500).json({ error: 'Failed to load fulfillments' });
+  }
+});
+
+/**
+ * PATCH /api/admin/orders/:id/fulfillments/:vendorId — update ONE vendor's leg.
+ *
+ * notify_customer emails only the lines that vendor is shipping, so a customer
+ * whose order is split across two vendors gets a truthful "2 of your 3 items
+ * have shipped" rather than one that implies the whole order is on its way.
+ */
+router.patch('/:id/fulfillments/:vendorId', adminAccess, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { id, vendorId } = req.params;
+    const {
+      status, po_number, vendor_order_ref,
+      tracking_number, tracking_carrier, notes, notify_customer = false
+    } = req.body || {};
+
+    const ALLOWED = ['pending', 'ordered', 'shipped', 'delivered', 'cancelled'];
+    if (status && !ALLOWED.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${ALLOWED.join(', ')}` });
+    }
+
+    const { data: order } = await supabase.from('orders').select('*').eq('id', id).single();
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const updates = { updated_at: new Date().toISOString() };
+    if (status !== undefined) updates.status = status;
+    if (po_number !== undefined) updates.po_number = po_number;
+    if (vendor_order_ref !== undefined) updates.vendor_order_ref = vendor_order_ref;
+    if (tracking_number !== undefined) updates.tracking_number = tracking_number;
+    if (tracking_carrier !== undefined) updates.tracking_carrier = tracking_carrier;
+    if (notes !== undefined) updates.notes = notes;
+
+    // Stamp the moment a leg reaches a milestone, once.
+    const now = new Date().toISOString();
+    if (status === 'ordered') updates.ordered_at = updates.ordered_at || now;
+    if (status === 'shipped') updates.shipped_at = now;
+    if (status === 'delivered') updates.delivered_at = now;
+
+    const { data: leg, error: updErr } = await supabase
+      .from('order_fulfillments')
+      .update(updates)
+      .eq('order_id', id).eq('vendor_id', vendorId)
+      .select().single();
+
+    if (updErr || !leg) {
+      return res.status(404).json({ error: 'No fulfillment for that vendor on this order' });
+    }
+
+    const { data: allLegs } = await supabase
+      .from('order_fulfillments').select('*').eq('order_id', id);
+
+    // Keep the order-level status honest, and keep the legacy single tracking
+    // columns populated when there is exactly one vendor, so nothing that still
+    // reads orders.tracking_number regresses.
+    const rolled = rollUpStatus(allLegs || [], order.status);
+    const orderUpdates = { status: rolled, updated_at: now };
+    const live = (allLegs || []).filter(f => f.status !== 'cancelled');
+    if (live.length === 1) {
+      orderUpdates.tracking_number = live[0].tracking_number || null;
+      orderUpdates.tracking_carrier = live[0].tracking_carrier || null;
+    }
+    if (rolled === 'shipped' && !order.shipped_at) orderUpdates.shipped_at = now;
+    await supabase.from('orders').update(orderUpdates).eq('id', id);
+
+    const vendorItems = (vendorsOnOrder(order).get(vendorId) || []);
+    await logOrderEvent(
+      supabase, id, 'fulfillment',
+      `${vendorId}: ${status || 'updated'}` +
+        (tracking_number ? ` — ${tracking_carrier || ''} ${tracking_number}`.trim() : '') +
+        (vendor_order_ref ? ` (their ref ${vendor_order_ref})` : ''),
+      req.adminUser?.email
+    );
+
+    let emailSent = false;
+    if (notify_customer && status === 'shipped' && order.customer_email && tracking_number) {
+      try {
+        const listed = vendorItems.map(i => `<li>${i.quantity || 1} × ${i.name}</li>`).join('');
+        const total = (Array.isArray(order.items) ? order.items : []).length;
+        const partial = vendorItems.length < total;
+        await emailService.sendEmail({
+          to: order.customer_email,
+          subject: `${partial ? 'Part of your order has' : 'Your order has'} shipped — ${order.order_number || id}`,
+          html: emailService.wrapEmailTemplate(`
+            <h2 style="color:#1a1a2e;">${partial ? 'Part of your order is on its way' : 'Your order is on its way'}</h2>
+            <p>Hi ${order.customer_name || 'there'},</p>
+            <p>${partial
+              ? `${vendorItems.length} of the ${total} items on order <strong>${order.order_number || id}</strong> have shipped. The rest ship separately and you'll get tracking for those as they go out.`
+              : `Your order <strong>${order.order_number || id}</strong> has shipped.`}</p>
+            <ul>${listed}</ul>
+            <p><strong>${tracking_carrier || 'Carrier'}:</strong> ${tracking_number}</p>
+            <p>Questions? Reply to this email or call (602) 833-3189.</p>
+            <p>— Surprise Granite</p>
+          `)
+        });
+        emailSent = true;
+        await logOrderEvent(supabase, id, 'email_sent', `Shipping notice for ${vendorId}`, req.adminUser?.email);
+      } catch (e) {
+        logger.warn('Per-vendor shipping email failed:', e.message);
+      }
+    }
+
+    res.json({ fulfillment: leg, order_status: rolled, email_sent: emailSent });
+  } catch (err) {
+    logger.error('Error updating fulfillment:', err.message);
+    res.status(500).json({ error: 'Failed to update fulfillment' });
+  }
+});
+
+/**
  * POST /api/admin/orders/:id/message - Send a message to customer
  */
 router.post('/:id/message', adminAccess, async (req, res) => {
