@@ -3859,26 +3859,36 @@
 
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-      // Resolve the real vendor(s) for this order from the catalog (by SKU),
-      // including their drop-ship email — instead of hardcoding one vendor.
-      // A single order can span multiple vendors (drop-ship), so list each.
+      // Resolve the real vendor(s) for this order, including their drop-ship
+      // email — a single order can span multiple vendors, so list each.
+      //
+      // Orders placed from 2026-08-27 carry vendor_id on the line item, resolved
+      // server-side by the price validator at checkout. Before that the webhook
+      // stored only name/qty/price, so this fell back to a SKU lookup that had
+      // no SKU to work with and printed "Confirm vendor before sending" on every
+      // order — including sample orders, where the vendor is the whole point.
       let vendorHtml = '<strong>Vendor</strong><br><em>Confirm vendor before sending.</em>';
       try {
+        const vids = [...new Set(items.map(it => it.vendor_id).filter(Boolean))];
+        const brandByVid = {};
         const skus = [...new Set(items.map(it => it.product_sku || it.sku).filter(Boolean))];
         if (skus.length) {
           const { data: cat } = await supabaseClient.from('catalog_products').select('sku,brand,vendor_id').in('sku', skus);
-          const brandByVid = {}; const vids = [];
-          (cat || []).forEach(c => { if (c.vendor_id && !brandByVid[c.vendor_id]) { brandByVid[c.vendor_id] = c.brand; vids.push(c.vendor_id); } });
-          if (vids.length) {
-            let vc = [];
-            try { const res = await supabaseClient.from('vendor_config').select('vendor_id,vendor_name,dropship_email,vendor_url').in('vendor_id', vids); vc = res.data || []; } catch (e) {}
-            const vcMap = {}; vc.forEach(v => vcMap[v.vendor_id] = v);
-            vendorHtml = vids.map(vid => {
-              const v = vcMap[vid] || {};
-              const nm = v.vendor_name || brandByVid[vid] || vid;
-              return `<strong>${esc(nm)}</strong>${v.dropship_email ? '<br>' + esc(v.dropship_email) : ''}`;
-            }).join('<br><br>') + '<br><em>Please fulfill &amp; drop-ship to the customer below.</em>';
-          }
+          (cat || []).forEach(c => {
+            if (!c.vendor_id) return;
+            if (!brandByVid[c.vendor_id]) brandByVid[c.vendor_id] = c.brand;
+            if (!vids.includes(c.vendor_id)) vids.push(c.vendor_id);
+          });
+        }
+        if (vids.length) {
+          let vc = [];
+          try { const res = await supabaseClient.from('vendor_config').select('vendor_id,vendor_name,dropship_email,vendor_url').in('vendor_id', vids); vc = res.data || []; } catch (e) {}
+          const vcMap = {}; vc.forEach(v => vcMap[v.vendor_id] = v);
+          vendorHtml = vids.map(vid => {
+            const v = vcMap[vid] || {};
+            const nm = v.vendor_name || brandByVid[vid] || vid;
+            return `<strong>${esc(nm)}</strong>${v.dropship_email ? '<br>' + esc(v.dropship_email) : ''}`;
+          }).join('<br><br>') + '<br><em>Please fulfill &amp; drop-ship to the customer below.</em>';
         }
       } catch (e) { /* keep placeholder */ }
 

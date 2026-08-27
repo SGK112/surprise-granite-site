@@ -177,11 +177,22 @@ async function validateCartPrices(items, supabase, shippingState) {
       result.warnings.push(validation.warning);
     }
 
-    // Use validated price, falling back to provided price with warning
+    // Use validated price, falling back to provided price with warning.
+    //
+    // resolvedVendorId is the vendor WE matched, not anything the client sent.
+    // It has to ride along on the item: the Stripe webhook rebuilds the stored
+    // order purely from Stripe line items, so anything not attached here is
+    // gone by the time staff need it. Vendor POs used to print "Confirm vendor
+    // before sending" on every order because of exactly that gap, and a sample
+    // order for "Sedona" — a name two active vendors share — could not be
+    // fulfilled at all without re-deriving the vendor by hand.
     const validatedItem = {
       ...item,
       validatedPrice: validation.validatedPrice || item.price,
-      priceSource: validation.priceSource || 'client'
+      priceSource: validation.priceSource || 'client',
+      resolvedVendorId: validation.vendorId || null,
+      resolvedSku: validation.resolvedSku || item.sku || null,
+      resolvedSlug: validation.resolvedSlug || null
     };
 
     result.validatedItems.push(validatedItem);
@@ -386,12 +397,12 @@ async function resolveSampleableProduct(item, supabase) {
       try {
         const { data } = await supabase
           .from('catalog_products')
-          .select('vendor_id, sample_eligible')
+          .select('vendor_id, sample_eligible, sku, slug')
           .eq(column, value).eq('active', true).limit(1).maybeSingle();
         if (data) {
           // Identity found. Its own flag is the verdict, either way.
           return data.sample_eligible
-            ? { vendorId: data.vendor_id || null, source: 'catalog_sample' }
+            ? { vendorId: data.vendor_id || null, sku: data.sku, slug: data.slug, source: 'catalog_sample' }
             : null;
         }
       } catch (err) {
@@ -401,12 +412,25 @@ async function resolveSampleableProduct(item, supabase) {
 
     if (!identity && base) {
       try {
+        // Names collide across vendors: "Sedona" is BOTH a sampleable Daltile
+        // slab and a non-sampleable Bolder Image Stone one, both active. The
+        // old `.limit(1)` had no ORDER BY, so which vendor answered — and
+        // therefore whether the sample sold at all — was left to Postgres.
+        // Take every match and only sell when the answer is unambiguous.
         const { data } = await supabase
           .from('catalog_products')
-          .select('vendor_id, sample_eligible')
-          .eq('name', base).eq('active', true).limit(1).maybeSingle();
-        if (data && data.sample_eligible) {
-          return { vendorId: data.vendor_id || null, source: 'catalog_sample' };
+          .select('vendor_id, sample_eligible, sku, slug')
+          .eq('name', base).eq('active', true);
+        const eligible = (data || []).filter(r => r.sample_eligible);
+        if (eligible.length === 1) {
+          const row = eligible[0];
+          return { vendorId: row.vendor_id || null, sku: row.sku, slug: row.slug, source: 'catalog_sample' };
+        }
+        if (eligible.length > 1) {
+          logger.warn('Ambiguous sample name — refusing rather than guessing the vendor', {
+            name: base, vendors: eligible.map(r => r.vendor_id)
+          });
+          return null;
         }
       } catch (err) {
         logger.debug('Sample catalog name lookup failed', { error: err.message });
@@ -420,13 +444,13 @@ async function resolveSampleableProduct(item, supabase) {
     const key = String(identity).toLowerCase();
     const known = allCountertopColours().bySlug.get(key);
     // We publish this colour: sampleable iff it survived the policy filter.
-    if (known) return bySlug.get(key) ? { vendorId: known.brand || null, source: 'static_countertops' } : null;
+    if (known) return bySlug.get(key) ? { vendorId: known.brand || null, slug: known.slug || null, source: 'static_countertops' } : null;
     // An id we have never seen falls through to the name, so a cart that sends a
     // stale slug for a colour we still sample keeps working.
   }
 
   const match = base && byName.get(base.toLowerCase());
-  if (match) return { vendorId: match.brand || null, source: 'static_countertops' };
+  if (match) return { vendorId: match.brand || null, slug: match.slug || null, source: 'static_countertops' };
 
   return null;
 }
@@ -443,6 +467,8 @@ async function validateSingleItem(item, supabase) {
     validatedPrice: null,
     priceSource: null,
     vendorId: null,
+    resolvedSku: null,
+    resolvedSlug: null,
     error: null,
     warning: null
   };
@@ -474,6 +500,8 @@ async function validateSingleItem(item, supabase) {
       result.validatedPrice = SAMPLE_PRICE_CENTS;
       result.priceSource = sampleable.source;
       result.vendorId = sampleable.vendorId;
+      result.resolvedSku = sampleable.sku || null;
+      result.resolvedSlug = sampleable.slug || null;
       return result;
     }
 
@@ -500,7 +528,7 @@ async function validateSingleItem(item, supabase) {
       // CATALOG is the source of truth. The cart sends the product slug as
       // item.id (catalog products) — also try SKU and exact name so static
       // products that were ingested into the catalog are matched too.
-      const catCols = 'id, name, retail_price, active, vendor_id';
+      const catCols = 'id, name, retail_price, active, vendor_id, sku, slug';
       if (!product && item.id) {
         const { data } = await supabase.from('catalog_products').select(catCols)
           .eq('slug', item.id).eq('active', true).limit(1).maybeSingle();
@@ -534,6 +562,8 @@ async function validateSingleItem(item, supabase) {
         // Capture the vendor so shipping can be charged per-vendor (each vendor
         // drop-ships separately and bills freight per shipment).
         result.vendorId = product.vendor_id || null;
+        result.resolvedSku = product.sku || item.sku || null;
+        result.resolvedSlug = product.slug || null;
         const dbPriceCents = Math.round(product.retail_price * 100);
         const clientPriceCents = item.price;
 
@@ -626,7 +656,12 @@ function buildStripeLineItems(validation) {
           images: item.image ? [item.image] : [],
           metadata: {
             product_id: item.id || '',
-            price_source: item.priceSource
+            price_source: item.priceSource,
+            // Read back by the checkout webhook. Stripe caps metadata values at
+            // 500 chars; these are short ids.
+            vendor_id: item.resolvedVendorId || '',
+            sku: item.resolvedSku || '',
+            slug: item.resolvedSlug || ''
           }
         },
         unit_amount: item.validatedPrice

@@ -2434,8 +2434,13 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             // Retrieve line items from Stripe session
             let lineItems = [];
             try {
+              // Expand the PRODUCT too: buildStripeLineItems stashes vendor_id/
+              // sku/slug in product_data.metadata, and that is the only channel
+              // by which what the price validator resolved reaches this webhook.
+              // Without it the stored order is just names and amounts, and the
+              // vendor PO cannot say who to order from.
               const sessionWithItems = await stripe.checkout.sessions.retrieve(session.id, {
-                expand: ['line_items']
+                expand: ['line_items', 'line_items.data.price.product']
               });
               lineItems = sessionWithItems.line_items?.data || [];
               crmLineItems = lineItems;
@@ -2453,12 +2458,20 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             const productLineItems = lineItems.filter(
               item => !isTaxDesc(item.description) && !isShippingDesc(item.description)
             );
-            orderItems = productLineItems.map(item => ({
-              name: item.description || item.price?.product?.name || 'Product',
-              quantity: item.quantity || 1,
-              unit_price: (item.price?.unit_amount || item.amount_total) / 100,
-              total: (item.amount_total || 0) / 100
-            }));
+            orderItems = productLineItems.map(item => {
+              const meta = item.price?.product?.metadata || {};
+              return {
+                name: item.description || item.price?.product?.name || 'Product',
+                quantity: item.quantity || 1,
+                unit_price: (item.price?.unit_amount || item.amount_total) / 100,
+                total: (item.amount_total || 0) / 100,
+                // Server-resolved at checkout, never client-supplied. printVendorPO
+                // looks these up to name the vendor and their drop-ship address.
+                vendor_id: meta.vendor_id || null,
+                sku: meta.sku || null,
+                slug: meta.slug || null
+              };
+            });
 
             // Calculate totals from session. Prefer Stripe's own tax/shipping
             // fields (populated when automatic_tax or shipping_options is on);
@@ -2619,9 +2632,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 const itemsToInsert = orderItems.map(item => ({
                   order_id: order.id,
                   product_name: item.name,
+                  product_sku: item.sku || null,
                   unit_price: item.unit_price,
                   quantity: item.quantity,
-                  line_total: item.total
+                  line_total: item.total,
+                  metadata: item.vendor_id ? { vendor_id: item.vendor_id, slug: item.slug || null } : {}
                 }));
 
                 const { error: itemsErr } = await supabase
@@ -4048,6 +4063,101 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           };
           await sendNotification(ADMIN_EMAIL, cancelEmail.subject, cancelEmail.html);
         } catch (emailErr) { logger.warn('Vendor cancel admin notification failed:', emailErr.message); }
+        }
+        break;
+      }
+
+      // A refund issued in the Stripe dashboard has to land back on the order,
+      // or the site shows "paid" for something we already gave back. Staff
+      // should never need the Stripe dashboard to know an order's real state —
+      // and when they do use it, this keeps the two in agreement.
+      //
+      // Fires for refunds from BOTH directions: the /api/admin/orders/:id/refund
+      // endpoint already writes the order row itself, so this is written to be
+      // idempotent on refund_id and simply re-affirms the same state.
+      case 'charge.refunded':
+      case 'charge.refund.updated': {
+        try {
+          const charge = event.data.object;
+          const paymentIntentId = charge.payment_intent
+            || (charge.object === 'refund' ? charge.payment_intent : null);
+          if (!paymentIntentId || !supabase) break;
+
+          const { data: order } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('stripe_payment_intent_id', paymentIntentId)
+            .limit(1)
+            .maybeSingle();
+          if (!order) {
+            logger.warn('Refund webhook: no order for payment intent', { paymentIntentId });
+            break;
+          }
+
+          // charge.amount_refunded is the cumulative total for the charge, which
+          // is what decides full vs partial — a single refund object is not.
+          const refundedTotal = (charge.amount_refunded != null
+            ? charge.amount_refunded
+            : (charge.amount || 0)) / 100;
+          const totalPaid = Number(order.total || 0);
+          const isFull = refundedTotal >= totalPaid - 0.005;
+
+          const existing = Array.isArray(order.metadata?.refunds) ? order.metadata.refunds : [];
+          const latest = charge.refunds?.data?.[0] || (charge.object === 'refund' ? charge : null);
+          const refundId = latest?.id || `charge_${charge.id}`;
+          const alreadyRecorded = existing.some(r => r.refund_id === refundId);
+
+          await supabase
+            .from('orders')
+            .update({
+              status: isFull ? 'refunded' : (order.status || 'confirmed'),
+              payment_status: isFull ? 'refunded' : 'partially_refunded',
+              metadata: {
+                ...(order.metadata || {}),
+                refunds: alreadyRecorded ? existing : [
+                  ...existing,
+                  {
+                    refund_id: refundId,
+                    amount: refundedTotal,
+                    reason: latest?.reason || null,
+                    created_at: new Date().toISOString(),
+                    by: 'stripe-dashboard'
+                  }
+                ]
+              },
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', order.id);
+
+          if (!alreadyRecorded) {
+            try {
+              await supabase.from('order_events').insert({
+                order_id: order.id,
+                event_type: 'refund',
+                description: `Refunded $${refundedTotal.toFixed(2)} (${isFull ? 'full' : 'partial'}) — synced from Stripe`,
+                actor: 'stripe',
+                created_at: new Date().toISOString()
+              });
+            } catch (e) { logger.warn('Could not log refund event:', e.message); }
+          }
+
+          // Full refund puts the goods back on the shelf, same as the in-app path.
+          if (isFull && !alreadyRecorded) {
+            try {
+              const { restockForOrder } = require('./routes/inventory');
+              await restockForOrder(supabase, {
+                order,
+                items: Array.isArray(order.items) ? order.items : [],
+                reason: 'refund'
+              });
+            } catch (e) { logger.warn('Refund restock failed:', e.message); }
+          }
+
+          logger.info('Refund synced from Stripe', {
+            order: order.order_number, amount: refundedTotal, full: isFull
+          });
+        } catch (e) {
+          logger.error('charge.refunded handler failed:', e.message);
         }
         break;
       }
