@@ -4079,9 +4079,16 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'charge.refund.updated': {
         try {
           const charge = event.data.object;
-          const paymentIntentId = charge.payment_intent
-            || (charge.object === 'refund' ? charge.payment_intent : null);
+          const paymentIntentId = charge.payment_intent;
           if (!paymentIntentId || !supabase) break;
+
+          // charge.refund.updated also fires when a refund FAILS or is cancelled
+          // (a closed bank account, say). Marking the order refunded on those
+          // would tell staff we returned money the customer never received.
+          if (charge.object === 'refund' && !['succeeded', 'pending'].includes(charge.status)) {
+            logger.warn('Ignoring non-successful refund event', { refund: charge.id, status: charge.status });
+            break;
+          }
 
           const { data: order } = await supabase
             .from('orders')
@@ -4096,9 +4103,18 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
           // charge.amount_refunded is the cumulative total for the charge, which
           // is what decides full vs partial — a single refund object is not.
-          const refundedTotal = (charge.amount_refunded != null
-            ? charge.amount_refunded
-            : (charge.amount || 0)) / 100;
+          // amount_refunded is the CUMULATIVE total on the charge, which is what
+          // decides full vs partial. A bare refund object only knows its own
+          // amount, so re-read the charge rather than under-count an order that
+          // was refunded in two goes.
+          let refundedCents = charge.amount_refunded;
+          if (refundedCents == null && charge.object === 'refund' && charge.charge) {
+            try {
+              const full = await stripe.charges.retrieve(charge.charge);
+              refundedCents = full.amount_refunded;
+            } catch (e) { logger.warn('Could not re-read charge for refund total:', e.message); }
+          }
+          const refundedTotal = (refundedCents != null ? refundedCents : (charge.amount || 0)) / 100;
           const totalPaid = Number(order.total || 0);
           const isFull = refundedTotal >= totalPaid - 0.005;
 
