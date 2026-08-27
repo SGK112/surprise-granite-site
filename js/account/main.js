@@ -3722,11 +3722,19 @@
                 ? `<a href="mailto:${escapeHtml(f.vendor_email)}" style="font-size:12px;color:var(--text-muted);">${escapeHtml(f.vendor_email)}</a>`
                 : `<span style="font-size:12px;color:var(--warning,#f59e0b);">no order email on file</span>`}
               <span style="flex:1;"></span>
-              ${unassigned ? '' : `<button onclick="printVendorPO('${orderId}', '${escapeHtml(vid)}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;cursor:pointer;">Print this vendor's PO</button>`}
+              ${unassigned ? '' : `
+                <button onclick="printVendorPO('${orderId}', '${escapeHtml(vid)}')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:12px;cursor:pointer;">Print PO</button>
+                <button onclick="sendVendorPO('${orderId}', '${escapeHtml(vid)}', this)" ${f.vendor_email ? '' : 'disabled'}
+                  title="${f.vendor_email ? 'Email this vendor their PO' : 'No order email on file for this vendor'}"
+                  style="padding:6px 12px;border-radius:6px;border:none;background:${f.vendor_email ? 'var(--gold-primary,#f9cb00)' : '#555'};color:${f.vendor_email ? 'var(--dark-surface,#1a1a2e)' : '#999'};font-size:12px;font-weight:600;cursor:${f.vendor_email ? 'pointer' : 'not-allowed'};">
+                  ${f.po_number ? 'Re-send PO' : 'Email PO'}
+                </button>`}
             </div>
 
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;padding-left:16px;">
               ${f.items.map(i => `• ${i.quantity || 1} × ${escapeHtml(i.name || 'Item')}${i.sku ? ` <span style="opacity:.6">(${escapeHtml(i.sku)})</span>` : ''}`).join('<br>')}
+              ${f.po_number ? `<div style="margin-top:6px;color:var(--success,#22c55e);">PO ${escapeHtml(f.po_number)} sent${f.ordered_at ? ' ' + new Date(f.ordered_at).toLocaleDateString('en-US') : ''}</div>` : ''}
+              ${f.notes ? `<div style="margin-top:6px;opacity:.8;">${escapeHtml(f.notes)}</div>` : ''}
             </div>
 
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -3751,8 +3759,50 @@
           </div>`;
         }).join('')}
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">
-          The order's overall status follows the slowest vendor. "Notify" emails the customer only the lines that vendor is shipping.
+          The order's overall status follows the slowest vendor. "Notify" emails the customer only that vendor's lines —
+          on Ordered ("being processed"), Shipped, or Delivered. Tracking is optional.
         </div>`;
+    }
+
+    // Emailing a PO is a promise to a supplier and cannot be unsent, so it is a
+    // deliberate click with the destination shown — never automatic on payment.
+    async function sendVendorPO(orderId, vendorId, btn) {
+      const msg = document.getElementById(`ff-msg-${orderId}-${vendorId}`);
+      const say = (t, ok) => {
+        showToast(t, ok ? 'success' : 'error');
+        if (msg) { msg.textContent = t; msg.style.color = ok ? 'var(--success,#22c55e)' : 'var(--danger,#ef4444)'; }
+      };
+      const resend = (btn?.textContent || '').includes('Re-send');
+      const note = prompt(resend
+        ? 'Re-sending this PO. Anything to add for the vendor? (blank for none)'
+        : 'Anything to add to this PO for the vendor? (blank for none)', '');
+      if (note === null) return;
+
+      const label = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      try {
+        const r = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/send-po`,
+          { note: note || undefined, resend });
+        say(`${r.po_number} emailed to ${r.to} (${r.items} line${r.items === 1 ? '' : 's'})`, true);
+        ordersLoaded = false;
+        await loadOrders();
+        await loadFulfillments(orderId);
+      } catch (err) {
+        // The server refuses a second send unless asked twice — surface that as
+        // a choice instead of an error the user can do nothing about.
+        if (/already sent/i.test(err.message) && confirm(err.message + '\n\nSend it again anyway?')) {
+          try {
+            const r = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/fulfillments/${encodeURIComponent(vendorId)}/send-po`,
+              { note: note || undefined, resend: true });
+            say(`${r.po_number} re-sent to ${r.to}`, true);
+            await loadFulfillments(orderId);
+          } catch (e2) { say('Failed: ' + e2.message, false); }
+        } else {
+          say('Failed: ' + err.message, false);
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+      }
     }
 
     async function saveFulfillment(orderId, vendorId, btn) {
@@ -3766,8 +3816,12 @@
         if (msg) { msg.textContent = t; msg.style.color = ok ? 'var(--success,#22c55e)' : 'var(--danger,#ef4444)'; }
       };
 
-      if (status === 'shipped' && !tracking_number) { say('Add a tracking number before marking shipped', false); return; }
-      if (notify && status !== 'shipped') { say('"Notify" only sends on a shipped status', false); return; }
+      // Tracking is optional: vendors ship samples in an envelope with no number.
+      if (notify && !['ordered', 'shipped', 'delivered'].includes(status)) {
+        say('"Notify" sends on Ordered, Shipped or Delivered', false); return;
+      }
+      if (status === 'shipped' && !tracking_number && notify &&
+          !confirm('No tracking number. Email the customer that it shipped without one?')) return;
 
       const label = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }

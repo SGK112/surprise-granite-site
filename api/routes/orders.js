@@ -402,31 +402,65 @@ router.patch('/:id/fulfillments/:vendorId', adminAccess, async (req, res) => {
       req.adminUser?.email
     );
 
+    // Tell the customer where their goods are.
+    //
+    // Tracking is NOT required. Vendors routinely ship a sample chip in an
+    // envelope with no number at all — the old rule silently sent nothing in
+    // exactly that case, which is the case samples are always in. 'ordered'
+    // notifies too, so "we've placed it with our supplier" is sayable.
     let emailSent = false;
-    if (notify_customer && status === 'shipped' && order.customer_email && tracking_number) {
+    const NOTIFIABLE = ['ordered', 'shipped', 'delivered'];
+    if (notify_customer && order.customer_email && NOTIFIABLE.includes(status)) {
       try {
         const listed = vendorItems.map(i => `<li>${i.quantity || 1} × ${i.name}</li>`).join('');
         const total = (Array.isArray(order.items) ? order.items : []).length;
         const partial = vendorItems.length < total;
-        await emailService.sendEmail({
-          to: order.customer_email,
-          subject: `${partial ? 'Part of your order has' : 'Your order has'} shipped — ${order.order_number || id}`,
-          html: emailService.wrapEmailTemplate(`
-            <h2 style="color:#1a1a2e;">${partial ? 'Part of your order is on its way' : 'Your order is on its way'}</h2>
+        const ref = order.order_number || id;
+        const some = partial ? `${vendorItems.length} of the ${total} items on your order` : 'Your order';
+        const copy = {
+          ordered: {
+            subject: `We're processing your order — ${ref}`,
+            heading: partial ? 'Part of your order is being processed' : 'Your order is being processed',
+            body: `${some} <strong>${ref}</strong> ${partial ? 'have' : 'has'} been placed with our supplier and ${partial ? 'are' : 'is'} being prepared for shipment.`
+          },
+          shipped: {
+            subject: `${partial ? 'Part of your order has' : 'Your order has'} shipped — ${ref}`,
+            heading: partial ? 'Part of your order is on its way' : 'Your order is on its way',
+            body: `${some} <strong>${ref}</strong> ${partial ? 'have' : 'has'} shipped.`
+                  + (partial ? " The rest ships separately and you'll hear from us as it goes out." : '')
+          },
+          delivered: {
+            subject: `${partial ? 'Part of your order was' : 'Your order was'} delivered — ${ref}`,
+            heading: 'Delivered',
+            body: `${some} <strong>${ref}</strong> should now have arrived.`
+          }
+        }[status];
+
+        // Say plainly that there is no number, rather than dropping the line and
+        // leaving the customer wondering whether we forgot it.
+        const trackingBlock = tracking_number
+          ? `<p><strong>${tracking_carrier || 'Carrier'}:</strong> ${tracking_number}</p>`
+          : (status === 'shipped'
+              ? `<p style="color:#555;">Our supplier shipped this without a tracking number — common for samples and small parcels. It usually arrives within a few business days.</p>`
+              : '');
+
+        await emailService.sendNotification(
+          order.customer_email,
+          copy.subject,
+          emailService.wrapEmailTemplate(`
+            <h2 style="color:#1a1a2e;">${copy.heading}</h2>
             <p>Hi ${order.customer_name || 'there'},</p>
-            <p>${partial
-              ? `${vendorItems.length} of the ${total} items on order <strong>${order.order_number || id}</strong> have shipped. The rest ship separately and you'll get tracking for those as they go out.`
-              : `Your order <strong>${order.order_number || id}</strong> has shipped.`}</p>
+            <p>${copy.body}</p>
             <ul>${listed}</ul>
-            <p><strong>${tracking_carrier || 'Carrier'}:</strong> ${tracking_number}</p>
+            ${trackingBlock}
             <p>Questions? Reply to this email or call (602) 833-3189.</p>
             <p>— Surprise Granite</p>
           `)
-        });
+        );
         emailSent = true;
-        await logOrderEvent(supabase, id, 'email_sent', `Shipping notice for ${vendorId}`, req.adminUser?.email);
+        await logOrderEvent(supabase, id, 'email_sent', `${status} notice for ${vendorId}`, req.adminUser?.email);
       } catch (e) {
-        logger.warn('Per-vendor shipping email failed:', e.message);
+        logger.warn('Per-vendor customer notice failed:', e.message);
       }
     }
 
@@ -434,6 +468,104 @@ router.patch('/:id/fulfillments/:vendorId', adminAccess, async (req, res) => {
   } catch (err) {
     logger.error('Error updating fulfillment:', err.message);
     res.status(500).json({ error: 'Failed to update fulfillment' });
+  }
+});
+
+/**
+ * POST /api/admin/orders/:id/fulfillments/:vendorId/send-po
+ *
+ * Build the PO for ONE vendor's lines and email it to the address on file, so
+ * the goods start moving without anyone retyping it.
+ *
+ * ⚠️ Deliberately NOT automatic on payment. A PO is money leaving the business
+ * and a promise to a supplier, and it cannot be unsent. On 2026-08-27 a
+ * Whitehaus sink sold for $105.30 against a $1,550 MSRP because of a bad
+ * scraped price; auto-sending would have put a PO in Alfi's inbox before anyone
+ * noticed. One human click is the whole safeguard. If a vendor is ever trusted
+ * enough to skip it, gate that per vendor in vendor_config — never globally.
+ */
+router.post('/:id/fulfillments/:vendorId/send-po', adminAccess, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { id, vendorId } = req.params;
+    const { note, resend = false, cc } = req.body || {};
+
+    const { data: order } = await supabase.from('orders').select('*').eq('id', id).single();
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Never buy stock against money we have given back or never took.
+    if (['refunded', 'cancelled'].includes(order.status)) {
+      return res.status(400).json({ error: `Order is ${order.status} — not sending a PO` });
+    }
+    if (order.payment_status && !['paid', 'partially_refunded'].includes(order.payment_status)) {
+      return res.status(400).json({ error: `Order is not paid (${order.payment_status}) — not sending a PO` });
+    }
+
+    const items = vendorsOnOrder(order).get(vendorId) || [];
+    if (!items.length) {
+      return res.status(400).json({ error: 'No items for that vendor on this order' });
+    }
+
+    const { data: vendor } = await supabase
+      .from('vendor_config').select('vendor_id, vendor_name, dropship_email')
+      .eq('vendor_id', vendorId).maybeSingle();
+
+    if (!vendor?.dropship_email) {
+      return res.status(400).json({
+        error: `No order email on file for "${vendorId}". Add vendor_config.dropship_email first.`
+      });
+    }
+
+    const { data: leg } = await supabase
+      .from('order_fulfillments').select('*')
+      .eq('order_id', id).eq('vendor_id', vendorId).maybeSingle();
+
+    // Sending twice makes a vendor ship twice. Make the second send deliberate.
+    if (leg?.po_number && !resend) {
+      return res.status(409).json({
+        error: `PO ${leg.po_number} was already sent to ${vendor.dropship_email}. Pass resend:true to send it again.`,
+        po_number: leg.po_number
+      });
+    }
+
+    const poNumber = leg?.po_number
+      || 'PO-' + String(order.order_number || id).replace(/[^A-Za-z0-9-]/g, '').toUpperCase()
+         + '-' + vendorId.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    const { subject, html } = emailService.generateVendorPOEmail(order, {
+      vendorName: vendor.vendor_name || vendorId,
+      items, poNumber, note
+    });
+
+    const result = await emailService.sendNotification(vendor.dropship_email, subject, html);
+    if (!result.success) {
+      return res.status(502).json({ error: 'Could not send the PO: ' + (result.reason || 'mail failed') });
+    }
+
+    const now = new Date().toISOString();
+    await supabase.from('order_fulfillments').update({
+      po_number: poNumber,
+      status: leg?.status === 'pending' || !leg?.status ? 'ordered' : leg.status,
+      ordered_at: leg?.ordered_at || now,
+      updated_at: now
+    }).eq('order_id', id).eq('vendor_id', vendorId);
+
+    const { data: allLegs } = await supabase
+      .from('order_fulfillments').select('*').eq('order_id', id);
+    await supabase.from('orders')
+      .update({ status: rollUpStatus(allLegs || [], order.status), updated_at: now })
+      .eq('id', id);
+
+    await logOrderEvent(
+      supabase, id, 'po_sent',
+      `${poNumber} emailed to ${vendor.vendor_name || vendorId} <${vendor.dropship_email}> — ${items.length} line(s)`,
+      req.adminUser?.email
+    );
+
+    res.json({ sent: true, po_number: poNumber, to: vendor.dropship_email, items: items.length });
+  } catch (err) {
+    logger.error('Error sending vendor PO:', err.message);
+    res.status(500).json({ error: 'Failed to send PO' });
   }
 });
 
@@ -692,10 +824,10 @@ router.post('/:id/refund', adminAccess, async (req, res) => {
     let emailSent = false;
     if (notify_customer && order.customer_email) {
       try {
-        await emailService.sendEmail({
-          to: order.customer_email,
-          subject: `Refund Issued — ${order.order_number || id}`,
-          html: emailService.wrapEmailTemplate(`
+        await emailService.sendNotification(
+          order.customer_email,
+          `Refund Issued — ${order.order_number || id}`,
+          emailService.wrapEmailTemplate(`
             <h2 style="color:#1a1a2e;">Refund Issued</h2>
             <p>Hi ${order.customer_name || 'there'},</p>
             <p>We've issued a refund of <strong>$${refundedAmount.toFixed(2)}</strong>
@@ -705,7 +837,7 @@ router.post('/:id/refund', adminAccess, async (req, res) => {
             <p>Questions? Reply to this email or call (602) 833-3189.</p>
             <p>— Surprise Granite</p>
           `)
-        });
+        );
         emailSent = true;
       } catch (emailErr) {
         logger.warn('Refund email failed:', emailErr.message);

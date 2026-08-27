@@ -1390,8 +1390,66 @@ function getTrackingUrl(carrier, trackingNumber) {
   return null;
 }
 
+/**
+ * Purchase order sent TO a vendor for the lines they are fulfilling.
+ *
+ * Deliberately carries NO pricing. Vendors drop-ship for us; they must not see
+ * our cost or the customer's retail. Items, SKUs, quantities and ship-to only —
+ * the same rule the printed PO follows.
+ */
+function generateVendorPOEmail(order, { vendorName, items, poNumber, note }) {
+  const esc = (v) => String(v == null ? '' : v)
+    .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const rows = (items || []).map(i => `
+    <tr>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;">
+        ${esc(i.name || 'Product')}
+        ${i.sku ? `<div style="font-size:11px;color:#888;margin-top:2px;">SKU: ${esc(i.sku)}</div>` : ''}
+      </td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;">${Number(i.quantity || 1)}</td>
+    </tr>`).join('');
+
+  const shipTo = (order.shipping_address_line1 || order.shipping_city)
+    ? `${esc(order.customer_name || '')}<br>
+       ${esc(order.shipping_address_line1 || '')}${order.shipping_address_line2 ? '<br>' + esc(order.shipping_address_line2) : ''}<br>
+       ${esc(order.shipping_city || '')}${order.shipping_city && order.shipping_state ? ', ' : ''}${esc(order.shipping_state || '')} ${esc(order.shipping_zip || '')}<br>
+       ${esc(order.shipping_country || 'US')}
+       ${order.customer_phone ? '<br>Phone: ' + esc(order.customer_phone) : ''}`
+    : '<em>No shipping address on file — please contact us before shipping.</em>';
+
+  const html = wrapEmailTemplate(`
+    <h2 style="color:#1a1a2e;margin:0 0 4px;">Purchase Order ${esc(poNumber)}</h2>
+    <p style="color:#555;margin:0 0 20px;">${esc(vendorName || 'Vendor')} &middot; ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+    <p>Please fulfil the following and <strong>drop-ship directly to the customer</strong> at the address below.</p>
+    ${note ? `<p style="background:#fffbe6;border-left:3px solid #f9cb00;padding:10px 12px;margin:16px 0;">${esc(note)}</p>` : ''}
+
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <thead>
+        <tr>
+          <th style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#888;border-bottom:2px solid #1a1a2e;padding:8px;">Item</th>
+          <th style="text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#888;border-bottom:2px solid #1a1a2e;padding:8px;">Qty</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div style="border:1px solid #e5e5e5;border-radius:6px;padding:14px 16px;margin:20px 0;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;font-weight:700;margin-bottom:8px;">Ship to</div>
+      <div style="font-size:13px;line-height:1.55;">${shipTo}</div>
+    </div>
+
+    <p>Please reply with your order number and tracking as soon as it ships, referencing <strong>${esc(poNumber)}</strong>.</p>
+    <p>Thank you,<br>${esc(COMPANY.name || 'Surprise Granite')}<br>(602) 833-3189</p>
+  `);
+
+  return { subject: `Purchase Order ${poNumber} — ${COMPANY.shortName || 'Surprise Granite'} (drop-ship)`, html };
+}
+
 module.exports = {
   sendNotification,
+  generateVendorPOEmail,
   sendAdminNotification,
   wrapEmailTemplate,
   generateLeadNotificationEmail,
