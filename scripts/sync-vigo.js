@@ -50,7 +50,12 @@ for (let page = 1; page <= 12; page++) {
   let products = [];
   try { products = JSON.parse(raw).products || []; } catch { break; }
   feed.push(...products);
-  if (products.length < 250) break;
+  // Shopify returns FEWER than the requested limit while more pages still
+  // exist: page 1 of this feed gives 242 of a possible 250, and the old
+  // `< 250 -> break` stopped there, missing pages 2 and 3 (373 more products).
+  // That left the sku count under the 300 floor below, so every run aborted
+  // with "feed short" and VIGO stock was never synced at all.
+  if (products.length === 0) break;
   execFileSync('sleep', ['2']);
 }
 const live = new Map();
