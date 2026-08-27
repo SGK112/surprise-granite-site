@@ -3586,8 +3586,9 @@
             <div style="background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px;">
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600;">Message Customer</div>
               <textarea id="modal-message-${orderId}" placeholder="Type a message to email the customer..." style="width:100%;min-height:64px;padding:10px 12px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--dark-surface);color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
-              <div style="margin-top:8px;text-align:right;">
-                <button onclick="orderAction_sendMessage('${orderId}')" style="padding:9px 18px;border-radius:6px;border:none;background:var(--gold-primary, #f9cb00);color:var(--dark-surface, #1a1a2e);font-size:13px;font-weight:600;cursor:pointer;">Send Email</button>
+              <div style="margin-top:8px;display:flex;align-items:center;justify-content:flex-end;gap:12px;">
+                <span id="modal-message-status-${orderId}" style="font-size:12px;flex:1;text-align:left;"></span>
+                <button onclick="orderAction_sendMessage('${orderId}', this)" style="padding:9px 18px;border-radius:6px;border:none;background:var(--gold-primary, #f9cb00);color:var(--dark-surface, #1a1a2e);font-size:13px;font-weight:600;cursor:pointer;">Send Email</button>
               </div>
             </div>
           </div>
@@ -3678,13 +3679,21 @@
       const API_BASE = SG_API_BASE;
       const session = await supabaseClient.auth.getSession();
       const token = session?.data?.session?.access_token;
+      // A silently-expired session used to send 'Bearer undefined' and come back
+      // 401 with no visible feedback. Say so instead of guessing.
+      if (!token) throw new Error('Your session expired — reload the page and sign in again');
       const res = await fetchWithTimeout(API_BASE + path, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: body ? JSON.stringify(body) : undefined
       }, 15000);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Request failed');
+      // Error pages (Cloudflare, Render cold start) come back as HTML — res.json()
+      // would throw a useless "Unexpected token <" here.
+      const raw = await res.text();
+      let data;
+      try { data = raw ? JSON.parse(raw) : {}; }
+      catch { throw new Error(`Server returned ${res.status} (${raw.slice(0, 80) || 'empty response'})`); }
+      if (!res.ok) throw new Error(data.error?.message || data.error || `Request failed (${res.status})`);
       return data;
     }
 
@@ -3734,14 +3743,33 @@
       } catch (err) { showToast('Failed: ' + err.message, 'error'); }
     }
 
-    async function orderAction_sendMessage(orderId) {
-      const message = document.getElementById('modal-message-' + orderId).value.trim();
-      if (!message) { showToast('Enter a message', 'error'); return; }
+    async function orderAction_sendMessage(orderId, btn) {
+      const box = document.getElementById('modal-message-' + orderId);
+      const status = document.getElementById('modal-message-status-' + orderId);
+      const say = (text, ok) => {
+        showToast(text, ok ? 'success' : 'error');
+        // Toasts render at the bottom of the page; this modal scrolls, so also
+        // report right next to the button that was clicked.
+        if (status) { status.textContent = text; status.style.color = ok ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)'; }
+      };
+      if (!box) { say('Message box not found — reopen the order', false); return; }
+      const message = box.value.trim();
+      if (!message) { say('Enter a message first', false); return; }
+      const label = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
       try {
         const result = await orderAction_apiCall('POST', `/api/admin/orders/${orderId}/message`, { message });
-        showToast(result.email_sent ? 'Message sent to customer' : 'Message saved but email failed', result.email_sent ? 'success' : 'error');
-        document.getElementById('modal-message-' + orderId).value = '';
-      } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+        if (result.email_sent) {
+          say('Email sent to the customer', true);
+          box.value = '';
+        } else {
+          say('Saved, but the email did not send — check the mail service', false);
+        }
+      } catch (err) {
+        say('Failed: ' + err.message, false);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+      }
     }
 
     // Issue a Stripe refund against an order
@@ -4993,7 +5021,7 @@
         padding: 12px 24px;
         border-radius: 8px;
         font-size: 14px;
-        z-index: 10001;
+        z-index: 2147483000;
         animation: fadeIn 0.3s ease;
         max-width: ${isMobile ? 'calc(100vw - 32px)' : '400px'};
         text-align: center;
