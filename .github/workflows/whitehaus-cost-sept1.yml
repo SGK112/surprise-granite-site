@@ -1,0 +1,65 @@
+name: whitehaus-cost-2026-09-01
+
+# Applies the Whitehaus standard-cost increase that takes effect 1 September
+# 2026 (159 SKUs, median +14.9%). The sheet arrived 2026-08-27; the costs are
+# not in force until the 1st, so this deliberately does NOT run at merge time —
+# writing them early would overstate cost and understate margin on every margin
+# report in between.
+#
+# Runs once, on the day, then this workflow and its SQL can be deleted.
+# retail_price is untouched: a cost rise is a fact, a price rise is the owner's
+# call. The MAP floors from the same sheet were applied on 2026-08-27.
+
+on:
+  schedule:
+    - cron: '0 15 1 9 *'      # 1 Sept, 08:00 America/Phoenix (AZ has no DST)
+  workflow_dispatch: {}        # lets the owner apply it early or re-run it
+
+concurrency:
+  group: catalog-write
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_ID: ypeypgwsycxcagncgdur
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the secret reached the runner
+        run: |
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::error::SUPABASE_DB_PASSWORD is missing — add it as a repo secret."
+            exit 1
+          fi
+          echo "DB pwd length: ${#SUPABASE_DB_PASSWORD}"
+
+      - name: Refuse to run before the effective date
+        run: |
+          TODAY=$(date -u +%F)
+          # workflow_dispatch is the owner explicitly choosing to apply early.
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "$TODAY" \< "2026-09-01" ]; then
+            echo "::error::Today is $TODAY; these costs take effect 2026-09-01."
+            exit 1
+          fi
+          echo "date check passed ($TODAY)"
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply the cost sheet
+        run: |
+          PGPASSWORD="$SUPABASE_DB_PASSWORD" psql \
+            "postgresql://postgres.$SUPABASE_PROJECT_ID@aws-0-us-west-2.pooler.supabase.com:5432/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f scripts/scheduled/whitehaus-cost-2026-09-01.sql
+
+      - name: Report the result
+        run: |
+          PGPASSWORD="$SUPABASE_DB_PASSWORD" psql \
+            "postgresql://postgres.$SUPABASE_PROJECT_ID@aws-0-us-west-2.pooler.supabase.com:5432/postgres" \
+            -tA -c "select 'active whitehaus rows at/below cost: '||count(*) from catalog_products where vendor_id='alfi-trade' and active and vendor_cost>0 and retail_price>0 and retail_price<=vendor_cost;"
