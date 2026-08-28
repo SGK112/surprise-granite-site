@@ -14,7 +14,7 @@
     email: 'info@surprisegranite.com',
     address: '15464 W Aster Dr, Surprise, AZ 85379',
     logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
-    license: 'AZ ROC# 341113',
+    license: 'AZ ROC# 367593',
     website: 'www.surprisegranite.com'
   };
 

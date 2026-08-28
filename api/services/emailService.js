@@ -24,7 +24,7 @@ const COMPANY = {
   website: 'https://www.surprisegranite.com',
   logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
   tagline: 'Premium Countertops & Expert Installation',
-  license: 'AZ ROC# 341113',
+  license: 'AZ ROC# 367593',
   poweredBy: 'Powered by Remodely.ai',
   googleReviewUrl: 'https://g.page/r/CXsLJCVtUF84EAE/review'
 };

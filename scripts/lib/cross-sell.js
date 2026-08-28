@@ -33,7 +33,7 @@ function build(kind) {
   const heading = isProduct ? 'Shop Materials for Your Project' : 'Let Us Install It — Phoenix Metro';
   const sub = isProduct
     ? 'Browse the countertops, sinks, faucets, tile, and flooring we carry — then let us fabricate and install.'
-    : 'Surprise Granite is a licensed AZ contractor (ROC #341113). We fabricate, install, and remodel across the Phoenix Valley.';
+    : 'Surprise Granite is a licensed AZ contractor (ROC #367593). We fabricate, install, and remodel across the Phoenix Valley.';
   const cards = items.map(([t, href, d]) => `
       <a href="${href}" style="display:block;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px 20px;text-decoration:none;transition:box-shadow .2s;">
         <div style="color:#1a2b3c;font-weight:700;font-size:15px;margin-bottom:4px;">${t}</div>

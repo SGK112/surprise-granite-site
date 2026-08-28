@@ -26,7 +26,7 @@ const MATERIALS = [
     h1: 'Granite Countertops',
     heroP: 'Every granite color we fabricate and install across the Phoenix metro — natural stone that’s heat- and scratch-resistant, with one-of-a-kind veining. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Granite countertops for Phoenix kitchens & bathrooms',
-    introP: 'Granite is a natural stone prized for its durability, heat resistance, and unique movement — no two slabs are alike. Surprise Granite sources granite from Arizona Tile, MSI, and top distributors, then fabricates and installs across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Granite is a natural stone prized for its durability, heat resistance, and unique movement — no two slabs are alike. Surprise Granite sources granite from Arizona Tile, MSI, and top distributors, then fabricates and installs across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['How much do granite countertops cost in Phoenix?', 'Installed granite starts around $55/sq ft for fabrication and installation on top of the slab material cost. Each color above shows its installed price per square foot; a free in-home measure gives you an exact quote.'],
       ['Does granite need to be sealed?', 'Yes — granite is a natural stone and we seal it during installation. A quick reseal every 1–2 years keeps it stain-resistant. It only takes a few minutes.'],
@@ -40,7 +40,7 @@ const MATERIALS = [
     h1: 'Quartz Countertops',
     heroP: 'Every engineered quartz color we install across the Phoenix metro — non-porous, low-maintenance, and consistent from slab to slab. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Quartz countertops for Phoenix kitchens & bathrooms',
-    introP: 'Engineered quartz is non-porous, stain-resistant, and never needs sealing — ideal for busy kitchens. Surprise Granite installs quartz from MSI Q, Caesarstone, Silestone, Cambria alternatives, and more across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Engineered quartz is non-porous, stain-resistant, and never needs sealing — ideal for busy kitchens. Surprise Granite installs quartz from MSI Q, Caesarstone, Silestone, Cambria alternatives, and more across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['How much do quartz countertops cost in Phoenix?', 'Installed quartz starts around $55/sq ft for fabrication and installation plus the slab cost. Each color above lists its installed price per square foot; a free in-home measure gives you an exact quote.'],
       ['Does quartz need to be sealed?', 'No. Engineered quartz is non-porous, so it never needs sealing — just clean with soap and water.'],
@@ -54,7 +54,7 @@ const MATERIALS = [
     h1: 'Quartzite Countertops',
     heroP: 'Every natural quartzite color we install across the Phoenix metro — the marble look you want with hardness that beats granite. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Quartzite countertops for Phoenix kitchens & bathrooms',
-    introP: 'Quartzite is a natural stone that offers the soft, flowing look of marble with a hardness greater than granite — colors like Taj Mahal, Mont Blanc, and Sea Pearl are favorites. Surprise Granite fabricates and installs quartzite across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Quartzite is a natural stone that offers the soft, flowing look of marble with a hardness greater than granite — colors like Taj Mahal, Mont Blanc, and Sea Pearl are favorites. Surprise Granite fabricates and installs quartzite across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['Is quartzite the same as quartz?', 'No. Quartzite is a 100% natural stone quarried from the earth; quartz is an engineered, man-made material. Quartzite has natural veining and excellent hardness, while quartz offers consistent color and zero maintenance.'],
       ['How much do quartzite countertops cost in Phoenix?', 'Installed quartzite starts around $55/sq ft for fabrication and installation plus the slab cost. Each color above shows its installed price; a free in-home measure gives an exact quote.'],
@@ -68,7 +68,7 @@ const MATERIALS = [
     h1: 'Marble Countertops',
     heroP: 'Every natural marble color we install across the Phoenix metro — timeless, luminous, and one of a kind. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Marble countertops for Phoenix kitchens & bathrooms',
-    introP: 'Marble brings unmatched elegance — the soft veining of Carrara, Calacatta, and Statuario has defined luxury kitchens and baths for centuries. It’s a softer natural stone that develops a lived-in patina; we seal it on install and can guide you on care. Surprise Granite fabricates and installs marble across the Phoenix metro from $55/sqft. Browse colors above, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Marble brings unmatched elegance — the soft veining of Carrara, Calacatta, and Statuario has defined luxury kitchens and baths for centuries. It’s a softer natural stone that develops a lived-in patina; we seal it on install and can guide you on care. Surprise Granite fabricates and installs marble across the Phoenix metro from $55/sqft. Browse colors above, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['Is marble too soft for kitchen countertops?', 'Marble is softer than granite or quartzite and can etch or scratch with acidic spills, so it’s often chosen for baths, vanities, and lower-traffic kitchens — or by homeowners who love its natural patina. We’ll help you decide.'],
       ['How much do marble countertops cost in Phoenix?', 'Installed marble starts around $55/sq ft for fabrication and installation plus the slab cost. Each color above shows installed pricing; a free in-home measure gives an exact quote.'],
@@ -82,7 +82,7 @@ const MATERIALS = [
     h1: 'Porcelain Countertops',
     heroP: 'Every large-format porcelain color we install across the Phoenix metro — UV-stable, heat- and scratch-resistant, and perfect for indoor or outdoor kitchens. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Porcelain countertops for Phoenix kitchens & bathrooms',
-    introP: 'Porcelain slabs are ultra-durable, UV-stable, and highly heat- and scratch-resistant — ideal for sun-exposed Arizona outdoor kitchens and modern large-format looks. Surprise Granite fabricates and installs porcelain across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Porcelain slabs are ultra-durable, UV-stable, and highly heat- and scratch-resistant — ideal for sun-exposed Arizona outdoor kitchens and modern large-format looks. Surprise Granite fabricates and installs porcelain across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['Are porcelain countertops good for outdoor kitchens?', 'Yes — porcelain is UV-stable so it won’t fade in Arizona sun, and it resists heat, scratches, and moisture, making it one of the best choices for outdoor kitchens.'],
       ['How much do porcelain countertops cost in Phoenix?', 'Installed porcelain starts around $55/sq ft for fabrication and installation plus the slab cost. Each color above shows installed pricing; a free in-home measure gives an exact quote.'],
@@ -96,7 +96,7 @@ const MATERIALS = [
     h1: 'Dekton Countertops',
     heroP: 'Every Dekton ultracompact color we install across the Phoenix metro — virtually scratch-, heat-, and UV-proof for the most demanding kitchens, indoors or out. Tap any color for installed pricing, a $12.99 sample, or a free in-home estimate.',
     introH2: 'Dekton countertops for Phoenix kitchens & bathrooms',
-    introP: 'Dekton by Cosentino is a sintered, ultracompact surface engineered for extreme durability — highly resistant to scratches, heat, stains, and UV fading, so it excels indoors and in Arizona outdoor kitchens. Surprise Granite fabricates and installs Dekton across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #341113.',
+    introP: 'Dekton by Cosentino is a sintered, ultracompact surface engineered for extreme durability — highly resistant to scratches, heat, stains, and UV fading, so it excels indoors and in Arizona outdoor kitchens. Surprise Granite fabricates and installs Dekton across the Phoenix metro from $55/sqft. Browse colors above with live installed pricing, order a $12.99 sample, or book a free in-home estimate. Licensed AZ ROC #367593.',
     faqs: [
       ['What is Dekton made of?', 'Dekton is an ultracompact surface by Cosentino made from a sintered blend of raw materials used in glass, porcelain, and quartz — engineered for maximum durability indoors and outdoors.'],
       ['How much do Dekton countertops cost in Phoenix?', 'Installed Dekton starts around $55/sq ft for fabrication and installation plus the slab cost. Each color above shows installed pricing; a free in-home measure gives an exact quote.'],
@@ -208,7 +208,7 @@ for (const m of MATERIALS) {
   // Bottom intro + FAQ section
   const oldIntro = `  <section class="m-intro">
     <h2>Countertop colors for Phoenix kitchens &amp; bathrooms</h2>
-    <p>Surprise Granite fabricates and installs granite, quartz, quartzite, marble, and porcelain countertops across the Phoenix metro — from Arizona Tile, MSI, Cosentino, Caesarstone, Daltile and more. Browse the full color range above, see each stone in a finished space, then order a $12.99 sample, view slabs in person at a partner yard, or book a free in-home estimate. Fabrication &amp; install from $55/sqft. Licensed AZ ROC #341113.</p>
+    <p>Surprise Granite fabricates and installs granite, quartz, quartzite, marble, and porcelain countertops across the Phoenix metro — from Arizona Tile, MSI, Cosentino, Caesarstone, Daltile and more. Browse the full color range above, see each stone in a finished space, then order a $12.99 sample, view slabs in person at a partner yard, or book a free in-home estimate. Fabrication &amp; install from $55/sqft. Licensed AZ ROC #367593.</p>
   </section>`;
   html = assertReplace(html, oldIntro, faqSection(m), 'intro');
 

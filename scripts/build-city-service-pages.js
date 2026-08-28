@@ -118,7 +118,7 @@ function page(citySlug, city, lat, lon, hook, svcSlug, svc) {
   <section class="sec"><div class="wrap">
     <h2>What's Included</h2>
     <ul style="color:#333;padding-left:20px;">${points}</ul>
-    <p style="color:#555;margin-top:16px;">Surprise Granite is a family-owned, licensed Arizona General Contractor (ROC #341113) serving ${city} and the entire Phoenix Valley. See our full <a href="${svc.parent}">${svc.label.toLowerCase()}</a> service, or <a href="/get-a-free-estimate">get a free in-home estimate</a> — we come to you in ${city}.</p>
+    <p style="color:#555;margin-top:16px;">Surprise Granite is a family-owned, licensed Arizona General Contractor (ROC #367593) serving ${city} and the entire Phoenix Valley. See our full <a href="${svc.parent}">${svc.label.toLowerCase()}</a> service, or <a href="/get-a-free-estimate">get a free in-home estimate</a> — we come to you in ${city}.</p>
   </div></section>
 
   <section class="sec" style="background:#f8f9fa;"><div class="wrap">

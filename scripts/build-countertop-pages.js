@@ -533,7 +533,7 @@ ${serviceStrip}
     <div class="footer-col"><h4>Connect</h4><div class="footer-contact"><p><strong>Service Area:</strong><br>Greater Phoenix, AZ<br>We Come to You!</p><p><strong>Hours:</strong><br>Mon-Fri 8am-5pm<br>Sat 9am-2pm</p></div></div>
   </div></div>
   <div class="footer-bottom"><div class="footer-bottom-inner">
-    <div class="footer-legal"><a href="/legal/privacy-policy">Privacy</a><a href="/legal/terms-of-use">Terms</a><a href="/legal/lifetime-warranty">Warranty</a><a href="https://azroc.my.site.com/AZRoc/s/contractor-search?licenseId=a0o8y000000OAdvAAG" target="_blank">ROC #341113</a></div>
+    <div class="footer-legal"><a href="/legal/privacy-policy">Privacy</a><a href="/legal/terms-of-use">Terms</a><a href="/legal/lifetime-warranty">Warranty</a><a href="https://azroc.my.site.com/AZRoc/s/contractor-search?licenseId=a0o8y000000OAdvAAG" target="_blank">ROC #367593</a></div>
     <div class="footer-copy">© 2026 Surprise Granite Marble &amp; Quartz</div>
   </div></div>
 </footer>

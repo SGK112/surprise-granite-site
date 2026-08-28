@@ -116,7 +116,7 @@ function page(citySlug, city, lat, lon, hook, matSlug, m) {
   <section class="sec"><div class="wrap">
     <h2>Why ${m.label} in ${city}?</h2>
     <ul style="color:#333;padding-left:20px;">${points}</ul>
-    <p style="color:#555;margin-top:16px;">Surprise Granite fabricates and installs ${m.label.toLowerCase()} countertops throughout ${city} and the Phoenix Valley — licensed AZ contractor (ROC #341113), free in-home estimates. Browse all <a href="${m.parent}">${m.label.toLowerCase()} options</a> or <a href="/locations/${citySlug}/countertops/">${city} countertops</a>.</p>
+    <p style="color:#555;margin-top:16px;">Surprise Granite fabricates and installs ${m.label.toLowerCase()} countertops throughout ${city} and the Phoenix Valley — licensed AZ contractor (ROC #367593), free in-home estimates. Browse all <a href="${m.parent}">${m.label.toLowerCase()} options</a> or <a href="/locations/${citySlug}/countertops/">${city} countertops</a>.</p>
   </div></section>
 
   <section class="sec" style="background:#f8f9fa;"><div class="wrap">

@@ -137,7 +137,7 @@ function contentFor(cfg) {
 <section class="sg-seo" style="max-width:1000px;margin:0 auto;padding:56px 20px;font-family:'Inter',system-ui,sans-serif;color:#1a1a2e;line-height:1.7;">
   <h2 style="color:#1a2b3c;font-size:clamp(24px,4vw,30px);margin-bottom:14px;">${c.h2}</h2>
   <p style="color:#555;">${c.intro}</p>
-  <p style="color:#555;margin-top:20px;">Surprise Granite is a family-owned, licensed Arizona General Contractor (ROC #341113) serving ${CITIES}. This tool is free to use — when you're ready, <a href="/get-a-free-estimate">get a free in-home estimate</a>.</p>${faqBlock}
+  <p style="color:#555;margin-top:20px;">Surprise Granite is a family-owned, licensed Arizona General Contractor (ROC #367593) serving ${CITIES}. This tool is free to use — when you're ready, <a href="/get-a-free-estimate">get a free in-home estimate</a>.</p>${faqBlock}
 </section>
 `;
 }

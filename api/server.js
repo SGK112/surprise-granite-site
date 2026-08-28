@@ -461,7 +461,7 @@ const COMPANY = {
   website: 'https://www.surprisegranite.com',
   logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
   tagline: 'Premium Countertops & Expert Installation',
-  license: 'AZ ROC# 341113'
+  license: 'AZ ROC# 367593'
 };
 
 // ==================== PDF GENERATION ====================
@@ -1786,7 +1786,7 @@ const emailTemplates = {
                     <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
                   </td>
                   <td style="text-align: right;">
-                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 341113</p>
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 367593</p>
                     <p style="margin: 4px 0 0; color: rgba(255,255,255,0.4); font-size: 10px;">Licensed & Insured</p>
                   </td>
                 </tr>
@@ -2055,7 +2055,7 @@ const emailTemplates = {
                   <td align="center">
                     <p style="margin: 0 0 4px; color: #1a2b3c; font-size: 13px; font-weight: 500;">Surprise Granite</p>
                     <p style="margin: 0 0 2px; color: #9ca3af; font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
-                    <p style="margin: 0; color: #9ca3af; font-size: 11px;">AZ ROC# 341113 · Licensed & Insured</p>
+                    <p style="margin: 0; color: #9ca3af; font-size: 11px;">AZ ROC# 367593 · Licensed & Insured</p>
                   </td>
                 </tr>
               </table>
@@ -2204,7 +2204,7 @@ const emailTemplates = {
             <td style="background: #1a1a2e; padding: 24px; text-align: center;">
               <p style="margin: 0 0 4px; color: #f9cb00; font-size: 13px; font-weight: 500;">Surprise Granite Marble & Quartz</p>
               <p style="margin: 0 0 8px; color: rgba(255,255,255,0.6); font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
-              <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 11px;">AZ ROC# 341113 · Licensed & Insured</p>
+              <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 11px;">AZ ROC# 367593 · Licensed & Insured</p>
             </td>
           </tr>
 
@@ -3618,7 +3618,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                     <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
                   </td>
                   <td style="text-align: right;">
-                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 341113</p>
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 367593</p>
                     <p style="margin: 4px 0 0; color: rgba(255,255,255,0.4); font-size: 10px;">Licensed & Insured</p>
                   </td>
                 </tr>

@@ -1189,7 +1189,7 @@ router.post('/blueprint/proposal/send', async (req, res) => {
 
     // Use preparedBy for header + footer when provided; otherwise fall back to SG defaults.
     const pbName    = (preparedBy.name    || 'Surprise Granite').toString();
-    const pbLicense = (preparedBy.license || 'AZ ROC #341113').toString();
+    const pbLicense = (preparedBy.license || 'AZ ROC #367593').toString();
     const pbAddress = (preparedBy.address || '15464 W Aster Dr, Surprise AZ 85379').toString();
     const pbPhone   = (preparedBy.phone   || '(602) 833-3189').toString();
     const pbWebsite = (preparedBy.website || 'surprisegranite.com').toString();
