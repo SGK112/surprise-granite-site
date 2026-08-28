@@ -982,16 +982,20 @@
     // tile layer via className, so markers and popups keep their colour.
     // OSM's tile usage policy requires attribution, which CARTO's blank string
     // was not providing either.
-    if (!document.getElementById('sg-map-tiles-css')) {
-      const st = document.createElement('style');
-      st.id = 'sg-map-tiles-css';
-      st.textContent = '.sg-map-tiles{filter:grayscale(1) brightness(1.04) contrast(0.96);}';
-      document.head.appendChild(st);
-    }
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      className: 'sg-map-tiles',
-      maxZoom: 19
+    // CARTO's keyless light_all basemap now returns tiles stamped "API KEY
+    // REQUIRED". OpenStreetMap's own tiles are not a substitute -- their
+    // usage policy bars this and their servers answer 418 "Access blocked".
+    // Esri's Light Gray canvas is keyless, permitted with attribution, and
+    // is the same pale basemap this map was designed against. Labels live in
+    // a separate Reference layer, so both are added -- base first.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; <a href="https://www.esri.com/">Esri</a>',
+      maxZoom: 19,
+      maxNativeZoom: 16
+    }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      maxNativeZoom: 16
     }).addTo(map);
 
     const pinIcon = L.divIcon({

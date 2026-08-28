@@ -926,12 +926,6 @@
         transition-duration: 0.01ms !important;
       }
     }
-  
-    /* OSM standard tiles, desaturated to match the pale basemap this
-       map was designed against. CARTO's keyless light_all now returns
-       an "API KEY REQUIRED" watermark, so the source had to change;
-       the filter is on the tile layer only, so markers stay in colour. */
-    .sg-map-tiles { filter: grayscale(1) brightness(1.04) contrast(0.96); }
   </style>
 
   <script type="application/ld+json">
@@ -1263,10 +1257,20 @@
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        className: 'sg-map-tiles',
-        maxZoom: 19
+      // CARTO's keyless light_all basemap now returns tiles stamped "API KEY
+      // REQUIRED". OpenStreetMap's own tiles are not a substitute -- their
+      // usage policy bars this and their servers answer 418 "Access blocked".
+      // Esri's Light Gray canvas is keyless, permitted with attribution, and
+      // is the same pale basemap this map was designed against. Labels live in
+      // a separate Reference layer, so both are added -- base first.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; <a href="https://www.esri.com/">Esri</a>',
+        maxZoom: 19,
+        maxNativeZoom: 16
+      }).addTo(map);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        maxNativeZoom: 16
       }).addTo(map);
 
       const pinIconYard = L.divIcon({
