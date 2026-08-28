@@ -975,8 +975,22 @@
       zoomControl: true
     }).setView([vendor.lat, vendor.lng], 14);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '',
+    // CARTO's keyless light_all basemap now returns tiles stamped
+    // "API KEY REQUIRED", which showed up across the whole map. Switched to
+    // OpenStreetMap's standard tiles (no key) and desaturated them to match the
+    // pale basemap this map was designed against. The filter is scoped to the
+    // tile layer via className, so markers and popups keep their colour.
+    // OSM's tile usage policy requires attribution, which CARTO's blank string
+    // was not providing either.
+    if (!document.getElementById('sg-map-tiles-css')) {
+      const st = document.createElement('style');
+      st.id = 'sg-map-tiles-css';
+      st.textContent = '.sg-map-tiles{filter:grayscale(1) brightness(1.04) contrast(0.96);}';
+      document.head.appendChild(st);
+    }
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      className: 'sg-map-tiles',
       maxZoom: 19
     }).addTo(map);
 

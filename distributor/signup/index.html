@@ -924,6 +924,12 @@
     .leaflet-container {
       background: var(--bg-secondary);
     }
+  
+    /* OSM standard tiles, desaturated to match the pale basemap this
+       map was designed against. CARTO's keyless light_all now returns
+       an "API KEY REQUIRED" watermark, so the source had to change;
+       the filter is on the tile layer only, so markers stay in colour. */
+    .sg-map-tiles { filter: grayscale(1) brightness(1.04) contrast(0.96); }
   </style>
   <link rel="stylesheet" href="/css/marketplace-mobile-fix.css?v=20260502a"/>
   <script defer src="/js/image-fallback.js?v=20260502a"></script>
@@ -1409,7 +1415,9 @@
           attributionControl: false
         }).setView([33.5, -112.0], 9);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          className: 'sg-map-tiles',
           maxZoom: 19
         }).addTo(heroMap);
       } catch(e) {}
@@ -1423,7 +1431,9 @@
           attributionControl: false
         }).setView([33.45, -112.07], 11);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          className: 'sg-map-tiles',
           maxZoom: 19
         }).addTo(previewMap);
 
