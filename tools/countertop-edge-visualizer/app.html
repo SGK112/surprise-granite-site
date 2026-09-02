@@ -119,7 +119,7 @@
 <div class="wrap" style="padding-top:14px">
   <div class="eyebrow">Countertop edges · 3D</div>
   <h1 class="display" style="font-size:clamp(19px,3vw,25px);margin:2px 0 6px">Design your <em>edge profile</em> in 3D</h1>
-  <p class="sub" style="margin-bottom:14px">Spin any profile on real stone — face, top, cut ends &amp; underside. <b>2cm</b> gets a build-up lip over ¾″ ply; <b>3cm</b> is solid stone.</p>
+  <p class="sub" style="margin-bottom:14px">Spin any profile on real stone — face, top, cut ends &amp; underside. <b>2cm</b> gets a build-up lip over underlayment; <b>3cm</b> is solid stone.</p>
 <div class="grid">
     <section class="stage" aria-live="polite">
       <div class="stage-head">
@@ -374,8 +374,8 @@ function buildGeometry(k,mode){
    const F=[[0,1,2,3,0,0,-1],[4,7,6,5,0,0,1],[0,4,5,1,0,-1,0],[3,2,6,7,0,1,0],[0,3,7,4,-1,0,0],[1,5,6,2,1,0,0]];
    for(const f of F){const q=[V[f[0]],V[f[1]],V[f[2]],V[f[3]]];for(const p of q){wpos.push(p[0],p[2],p[1]);wnrm.push(f[4],f[6],f[5]);}widx.push(wi,wi+1,wi+2,wi,wi+2,wi+3);wi+=4;}
   };
-  if(k==='mitered') box(0.35,L-0.35, 0.2, 1.72, 1.6, 2.0); // ¾″ sub-deck under the waterfall top slab
-  else box(0.35,L-0.35, 0, 3.0-1.5, 0.42, 1.0);           // ¾″ sub-deck under the 2cm laminated top
+  if(k==='mitered') box(0.35,L-0.35, 0.2, 1.72, 1.6, 2.0); // sub-deck under the waterfall top slab
+  else box(0.35,L-0.35, 0, 3.0-1.5, 0.42, 1.0);           // sub-deck under the 2cm laminated top
   wood={pos:new Float32Array(wpos),nrm:new Float32Array(wnrm),idx:new Uint16Array(widx),count:widx.length};
  }
  // lamination seam: two pieces of the same slab, fused & polished. On the polished FACE
@@ -489,7 +489,7 @@ function sync(){
  const le=$('leadEdge');if(le)le.textContent=p.n;
  $('qbtn').textContent='Get the '+p.n+' edge ('+curT+'cm) in my quote →';
  $('pbuild').textContent = curP==='mitered' ? '45° mitered corner — hidden seam' : (two?'2cm + build-up lip = 4cm-look edge':'3cm solid — no underlayment');
- $('hinttxt').innerHTML=curP==='mitered'?'<b>Mitered / waterfall</b> folds the slab down the side with a 45° corner joint, so the vein turns the corner as one solid piece — no build-up strip. The thin top rides on a ¾″ plywood sub-deck. Rotate to the <b>Side</b> to see the diagonal miter.':two?'<b>2cm</b> is two pieces of the same slab: the top, plus a build-up strip laminated under the <em>front edge only</em> to make a ~4cm-look lip that hides the ¾″ plywood. The two pieces are glued, clamped and fused, then the face is polished so the joint nearly vanishes — only a hairline remains, clearest on the sawn ends. Switch to <b>3cm</b> for one solid piece.':'<b>3cm</b> is a single solid piece — profile ground straight into the stone, no build-up, no plywood, no seam. Rotate to the <b>Side</b> to see the solid cut.';
+ $('hinttxt').innerHTML=curP==='mitered'?'<b>Mitered / waterfall</b> folds the slab down the side with a 45° corner joint, so the vein turns the corner as one solid piece — no build-up strip. The thin top rides on a plywood sub-deck. Rotate to the <b>Side</b> to see the diagonal miter.':two?'<b>2cm</b> is two pieces of the same slab: the top, plus a build-up strip laminated under the <em>front edge only</em> to make a ~4cm-look lip that hides the underlayment. The two pieces are glued, clamped and fused, then the face is polished so the joint nearly vanishes — only a hairline remains, clearest on the sawn ends. Switch to <b>3cm</b> for one solid piece.':'<b>3cm</b> is a single solid piece — profile ground straight into the stone, no build-up, no underlayment, no seam. Rotate to the <b>Side</b> to see the solid cut.';
 }
 // boot
 if(initGL()){ loadTexture(); rebuild(); sync(); requestAnimationFrame(frame); }
