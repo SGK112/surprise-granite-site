@@ -191,6 +191,7 @@ const { publicRateLimiter } = require('./middleware/publicRateLimiter');
 // Middleware instances for different endpoints
 const leadRateLimiter = publicRateLimiter({ maxRequests: 5, windowMs: 60000, message: 'Too many lead submissions. Please wait a minute.' });
 const emailRateLimiter = publicRateLimiter({ maxRequests: 3, windowMs: 60000, message: 'Too many email requests. Please wait a minute.' });
+const geocodeRateLimiter = publicRateLimiter({ maxRequests: 30, windowMs: 60000, message: 'Too many geocode requests.' });
 const customerRateLimiter = publicRateLimiter({ maxRequests: 10, windowMs: 60000, message: 'Too many requests. Please wait.' });
 
 // ============================================
@@ -4559,6 +4560,69 @@ app.post('/api/heic-to-jpeg',
 // ============ FLOORING & HEALTH ROUTES ============
 app.use('/api/flooring', flooringRouter);
 app.use('/api/health', healthRouter);
+// ── Reverse geocode proxy ─────────────────────────────────────────────────
+//
+// 98 pages used to call Google's Geocoding web service straight from the
+// browser, which forces an UNRESTRICTED api key: Google rejects referer-
+// restricted keys on that endpoint ("API keys with referer restrictions cannot
+// be used with this API"). An unrestricted key sitting in 98 public pages is
+// billable by anyone who copies it, and this repo is public.
+//
+// Doing the call here keeps the key server-side, where it can be locked to this
+// service's egress IPs. Answers only the question the pages actually asked:
+// what city/state is this lat/lng in.
+const geocodeCache = new Map();          // "lat,lng" -> { at, value }
+const GEOCODE_TTL_MS = 24 * 60 * 60 * 1000;
+
+app.get('/api/geocode/reverse', geocodeRateLimiter, async (req, res) => {
+  try {
+    const key = process.env.GOOGLE_MAPS_SERVER_KEY;
+    if (!key) {
+      // Never fall back to a browser key here — that would re-create the leak.
+      return res.status(503).json({ error: 'Geocoding is not configured' });
+    }
+    const lat = Number(req.query.lat), lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'lat and lng are required' });
+    }
+    // Round to ~100m. A city label needs no more, and it collapses the cache
+    // to something that actually hits.
+    const ck = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+    const hit = geocodeCache.get(ck);
+    if (hit && Date.now() - hit.at < GEOCODE_TTL_MS) return res.json(hit.value);
+
+    const r = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${ck}&result_type=locality|administrative_area_level_1|country&key=${key}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    const j = await r.json();
+    if (j.status !== 'OK' || !j.results?.length) {
+      return res.json({ status: j.status || 'ZERO_RESULTS', results: [] });
+    }
+    // Answer in GOOGLE'S OWN SHAPE. The 98 callers already parse
+    // results[0].address_components; returning a tidier object would mean
+    // rewriting the handler in all of them, and a one-line URL swap is a far
+    // safer edit than 98 hand-modified parsers. Only the three component types
+    // those callers read are passed through.
+    const WANTED = new Set(['locality', 'administrative_area_level_1', 'country']);
+    const value = {
+      status: 'OK',
+      results: [{
+        address_components: (j.results[0].address_components || [])
+          .filter((c) => (c.types || []).some((t) => WANTED.has(t)))
+          .map((c) => ({ long_name: c.long_name, short_name: c.short_name, types: c.types }))
+      }]
+    };
+    if (geocodeCache.size > 5000) geocodeCache.clear();   // crude bound; it is a label cache
+    geocodeCache.set(ck, { at: Date.now(), value });
+    res.json(value);
+  } catch (err) {
+    logger.warn('Reverse geocode failed:', err.message);
+    res.status(502).json({ error: 'Geocode failed' });
+  }
+});
+
 app.use('/api/admin/orders', ordersRouter);
 
 // ============ ASPN — Arizona Stone Providers Network ============

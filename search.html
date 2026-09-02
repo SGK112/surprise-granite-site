@@ -190,7 +190,12 @@ a, button {
         }
 
         function reverseGeocode(latitude, longitude) {
-            const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyAxOFaHXjn5lKZ4DKueRWdH0W-Cb9TOJZE`;
+            // Proxied through our own API so the Google key stays server-side.
+            // Google rejects referer-restricted keys on the Geocoding web
+            // service, so calling it from the browser forced an UNRESTRICTED
+            // key onto ~100 public pages — billable by anyone who copied it.
+            const apiBase = (window.SG_CONFIG && window.SG_CONFIG.API_BASE) || 'https://surprise-granite-email-api.onrender.com';
+            const apiUrl = `${apiBase}/api/geocode/reverse?lat=${latitude}&lng=${longitude}`;
             fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
