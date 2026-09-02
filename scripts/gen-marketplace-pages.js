@@ -346,6 +346,8 @@ const all = fetchAll();
 console.log(`fetched ${all.length} ${CAT} products`);
 REVIEWS = fetchReviewData();
 let made = 0, skipOOS = 0, skipNoPrice = 0, skipNoImg = 0, skipVendorOOS = 0;
+const writtenHandles = new Map();   // handle -> sku, to catch slug collisions
+const collisions = [];
 const oosList = [];
 const pulled = [];
 const urls = [];
@@ -369,6 +371,18 @@ for (const p of all) {
   }
   if (!(Number(p.retail_price) > 0)) { skipNoPrice++; continue; } // need a real price to sell
   const dir = path.join(OUTDIR, handle);
+  // One directory per handle: when two catalog rows share one, the second
+  // SILENTLY overwrites the first and that product never gets a page at all.
+  // It happened — the slug generator truncates at 100 chars without checking
+  // uniqueness, so Ruvati colour variants whose names differ only in a trailing
+  // SKU collapsed onto one slug. 13 products, 7 of them in stock, were
+  // unreachable while still appearing in the API-driven grids. Keep the first
+  // and shout, because this failure is otherwise completely invisible.
+  if (writtenHandles.has(handle)) {
+    collisions.push(`${handle} :: kept ${writtenHandles.get(handle)}, DROPPED ${p.sku}`);
+    continue;
+  }
+  writtenHandles.set(handle, p.sku);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), page(p));
   // Only sitemap products with a real image (imageless ones are noindexed in page()).
@@ -378,6 +392,10 @@ for (const p of all) {
   made++;
 }
 console.log(`generated ${made} pages | skipped OOS ${skipOOS}, vendor-OOS ${skipVendorOOS}, no-price ${skipNoPrice}, noindex no-image ${skipNoImg}`);
+if (collisions.length) {
+  console.log(`\n⚠ ${collisions.length} SLUG COLLISION(S) — these products got NO page:`);
+  collisions.forEach((c) => console.log(`   ${c}`));
+}
 if (oosList.length) {
   // Name them. "skipped 18" tells nobody which customer request will now come
   // up empty, and these are products we were advertising an hour ago.
