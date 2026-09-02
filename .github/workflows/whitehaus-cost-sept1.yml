@@ -24,18 +24,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SUPABASE_PROJECT_ID: ypeypgwsycxcagncgdur
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # SUPABASE_DB_PASSWORD does NOT work for a direct psql connection: the
+      # 2026-09-01 run failed with `password authentication failed for user
+      # "postgres"`. That secret is 44 chars; the pooler password is 16, so it
+      # holds something else entirely. SUPABASE_DB_URL is the full working
+      # connection string and is what the rest of the repo uses.
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Verify the secret reached the runner
         run: |
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "::error::SUPABASE_DB_PASSWORD is missing — add it as a repo secret."
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL is missing — add it as a repo secret."
             exit 1
           fi
-          echo "DB pwd length: ${#SUPABASE_DB_PASSWORD}"
+          echo "connection string length: ${#SUPABASE_DB_URL}"
 
       - name: Refuse to run before the effective date
         run: |
@@ -52,14 +56,8 @@ jobs:
           version: latest
 
       - name: Apply the cost sheet
-        run: |
-          PGPASSWORD="$SUPABASE_DB_PASSWORD" psql \
-            "postgresql://postgres.$SUPABASE_PROJECT_ID@aws-0-us-west-2.pooler.supabase.com:5432/postgres" \
-            -v ON_ERROR_STOP=1 \
-            -f scripts/scheduled/whitehaus-cost-2026-09-01.sql
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f scripts/scheduled/whitehaus-cost-2026-09-01.sql
 
       - name: Report the result
         run: |
-          PGPASSWORD="$SUPABASE_DB_PASSWORD" psql \
-            "postgresql://postgres.$SUPABASE_PROJECT_ID@aws-0-us-west-2.pooler.supabase.com:5432/postgres" \
-            -tA -c "select 'active whitehaus rows at/below cost: '||count(*) from catalog_products where vendor_id='alfi-trade' and active and vendor_cost>0 and retail_price>0 and retail_price<=vendor_cost;"
+          psql "$SUPABASE_DB_URL" -tA -c "select 'active whitehaus rows at/below cost: '||count(*) from catalog_products where vendor_id='alfi-trade' and active and vendor_cost>0 and retail_price>0 and retail_price<=vendor_cost;"

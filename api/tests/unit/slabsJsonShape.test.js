@@ -53,14 +53,34 @@ describe('data/slabs.json shape', () => {
     expect(dupes.map((s) => s.handle)).toEqual([]);
   });
 
-  it('does not publish the colours whose material was derived from their name', () => {
-    // MSI's "Soapstone Mist" is Q Quartz; Silestone's "Charcoal Soapstone" is quartz.
-    // They were filed as Soapstone, which suppressed their sample button.
-    const byHandle = new Map(slabs.map((s) => [s.handle, s]));
-    for (const h of ['soapstone-mist-quartz-sample', 'charcoal-soapstone-quartz-sample', 'lagoon-quartz-sample']) {
-      expect(byHandle.get(h)).toBeDefined();
-      expect(byHandle.get(h).productType).toBe('Quartz');
-      expect(byHandle.get(h).sample_eligible).toBe(true);
-    }
+  it('publishes no `-sample` chip rows — those are sold through the sample flow', () => {
+    // 074348ea333 removed all 288 `<slug>-sample` rows: they share category
+    // 'slab' but are chip SKUs, and browsing them showed 288 phantom products.
+    const chips = slabs.filter((s) => /-sample$/.test(String(s.handle || '')));
+    expect(chips.map((s) => s.handle)).toEqual([]);
   });
+});
+
+// The colours whose material used to be derived from their NAME.
+//
+// MSI's "Soapstone Mist" is Q Quartz and Silestone's "Charcoal Soapstone" is
+// porcelain, but both were filed as Soapstone — which the natural-stone rule
+// reads as un-sampleable, silently suppressing their sample button.
+//
+// This used to be asserted against slabs.json, where it has been vacuously
+// passing-then-failing since the chip rows were dropped from that file. The
+// static sample allowlist reads data/countertops.json, so the invariant belongs
+// here, checked against the SERVER's own pattern rather than a copy of it.
+describe('material is not mis-derived from a colour name', () => {
+  const { countertops } = require('../../../data/countertops.json');
+  // Same source of truth as api/validators/price-validator.js.
+  const NATURAL_STONE_RX = /granite|quartzite|marble|dolomite|limestone|travertine|onyx|soapstone|slate|semi.?precious/i;
+
+  for (const name of ['Soapstone Mist', 'Charcoal Soapstone', 'Lagoon']) {
+    it(`keeps "${name}" sampleable — its name is not its material`, () => {
+      const row = countertops.find((c) => String(c.name || '').toLowerCase() === name.toLowerCase());
+      expect(row).toBeDefined();
+      expect(NATURAL_STONE_RX.test(row.type || '')).toBe(false);
+    });
+  }
 });
