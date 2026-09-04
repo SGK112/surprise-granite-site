@@ -96,6 +96,59 @@
 <meta name="twitter:title" content="Remodely Design Pro — Kitchen Designer & Fabrication Plans">
 <meta name="twitter:description" content="Draw the room, lay out cabinets, pick your stone, and get a fabrication plan with cut lists and a priced item list. 2D plan and 3D view, free to try.">
 <meta name="twitter:image" content="https://www.surprisegranite.com/images/og/og-room-designer.jpg">
+<script>
+/**
+ * Whose name the app wears — resolved before first paint.
+ *
+ * The app is hosted on the countertop shop's domain but the product is
+ * Remodely Design Pro; its own manifest already says so. A visitor arriving
+ * from remodely.ai was landing on something branded Surprise Granite, which
+ * reads as the wrong company's software.
+ *
+ * Default stays Surprise Granite, so the shop's own visitors see no change.
+ * ?brand=remodely — how remodely.ai links to it — wears Remodely instead.
+ * This must run in <head>: the main script is ~2.8MB and parses for seconds,
+ * and a name that corrects itself after the fact is worse than none.
+ */
+(function () {
+  var BRANDS = {
+    'surprise-granite': {
+      name: 'Surprise Granite',
+      logo: '/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png',
+      home: 'https://www.surprisegranite.com/'
+    },
+    remodely: {
+      name: 'Remodely',
+      logo: 'https://www.remodely.ai/images/remodely-house-logo.svg',
+      home: 'https://www.remodely.ai/'
+    }
+  };
+  var q = '';
+  try { q = (new URLSearchParams(location.search).get('brand') || '').toLowerCase(); } catch (e) {}
+  var b = BRANDS[q];
+  if (!b) {
+    // A link from remodely.ai that lost its query string still should not show
+    // another company's name to that visitor.
+    try {
+      if (document.referrer && new URL(document.referrer).hostname.indexOf('remodely.ai') !== -1) b = BRANDS.remodely;
+    } catch (e) {}
+  }
+  b = b || BRANDS['surprise-granite'];
+  window.ACTIVE_BRAND = b;
+
+  function paint() {
+    var co = document.getElementById('preloaderCompanyMain');
+    if (co) co.textContent = b.name;
+    var img = document.getElementById('logoImg');
+    if (img) { img.src = b.logo; img.alt = b.name; }
+    var link = document.getElementById('mainLogo');
+    if (link) link.href = b.home;
+  }
+  window.__paintBrand = paint;
+  paint();
+  document.addEventListener('DOMContentLoaded', paint);
+})();
+</script>
 </head>
 <body>
 <!-- Dinner promo strip removed — workspace tools don't carry marketing widgets. -->
@@ -106,6 +159,7 @@
     <!-- Main Content -->
     <div class="preloader-content">
       <div class="preloader-company" id="preloaderCompanyMain">Surprise Granite</div>
+      <script>window.__paintBrand && window.__paintBrand();</script>
       <div class="preloader-tagline">Room Designer</div>
       <div class="preloader-loading">
         <div class="preloader-bar">
@@ -148,6 +202,7 @@
           <a href="/" class="logo" id="mainLogo">
             <img src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" alt="Surprise Granite" id="logoImg">
           </a>
+          <script>window.__paintBrand && window.__paintBrand();</script>
         </div>
         <input type="text" class="project-input" id="projectName" value="Untitled Project" placeholder="Project name">
       </div>
@@ -15301,7 +15356,7 @@
 
     async function init() {
       // Start preloader animation immediately
-      showPreloader('Loading workspace', 'Surprise Granite');
+      showPreloader('Loading workspace', (typeof ACTIVE_BRAND !== 'undefined' && ACTIVE_BRAND.name) || 'Surprise Granite');
 
       // Check if viewing a shared design (allow without login)
       const urlParams = new URLSearchParams(window.location.search);
