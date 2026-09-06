@@ -3083,7 +3083,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script defer src="/js/remodely-hub.js?v=20260713c"></script>
 
 <script>
-(function() {
+(async function() {
   const BRAND_TO_YARD = {
     'msi-surfaces': { slug: 'msi', name: 'MSI Surfaces' },
     'MSI': { slug: 'msi', name: 'MSI Surfaces' },
@@ -3155,6 +3155,34 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
   if (!handle) {
     document.getElementById('loading-overlay').innerHTML = '<div style="text-align:center;padding:40px;"><h2>Product Not Found</h2><p>No product handle specified.</p><a href="/marketplace/' + category + '/" style="color:#f9cb00;">Browse all ' + category + '</a></div>';
     return;
+  }
+
+  // ONE page per product.
+  //
+  // Goods (sinks, faucets, bathroom fixtures, tile, accessories) have a real
+  // static page at /marketplace/<dir>/<handle>/. This template renders the same
+  // product a second way, and the two disagreed: the static page always had a
+  // working Add to Cart while this one hid it for 760 fixtures and accessories,
+  // so a shower panel was buyable from Google and unbuyable from our own grid.
+  // Hand the visitor to the static page whenever one exists; slabs, remnants and
+  // flooring have no static page and are still rendered here.
+  // data/pdp-index.json is written by scripts/gen-marketplace-pages.js, so it
+  // lists exactly what was generated rather than what we assume exists.
+  const STATIC_DIR = { sink: 'sinks', sinks: 'sinks', faucet: 'faucets', faucets: 'faucets',
+    fixture: 'bathroom', bathroom: 'bathroom', 'bath-fixtures': 'bathroom',
+    accessory: 'kitchen-accessories', 'kitchen-accessories': 'kitchen-accessories',
+    tile: 'tile' };
+  const staticDir = STATIC_DIR[String(category).toLowerCase().trim()];
+  if (staticDir && !path.startsWith('/marketplace/' + staticDir + '/')) {
+    try {
+      const idx = await fetch('/data/pdp-index.json', { cache: 'force-cache' }).then(r => r.ok ? r.json() : null);
+      if (idx && Array.isArray(idx[staticDir]) && idx[staticDir].includes(handle)) {
+        // replace(), not assign(): the dynamic URL should not sit in history as
+        // a place the back button can return to.
+        window.location.replace('/marketplace/' + staticDir + '/' + encodeURIComponent(handle) + '/');
+        return;
+      }
+    } catch (_) { /* index unreachable — render here rather than dead-end */ }
   }
 
   // Color mapping

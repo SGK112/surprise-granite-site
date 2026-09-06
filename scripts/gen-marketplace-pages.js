@@ -411,6 +411,19 @@ const sm = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.si
 fs.writeFileSync(path.join(ROOT, `sitemap-${DIR}.xml`), sm);
 console.log(`wrote sitemap-${DIR}.xml (${urls.length} urls)`);
 
+// Manifest of the handles that HAVE a static page, so the dynamic template can
+// hand a visitor over to it instead of rendering the same product a second way.
+// Two templates for one product is how a shower panel came to show a buy button
+// in the grid and none on click-through: they disagreed and nobody could see it.
+// Written here because this is the only place that knows what was actually made.
+const manifestPath = path.join(ROOT, 'data', 'pdp-index.json');
+let manifest = {};
+try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch (_) { /* first run */ }
+manifest[DIR] = [...writtenHandles.keys()].sort();
+manifest._generated = new Date().toISOString();
+fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+console.log(`wrote data/pdp-index.json (${manifest[DIR].length} handles under ${DIR})`);
+
 /**
  * Correct the pages of products the vendor has pulled.
  *
