@@ -3394,10 +3394,20 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // ordered (and recover the customer email) instead of just an amount.
         let piLineItems = [];
         let piSessionEmail = null;
+        // Did this payment come from a storefront checkout? If so,
+        // checkout.session.completed already owns it — it has the real order
+        // number, the vendor lines and the customer's address, and it has
+        // already emailed everyone. This branch fires for EVERY succeeded
+        // payment on the account, so without this flag one storefront sale sent
+        // Josh two "New Order" emails under two different numbers (SG-TSJO6LO3
+        // and SG-0SMCD8VL, both pi_3UCcOL…0sMcd8VL) and an invoice payment
+        // arrived as a mystery "order" with no product on it.
+        let fromCheckout = false;
         try {
           const piSessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent.id, expand: ['data.line_items'], limit: 1 });
           const piSession = piSessions.data[0];
           if (piSession) {
+            fromCheckout = true;
             piSessionEmail = piSession.customer_details?.email || null;
             piLineItems = (piSession.line_items?.data || [])
               .filter(li => !/^(shipping|tax\b|tax\s|sales tax)/i.test(li.description || ''))
@@ -3416,7 +3426,9 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const shipping = paymentIntent.shipping;
         const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email || piSessionEmail;
 
-        if (receiptEmail) {
+        // A storefront buyer already had a confirmation from the checkout
+        // handler; a second one for the same purchase reads as a double charge.
+        if (receiptEmail && !fromCheckout) {
           try {
           const orderDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           const orderEmail = {
@@ -3647,10 +3659,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         } catch (emailErr) { logger.warn('Payment receipt email failed:', emailErr.message); }
         }
 
-        // Tell the CRM -- this is the event that carries the line items and
-        // the shipping address, so it is the one that lets a purchase order be
-        // raised against the right vendor.
-        notifyCrmOrder({
+        // Tell the CRM -- for payments that did NOT come through checkout
+        // (invoice and payment-link payments). A storefront sale is already in
+        // the CRM under its real order number; sending it again under an id
+        // invented from the payment intent is what put two numbers on one sale.
+        if (!fromCheckout) notifyCrmOrder({
           orderId: `SG-${paymentIntent.id.slice(-8).toUpperCase()}`,
           paymentIntentId: paymentIntent.id,
           customer: {
@@ -3670,17 +3683,26 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           payment_status: paymentIntent.status,
         }, logger);
 
-        // Notify admin
+        // Notify admin — only for payments the checkout handler did not already
+        // report, and NEVER as a "New Order". This branch sees invoice and
+        // payment-link payments too: one arrived as "New Order - #SG-1FGEZHUL -
+        // $30.24" with "Customer: N/A" and a single line reading "Invoice
+        // Payment", and there is no way to tell from that what was sold,
+        // because nothing was. Call a payment a payment.
+        const piKind = paymentIntent.metadata?.invoiceNumber
+          ? `Invoice ${paymentIntent.metadata.invoiceNumber}`
+          : (paymentIntent.description || 'Payment');
+        if (!fromCheckout) {
         try {
         const adminOrderEmail = {
-          subject: `New Order - #SG-${paymentIntent.id?.slice(-8)?.toUpperCase() || 'UNKNOWN'} - $${Number.isFinite(paymentIntent.amount) ? (paymentIntent.amount / 100).toFixed(2) : '0.00'}`,
+          subject: `Payment received — ${piKind} — $${Number.isFinite(paymentIntent.amount) ? (paymentIntent.amount / 100).toFixed(2) : '0.00'}`,
           html: `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-  <h2 style="color: #1a1a2e;">New Order Received!</h2>
+  <h2 style="color: #1a1a2e;">Payment received</h2>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 12px;">Not a storefront order — this is a payment against ${piKind}. Storefront orders arrive separately with their SG order number and vendor lines.</p>
   <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    <p><strong>Order ID:</strong> #SG-${paymentIntent.id.slice(-8).toUpperCase()}</p>
     <p><strong>Payment Intent:</strong> ${paymentIntent.id}</p>
     <p><strong>Customer:</strong> ${shipping?.name || 'N/A'}</p>
     <p><strong>Email:</strong> ${receiptEmail || 'N/A'}</p>
@@ -3701,6 +3723,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         };
         await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
         } catch (emailErr) { logger.warn('Payment admin notification failed:', emailErr.message); }
+        }
         break;
       }
 
