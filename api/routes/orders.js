@@ -193,12 +193,17 @@ router.put('/:id/tracking', adminAccess, async (req, res) => {
     const { id } = req.params;
     const { tracking_number, tracking_carrier, notify_customer = true, message } = req.body;
 
-    if (!tracking_number) {
-      return res.status(400).json({ error: 'Tracking number is required' });
-    }
+    // Tracking is NOT required to mark an order shipped.
+    //
+    // VIGO fulfils through Shop and returns no tracking number at all, so an
+    // order that had genuinely shipped could not be marked shipped and the
+    // customer could not be told — the 400 here held the whole order hostage to
+    // a number the vendor will never send. The shipping email already omits the
+    // tracking block when there is no number; say so plainly instead of nothing.
+    const tracked = String(tracking_number || '').trim();
 
     const updates = {
-      tracking_number,
+      tracking_number: tracked || null,
       tracking_carrier: tracking_carrier || null,
       status: 'shipped',
       shipped_at: new Date().toISOString(),
@@ -217,13 +222,23 @@ router.put('/:id/tracking', adminAccess, async (req, res) => {
       return res.status(500).json({ error: 'Failed to update tracking' });
     }
 
-    await logOrderEvent(supabase, id, 'tracking_added', `Tracking: ${tracking_carrier || 'N/A'} ${tracking_number}`, req.adminUser?.email);
+    await logOrderEvent(
+      supabase, id,
+      tracked ? 'tracking_added' : 'status_change',
+      tracked
+        ? `Tracking: ${tracking_carrier || 'N/A'} ${tracked}`
+        : 'Marked shipped — vendor provided no tracking number',
+      req.adminUser?.email
+    );
 
     // Send shipping notification email
     if (notify_customer && order.customer_email) {
+      // Without a number the email would otherwise be a shipping notice that
+      // says nothing about the shipment, which reads like a mistake and earns a
+      // "where is it?" phone call. Tell them why there is no link to click.
       const emailData = emailService.generateShippingNotificationEmail({
         ...order,
-        shipping_message: message
+        shipping_message: message || (tracked ? null : 'Your order has shipped directly from our supplier, who does not issue a tracking number for this item. It typically arrives within 3–7 business days — reply to this email or call us any time for an update.')
       });
       const result = await emailService.sendNotification(order.customer_email, emailData.subject, emailData.html);
       await logOrderEvent(supabase, id, 'email_sent', 'Shipping notification sent', req.adminUser?.email);

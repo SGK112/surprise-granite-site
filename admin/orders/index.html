@@ -827,7 +827,10 @@
       const tracking_number = document.getElementById('trackingNumber').value.trim();
       const tracking_carrier = document.getElementById('trackingCarrier').value;
       const notify = document.getElementById('trackingNotify').checked;
-      if (!tracking_number) { showToast('Enter a tracking number', 'error'); return; }
+      // VIGO fulfils through Shop and never issues a tracking number, so "no
+      // number" has to be a shippable state rather than a validation error —
+      // otherwise their orders can never be marked shipped or announced at all.
+      if (!tracking_number && !confirm('Mark this order shipped with no tracking number?\n\nThe customer is told the supplier does not provide one for this item.')) return;
       try {
         const result = await apiCall('PUT', `/api/admin/orders/${orderId}/tracking`, {
           tracking_number, tracking_carrier, notify_customer: notify
