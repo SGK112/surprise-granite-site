@@ -3402,7 +3402,14 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       // override for known purchasable types so the slab/countertop flow (which
       // relies on category === 'slabs') is never disturbed.
       if (product.category) {
-        const SG_CAT_MAP = { sink: 'sinks', faucet: 'faucets', tile: 'tile', bathroom: 'bathroom', 'bath-fixtures': 'bath-fixtures', 'kitchen-accessories': 'kitchen-accessories', other: 'other' };
+        // 'fixture' and 'accessory' are the catalog's OWN category values for 589
+        // shower panels/doors/drains and 171 kitchen accessories. They were missing
+        // here, so the map left category as the URL's 'fixture', which is not in
+        // purchasableCategories — and every one of those 760 products rendered with
+        // NO Add to Cart, no Buy Now and no price. The static /marketplace/bathroom/
+        // pages always had a working button, which is why the shower panel could be
+        // bought from Google while it looked unbuyable on this template.
+        const SG_CAT_MAP = { sink: 'sinks', faucet: 'faucets', fixture: 'bathroom', accessory: 'kitchen-accessories', tile: 'tile', bathroom: 'bathroom', 'bath-fixtures': 'bath-fixtures', 'kitchen-accessories': 'kitchen-accessories', other: 'other' };
         const mapped = SG_CAT_MAP[String(product.category).toLowerCase().trim()];
         if (mapped) category = mapped;
       }
