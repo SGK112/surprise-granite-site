@@ -2564,7 +2564,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               .from('orders')
               .insert({
                 order_number: orderNumber,
-                status: requiresShipment ? 'confirmed' : 'paid',
+                // NOT 'paid'. orders_status_check allows only pending, confirmed,
+                // processing, shipped, delivered, completed, cancelled, refunded —
+                // so every payment-only order (invoice, deposit, balance,
+                // quick-pay) failed this insert on a check-constraint violation
+                // and was never recorded at all. The insert is the critical path,
+                // so Stripe kept retrying a webhook that could never succeed.
+                // 'completed' is both allowed and true: nothing ships, nothing
+                // further to do.
+                status: requiresShipment ? 'confirmed' : 'completed',
                 requires_shipment: requiresShipment,
                 customer_email: session.customer_details?.email,
                 customer_name: session.customer_details?.name || session.shipping_details?.name,
@@ -3682,6 +3690,57 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           currency: paymentIntent.currency,
           payment_status: paymentIntent.status,
         }, logger);
+
+        // RECORD IT. A payment that produces no row is money we cannot account
+        // for: a $30.24 payment on 2026-09-06 reached Josh as an "order" with no
+        // product, no invoice behind it in either system, and nothing to look up.
+        // checkout.session.completed writes a row for payments it sees; this
+        // writes one for the payments it does not, so every dollar has a record
+        // whichever event arrives.
+        if (!fromCheckout && supabase) {
+          try {
+            const payNumber = `SG-${paymentIntent.id.slice(-8).toUpperCase()}`;
+            const { data: already } = await supabase
+              .from('orders').select('id').eq('stripe_payment_intent_id', paymentIntent.id).limit(1).maybeSingle();
+            if (!already) {
+              const dollars = Number.isFinite(paymentIntent.amount) ? paymentIntent.amount / 100 : 0;
+              const label = paymentIntent.metadata?.memo || piKind;
+              const { error: payErr } = await supabase.from('orders').insert({
+                order_number: payNumber,
+                // 'other' — NOT a new kind. orders.kind has a CHECK constraint
+                // (store|project|subscription|donation|other) and migrations here
+                // are applied by hand, so inventing 'payment' would reject the
+                // insert and lose the very record this block exists to keep.
+                kind: 'other',
+                status: 'completed',
+                payment_status: 'paid',
+                requires_shipment: false,
+                customer_email: receiptEmail || null,
+                customer_name: shipping?.name || null,
+                subtotal: dollars,
+                shipping_amount: 0,
+                tax_amount: 0,
+                total: dollars,
+                items: [{ name: label, quantity: 1, unit_price: dollars, total: dollars }],
+                stripe_payment_intent_id: paymentIntent.id,
+                paid_at: new Date((paymentIntent.created || Date.now() / 1000) * 1000).toISOString(),
+                // Whatever the payer was actually paying for, in their words and
+                // ours. Empty here is the signal that a payment link was raised
+                // without a reference — which is exactly how one became untraceable.
+                internal_notes: [
+                  paymentIntent.metadata?.invoiceNumber || paymentIntent.metadata?.invoice_ref
+                    ? `invoice ${paymentIntent.metadata.invoiceNumber || paymentIntent.metadata.invoice_ref}` : null,
+                  paymentIntent.metadata?.memo ? `memo: ${paymentIntent.metadata.memo}` : null,
+                  paymentIntent.metadata?.lead_id ? `lead ${paymentIntent.metadata.lead_id}` : null,
+                  paymentIntent.description || null,
+                ].filter(Boolean).join(' · ') || 'No invoice or reference on this payment.',
+                metadata: { payment_type: paymentIntent.metadata?.payment_type || 'unreferenced', source: 'payment_intent.succeeded' },
+              });
+              if (payErr) logger.error('Could not record non-checkout payment:', payErr.message);
+              else logger.info('Recorded payment', payNumber, 'for', paymentIntent.id);
+            }
+          } catch (recErr) { logger.error('Payment record failed:', recErr.message); }
+        }
 
         // Notify admin — only for payments the checkout handler did not already
         // report, and NEVER as a "New Order". This branch sees invoice and
