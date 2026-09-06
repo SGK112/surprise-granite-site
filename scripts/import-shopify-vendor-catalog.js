@@ -30,7 +30,12 @@ const CATEGORY = (type, title) => {
   if (/shower|tub|bathtub|drain|grid|strainer|soap|accessor|holder|stopper/.test(t)) return 'accessory';
   return 'fixture';
 };
-const stripHtml = (h) => String(h || '').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+// <script> goes WITH its contents, exactly like <style>. Removing only the tags
+// left the payload behind as text: VIGO opens body_html with a JSON-LD Product
+// schema, so 206 products stored `{ "@context": "https://schema.org/", … }` as
+// their description and showed a customer that blob, truncated mid-URL at 600
+// chars. Repaired by scripts/repair-jsonld-descriptions.js.
+const stripHtml = (h) => String(h || '').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
 
 (async () => {
   const mongo = new MongoClient(process.env.MONGODB_URI); await mongo.connect();

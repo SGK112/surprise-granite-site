@@ -3167,6 +3167,21 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     'yellow': '#FFD700', 'purple': '#800080'
   };
 
+  // A description is only a description if it reads like prose. VIGO's feed put a
+  // JSON-LD Product schema in body_html, the importer kept its text, and because
+  // the blob was LONGER than our own copy it won the tie-break below and showed
+  // customers `{ "@context": "https://schema.org/", ... }` in the Description tab.
+  // The data is repaired and the importer fixed; this makes the page refuse to
+  // render markup no matter what a future vendor feed contains.
+  function prose(s) {
+    if (!s) return null;
+    const t = String(s).trim();
+    if (!t) return null;
+    if (t[0] === '{' || t[0] === '[' || t[0] === '<') return null;
+    if (/"@context"|"@type"|schema\.org|<\/?script/i.test(t)) return null;
+    return t;
+  }
+
   function getColorHex(name) {
     if (!name) return '#cccccc';
     return colorHex[name.toLowerCase()] || '#cccccc';
@@ -3310,7 +3325,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             // which used to leave the Description tab on generic filler text
             // Never emit an empty schema/OG description (GSC "Missing field description"): fall back
             // to a name-led line when the catalog row has no description.
-            description: [p.description, p.short_description].filter(Boolean).sort((a, b) => b.length - a.length)[0]
+            description: [p.description, p.short_description].map(prose).filter(Boolean).sort((a, b) => b.length - a.length)[0]
               || `${p.name} — available at Surprise Granite with fast shipping, 30-day returns, and pro installation across metro Phoenix.`,
             tags: p.tags || [],
             available: p.in_stock !== false,
@@ -3482,7 +3497,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
       const title = product.title || product.name || 'Product';
       const brand = product.brandDisplay || product.vendor || 'Premium Brand';
       const material = product.productType || 'Stone';
-      const description = product.description || `Premium ${material} from ${brand}. Perfect for countertops, kitchen islands, and bathroom vanities.`;
+      const description = prose(product.description) || `Premium ${material} from ${brand}. Perfect for countertops, kitchen islands, and bathroom vanities.`;
 
       // Natural-stone / remnant disclaimer: every natural slab is unique, so
       // photos can't be relied on — show a "view in person" note. Engineered
