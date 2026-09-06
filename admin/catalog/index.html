@@ -113,10 +113,12 @@
     <!-- Recent products (filterable by vendor) -->
     <div class="section" id="productsSection" style="display:none;">
       <h2>Recent products <span class="count" id="productsCount">—</span></h2>
-      <div style="margin-bottom:12px;">
+      <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
         <select id="filterVendor" style="padding:8px 12px; border:1px solid var(--line); border-radius:6px;">
           <option value="">All vendors</option>
         </select>
+        <input type="search" id="filterSearch" placeholder="Search name, brand or SKU — e.g. Vigo Dilana, VG08001"
+               style="padding:8px 12px; border:1px solid var(--line); border-radius:6px; flex:1; min-width:260px;"/>
       </div>
       <div style="overflow-x:auto;">
         <table id="productsTable">
@@ -278,6 +280,15 @@
       const sel = document.getElementById('filterVendor');
       sel.innerHTML = '<option value="">All vendors</option>' + vendors.map(v => `<option value="${escapeHtml(v.vendor_id)}">${escapeHtml(v.vendor_name)}</option>`).join('');
       sel.onchange = () => loadProducts(sel.value);
+
+      const box = document.getElementById('filterSearch');
+      if (box && !box.dataset.wired) {
+        box.dataset.wired = '1';
+        let t;
+        const run = () => loadProducts(sel.value);
+        box.addEventListener('input', () => { clearTimeout(t); t = setTimeout(run, 300); });
+        box.addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(t); run(); } });
+      }
     }
     window.filterByVendor = (vid) => {
       document.getElementById('filterVendor').value = vid;
@@ -285,9 +296,14 @@
       productsSection.scrollIntoView({behavior:'smooth'});
     };
 
-    async function loadProducts(vendor='') {
+    async function loadProducts(vendor='', search=null) {
       const headers = authHeaders();
-      const url = API_BASE + '/api/admin/catalog/products?limit=50' + (vendor ? '&vendor=' + encodeURIComponent(vendor) : '');
+      // Read the box when the caller didn't pass one, so changing the vendor
+      // filter keeps the current search instead of silently widening it.
+      const q = (search === null ? (document.getElementById('filterSearch')?.value || '') : search).trim();
+      const url = API_BASE + '/api/admin/catalog/products?limit=100'
+        + (vendor ? '&vendor=' + encodeURIComponent(vendor) : '')
+        + (q ? '&search=' + encodeURIComponent(q) : '');
       const r = await fetch(url, { headers });
       const j = await r.json();
       if (!r.ok || !j.success) { showMsg('Products load failed: '+(j.error||'unknown'), 'err'); return; }

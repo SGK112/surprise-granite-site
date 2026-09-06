@@ -19,6 +19,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const { withInstalled, simpleMarginPct } = require('../lib/installedPricing');
+const { applyCatalogSearch } = require('../lib/catalogSearch');
 const { spawn } = require('child_process');
 const path = require('path');
 const { adminAccess } = require('../middleware/adminAuth');
@@ -235,6 +236,10 @@ router.get('/products', async (req, res) => {
     const category = s(req.query?.category, 50);
     if (vendor) q = q.eq('vendor_id', vendor);
     if (category) q = q.eq('category', category);
+    // Same filter the storefront uses, so what the owner can find and what a
+    // customer can buy are the same set of products.
+    const search = s(req.query?.search, 100);
+    if (search) q = applyCatalogSearch(q, search);
     const { data, error, count } = await q;
     if (error) return res.status(500).json({ error: error.message });
     // Attach the SAME margin math the public catalog uses. Without this the admin

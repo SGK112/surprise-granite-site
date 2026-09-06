@@ -201,6 +201,7 @@ function isInternal(req) {
 // the admin catalog and every margin renderer share ONE copy of the formula.
 // A second copy drifts, and a drifted copy reports margin that doesn't exist.
 const { withInstalled, simpleMarginPct } = require('../lib/installedPricing');
+const { applyCatalogSearch } = require('../lib/catalogSearch');
 
 router.get('/', async (req, res) => {
   try {
@@ -229,22 +230,7 @@ router.get('/', async (req, res) => {
     if (vendor) q = q.eq('vendor_id', vendor);
     if (sampleOnly) q = q.eq('sample_eligible', true);
     if (inStockOnly) q = q.eq('in_stock', true);
-    if (search) {
-      // Escape PostgREST or-filter delimiters so commas/parens can't break the query.
-      const s = search.replace(/[(),*]/g, ' ').trim();
-      // Match WORD BY WORD, not as one contiguous phrase. Brand and name live in
-      // separate columns, so the natural query — brand then product, "Vigo Dilana"
-      // — found nothing at all while each half on its own worked. Every token has
-      // to hit some column (AND across tokens, OR across columns), which still
-      // matches anything the old whole-phrase filter did.
-      // SKU is searched too: the column is populated, whatever the old comment here
-      // claimed, and "VG08001" returning nothing is how a customer decides we don't
-      // stock it.
-      const tokens = s.split(/\s+/).filter(Boolean).slice(0, 8);
-      for (const t of tokens) {
-        q = q.or(`name.ilike.%${t}%,brand.ilike.%${t}%,sku.ilike.%${t}%,subcategory.ilike.%${t}%,short_description.ilike.%${t}%`);
-      }
-    }
+    if (search) q = applyCatalogSearch(q, search);
 
     const { data, error, count } = await q;
     if (error) {
