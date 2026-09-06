@@ -438,10 +438,18 @@ console.log(`wrote data/pdp-index.json (${manifest[DIR].length} handles under ${
  * availability line with the restock date when the vendor gives one, and no
  * Add to Cart.
  */
-let corrected = 0;
-for (const { handle, eta } of pulled) {
-  const file = path.join(OUTDIR, handle, 'index.html');
-  if (!fs.existsSync(file)) continue;
+/**
+ * Retire one published page: noindex it, say plainly that it cannot be bought,
+ * disable the button and make the schema agree.
+ *
+ * Shared by both retirement paths on purpose. The orphan sweep below used to
+ * only set noindex, so a product removed from the catalog kept a live Add to
+ * Cart — 28 deactivated VIGO products were still offering a button that
+ * checkout would refuse, which reads to the customer as a broken store rather
+ * than a discontinued product.
+ */
+function retirePage(file, note) {
+  if (!fs.existsSync(file)) return false;
   let html = fs.readFileSync(file, 'utf8');
   const before = html;
 
@@ -451,9 +459,7 @@ for (const { handle, eta } of pulled) {
 
   html = html.replace(
     /<div class="pdp-ship">[\s\S]*?<\/div>/i,
-    eta
-      ? `<div class="pdp-ship pdp-oos">Currently unavailable · expected back ${esc(eta)}</div>`
-      : '<div class="pdp-ship pdp-oos">Currently unavailable from the manufacturer</div>',
+    `<div class="pdp-ship pdp-oos">${esc(note)}</div>`,
   );
 
   // A disabled button, not a removed one: the page keeps its shape, and a
@@ -467,7 +473,15 @@ for (const { handle, eta } of pulled) {
   html = html.replace(/"availability"\s*:\s*"https:\/\/schema\.org\/InStock"/gi,
     '"availability": "https://schema.org/OutOfStock"');
 
-  if (html !== before) { fs.writeFileSync(file, html); corrected++; }
+  if (html === before) return false;
+  fs.writeFileSync(file, html);
+  return true;
+}
+
+let corrected = 0;
+for (const { handle, eta } of pulled) {
+  const note = eta ? `Currently unavailable · expected back ${eta}` : 'Currently unavailable from the manufacturer';
+  if (retirePage(path.join(OUTDIR, handle, 'index.html'), note)) corrected++;
 }
 if (pulled.length) console.log(`corrected ${corrected} of ${pulled.length} already-published page(s) to say unavailable`);
 
@@ -485,15 +499,12 @@ if (liveHandles.size >= 50) { // safety: never sweep on a failed/partial API fet
       const file = path.join(OUTDIR, d, 'index.html');
       if (!fs.existsSync(file)) continue;
       const html = fs.readFileSync(file, 'utf8');
-      if (/content="noindex/i.test(html)) continue; // already noindexed
-      // Replace an existing robots meta (any format) or insert one after </title>.
-      const nu = /<meta name="robots"/i.test(html)
-        ? html.replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex, follow"/>')
-        : html.replace(/<\/title>/i, '</title>\n<meta name="robots" content="noindex, follow"/>');
-      if (nu !== html) { fs.writeFileSync(file, nu); orphaned++; }
+      // Already retired: noindexed AND not still offering a live button.
+      if (/content="noindex/i.test(html) && /add-to-cart-btn" disabled/i.test(html)) continue;
+      if (retirePage(file, 'No longer available')) orphaned++;
     }
   } catch (e) { console.warn('orphan sweep failed:', e.message); }
 } else {
   console.warn(`orphan sweep SKIPPED — only ${liveHandles.size} live products fetched (possible API issue)`);
 }
-console.log(`noindexed ${orphaned} orphan pages (product no longer in catalog)`);
+console.log(`retired ${orphaned} orphan pages (noindex + no buy button)`);
