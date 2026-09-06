@@ -29,9 +29,14 @@ const ROOT = path.join(__dirname, '..');
 const WRITE = process.argv.includes('--write');
 const mi = process.argv.indexOf('--dealer-mult');
 const DEALER_MULT = mi !== -1 && process.argv[mi + 1] ? parseFloat(process.argv[mi + 1]) : null;
+const gi = process.argv.indexOf('--margin');
+const DEACTIVATE_MISSING = process.argv.includes('--deactivate-missing');
 const UNDERCUT = 0.90;
 const TAX = 1.085;
-const MARGIN = 1.35;
+// 1.35 is the house rule, but it assumes a real dealer rate. While we pay VIGO's
+// list price a 1.35 markup lands 52% over Home Depot's shelf price, so the run
+// that stopped the bleeding used --margin 1.15. Drop the flag once VIGO sends a rate.
+const MARGIN = gi !== -1 && process.argv[gi + 1] ? parseFloat(process.argv[gi + 1]) : 1.35;
 
 for (const line of fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8').split('\n')) {
   const m = /^([A-Z_]+)=(.*)$/.exec(line.trim());
@@ -97,6 +102,8 @@ console.log(`our rows: ${rows.length} | matched: ${matched.length} | not in feed
 console.log(`cost == VIGO's own selling price : ${costIsTheirPrice.length}   <- the bug`);
 console.log(`priced ABOVE VIGO's own site     : ${dearer.length}`);
 console.log(`stock corrections                : ${matched.filter((m) => m.in_stock !== m.hit.available).length}`);
+const staleActive = unmatched.filter((r) => r.active);
+if (DEACTIVATE_MISSING) console.log(`to deactivate (gone from feed)   : ${staleActive.length}`);
 if (!DEALER_MULT) console.log('\ncost/retail NOT touched — rerun with --dealer-mult once VIGO sends their rate');
 
 if (!WRITE) { console.log('\nDry run — nothing written.'); process.exit(0); }
@@ -117,6 +124,12 @@ update catalog_products c
     ${vals}
   ) as v(id, available, price, msrp, cost, retail)
  where c.id = v.id;
-commit;`);
+${DEACTIVATE_MISSING && staleActive.length ? `
+-- A SKU VIGO no longer lists is one we cannot price, cost, or order. Leaving it
+-- buyable sells a product nobody can fulfil, so it comes down with the sync.
+update catalog_products
+   set active = false, in_stock = false, updated_at = now()
+ where id in (${staleActive.map((r) => `'${r.id}'::uuid`).join(', ')});
+` : ''}commit;`);
 execFileSync('psql', [DATABASE_URL, '-v', 'ON_ERROR_STOP=1', '-f', f], { stdio: 'inherit' });
 console.log(`\nsynced ${matched.length} VIGO products (stock${DEALER_MULT ? ' + cost + retail' : ' only'})`);
