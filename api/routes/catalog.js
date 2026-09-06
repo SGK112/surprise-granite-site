@@ -231,9 +231,19 @@ router.get('/', async (req, res) => {
     if (inStockOnly) q = q.eq('in_stock', true);
     if (search) {
       // Escape PostgREST or-filter delimiters so commas/parens can't break the query.
-      // Products carry no SKU, so we match the fields that actually exist.
       const s = search.replace(/[(),*]/g, ' ').trim();
-      q = q.or(`name.ilike.%${s}%,brand.ilike.%${s}%,subcategory.ilike.%${s}%,short_description.ilike.%${s}%`);
+      // Match WORD BY WORD, not as one contiguous phrase. Brand and name live in
+      // separate columns, so the natural query — brand then product, "Vigo Dilana"
+      // — found nothing at all while each half on its own worked. Every token has
+      // to hit some column (AND across tokens, OR across columns), which still
+      // matches anything the old whole-phrase filter did.
+      // SKU is searched too: the column is populated, whatever the old comment here
+      // claimed, and "VG08001" returning nothing is how a customer decides we don't
+      // stock it.
+      const tokens = s.split(/\s+/).filter(Boolean).slice(0, 8);
+      for (const t of tokens) {
+        q = q.or(`name.ilike.%${t}%,brand.ilike.%${t}%,sku.ilike.%${t}%,subcategory.ilike.%${t}%,short_description.ilike.%${t}%`);
+      }
     }
 
     const { data, error, count } = await q;
