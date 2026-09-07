@@ -72,25 +72,6 @@
   .err{color:#a3271f;font-size:14px;margin:-8px 0 14px;display:none}
   .step{display:none}.step.on{display:block}
 
-  .viz{border-top:1px solid var(--line);margin:26px 0 22px;padding-top:24px}
-  .viz h2{font-size:19px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
-  .vsub{color:var(--body);font-size:14.5px;margin:0 0 16px}
-  .drop{display:flex;align-items:center;justify-content:center;min-height:110px;cursor:pointer;
-    border:2px dashed var(--line);border-radius:14px;background:var(--stone);color:var(--body);
-    font-weight:700;font-size:15px;text-align:center;padding:16px;transition:border-color .15s,background .15s}
-  .drop:hover{border-color:var(--accent);background:#f2f8f6}
-  #vizStage{margin:16px 0}
-  #vizStage img{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
-  .cmp{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);line-height:0}
-  .cmp img{width:100%;display:block}
-  .cmp .after{position:absolute;inset:0;clip-path:inset(0 0 0 var(--v))}
-  .cmp input[type=range]{position:absolute;left:0;right:0;bottom:12px;width:calc(100% - 24px);
-    margin:0 12px;accent-color:var(--accent)}
-  .working{display:flex;flex-direction:column;align-items:center;gap:12px;padding:34px 16px;
-    background:var(--stone);border-radius:12px;color:var(--body);font-size:14.5px;text-align:center}
-  .spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--accent);
-    border-radius:50%;animation:sp 1s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -185,26 +166,7 @@
         <div class="n">We'll confirm it against real measurements before anything is ordered.</div>
       </div>
 
-      <!-- The visualizer sits AFTER the lead, not before it. Each render is a
-           paid model call, so it rewards a real customer rather than burning
-           budget on anonymous traffic — and it gives someone a reason to still
-           be on the page when the phone rings. -->
-      <div class="viz">
-        <h2>See it in your kitchen</h2>
-        <p class="vsub">Take a photo of the counters you have now and we'll show you
-          <span id="vizMat">the new material</span> in your own space. Takes about 30 seconds.</p>
-
-        <label class="drop" id="drop" for="photo">
-          <input type="file" id="photo" accept="image/*" capture="environment" hidden/>
-          <span id="dropText">📷 Take or choose a photo</span>
-        </label>
-
-        <div id="vizStage" hidden></div>
-        <button class="btn" id="vizGo" hidden>Show me my kitchen</button>
-        <div class="err" id="e4">Something went wrong rendering that photo. Try a straighter, brighter shot.</div>
-      </div>
-
-      <a class="btn" href="/" style="text-decoration:none;text-align:center;background:#6b7280">Back to home</a>
+      <a class="btn" href="/" style="text-decoration:none;text-align:center">Back to home</a>
     </section>
   </div>
 </div>
@@ -333,7 +295,6 @@
     })
     .then(function(){
       $('doneVal').textContent = money(st.low) + ' – ' + money(st.high);
-      $('vizMat').textContent = st.material === 'unsure' ? 'new countertops' : st.material;
       $('doneH').textContent = st.az ? "We'll be in touch today" : "We're finding your local pro";
       $('doneP').textContent = st.az
         ? 'Someone from Surprise Granite will call to book a measure. Bring questions — the measure is free either way.'
@@ -341,115 +302,6 @@
       show(4);
       if(GA_ID && window.gtag) window.gtag('event','generate_lead',{value:st.low,currency:'USD',routing:routing});
     });
-  });
-
-  // ── Visualizer ───────────────────────────────────────────────────────
-  // Their step-2 material choice becomes the prompt, so there is no product
-  // grid to pick from and no data/*.json to ship with this site. One tap:
-  // photo in, kitchen out.
-  var LOOK = {
-    quartz:    { name:'White quartz with soft grey veining', type:'quartz',    color:'white', style:'veined' },
-    granite:   { name:'Speckled granite in warm greys and browns', type:'granite', color:'grey', style:'speckled' },
-    quartzite: { name:'Dramatic quartzite with bold veining', type:'quartzite', color:'white', style:'heavily veined' },
-    unsure:    { name:'White quartz with soft grey veining', type:'quartz',    color:'white', style:'veined' }
-  };
-  var photoB64 = null;
-
-  // Phone cameras produce 4–12MB images. Sent raw they make the request slow,
-  // sometimes too large, and no better looking — the model works from a
-  // downscaled frame anyway.
-  function downscale(file, cb){
-    var fr = new FileReader();
-    fr.onload = function(){
-      var img = new Image();
-      img.onload = function(){
-        var max = 1400, w = img.width, h = img.height;
-        if(Math.max(w,h) > max){ var k = max/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
-        var c = document.createElement('canvas'); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        cb(c.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = function(){ cb(null); };
-      img.src = fr.result;
-    };
-    fr.onerror = function(){ cb(null); };
-    fr.readAsDataURL(file);
-  }
-
-  $('photo').addEventListener('change', function(){
-    var f = this.files && this.files[0]; if(!f) return;
-    $('e4').style.display = 'none';
-    $('dropText').textContent = 'Reading your photo…';
-    downscale(f, function(b64){
-      if(!b64){ $('dropText').textContent = '📷 Take or choose a photo'; $('e4').style.display='block'; return; }
-      photoB64 = b64;
-      $('dropText').textContent = '✓ Photo ready — ' + f.name.slice(0,28);
-      $('vizStage').hidden = false;
-      $('vizStage').innerHTML = '<img alt="Your kitchen as it is now" src="' + b64 + '"/>';
-      $('vizGo').hidden = false;
-    });
-  });
-
-  $('vizGo').addEventListener('click', function(){
-    if(!photoB64) return;
-    var btn = this; btn.disabled = true; btn.textContent = 'Rendering…';
-    $('e4').style.display = 'none';
-    $('vizStage').innerHTML = '<div class="working"><div class="spin"></div>' +
-      'Putting ' + (st.material === 'unsure' ? 'new counters' : st.material) + ' in your kitchen…' +
-      '<br><small style="opacity:.65">this takes 20–40 seconds</small></div>';
-
-    var ctrl = new AbortController();
-    var to = setTimeout(function(){ ctrl.abort(); }, 150000);
-
-    fetch(API + '/api/ai/room-visualize', {
-      method:'POST', headers:{'Content-Type':'application/json'}, signal: ctrl.signal,
-      body: JSON.stringify({
-        image: photoB64,
-        roomType: 'kitchen',
-        selections: [{ surface:'countertops', material: LOOK[st.material] || LOOK.unsure }]
-      })
-    })
-    .then(function(r){
-      // Keep the status. Without it every failure looks the same and the page
-      // blames the customer's photo for what was actually a 403 — which is
-      // exactly what happened the first time this ran.
-      return r.text().then(function(t){ return { status:r.status, ok:r.ok, text:t }; });
-    })
-    .then(function(res){
-      var d = {}; try { d = res.text ? JSON.parse(res.text) : {}; } catch(_){}
-      if(!res.ok) throw new Error('HTTP_' + res.status + (d.error ? ': ' + d.error : ''));
-      if(!d.image) throw new Error(d.error || 'NO_IMAGE');
-      // Before/after on one slider — seeing the change beats seeing the result.
-      $('vizStage').innerHTML =
-        '<div class="cmp" id="cmp" style="--v:50%">' +
-          '<img alt="Your kitchen now" src="' + photoB64 + '"/>' +
-          '<img class="after" alt="Your kitchen with new countertops" src="data:image/jpeg;base64,' + d.image + '"/>' +
-          '<input type="range" min="0" max="100" value="50" aria-label="Drag to compare before and after"/>' +
-        '</div>';
-      $('cmp').querySelector('input').addEventListener('input', function(){
-        $('cmp').style.setProperty('--v', this.value + '%');
-      });
-      btn.hidden = true;
-      if(GA_ID && window.gtag) window.gtag('event','visualize_render',{material:st.material});
-    })
-    .catch(function(err){
-      console.error('visualize failed', err);
-      var m = String(err && err.message || '');
-      // Say what actually went wrong. "Try a brighter photo" is only true when
-      // the model genuinely could not apply the material; for a network or
-      // server fault it sends someone off retaking photos that were fine.
-      $('e4').textContent =
-        err.name === 'AbortError'          ? 'That took longer than 2 minutes. The render service may be busy — try again in a moment.' :
-        m === 'NO_IMAGE'                   ? 'We couldn\'t apply the material to that photo. Try a straighter, brighter shot of the counters.' :
-        /^HTTP_(401|403)/.test(m)          ? 'This site isn\'t authorised to reach the render service yet. Nothing to do with your photo — we\'re on it.' :
-        /^HTTP_5/.test(m)                  ? 'The render service is having a problem right now. Your quote is safely submitted — try the photo again later.' :
-        /^HTTP_/.test(m)                   ? 'The render service refused that request (' + m.replace('HTTP_','') + ').' :
-                                             'Couldn\'t reach the render service. Check your connection and try again.';
-      $('vizStage').innerHTML = '<img alt="Your kitchen as it is now" src="' + photoB64 + '"/>';
-      $('e4').style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Try again';
-    })
-    .then(function(){ clearTimeout(to); });
   });
 
   // Analytics stays off until a real measurement id is set — the thing
