@@ -2737,5 +2737,105 @@
   <p style="color:#4a5159;font-size:15px;margin:0 0 14px">Want a real quote and a pro who can do the work?</p>
   <a href="/quote/" style="display:inline-block;background:#1f6f5c;color:#fff;text-decoration:none;font-weight:800;font-size:16px;padding:15px 28px;border-radius:12px">Get my free quote →</a>
 </div>
+<script>
+(function(){
+  var card = document.querySelector('.calculator-card');
+  var sections = document.getElementById('sections');
+  var grids = document.querySelectorAll('.project-options .options-grid');
+  var genBtn = document.querySelector('.generate-quote-btn');
+  if(!card || !sections || grids.length < 2 || !genBtn) return;   // stay long-form
+
+  var STEPS = [
+    { el: sections,  title: 'Measure your counters', sub: 'Length and depth of each run. Rough numbers are fine.' },
+    { el: grids[0],  title: 'Material and service',  sub: 'What you want, and how much of the work is ours.' },
+    { el: grids[1],  title: 'Sinks, cooktops, extras', sub: 'Only what applies — most kitchens need one or two.' }
+  ];
+
+  var bar = document.createElement('div');
+  bar.className = 'nc-steps';
+  bar.innerHTML = '<div class="nc-prog">' + STEPS.concat([0]).map(function(){ return '<i></i>'; }).join('') + '</div>' +
+    '<h2 class="nc-title"></h2><p class="nc-sub"></p>';
+  card.insertBefore(bar, card.firstChild);
+
+  // The lead card. The estimate is the thing they came for, so it is what the
+  // form is exchanged for — asking first would be a toll, asking after is a trade.
+  var lead = document.createElement('div');
+  lead.className = 'nc-lead';
+  lead.innerHTML =
+    '<label>Your name</label><input id="ncName" type="text" autocomplete="name" placeholder="First and last">' +
+    '<label>Email</label><input id="ncEmail" type="email" autocomplete="email" placeholder="you@example.com">' +
+    '<label>Phone</label><input id="ncPhone" type="tel" autocomplete="tel" placeholder="(602) 555-0134">' +
+    '<label>ZIP code</label><input id="ncZip" type="text" inputmode="numeric" maxlength="5" placeholder="85379">' +
+    '<label class="nc-ok"><input type="checkbox" id="ncConsent"> I agree to be contacted about this estimate by phone, text or email, ' +
+    'including by a licensed fabricator near me if the work is outside Arizona. Consent is not a condition of purchase.</label>' +
+    '<div class="nc-err" id="ncErr">Add your name, a valid email, a ZIP and tick the box.</div>';
+  sections.parentNode.insertBefore(lead, sections);
+
+  var nav = document.createElement('div');
+  nav.className = 'nc-nav';
+  nav.innerHTML = '<button type="button" class="nc-back">← Back</button><button type="button" class="nc-next">Continue</button>';
+  card.appendChild(nav);
+
+  var i = 0, LAST = STEPS.length;
+  function draw(){
+    STEPS.forEach(function(s, n){ s.el.style.display = (n === i) ? '' : 'none'; });
+    lead.style.display = (i === LAST) ? '' : 'none';
+    genBtn.style.display = 'none';
+    bar.querySelector('.nc-title').textContent = i === LAST ? 'Where should we send it?' : STEPS[i].title;
+    bar.querySelector('.nc-sub').textContent   = i === LAST ? 'Your estimate lands in your inbox, and a real person checks the numbers.' : STEPS[i].sub;
+    Array.prototype.forEach.call(bar.querySelectorAll('.nc-prog i'), function(d, n){ d.classList.toggle('on', n <= i); });
+    nav.querySelector('.nc-back').style.visibility = i ? 'visible' : 'hidden';
+    nav.querySelector('.nc-next').textContent = i === LAST ? 'Send me my estimate' : (i === LAST - 1 ? 'Almost done' : 'Continue');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  nav.querySelector('.nc-back').addEventListener('click', function(){ if(i){ i--; draw(); } });
+  nav.querySelector('.nc-next').addEventListener('click', function(){
+    if(i < LAST){ i++; draw(); return; }
+    var nm = document.getElementById('ncName').value.trim();
+    var em = document.getElementById('ncEmail').value.trim();
+    var zip = document.getElementById('ncZip').value.replace(/\D/g,'');
+    if(!nm || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) || zip.length !== 5 || !document.getElementById('ncConsent').checked){
+      document.getElementById('ncErr').style.display = 'block'; return;
+    }
+    document.getElementById('ncErr').style.display = 'none';
+    var sqft = (document.getElementById('totalSqft')||{}).textContent || '';
+    var az = (function(n){ return n >= 85001 && n <= 86556; })(parseInt(zip,10));
+    fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        homeowner_name: nm, homeowner_email: em, homeowner_phone: document.getElementById('ncPhone').value.trim(),
+        project_type:'kitchen_countertops', project_zip: zip,
+        project_details: 'ROUTING: ' + (az ? 'in-house (AZ)' : 'REFERRAL — needs a fabricator in ' + zip) +
+          ' | calculator sqft: ' + sqft + ' | consent captured: yes (' + new Date().toISOString() + ')',
+        source: 'newcountertops.com/calculator'
+      })
+    }).catch(function(e){ console.error('lead capture failed', e); });
+    // Hand back to the calculator's own estimate flow, untouched.
+    var em2 = document.getElementById('quoteEmail') || document.getElementById('email');
+    if(em2 && !em2.value) em2.value = em;
+    generateQuote();
+  });
+  draw();
+})();
+</script>
+<style>
+  .nc-steps{margin-bottom:18px}
+  .nc-prog{display:flex;gap:6px;margin-bottom:16px}
+  .nc-prog i{flex:1;height:4px;border-radius:2px;background:#e6e3dd}
+  .nc-prog i.on{background:#1f6f5c}
+  .nc-title{font-size:20px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em}
+  .nc-sub{color:#4a5159;font-size:14.5px;margin:0}
+  .nc-nav{display:flex;gap:12px;align-items:center;margin-top:22px}
+  .nc-nav button{font:inherit;font-weight:800;border-radius:12px;cursor:pointer;border:0;padding:15px 22px}
+  .nc-back{background:none;color:#7a828b;text-decoration:underline}
+  .nc-next{flex:1;background:#1f6f5c;color:#fff;font-size:16px}
+  .nc-next:hover{background:#12503f}
+  .nc-lead label{display:block;font-weight:700;font-size:14px;margin:0 0 7px}
+  .nc-lead input[type=text],.nc-lead input[type=email],.nc-lead input[type=tel]{
+    width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #e6e3dd;border-radius:11px;margin-bottom:16px}
+  .nc-ok{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:12.5px;color:#7a828b;line-height:1.5}
+  .nc-ok input{width:18px;height:18px;margin-top:2px;flex-shrink:0}
+  .nc-err{display:none;color:#a3271f;font-size:14px;margin-top:10px}
+</style>
 </body>
 </html>
