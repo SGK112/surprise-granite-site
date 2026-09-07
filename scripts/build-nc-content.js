@@ -52,6 +52,23 @@ async function slabPrices() {
   return rows;
 }
 
+// Real slabs, kept alongside the price, so a material page can name actual
+// products at actual prices. That is the thing a content farm cannot copy: they
+// can write the same words, they cannot show you what is in stock this morning.
+function examples(rows, material) {
+  const v = rows
+    .filter((p) => String(p.price_unit || '').toLowerCase() === 'sqft'
+      && Number(p.retail_price) > 0
+      && String(p.subcategory || '').toLowerCase().includes(material)
+      && p.name)
+    .sort((a, b) => a.retail_price - b.retail_price);
+  if (v.length < 6) return [];
+  const at = (f) => v[Math.min(v.length - 1, Math.floor(v.length * f))];
+  const picked = [at(0.05), at(0.5), at(0.92)];
+  const seen = new Set();
+  return picked.filter((x) => x && !seen.has(x.name) && seen.add(x.name));
+}
+
 function bands(rows) {
   const by = {};
   for (const p of rows) {
@@ -87,6 +104,146 @@ const BLURB = {
   dekton: 'Sintered stone. Effectively immune to heat, UV and scratching, which is why it turns up outdoors and on islands people actually cook on.',
 };
 
+// One honest paragraph per material about the trade-off people actually face.
+// Written once, by hand: the prices update, the physics of the stone does not.
+const DEEP = {
+  quartz: {
+    is: 'Ground natural quartz bound in resin, made in a factory to a spec. Non-porous, so it never needs sealing and cannot stain from wine or oil.',
+    watch: 'Heat is the weakness. The resin scorches, so a pan straight off the burner can leave a mark that does not come out. Use a trivet and it will outlive the kitchen.',
+    who: 'Anyone who wants to stop thinking about their countertops after installation day.',
+  },
+  granite: {
+    is: 'Quarried stone, cut into slabs. Every slab is different, which is the appeal and the reason to look at the actual slab rather than a sample chip.',
+    watch: 'It is porous. It wants sealing every year or two, and a lemon left overnight can etch a dull patch. Cheaper than quartz to buy, marginally more to live with.',
+    who: 'People who want real stone and are happy that no two kitchens look the same.',
+  },
+  quartzite: {
+    is: 'Natural stone, metamorphosed sandstone. Harder than granite and often looks like marble, which is exactly why people want it.',
+    watch: 'Sold loosely. Some slabs labelled quartzite are softer dolomitic marble that will etch. Ask for the acid test before you commit.',
+    who: 'People who want the marble look without the marble maintenance, and will pay for it.',
+  },
+  marble: {
+    is: 'Classic, and the reason every high-end kitchen photo looks the way it does. Cool to the touch, which is why pastry chefs insist on it.',
+    watch: 'It etches. Lemon juice, vinegar and wine dull the polish where they land, and no sealer prevents it. This is not a defect, it is what marble does.',
+    who: 'People who genuinely like patina, or who bake. Not for anyone who will be upset by the first ring.',
+  },
+  porcelain: {
+    is: 'Large-format sintered slab, typically thin. Extremely hard, completely non-porous, and UV-stable.',
+    watch: 'The colour is often surface-printed, so a chipped edge can show a paler body underneath. Fabrication needs someone who has done it before.',
+    who: 'Outdoor kitchens, waterfall edges, and anywhere a thin profile matters.',
+  },
+  dekton: {
+    is: 'Sintered stone made under extreme pressure and heat. Effectively immune to heat, UV, scratching and staining.',
+    watch: 'Hard enough to be brittle at the edges during fabrication, and priced accordingly. It is the durable option, not the cheap one.',
+    who: 'Outdoor kitchens and anyone who will genuinely put a hot pan straight down.',
+  },
+};
+
+function materialPage(x, all, egs, FAB, SITE, today, month) {
+  const cap = x.material[0].toUpperCase() + x.material.slice(1);
+  const d = DEEP[x.material] || {};
+  const others = all.filter((o) => o.material !== x.material).slice(0, 3);
+  const cmp = others.map((o) => {
+    const diff = Math.round((o.lo + FAB) - (x.lo + FAB));
+    const word = diff === 0 ? 'starts at about the same price as'
+      : diff > 0 ? `starts about ${money(Math.abs(diff))}/sq ft more than`
+      : `starts about ${money(Math.abs(diff))}/sq ft less than`;
+    return `<li><strong>${o.material[0].toUpperCase() + o.material.slice(1)}</strong> ${word} ${x.material} — ${money(o.lo + FAB)}–${money(o.hi + FAB)} installed, from ${o.n.toLocaleString('en-US')} slabs. <a href="/cost/${o.material}/">${o.material} costs &rarr;</a></li>`;
+  }).join('\n');
+
+  const egRows = egs.map((e, i) => `<tr>
+      <th scope="row">${['Entry', 'Typical', 'Premium'][i] || ''}</th>
+      <td>${esc(e.name)}${e.brand ? ` <span class="dim">${esc(e.brand)}</span>` : ''}</td>
+      <td>${money(e.retail_price)}/sq ft</td>
+      <td><strong>${money((Number(e.retail_price) + FAB) * 45)}</strong></td>
+    </tr>`).join('\n');
+
+  const faq = [
+    [`How much do ${x.material} countertops cost per square foot?`,
+     `${money(x.lo + FAB)} to ${money(x.hi + FAB)} installed, based on ${x.n.toLocaleString('en-US')} ${x.material} slabs priced today. Material alone is ${money(x.lo)}–${money(x.hi)}; fabrication and installation add about ${money(FAB)} per square foot.`],
+    [`How much is a ${x.material} kitchen?`,
+     `A typical 45 square foot kitchen in ${x.material} runs ${money((x.lo + FAB) * 45)} to ${money((x.hi + FAB) * 45)} installed. Bigger kitchens and islands push that up; a waterfall edge or a mitred edge adds meaningfully more.`],
+    [`Is ${x.material} worth it?`, `${d.who || ''} ${d.watch || ''}`.trim()],
+  ];
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${cap} Countertops Cost per Square Foot (${month})</title>
+<meta name="description" content="${cap} countertops cost ${money(x.lo + FAB)}–${money(x.hi + FAB)} per square foot installed, priced from ${x.n.toLocaleString('en-US')} slabs available today. Real examples and what drives the price."/>
+<link rel="canonical" href="${SITE}/cost/${x.material}/"/>
+<meta name="robots" content="index, follow"/>
+<meta property="og:title" content="${cap} Countertops Cost per Square Foot (${month})"/>
+<meta property="og:description" content="Priced from ${x.n.toLocaleString('en-US')} ${x.material} slabs available today."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="${SITE}/cost/${x.material}/"/>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9HJRRMG310"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9HJRRMG310');</script>
+<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  })}</script>
+<link rel="stylesheet" href="/cost/cost.css"/>
+</head>
+<body>
+<header><div class="bar">
+  <a class="logo" href="/">New<span>Countertops</span></a>
+  <a class="cta" href="/quote/">Get my free quote</a>
+</div></header>
+
+<main class="wrap">
+  <p class="crumb"><a href="/cost/">Countertop costs</a> / ${cap}</p>
+  <h1>${cap} countertops cost</h1>
+  <p class="stand"><strong>${money(x.lo + FAB)} to ${money(x.hi + FAB)} per square foot installed.</strong>
+    A typical 45 sq ft kitchen runs ${money((x.lo + FAB) * 45)} to ${money((x.hi + FAB) * 45)}.</p>
+  <p class="meta">Priced from ${x.n.toLocaleString('en-US')} ${x.material} slabs available right now · updated ${today}</p>
+
+  <div class="callout"><p><strong>These are live prices.</strong> Not an industry average — the real
+    per-square-foot price of ${x.n.toLocaleString('en-US')} ${x.material} slabs in stock today, plus
+    ${money(FAB)}/sq ft for fabrication and installation. Rebuilt whenever those prices move.</p></div>
+
+  ${egs.length ? `<h2>What ${x.material} actually costs, by slab</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th scope="col">Tier</th><th scope="col">Slab</th><th scope="col">Material</th><th scope="col">45 sq ft installed</th></tr></thead>
+    <tbody>
+${egRows}
+    </tbody>
+  </table></div>
+  <p class="meta">Real slabs from current stock. The spread between entry and premium is almost entirely material — fabrication costs the same either way.</p>` : ''}
+
+  <h2>What ${x.material} is</h2>
+  <p>${esc(d.is || '')}</p>
+  <h2>What to watch for</h2>
+  <p>${esc(d.watch || '')}</p>
+  <h2>Who it suits</h2>
+  <p>${esc(d.who || '')}</p>
+
+  <h2>${cap} vs the alternatives</h2>
+  <ul class="cmp">
+${cmp}
+  </ul>
+
+  <h2>Common questions</h2>
+${faq.map(([q, a]) => `  <details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('\n')}
+</main>
+
+<section class="end">
+  <p>Price your own kitchen in ${x.material} in about a minute.</p>
+  <a class="btn" href="/quote/">Get my free quote &rarr;</a>
+  <p style="margin:16px 0 0"><a href="/cost/">All countertop costs</a> · <a href="/calculator/">Full calculator</a></p>
+</section>
+
+<footer><div class="fl">
+  <div>&copy; ${new Date().getFullYear()} NewCountertops.com</div>
+  <div><a href="/quote/">Get a quote</a> · <a href="/cost/">Costs</a> · <a href="/calculator/">Calculator</a></div>
+</div></footer>
+</body>
+</html>
+`;
+}
+
 (async () => {
   const rows = await slabPrices();
   const b = bands(rows);
@@ -97,7 +254,7 @@ const BLURB = {
   const month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const table = b.map((x) => `<tr>
-      <th scope="row"><a href="#${x.material}">${x.material[0].toUpperCase() + x.material.slice(1)}</a></th>
+      <th scope="row"><a href="/cost/${x.material}/">${x.material[0].toUpperCase() + x.material.slice(1)}</a></th>
       <td>${money(x.lo)} – ${money(x.hi)}</td>
       <td><strong>${money(x.lo + FAB)} – ${money(x.hi + FAB)}</strong></td>
       <td class="num">${x.n.toLocaleString('en-US')}</td>
@@ -108,7 +265,8 @@ const BLURB = {
       <p>${esc(BLURB[x.material] || '')}</p>
       <p class="fig"><strong>${money(x.lo + FAB)} – ${money(x.hi + FAB)}</strong> per square foot installed
         &nbsp;·&nbsp; material alone ${money(x.lo)} – ${money(x.hi)} &nbsp;·&nbsp; ${x.n.toLocaleString('en-US')} slabs priced</p>
-      <p class="eg">A 45 sq ft kitchen: <strong>${money((x.lo + FAB) * 45)} – ${money((x.hi + FAB) * 45)}</strong>.</p>
+      <p class="eg">A 45 sq ft kitchen: <strong>${money((x.lo + FAB) * 45)} – ${money((x.hi + FAB) * 45)}</strong>
+        &nbsp;·&nbsp; <a href="/cost/${x.material}/">${x.material} costs in detail &rarr;</a></p>
     </section>`).join('\n');
 
   const faq = [
@@ -242,6 +400,30 @@ ${faq.map(([q, a]) => `  <details><summary>${esc(q)}</summary><p>${esc(a)}</p></
 
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(path.join(OUT, 'index.html'), html);
+
+  // One stylesheet for the cluster rather than the same 2KB inlined on every
+  // page: it is cached across the whole section after the first hit, and there
+  // is one place to change how a cost page looks.
+  const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1] + `
+  .crumb{font-size:14px;color:var(--muted);margin:28px 0 0}
+  .crumb a{color:var(--muted)}
+  .dim{color:var(--muted);font-weight:400;font-size:13.5px}
+  ul.cmp{padding-left:20px}
+  ul.cmp li{margin-bottom:10px}
+  .end p{color:var(--body);margin:0 0 18px}
+`;
+  fs.writeFileSync(path.join(OUT, 'cost.css'), css);
+
+  let made = 0;
+  for (const x of b) {
+    const dir = path.join(OUT, x.material);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.html'),
+      materialPage(x, b, examples(rows, x.material), FAB, SITE, today, month));
+    made++;
+  }
+
   console.log(`wrote /cost/ from ${total.toLocaleString('en-US')} priced slabs across ${b.length} materials`);
   for (const x of b) console.log(`  ${x.material.padEnd(10)} ${String(x.n).padStart(4)} slabs  ${money(x.lo + FAB)}–${money(x.hi + FAB)}/sqft installed`);
+  console.log(`wrote ${made} material pages + cost.css`);
 })();
