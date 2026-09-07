@@ -25,9 +25,12 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:22px;max-width:460px;width:100%;padding:28px 24px 24px;box-shadow:0 24px 60px -30px rgba(9,14,20,.4);position:relative;}
   /* The review form is a dead end without this: it is opened from a product page
      and had no way back, so anyone who changed their mind was stuck on it. */
-  .close{position:absolute;top:10px;right:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--line);background:var(--field);color:var(--ink);font-size:22px;line-height:1;text-decoration:none;opacity:.7;transition:opacity .12s,background .12s}
-  .close:hover{opacity:1;background:var(--line)}
-  .close:focus-visible{outline:3px solid var(--navy);outline-offset:2px;opacity:1}
+  .close{position:absolute;top:8px;right:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:none;border-radius:50%;color:var(--ink);text-decoration:none;opacity:.4;transition:opacity .12s}
+  .close:hover{opacity:.85}
+  .close:focus-visible{outline:3px solid var(--navy);outline-offset:-2px;opacity:1}
+  /* An SVG, not a &times; glyph: the character sits off-centre in most faces and
+     its weight changes with the font. The 44px box stays for the touch target. */
+  .close svg{width:17px;height:17px;display:block}
   .logo{height:30px;margin:0 auto 20px;display:block}
   .prod{display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:20px}
   .prod img{width:52px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--line)}
@@ -63,7 +66,7 @@
 </head>
 <body>
   <main class="card">
-    <a class="close" id="closeBtn" href="/marketplace/" aria-label="Close and go back to the product" title="Close">&times;</a>
+    <a class="close" id="closeBtn" href="/marketplace/" aria-label="Close and go back to the product" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></a>
     <img class="logo" src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite"/>
 
     <!-- FORM -->
