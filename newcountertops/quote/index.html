@@ -409,10 +409,16 @@
         selections: [{ surface:'countertops', material: LOOK[st.material] || LOOK.unsure }]
       })
     })
-    .then(function(r){ return r.text(); })
-    .then(function(t){
-      var d = {}; try { d = t ? JSON.parse(t) : {}; } catch(_){}
-      if(!d.image) throw new Error(d.error || 'no image returned');
+    .then(function(r){
+      // Keep the status. Without it every failure looks the same and the page
+      // blames the customer's photo for what was actually a 403 — which is
+      // exactly what happened the first time this ran.
+      return r.text().then(function(t){ return { status:r.status, ok:r.ok, text:t }; });
+    })
+    .then(function(res){
+      var d = {}; try { d = res.text ? JSON.parse(res.text) : {}; } catch(_){}
+      if(!res.ok) throw new Error('HTTP_' + res.status + (d.error ? ': ' + d.error : ''));
+      if(!d.image) throw new Error(d.error || 'NO_IMAGE');
       // Before/after on one slider — seeing the change beats seeing the result.
       $('vizStage').innerHTML =
         '<div class="cmp" id="cmp" style="--v:50%">' +
@@ -428,6 +434,17 @@
     })
     .catch(function(err){
       console.error('visualize failed', err);
+      var m = String(err && err.message || '');
+      // Say what actually went wrong. "Try a brighter photo" is only true when
+      // the model genuinely could not apply the material; for a network or
+      // server fault it sends someone off retaking photos that were fine.
+      $('e4').textContent =
+        err.name === 'AbortError'          ? 'That took longer than 2 minutes. The render service may be busy — try again in a moment.' :
+        m === 'NO_IMAGE'                   ? 'We couldn\'t apply the material to that photo. Try a straighter, brighter shot of the counters.' :
+        /^HTTP_(401|403)/.test(m)          ? 'This site isn\'t authorised to reach the render service yet. Nothing to do with your photo — we\'re on it.' :
+        /^HTTP_5/.test(m)                  ? 'The render service is having a problem right now. Your quote is safely submitted — try the photo again later.' :
+        /^HTTP_/.test(m)                   ? 'The render service refused that request (' + m.replace('HTTP_','') + ').' :
+                                             'Couldn\'t reach the render service. Check your connection and try again.';
       $('vizStage').innerHTML = '<img alt="Your kitchen as it is now" src="' + photoB64 + '"/>';
       $('e4').style.display = 'block';
       btn.disabled = false; btn.textContent = 'Try again';

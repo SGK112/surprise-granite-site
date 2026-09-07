@@ -2267,7 +2267,12 @@ const developmentOrigins = [
   'http://127.0.0.1:3333',
   'http://127.0.0.1:5500',
   'http://127.0.0.1:8080',
-  'http://localhost:8899',   // newcountertops funnel, served locally
+  // NOTE: this list is only used when NODE_ENV !== 'production', and the
+  // deployed API runs in production — so adding a port here does NOT let you
+  // work against the live API locally. Serve the funnel on :8080, which is in
+  // productionOrigins above. (Learned the hard way: :8899 was added here, the
+  // browser got a 403, and the page blamed the customer's photo.)
+  'http://localhost:8899',
   'http://127.0.0.1:8899',
   'null' // file:// protocol sends origin 'null'
 ];
