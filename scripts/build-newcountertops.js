@@ -148,11 +148,19 @@ h = h.replace(/<\/body>/i, `<script>
     { el: grids[1],  title: 'Sinks, cooktops, extras', sub: 'Only what applies — most kitchens need one or two.' }
   ];
 
+  // Everything goes INSIDE .calc-section, which owns the 24px/20px padding.
+  // Putting the header on .calculator-card (transparent, no padding) left it
+  // flush against the edge while every field sat 20px in — that misalignment
+  // was the whole "margins are messed up".
+  var host = document.querySelector('.calc-section') || card;
+  var title = host.querySelector('.calc-section-title');
+  if(title) title.style.display = 'none';        // .nc-title replaces it
+
   var bar = document.createElement('div');
   bar.className = 'nc-steps';
   bar.innerHTML = '<div class="nc-prog">' + STEPS.concat([0]).map(function(){ return '<i></i>'; }).join('') + '</div>' +
     '<h2 class="nc-title"></h2><p class="nc-sub"></p>';
-  card.insertBefore(bar, card.firstChild);
+  host.insertBefore(bar, host.firstChild);
 
   // The lead card. The estimate is the thing they came for, so it is what the
   // form is exchanged for — asking first would be a toll, asking after is a trade.
@@ -171,11 +179,17 @@ h = h.replace(/<\/body>/i, `<script>
   var nav = document.createElement('div');
   nav.className = 'nc-nav';
   nav.innerHTML = '<button type="button" class="nc-back">← Back</button><button type="button" class="nc-next">Continue</button>';
-  card.appendChild(nav);
+  host.appendChild(nav);
+
+  // "Add another section" belongs to the measurements card. It is a sibling of
+  // #sections, not a child, so it was sitting under the contact form inviting
+  // someone to add a countertop run while typing their email.
+  var addBtn = document.querySelector('.add-section-btn');
 
   var i = 0, LAST = STEPS.length;
   function draw(){
     STEPS.forEach(function(s, n){ s.el.style.display = (n === i) ? '' : 'none'; });
+    if(addBtn) addBtn.style.display = (i === 0) ? '' : 'none';
     lead.style.display = (i === LAST) ? '' : 'none';
     genBtn.style.display = 'none';
     bar.querySelector('.nc-title').textContent = i === LAST ? 'Where should we send it?' : STEPS[i].title;
@@ -216,13 +230,15 @@ h = h.replace(/<\/body>/i, `<script>
 })();
 </script>
 <style>
-  .nc-steps{margin-bottom:18px}
+  .nc-steps{margin:0 0 20px}
   .nc-prog{display:flex;gap:6px;margin-bottom:16px}
   .nc-prog i{flex:1;height:4px;border-radius:2px;background:#e6e3dd}
   .nc-prog i.on{background:#1f6f5c}
   .nc-title{font-size:20px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em}
   .nc-sub{color:#4a5159;font-size:14.5px;margin:0}
-  .nc-nav{display:flex;gap:12px;align-items:center;margin-top:22px}
+  .nc-nav{display:flex;gap:12px;align-items:center;margin:22px 0 4px}
+  .nc-lead{margin-bottom:4px}
+  .calc-section > .project-options,.calc-section > .countertop-sections{margin-bottom:0}
   .nc-nav button{font:inherit;font-weight:800;border-radius:12px;cursor:pointer;border:0;padding:15px 22px}
   .nc-back{background:none;color:#7a828b;text-decoration:underline}
   .nc-next{flex:1;background:#1f6f5c;color:#fff;font-size:16px}
