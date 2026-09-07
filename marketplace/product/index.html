@@ -3185,6 +3185,23 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     } catch (_) { /* index unreachable — render here rather than dead-end */ }
   }
 
+  // A countertop IS a slab. The stone already has one real page at
+  // /countertops/<slug>/, and rendering it again here made a second URL for the
+  // same rock — /marketplace/product/?handle=absoluteblack-daltile&category=slabs
+  // and /countertops/absolute-black-granite/ are the same granite. Send stone to
+  // its page. data/countertop-index.json resolves merged colours to the surviving
+  // stone, so this is one hop, not a bounce through a stub.
+  if (!staticDir && !path.startsWith('/countertops/')) {
+    try {
+      const stone = await fetch('/data/countertop-index.json', { cache: 'force-cache' }).then(r => r.ok ? r.json() : null);
+      const dest = stone && stone[String(handle).toLowerCase()];
+      if (dest && dest !== window.location.pathname) {
+        window.location.replace(dest);
+        return;
+      }
+    } catch (_) { /* index unreachable — render here rather than dead-end */ }
+  }
+
   // Color mapping
   const colorHex = {
     'white': '#ffffff', 'black': '#1a1a1a', 'gray': '#808080', 'grey': '#808080',
