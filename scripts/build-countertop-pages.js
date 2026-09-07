@@ -375,8 +375,12 @@ function renderPage(e) {
   if (matSlug) crumbItems.push({ '@type': 'ListItem', position: crumbItems.length + 1, name: `${e.material} Countertops`, item: `${ORIGIN}/materials/countertops/${matSlug}-countertops/` });
   crumbItems.push({ '@type': 'ListItem', position: crumbItems.length + 1, name: e.name, item: url });
   const crumbLd = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbItems };
+  // Thumbnails were plain <img>: they showed the other photos of the slab but
+  // clicking one did nothing, so the extra images were unreachable at any usable
+  // size. Buttons that swap the hero, keyboard-operable, with the current one
+  // marked — not an <img onclick>, which no keyboard or screen reader can work.
   const gallery = imgs.length > 1
-    ? `<div class="thumbs">${imgs.map((i, n) => `<img src="${attr(i)}" alt="${attr(dn)} ${n ? 'scene ' + n : 'slab'}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>`
+    ? `<div class="thumbs">${imgs.map((i, n) => `<button type="button" class="thumb${n ? '' : ' is-active'}" data-src="${attr(i)}" data-alt="${attr(dn)} ${n ? 'scene ' + n : 'slab'}" aria-label="Show ${attr(dn)} ${n ? 'scene ' + n : 'slab'}" onclick="ctShow(this)"><img src="${attr(i)}" alt="${attr(dn)} ${n ? 'scene ' + n : 'slab'}" loading="lazy" onerror="this.parentNode.style.display='none'"></button>`).join('')}</div>`
     : '';
   const sampleCta = e.sample_eligible ? `<a class="btn ghost" href="/marketplace/product/?handle=${attr(e.slug)}&category=slabs">Order a sample${e.sample_price ? ` · $${attr(e.sample_price)}` : ''}</a>` : '';
 
@@ -418,7 +422,10 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 @media (max-width:820px){.top{grid-template-columns:1fr}}
 .gallery img.hero{width:100%;border-radius:16px;border:1px solid var(--line);display:block;background:#e9e3d6;aspect-ratio:4/3;object-fit:cover}
 .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
-.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#e9e3d6}
+.thumbs .thumb{padding:0;border:0;background:none;cursor:pointer;border-radius:10px;display:block;line-height:0}
+.thumbs .thumb img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#e9e3d6;transition:border-color .15s,opacity .15s;opacity:.78}
+.thumbs .thumb:hover img,.thumbs .thumb.is-active img{opacity:1;border-color:var(--gold-deep)}
+.thumbs .thumb:focus-visible{outline:3px solid var(--gold-deep);outline-offset:2px}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
 h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:4px 0 12px}
 .lead{color:#33343a;font-size:15.5px;margin-bottom:18px}
@@ -490,8 +497,9 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
   </nav>
   <div class="top">
     <div class="gallery">
-      <img class="hero" src="${attr(hero)}" alt="${attr(dn)} countertop slab" onerror="this.style.background='#e9e3d6'">
+      <img class="hero" id="ctHero" src="${attr(hero)}" alt="${attr(dn)} countertop slab" onerror="this.style.background='#e9e3d6'">
       ${gallery}
+      ${imgs.length > 1 ? `<script>function ctShow(b){var h=document.getElementById('ctHero');if(!h)return;h.src=b.getAttribute('data-src');h.alt=b.getAttribute('data-alt')||h.alt;var t=b.parentNode.querySelectorAll('.thumb');for(var i=0;i<t.length;i++){t[i].classList.toggle('is-active',t[i]===b);}}</script>` : ''}
     </div>
     <div class="info">
       <div class="eyebrow">${esc(e.material)}${members ? ` · ${members.length} suppliers` : (e.vendor ? ' · ' + esc(prettyVendor(e.vendor)) : '')}</div>

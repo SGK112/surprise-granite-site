@@ -36,7 +36,10 @@ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"
 @media (max-width:820px){.top{grid-template-columns:1fr}}
 .gallery img.hero{width:100%;border-radius:16px;border:1px solid var(--line);display:block;background:#e9e3d6;aspect-ratio:4/3;object-fit:cover}
 .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
-.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#e9e3d6}
+.thumbs .thumb{padding:0;border:0;background:none;cursor:pointer;border-radius:10px;display:block;line-height:0}
+.thumbs .thumb img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#e9e3d6;transition:border-color .15s,opacity .15s;opacity:.78}
+.thumbs .thumb:hover img,.thumbs .thumb.is-active img{opacity:1;border-color:var(--gold-deep)}
+.thumbs .thumb:focus-visible{outline:3px solid var(--gold-deep);outline-offset:2px}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);font-weight:700}
 h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:4px 0 12px}
 .lead{color:#33343a;font-size:15.5px;margin-bottom:18px}
@@ -108,7 +111,8 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
   </nav>
   <div class="top">
     <div class="gallery">
-      <img class="hero" src="https://arcsurfaces.com/wp-content/uploads/ns-featured-15.jpg" alt="Brown Fantasy Marble countertop slab" onerror="this.style.background='#e9e3d6'">
+      <img class="hero" id="ctHero" src="https://arcsurfaces.com/wp-content/uploads/ns-featured-15.jpg" alt="Brown Fantasy Marble countertop slab" onerror="this.style.background='#e9e3d6'">
+      
       
     </div>
     <div class="info">
@@ -185,7 +189,7 @@ h1{font-size:clamp(24px,4vw,34px);line-height:1.08;letter-spacing:-.02em;font-we
     <div class="footer-col"><h4>Products</h4><a href="/materials/all-countertops/">Countertops</a><a href="/materials/all-cabinets">Cabinets</a><a href="/materials/flooring">Flooring</a><a href="/materials/all-tile">Tile &amp; Backsplash</a><a href="/marketplace/">Online Store</a></div>
     <div class="footer-col"><h4>Services</h4><a href="/services/home/kitchen-remodeling-arizona">Kitchen Remodeling</a><a href="/services/home/bathroom-remodeling-arizona">Bathroom Remodeling</a><a href="/get-a-free-estimate/">Free Estimate</a><a href="/tools/">Design Tools</a></div>
     <div class="footer-col"><h4>Company</h4><a href="/company/about-us">About Us</a><a href="/company/project-gallery">Gallery</a><a href="/company/reviews">Reviews</a><a href="/blog">Blog</a><a href="/contact-us">Contact</a></div>
-    <div class="footer-col"><h4>Connect</h4><div class="footer-contact"><p><strong>Service Area:</strong><br>Greater Phoenix, AZ<br>We Come to You!</p><p><strong>Hours:</strong><br>Mon-Fri 8am-4pm<br>Sat 10am-2pm</p></div></div>
+    <div class="footer-col"><h4>Connect</h4><div class="footer-contact"><p><strong>Service Area:</strong><br>Greater Phoenix, AZ<br>We Come to You!</p><p><strong>Hours:</strong><br>Mon-Fri 8am-5pm<br>Sat 9am-2pm</p></div></div>
   </div></div>
   <div class="footer-bottom"><div class="footer-bottom-inner">
     <div class="footer-legal"><a href="/legal/privacy-policy">Privacy</a><a href="/legal/terms-of-use">Terms</a><a href="/legal/lifetime-warranty">Warranty</a><a href="https://azroc.my.site.com/AZRoc/s/contractor-search?licenseId=a0o8y000000OAdvAAG" target="_blank">ROC #367593</a></div>
