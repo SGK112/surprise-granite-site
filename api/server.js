@@ -2239,6 +2239,14 @@ const productionOrigins = [
   'https://www.surprisegranite.com',
   'https://surprisegranite.com',
   'https://surprise-granite-site.onrender.com',
+  // Remodely Design Pro. The designer is served from remodely.ai and calls this
+  // API for email, the AI design chat, room scan, marketplace inventory and
+  // collaborators. Without these it fails the preflight and every one of those
+  // endpoints answers 403 from that origin, which reads in the browser as
+  // "Failed to send" and an empty vendor catalogue.
+  'https://www.remodely.ai',
+  'https://remodely.ai',
+  'https://remodely-design-pro.onrender.com',
   'http://localhost:8080',
   'http://127.0.0.1:8080'
 ];
