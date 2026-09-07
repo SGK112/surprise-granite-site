@@ -1,0 +1,134 @@
+#!/usr/bin/env node
+/**
+ * Port the Surprise Granite countertop calculator onto newcountertops.com.
+ *
+ * The calculator works and is trusted, so it is COPIED from the canonical file
+ * rather than rewritten — and copied by a script rather than by hand, so when
+ * the Surprise Granite version improves this one gets the improvement by
+ * re-running instead of quietly drifting a year behind it.
+ *
+ * What gets stripped is the Surprise Granite shell: the unified nav, auth,
+ * tracking, the Webflow stylesheet and the SG favicons. None of it belongs on a
+ * different brand, and each one is a file that can fail to load on a domain that
+ * does not host it. The calculator carries 43KB of its own inline CSS and uses
+ * no Webflow classes, so it stands up without them.
+ *
+ * Usage: node scripts/build-newcountertops.js
+ */
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const SRC = path.join(ROOT, 'tools', 'countertop-calculator', 'index.html');
+const OUT = path.join(ROOT, 'newcountertops', 'calculator', 'index.html');
+
+// Anything served only by surprisegranite.com. Leaving one of these in means a
+// 404 on every page load at best, and SG's navigation bar on someone else's
+// brand at worst.
+const SG_ONLY = [
+  'unified-nav', 'auth-state', 'user-tracking', 'remodely-hub', 'site-search',
+  'schedule-cta', 'image-fallback', 'rate-limiter', 'footer-enhanced',
+  'marketplace-mobile-fix', 'mobile-optimizations', 'surprisegranite.webflow',
+  '/js/config.js', '/migrated/',
+];
+
+const HEADER = `<header class="nc-head">
+  <div class="nc-bar">
+    <a class="nc-logo" href="/">New<span>Countertops</span></a>
+    <a class="nc-cta" href="/quote/">Get my free quote</a>
+  </div>
+</header>
+<style>
+  .nc-head{border-bottom:1px solid #e6e3dd;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif}
+  .nc-bar{max-width:1080px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .nc-logo{font-weight:800;font-size:18px;letter-spacing:-.02em;text-decoration:none;color:#14181d}
+  .nc-logo span{color:#1f6f5c}
+  .nc-cta{background:#1f6f5c;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 18px;border-radius:10px}
+  .nc-cta:hover{background:#12503f}
+</style>`;
+
+let h = fs.readFileSync(SRC, 'utf8');
+const before = h.length;
+
+// 1. Drop every SG-only stylesheet, script and icon.
+let stripped = 0;
+h = h.replace(/[ \t]*<(?:link|script)\b[^>]*>(?:\s*<\/script>)?\s*\n?/gi, (tag) => {
+  if (SG_ONLY.some((s) => tag.includes(s))) { stripped++; return ''; }
+  return tag;
+});
+
+// 2. The nav class drives body padding for a fixed header that no longer exists.
+h = h.replace(/<body class="unified-nav-active">/, '<body>');
+
+// 3. Our own header, right after <body>.
+h = h.replace(/<body>/, '<body>\n' + HEADER);
+
+// 4. Identity. A page that still says Surprise Granite in the tab and canonical
+//    tells Google these are the same page and tells the visitor they were
+//    redirected somewhere unexpected.
+h = h.replace(/<title>[\s\S]*?<\/title>/i,
+  '<title>Countertop Cost Calculator — NewCountertops.com</title>');
+h = h.replace(/<link rel="canonical"[^>]*>/i,
+  '<link rel="canonical" href="https://www.newcountertops.com/calculator/"/>');
+h = h.replace(/<meta name="description"[^>]*>/i,
+  '<meta name="description" content="Price your countertops by the square foot — material, fabrication and installation. Free, instant, no showroom visit."/>');
+
+// 5. Breadcrumb points home, not into a site this domain does not have.
+h = h.replace(/<nav class="breadcrumb"[\s\S]*?<\/nav>/i,
+  '<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> / Countertop calculator</nav>');
+
+// 6. Leads from here are newcountertops leads. Without this they arrive looking
+//    like SG tool traffic and the whole point — measuring whether this domain
+//    works — is lost.
+h = h.replace(/source: '\/tools\/countertop-calculator\/'/g,
+  "source: 'newcountertops.com/calculator'");
+
+// 7. Send finishers to the quote funnel, which is the only place that routes by ZIP.
+h = h.replace(/<\/body>/i,
+  `<div style="max-width:760px;margin:0 auto 48px;padding:0 20px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif">
+  <p style="color:#4a5159;font-size:15px;margin:0 0 14px">Want a real quote and a pro who can do the work?</p>
+  <a href="/quote/" style="display:inline-block;background:#1f6f5c;color:#fff;text-decoration:none;font-weight:800;font-size:16px;padding:15px 28px;border-radius:12px">Get my free quote →</a>
+</div>
+</body>`);
+
+// 8. The "Schedule Free Consultation" button's handler lives in schedule-cta.js,
+//    which we just stripped. A button that looks live and does nothing is the
+//    exact fault we spent today removing from the storefront.
+h = h.replace(/[ \t]*<button class="cta-btn cta-btn-secondary" data-schedule-cta>[\s\S]*?<\/button>\s*\n/i, '');
+
+// 9. Replace the Surprise Granite footer wholesale. It carries SG's warranty
+//    links, copyright, card logos served from a path this domain does not host —
+//    and ROC #367593, which on a site that refers work to other states would
+//    claim a licence Surprise Granite does not hold there.
+h = h.replace(/<footer[\s\S]*?<\/footer>/i, `<footer style="border-top:1px solid #e6e3dd;background:#fff;padding:26px 20px;color:#7a828b;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif">
+  <div style="max-width:1080px;margin:0 auto;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;align-items:center">
+    <div>&copy; 2026 NewCountertops.com</div>
+    <div><a href="/quote/" style="color:#7a828b">Get a quote</a></div>
+  </div>
+</footer>`);
+
+// 10. The estimate modal is branded Surprise Granite. On a national funnel the
+//     estimate is from NewCountertops until a fabricator is assigned.
+h = h.replace(/<p>Surprise Granite Marble &amp; Quartz<\/p>/i, '<p>NewCountertops.com</p>');
+
+// 11a. Whatever is left. Blunt on purpose: after the targeted edits above, ANY
+//     surviving mention of Surprise Granite on this domain is either a false
+//     claim (a licence that does not cover the visitor's state) or a branding
+//     leak, and there is no case where leaving one is correct. Ampersand in two
+//     encodings because the page uses both.
+h = h.replace(/Surprise Granite Marble (?:&amp;|&) Quartz/g, 'NewCountertops.com')
+     .replace(/Surprise Granite/g, 'NewCountertops.com');
+
+// 11. Drop the SEO block. It is Phoenix copy — "how much do countertops cost
+//     installed in Phoenix", ROC #367593, the cities SG serves. On this domain
+//     it would be false for most visitors AND would rank newcountertops.com for
+//     Phoenix terms, competing with surprisegranite.com for the same searches.
+//     National content belongs here later; SG's does not.
+h = h.replace(/<section class="sg-seo"[\s\S]*?<\/section>/i, '');
+
+fs.mkdirSync(path.dirname(OUT), { recursive: true });
+fs.writeFileSync(OUT, h);
+
+const leftover = SG_ONLY.concat(['ROC #367593', 'Surprise Granite', 'sg-seo']).filter((s) => h.includes(s));
+console.log(`calculator ported: ${(before / 1024).toFixed(0)}KB -> ${(h.length / 1024).toFixed(0)}KB, ${stripped} SG-only tags removed`);
+console.log(leftover.length ? `  ⚠ still references: ${leftover.join(', ')}` : '  no Surprise Granite dependencies left');
