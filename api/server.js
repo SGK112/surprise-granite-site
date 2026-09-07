@@ -2247,6 +2247,12 @@ const productionOrigins = [
   'https://www.remodely.ai',
   'https://remodely.ai',
   'https://remodely-design-pro.onrender.com',
+  // newcountertops.com — the quote funnel. It posts leads and calls
+  // /api/ai/room-visualize from the browser, so without these every submission
+  // and every render answers 403 and the page looks broken for reasons the
+  // visitor can't see.
+  'https://www.newcountertops.com',
+  'https://newcountertops.com',
   'http://localhost:8080',
   'http://127.0.0.1:8080'
 ];
@@ -2261,6 +2267,8 @@ const developmentOrigins = [
   'http://127.0.0.1:3333',
   'http://127.0.0.1:5500',
   'http://127.0.0.1:8080',
+  'http://localhost:8899',   // newcountertops funnel, served locally
+  'http://127.0.0.1:8899',
   'null' // file:// protocol sends origin 'null'
 ];
 
