@@ -219,7 +219,11 @@ function page(p) {
     .breadcrumb-nav{max-width:1200px;margin:0 auto;padding:14px 24px;font-size:13px;color:var(--text-muted)}
     .breadcrumb-nav a{color:var(--navy);text-decoration:none}.breadcrumb-nav a:hover{text-decoration:underline}
     .pdp{max-width:1200px;margin:0 auto;padding:8px 24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:48px}
-    .pdp-gallery{position:sticky;top:16px;align-self:start}
+    /* The site nav is position:fixed and 140px tall (64px under 991px), so a
+       sticky offset of 16px parks the gallery UNDERNEATH it and the image slides
+       behind the header as you scroll. Clear the nav, don't guess a number. */
+    .pdp-gallery{position:sticky;top:calc(var(--nav-height-desktop, 140px) + 16px);align-self:start;min-width:0}
+    .pdp-info{min-width:0}
     .pdp-main{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid var(--border);border-radius:14px;background:var(--bg-light)}
     .pdp-thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
     .pdp-thumb{width:64px;height:64px;object-fit:cover;border:1px solid var(--border);border-radius:8px;cursor:pointer;opacity:.65;transition:opacity .15s}
@@ -228,8 +232,11 @@ function page(p) {
     .pdp-title{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;margin:6px 0 14px;line-height:1.2}
     .pdp-price{font-size:1.9rem;font-weight:800;color:var(--navy);margin-bottom:8px}
     .pdp-ship{font-size:13px;color:#16a34a;font-weight:600;margin-bottom:20px}
-    .add-to-cart-btn{display:inline-block;background:var(--gold);color:var(--navy);border:none;border-radius:10px;padding:15px 40px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:transform .1s,box-shadow .15s;box-shadow:0 3px 12px rgba(249,203,0,.35)}
-    .add-to-cart-btn:hover{transform:translateY(-1px)}.add-to-cart-btn:disabled{opacity:.7;cursor:default}
+    .add-to-cart-btn{display:block;width:100%;max-width:340px;background:var(--gold);color:var(--navy);border:none;border-radius:12px;padding:16px 28px;font:inherit;font-size:1rem;font-weight:800;letter-spacing:.01em;cursor:pointer;transition:background .15s,box-shadow .15s,transform .06s;box-shadow:0 1px 2px rgba(26,43,60,.12)}
+    .add-to-cart-btn:hover{background:#ffd633;box-shadow:0 4px 14px rgba(26,43,60,.16)}
+    .add-to-cart-btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(26,43,60,.12)}
+    .add-to-cart-btn:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+    .add-to-cart-btn:disabled{background:#e9e9e9;color:#8a8a8a;box-shadow:none;cursor:not-allowed}
     .pdp-desc{margin:26px 0;line-height:1.7;color:var(--text-secondary);font-size:15px}
     .pdp-specs{list-style:none;padding:0;margin:0 0 26px;border-top:1px solid var(--border)}
     .pdp-specs li{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px}
@@ -239,7 +246,10 @@ function page(p) {
     .footer-links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
     .footer-links a{color:#fff;opacity:.85;text-decoration:none;font-size:14px}.footer-links a:hover{opacity:1}
     .footer-copyright{opacity:.6;font-size:13px}
-    .pdp-reviews{grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:28px}
+    /* Reviews sit OUTSIDE the product grid. As a grid child spanning both
+       columns they shared a stacking context with the sticky gallery, and the
+       pinned image rode over the review text on the way past. */
+    .pdp-reviews{max-width:1200px;margin:0 auto;padding:32px 24px 8px;border-top:1px solid var(--border)}
     .pdp-reviews h2{font-size:1.3rem;font-weight:800;margin:0 0 16px}
     .pdp-reviews-empty p{color:var(--text-secondary);font-size:15px;margin:0 0 16px}
     .rv-sum{display:flex;align-items:center;gap:12px;margin-bottom:20px}
@@ -275,8 +285,8 @@ function page(p) {
       <ul class="pdp-specs">${specs}</ul>
       <a class="pdp-back" href="/marketplace/${DIR}/">← Browse all ${PLURAL}</a>
     </div>
-    ${reviewsHtml}
   </main>
+  ${reviewsHtml}
   ${serviceStrip}
   <footer class="footer"><div class="footer-inner">
     <div class="footer-links"><a href="/">Home</a><a href="/marketplace/">Marketplace</a><a href="/marketplace/${DIR}/">${PLURAL}</a><a href="/cart/">Cart</a><a href="/contact-us/">Contact</a></div>
