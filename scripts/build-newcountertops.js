@@ -321,5 +321,33 @@ fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, h);
 
 const leftover = SG_ONLY.concat(['ROC #367593', 'Surprise Granite', 'sg-seo']).filter((s) => h.includes(s));
+// ── Sitemap ─────────────────────────────────────────────────────────────────
+// Generated from what is actually on disk, not a hand-kept list. A sitemap that
+// names a page which no longer exists is worse than none: it teaches Google the
+// file is unreliable and it stops trusting what else is in it.
+const SITE = 'https://www.newcountertops.com';
+const NC = path.join(ROOT, 'newcountertops');
+const today = new Date().toISOString().slice(0, 10);
+const urls = [];
+(function walk(dir, rel) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name.startsWith('.')) continue;
+    const abs = path.join(dir, e.name);
+    if (e.isDirectory()) walk(abs, rel + e.name + '/');
+    else if (e.name === 'index.html') {
+      const html = fs.readFileSync(abs, 'utf8');
+      // A noindex page in a sitemap is a contradiction a crawler has to resolve,
+      // and it resolves it by trusting the sitemap less.
+      if (!/content="noindex/i.test(html)) urls.push(SITE + rel);
+    }
+  }
+})(NC, '/');
+urls.sort();
+fs.writeFileSync(path.join(NC, 'sitemap.xml'),
+  '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+  urls.map((u) => `<url>\n<loc>${u}</loc>\n<lastmod>${today}</lastmod>\n</url>`).join('\n') +
+  '\n</urlset>\n');
+console.log(`wrote sitemap.xml (${urls.length} urls)`);
+
 console.log(`calculator ported: ${(before / 1024).toFixed(0)}KB -> ${(h.length / 1024).toFixed(0)}KB, ${stripped} SG-only tags removed`);
 console.log(leftover.length ? `  ⚠ still references: ${leftover.join(', ')}` : '  no Surprise Granite dependencies left');
