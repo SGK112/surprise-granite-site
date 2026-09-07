@@ -124,6 +124,22 @@ h = h.replace(/<p>Surprise Granite Marble &amp; Quartz<\/p>/i, '<p>NewCountertop
 h = h.replace(/Surprise Granite Marble (?:&amp;|&) Quartz/g, 'NewCountertops.com')
      .replace(/Surprise Granite/g, 'NewCountertops.com');
 
+// 10b. Drop "Explore More Design Tools". Every link points at /tools/... which
+//     this domain does not host — and two of them only resolve on
+//     surprisegranite.com because a 301 sends them to the visualizer. Here they
+//     are four dead ends on a page whose whole job is one action. Pointing them
+//     at the other site instead would leak the visitor to an Arizona contractor
+//     mid-funnel, which is worse than not offering them.
+h = h.replace(/<div class="other-tools"[\s\S]*?<\/div>\s*<\/div>/i, '');
+// Test for the BLOCK, not the word: .other-tools also appears in a CSS rule, so
+// matching the bare class reported a failure on a removal that had worked.
+if (/class="other-tools"/.test(h)) {
+  // The block moved or was renamed upstream: neutralise the links rather than
+  // shipping them broken, and say so instead of failing silently.
+  h = h.replace(/href="\/tools\/[^"]*"/g, 'href="/quote/"');
+  console.log('  ⚠ other-tools block not matched — tool links repointed at /quote/ instead');
+}
+
 // 11. Drop the SEO block. It is Phoenix copy — "how much do countertops cost
 //     installed in Phoenix", ROC #367593, the cities SG serves. On this domain
 //     it would be false for most visitors AND would rank newcountertops.com for
