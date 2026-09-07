@@ -22,7 +22,12 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{overflow-x:hidden}
   body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 18px;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;max-width:460px;width:100%;padding:28px 24px 24px;box-shadow:0 24px 60px -30px rgba(9,14,20,.4);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;max-width:460px;width:100%;padding:28px 24px 24px;box-shadow:0 24px 60px -30px rgba(9,14,20,.4);position:relative;}
+  /* The review form is a dead end without this: it is opened from a product page
+     and had no way back, so anyone who changed their mind was stuck on it. */
+  .close{position:absolute;top:10px;right:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--line);background:var(--field);color:var(--ink);font-size:22px;line-height:1;text-decoration:none;opacity:.7;transition:opacity .12s,background .12s}
+  .close:hover{opacity:1;background:var(--line)}
+  .close:focus-visible{outline:3px solid var(--navy);outline-offset:2px;opacity:1}
   .logo{height:30px;margin:0 auto 20px;display:block}
   .prod{display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:20px}
   .prod img{width:52px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--line)}
@@ -58,6 +63,7 @@
 </head>
 <body>
   <main class="card">
+    <a class="close" id="closeBtn" href="/marketplace/" aria-label="Close and go back to the product" title="Close">&times;</a>
     <img class="logo" src="/migrated/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite"/>
 
     <!-- FORM -->
@@ -127,6 +133,31 @@
         name=g('name'), product=g('product')||g('name_product'), img=g('img');
     var rating=0;
     var LBL={1:'Poor',2:'Fair',3:'Good',4:'Great',5:'Excellent — love it!'};
+
+    // Point the close button back at the product this review is for. The link
+    // carries the slug and category, so the way home is already in the URL —
+    // /marketplace/ was only ever the fallback for a link that lost them.
+    (function(){
+      var btn=document.getElementById('closeBtn');
+      if(!btn) return;
+      var DIR={sink:'sinks',sinks:'sinks',faucet:'faucets',faucets:'faucets',
+               fixture:'bathroom',bathroom:'bathroom','bath-fixtures':'bathroom',
+               accessory:'kitchen-accessories','kitchen-accessories':'kitchen-accessories',
+               tile:'tile',flooring:'flooring'};
+      var STONE={countertop:1,countertops:1,slab:1,slabs:1,remnant:1,remnants:1};
+      var cat=String(category||'').toLowerCase();
+      if(slug && STONE[cat]) btn.href='/countertops/'+encodeURIComponent(slug)+'/';
+      else if(slug && DIR[cat]) btn.href='/marketplace/'+DIR[cat]+'/'+encodeURIComponent(slug)+'/';
+      // Came from our own site? Going back keeps their scroll position, which a
+      // fresh navigation to the same URL throws away.
+      btn.addEventListener('click',function(e){
+        try{
+          if(document.referrer && new URL(document.referrer).origin===location.origin && history.length>1){
+            e.preventDefault(); history.back();
+          }
+        }catch(_){/* opaque referrer — let the href do its job */}
+      });
+    })();
 
     // Product context (from the emailed link)
     if(product){
