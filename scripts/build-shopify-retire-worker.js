@@ -43,23 +43,94 @@ function existingMap() {
   throw new Error('could not parse MAP out of ' + WORKER);
 }
 
-// Every product page that actually exists, indexed by its slug.
+// Vendor tokens our slugs carry that a Shopify handle never did. NOT a list of
+// every trailing word: 'quartz', 'tile', 'granite', 'sink' and 'sample' end
+// hundreds of slugs too and are part of the product's name, so stripping those
+// would point unrelated handles at each other.
+const VENDOR_SUFFIXES = ['vigo', 'alfi-trade', 'alfi', 'msi', 'esi', 'kibi', 'ruvati',
+  'cactus', 'monterrey', 'daltile', 'theyard', 'asg', 'bolder', 'sunstone',
+  'arizona-tile', 'arizonatile', 'caesarstone', 'gila', 'sensa', 'eclos',
+  'pentalquartz', 'hanstone', 'arcsurfaces', 'bravo-tile', 'bravo', 'classic',
+  'schluter-system'];
+
+// Every product page that actually exists, indexed by its slug — and by the slug
+// with its vendor suffix removed.
+//
+// Our slug is the Shopify handle plus the vendor: Shopify's
+// /products/vg08001-dilana-6-jet-shower-panel-system is our
+// /marketplace/bathroom/vg08001-dilana-6-jet-shower-panel-system-vigo. Exact
+// matching missed every one of those, so a product we actively sell answered a
+// live search result with 410 Gone. 1,710 handles resolve on this rule alone.
+//
+// `indexable` decides ties: the same product can have a retired copy under
+// another department (VG08001 exists under bathroom AND kitchen-accessories,
+// the latter noindexed), and the live page is the one worth 301ing to.
 function pagesOnDisk() {
-  const found = {};
+  const exact = {};
+  const stripped = {};   // vendor-suffix-stripped handle -> [{ url, indexable }]
+  const named = {};      // slugified product name       -> [{ url, indexable }]
   const walk = (rel) => {
     const abs = path.join(ROOT, rel);
     if (!fs.existsSync(abs)) return;
     for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
       const childRel = path.join(rel, entry.name);
-      if (fs.existsSync(path.join(ROOT, childRel, 'index.html'))) {
-        found[entry.name.toLowerCase()] = `${WWW}/${childRel}/`;
+      const file = path.join(ROOT, childRel, 'index.html');
+      if (fs.existsSync(file)) {
+        const slug = entry.name.toLowerCase();
+        const url = `${WWW}/${childRel}/`;
+        const html = fs.readFileSync(file, 'utf8');
+        const indexable = !/content="noindex/i.test(html);
+        if (!exact[slug] || indexable) exact[slug] = url;
+        for (const v of VENDOR_SUFFIXES) {
+          if (slug.endsWith('-' + v)) {
+            const base = slug.slice(0, -(v.length + 1));
+            if (base) (stripped[base] = stripped[base] || []).push({ url, indexable });
+            break;
+          }
+        }
+        // Shopify handles were built from the product NAME; ours are built from
+        // the SKU, so /products/amada-wall-mount-bathroom-faucet and our
+        // /marketplace/faucets/vg05005-vigo/ are the same faucet and no amount of
+        // suffix-stripping connects them. The page's own <h1> is the bridge.
+        const h1 = html.match(/<h1 class="pdp-title">([^<]+)<\/h1>/);
+        if (h1) {
+          const key = h1[1].replace(/&quot;/g, '').replace(/&amp;/g, 'and')
+            .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          if (key) (named[key] = named[key] || []).push({ url, indexable });
+        }
       }
       walk(childRel);
     }
   };
   ['marketplace', 'countertops', 'flooring'].forEach(walk);
-  return found;
+
+  // Fold the stripped handles in, keeping only the ones that resolve to a single
+  // destination. An ambiguous handle stays a 410 rather than guessing which of
+  // two products the visitor wanted.
+  let fromSuffix = 0, ambiguous = 0;
+  for (const [base, hits] of Object.entries(stripped)) {
+    if (exact[base]) continue;                       // a real page already owns it
+    const live = hits.filter((h) => h.indexable);
+    const pick = live.length ? live : hits;
+    if (pick.length !== 1) { ambiguous++; continue; }
+    exact[base] = pick[0].url;
+    fromSuffix++;
+  }
+  // Then by product name — but ONLY to a page that is still live. A retired
+  // product should keep answering 410: that is true, and it beats sending a
+  // searcher to a page whose buy button is disabled.
+  let fromName = 0, nameAmbiguous = 0, nameRetired = 0;
+  for (const [key, hits] of Object.entries(named)) {
+    if (exact[key]) continue;
+    const live = hits.filter((h) => h.indexable);
+    if (!live.length) { nameRetired++; continue; }
+    if (live.length !== 1) { nameAmbiguous++; continue; }
+    exact[key] = live[0].url;
+    fromName++;
+  }
+  console.log(`disk index: ${Object.keys(exact).length} slugs (${fromSuffix} via vendor suffix, ${fromName} via product name; ${ambiguous + nameAmbiguous} ambiguous and ${nameRetired} retired left at 410)`);
+  return exact;
 }
 
 const map = existingMap();
