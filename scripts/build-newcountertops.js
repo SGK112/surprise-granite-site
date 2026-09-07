@@ -69,7 +69,7 @@ h = h.replace(/<body>/, '<body>\n' + HEADER);
 h = h.replace(/<title>[\s\S]*?<\/title>/i,
   '<title>Countertop Cost Calculator — NewCountertops.com</title>');
 h = h.replace(/<link rel="canonical"[^>]*>/i,
-  '<link rel="canonical" href="https://www.newcountertops.com/calculator/"/>');
+  '<link rel="canonical" href="https://newcountertops.com/calculator/"/>');
 h = h.replace(/<meta name="description"[^>]*>/i,
   '<meta name="description" content="Price your countertops by the square foot — material, fabrication and installation. Free, instant, no showroom visit."/>');
 
@@ -325,7 +325,9 @@ const leftover = SG_ONLY.concat(['ROC #367593', 'Surprise Granite', 'sg-seo']).f
 // Generated from what is actually on disk, not a hand-kept list. A sitemap that
 // names a page which no longer exists is worse than none: it teaches Google the
 // file is unreliable and it stops trusting what else is in it.
-const SITE = 'https://www.newcountertops.com';
+// The APEX serves; www 301s to it. A sitemap full of redirecting URLs makes
+// Google resolve every one of them before it can index anything.
+const SITE = 'https://newcountertops.com';
 const NC = path.join(ROOT, 'newcountertops');
 const today = new Date().toISOString().slice(0, 10);
 const urls = [];

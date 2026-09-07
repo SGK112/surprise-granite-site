@@ -23,7 +23,9 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'newcountertops', 'cost');
 const API = 'https://surprise-granite-email-api.onrender.com';
-const SITE = 'https://www.newcountertops.com';
+// The APEX is the host that serves; www 301s to it. Canonicals and sitemap
+// entries must name the URL that answers 200, not one that redirects to it.
+const SITE = 'https://newcountertops.com';
 const FAB = 55;                       // fabrication + installation, $/sqft
 // ORDER MATTERS: 'quartzite' contains 'quartz', so a first-match scan that
 // checks quartz first swallows every quartzite slab into the quartz bucket —
