@@ -73,6 +73,8 @@
   .step{display:none}.step.on{display:block}
 
 </style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9HJRRMG310"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9HJRRMG310');</script>
 </head>
 <body>
 
@@ -189,7 +191,10 @@
   };
   var MIN_JOB = 1200;               // nobody fabricates a countertop for less
   var API = 'https://surprise-granite-email-api.onrender.com';
-  var GA_ID = '';                   // set to a G-XXXXXXX id to switch analytics on
+  // Surprise Granite's existing GA4 property. Shared deliberately rather than
+  // creating a second one: GA4 splits by Hostname, so newcountertops.com stays
+  // separable in reports, and one property means one place to look.
+  var GA_ID = 'G-9HJRRMG310';
 
   // Arizona ZIPs run 85001–86556. Anything else gets referred, so this single
   // line decides who does the work — keep it obvious rather than clever.
@@ -304,17 +309,6 @@
     });
   });
 
-  // Analytics stays off until a real measurement id is set — the thing
-  // surprisegranite.com never had, which is why nobody can say whether that
-  // store has a traffic problem or a conversion problem.
-  if(GA_ID){
-    var g = document.createElement('script');
-    g.async = true; g.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-    document.head.appendChild(g);
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function(){ window.dataLayer.push(arguments); };
-    window.gtag('js', new Date()); window.gtag('config', GA_ID);
-  }
 })();
 </script>
 </body>

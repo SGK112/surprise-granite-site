@@ -147,6 +147,13 @@ if (/class="other-tools"/.test(h)) {
 //     National content belongs here later; SG's does not.
 h = h.replace(/<section class="sg-seo"[\s\S]*?<\/section>/i, '');
 
+// 11b. Analytics. The same GA4 property Surprise Granite already uses — GA4
+//     splits by Hostname, so this domain stays separable in reports without a
+//     second property to maintain. Loaded in <head> so a bounce still counts.
+h = h.replace(/<\/head>/i, `<script async src="https://www.googletagmanager.com/gtag/js?id=G-9HJRRMG310"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9HJRRMG310');</script>
+</head>`);
+
 // 12. Card the form, and put the lead in front of the estimate.
 //
 //     Thirteen inputs on one screen is a wall; people abandon walls. The same
@@ -258,6 +265,7 @@ h = h.replace(/<\/body>/i, `<script>
         source: 'newcountertops.com/calculator'
       })
     }).catch(function(e){ console.error('lead capture failed', e); });
+    if(window.gtag) window.gtag('event','generate_lead',{ routing: az ? 'in-house' : 'referral', source:'calculator' });
     // Hand back to the calculator's own estimate flow, untouched.
     var em2 = document.getElementById('quoteEmail') || document.getElementById('email');
     if(em2 && !em2.value) em2.value = em;
