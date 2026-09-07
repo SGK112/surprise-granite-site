@@ -83,13 +83,18 @@ h = h.replace(/<nav class="breadcrumb"[\s\S]*?<\/nav>/i,
 h = h.replace(/source: '\/tools\/countertop-calculator\/'/g,
   "source: 'newcountertops.com/calculator'");
 
-// 7. Send finishers to the quote funnel, which is the only place that routes by ZIP.
-h = h.replace(/<\/body>/i,
-  `<div style="max-width:760px;margin:0 auto 48px;padding:0 20px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif">
-  <p style="color:#4a5159;font-size:15px;margin:0 0 14px">Want a real quote and a pro who can do the work?</p>
-  <a href="/quote/" style="display:inline-block;background:#1f6f5c;color:#fff;text-decoration:none;font-weight:800;font-size:16px;padding:15px 28px;border-radius:12px">Get my free quote →</a>
-</div>
-</body>`);
+// 7. Send finishers to the quote funnel, which is the only place that routes by
+//    ZIP. It goes BEFORE the footer — appended at </body> it rendered underneath
+//    the copyright band and read as jammed into it.
+const CLOSER = `
+<section style="background:#f4f1ea;border-top:1px solid #e6e3dd;padding:44px 20px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif">
+  <p style="color:#4a5159;font-size:16px;margin:0 0 18px">Want a real quote and a pro who can do the work?</p>
+  <a href="/quote/" style="display:inline-block;background:#1f6f5c;color:#fff;text-decoration:none;font-weight:800;font-size:16px;padding:16px 30px;border-radius:12px">Get my free quote &rarr;</a>
+</section>
+`;
+h = h.includes('<footer')
+  ? h.replace(/<footer/i, CLOSER + '<footer')
+  : h.replace(/<\/body>/i, CLOSER + '</body>');
 
 // 8. The "Schedule Free Consultation" button's handler lives in schedule-cta.js,
 //    which we just stripped. A button that looks live and does nothing is the
@@ -254,7 +259,11 @@ h = h.replace(/<\/body>/i, `<script>
   .nc-sub{color:#4a5159;font-size:14.5px;margin:0}
   .nc-nav{display:flex;gap:12px;align-items:center;justify-content:center;max-width:520px;margin:22px auto 4px}
   .nc-lead{margin-bottom:4px}
-  .calc-section > .project-options,.calc-section > .countertop-sections{margin-bottom:0}
+  /* Not 0. Zeroing this is what pushed "Add Another Section" flush against the
+     Section 1 card — the gap belonged to .countertop-sections all along. */
+  .calc-section > .project-options{margin-bottom:0}
+  .calc-section > .countertop-sections{margin-bottom:16px}
+  .add-section-btn{margin-bottom:8px}
   .nc-nav button{font:inherit;font-weight:800;border-radius:12px;cursor:pointer;border:0;padding:15px 22px}
   .nc-back{background:none;color:#7a828b;text-decoration:underline}
   .nc-next{flex:1;background:#1f6f5c;color:#fff;font-size:16px}
