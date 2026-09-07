@@ -2745,11 +2745,26 @@
   var genBtn = document.querySelector('.generate-quote-btn');
   if(!card || !sections || grids.length < 2 || !genBtn) return;   // stay long-form
 
+  // A step owns a LIST of elements, not one. The "Material & Service" and
+  // "Sinks & Cutouts" headings are siblings of their grids, not parents, so
+  // hiding the grid alone left both headings stacked on the measurements card
+  // with nothing under them.
+  var labels = document.querySelectorAll('.project-options .edge-label');
+  var note   = document.querySelector('.project-options .edge-note');
+  var addBtn = document.querySelector('.add-section-btn');
+  var pick = function(){ return Array.prototype.slice.call(arguments).filter(Boolean); };
+
   var STEPS = [
-    { el: sections,  title: 'Measure your counters', sub: 'Length and depth of each run. Rough numbers are fine.' },
-    { el: grids[0],  title: 'Material and service',  sub: 'What you want, and how much of the work is ours.' },
-    { el: grids[1],  title: 'Sinks, cooktops, extras', sub: 'Only what applies — most kitchens need one or two.' }
+    { els: pick(sections, addBtn),          title: 'Measure your counters',   sub: 'Length and depth of each run. Rough numbers are fine.' },
+    { els: pick(labels[0], grids[0]),       title: 'Material and service',    sub: 'What you want, and how much of the work is ours.' },
+    { els: pick(labels[1], grids[1], note), title: 'Sinks, cooktops, extras', sub: 'Only what applies — most kitchens need one or two.' }
   ];
+
+  // The calculator's own "Save your estimate or request an exact quote!" block
+  // is replaced by the nav below. Hiding just the button inside it left an empty
+  // white panel that collided with the footer.
+  var cta = document.querySelector('.cta-section');
+  if(cta) cta.style.display = 'none';
 
   // Everything goes INSIDE .calc-section, which owns the 24px/20px padding.
   // Putting the header on .calculator-card (transparent, no padding) left it
@@ -2784,21 +2799,22 @@
   nav.innerHTML = '<button type="button" class="nc-back">← Back</button><button type="button" class="nc-next">Continue</button>';
   host.appendChild(nav);
 
-  // "Add another section" belongs to the measurements card. It is a sibling of
-  // #sections, not a child, so it was sitting under the contact form inviting
-  // someone to add a countertop run while typing their email.
-  var addBtn = document.querySelector('.add-section-btn');
+  // ("Add another section" is a sibling of #sections, not a child, so it rides
+  //  with the measurements step above rather than following it around.)
 
   var i = 0, LAST = STEPS.length;
   function draw(){
-    STEPS.forEach(function(s, n){ s.el.style.display = (n === i) ? '' : 'none'; });
-    if(addBtn) addBtn.style.display = (i === 0) ? '' : 'none';
+    STEPS.forEach(function(s, n){
+      s.els.forEach(function(el){ el.style.display = (n === i) ? '' : 'none'; });
+    });
     lead.style.display = (i === LAST) ? '' : 'none';
     genBtn.style.display = 'none';
     bar.querySelector('.nc-title').textContent = i === LAST ? 'Where should we send it?' : STEPS[i].title;
     bar.querySelector('.nc-sub').textContent   = i === LAST ? 'Your estimate lands in your inbox, and a real person checks the numbers.' : STEPS[i].sub;
     Array.prototype.forEach.call(bar.querySelectorAll('.nc-prog i'), function(d, n){ d.classList.toggle('on', n <= i); });
-    nav.querySelector('.nc-back').style.visibility = i ? 'visible' : 'hidden';
+    // display, not visibility: a hidden-but-present Back button kept its width
+    // and shoved Continue off-centre.
+    nav.querySelector('.nc-back').style.display = i ? '' : 'none';
     nav.querySelector('.nc-next').textContent = i === LAST ? 'Send me my estimate' : (i === LAST - 1 ? 'Almost done' : 'Continue');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -2839,7 +2855,7 @@
   .nc-prog i.on{background:#1f6f5c}
   .nc-title{font-size:20px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em}
   .nc-sub{color:#4a5159;font-size:14.5px;margin:0}
-  .nc-nav{display:flex;gap:12px;align-items:center;margin:22px 0 4px}
+  .nc-nav{display:flex;gap:12px;align-items:center;justify-content:center;max-width:520px;margin:22px auto 4px}
   .nc-lead{margin-bottom:4px}
   .calc-section > .project-options,.calc-section > .countertop-sections{margin-bottom:0}
   .nc-nav button{font:inherit;font-weight:800;border-radius:12px;cursor:pointer;border:0;padding:15px 22px}
@@ -2852,6 +2868,22 @@
   .nc-ok{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:12.5px;color:#7a828b;line-height:1.5}
   .nc-ok input{width:18px;height:18px;margin-top:2px;flex-shrink:0}
   .nc-err{display:none;color:#a3271f;font-size:14px;margin-top:10px}
+
+  /* One column, one gutter. The panels inherited three different widths from the
+     source page — breadcrumb and hero at one inset, the calculator card
+     at another, the tips panel wider than both — so nothing lined up down the
+     left edge. Same max-width and the same auto margins puts every block on one
+     grid line. */
+  .page-content > .breadcrumb,
+  .page-content > .calc-hero,
+  .page-content > .calculator-card,
+  .page-content > .tips-section,
+  .page-content > .other-tools{max-width:900px;margin-left:auto;margin-right:auto;width:100%}
+  .page-content{padding-left:20px;padding-right:20px;box-sizing:border-box}
+  .results-panel{margin-left:0;margin-right:0}
+  /* The estimate button is the one thing on the page that should sit dead
+     centre, so it reads as the end of the flow rather than another field. */
+  .nc-next{max-width:340px}
 </style>
 </body>
 </html>
