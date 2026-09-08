@@ -24,11 +24,27 @@ const { MongoClient } = require('mongodb');
 
 const MARKUP_STD = Number(process.env.CATALOG_MARKUP_STD || 1.30);
 const MARKUP_TILE = Number(process.env.CATALOG_MARKUP_TILE || 1.50);
+
+// WE PAY SALES TAX ON WHAT WE BUY, so cost is not what a slab lands at.
+//
+// retail = cost x markup skipped it entirely, which quietly shaves the tax off
+// every margin: a 1.30 markup on a taxed cost is 1.30 / 1.085 = 1.198 real, so
+// a "30% margin" is actually about 20%. Measured 2026-09-07 across the live
+// catalog: 2,715 active products carry exactly cost x 1.30, every one of them
+// thinner than intended by the tax.
+//
+// This is the same rule sync-vigo.js and the countertop pages already use —
+// retail = cost x TAX x markup — so the three stop disagreeing about what a
+// margin is. Arizona 8.5%; override per-tenant if that ever changes.
+const INPUT_TAX = Number(process.env.CATALOG_INPUT_TAX || 1.085);
+
 const MONGO_DB = process.env.VENDOR_MONGO_DB || 'voiceflow-crm';
 
 const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const round2 = (n) => Math.round(n * 100) / 100;
-const markupFor = (category) => (/tile/i.test(category || '') ? MARKUP_TILE : MARKUP_STD);
+// Landed multiplier: tax first, then margin. Named so a caller cannot mistake it
+// for a bare markup and apply tax twice.
+const markupFor = (category) => INPUT_TAX * (/tile/i.test(category || '') ? MARKUP_TILE : MARKUP_STD);
 
 // A catalog vendor_id may be SOURCED under a different CRM vendor label — e.g.
 // Caesarstone/Silestone slabs come off the Aracruz sheet, PentalQuartz off ASG.

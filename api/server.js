@@ -3812,155 +3812,18 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         break;
 
       // ============ PROJECT PAYMENT EVENTS ============
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object;
-
-        // Check if this is a project payment
-        if (pi.metadata?.project_id) {
-          logger.info('Project payment succeeded:', pi.id, 'Project:', pi.metadata.project_id);
-
-          const projectId = pi.metadata.project_id;
-          const amount = pi.amount / 100;
-          const paymentType = pi.metadata.payment_type || 'payment';
-
-          // Update payment record
-          await supabase
-            .from('project_payments')
-            .update({
-              status: 'succeeded',
-              completed_at: new Date().toISOString(),
-              stripe_charge_id: pi.latest_charge,
-              receipt_url: pi.receipt_url
-            })
-            .eq('stripe_payment_intent_id', pi.id);
-
-          // Get current project
-          const { data: project } = await supabase
-            .from('room_designs')
-            .select('*')
-            .eq('id', projectId)
-            .single();
-
-          if (project) {
-            const newAmountPaid = (project.amount_paid || 0) + amount;
-            const isPaidInFull = newAmountPaid >= (project.quote_total || 0);
-
-            // Update project
-            await supabase
-              .from('room_designs')
-              .update({
-                amount_paid: newAmountPaid,
-                payment_status: isPaidInFull ? 'paid' : (paymentType === 'deposit' ? 'deposit_paid' : 'partial'),
-                status: isPaidInFull ? 'paid' : (project.status === 'approved' ? 'paid' : project.status),
-                stripe_payment_intent_id: pi.id
-              })
-              .eq('id', projectId);
-
-            // Log activity
-            await supabase.from('project_activities').insert({
-              project_id: projectId,
-              activity_type: 'payment_received',
-              description: `${paymentType} payment of $${amount.toFixed(2)} received`,
-              metadata: { payment_intent_id: pi.id, amount, payment_type: paymentType }
-            });
-
-            // Send receipt to customer
-            if (project.customer_email) {
-              const receiptHtml = `
-<!DOCTYPE html>
-<html>
-<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
-      <h1 style="color: #fff; margin: 0; font-size: 24px;">Payment Received!</h1>
-    </div>
-    <div style="padding: 30px;">
-      <p style="color: #333; font-size: 16px;">Hi ${project.customer_name || 'there'},</p>
-      <p style="color: #333; font-size: 16px;">Thank you for your payment. Here are the details:</p>
-
-      <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
-        <table width="100%" style="border-collapse: collapse;">
-          <tr>
-            <td style="padding: 8px 0; color: #666;">Project:</td>
-            <td style="padding: 8px 0; color: #333; text-align: right; font-weight: 600;">${project.name}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #666;">Payment Type:</td>
-            <td style="padding: 8px 0; color: #333; text-align: right;">${paymentType}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #666;">Amount Paid:</td>
-            <td style="padding: 8px 0; color: #10b981; text-align: right; font-weight: 700; font-size: 18px;">$${amount.toFixed(2)}</td>
-          </tr>
-          <tr style="border-top: 1px solid #eee;">
-            <td style="padding: 12px 0 8px; color: #666;">Total Paid:</td>
-            <td style="padding: 12px 0 8px; color: #333; text-align: right;">$${newAmountPaid.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #666;">Project Total:</td>
-            <td style="padding: 8px 0; color: #333; text-align: right;">$${(project.quote_total || 0).toFixed(2)}</td>
-          </tr>
-          ${!isPaidInFull ? `
-          <tr>
-            <td style="padding: 8px 0; color: #666;">Remaining Balance:</td>
-            <td style="padding: 8px 0; color: #f59e0b; text-align: right; font-weight: 600;">$${((project.quote_total || 0) - newAmountPaid).toFixed(2)}</td>
-          </tr>
-          ` : ''}
-        </table>
-      </div>
-
-      ${isPaidInFull ? `
-      <div style="background: #dcfce7; border-radius: 8px; padding: 15px; text-align: center;">
-        <p style="color: #166534; margin: 0; font-weight: 600;">Project is paid in full! We'll be in touch soon.</p>
-      </div>
-      ` : ''}
-    </div>
-    <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
-      <p style="color: #999; font-size: 12px; margin: 0;">Questions? Call (602) 833-3189</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
-              await transporter.sendMail({
-                from: `"Surprise Granite" <${FROM_EMAIL}>`,
-                to: project.customer_email,
-                subject: `Payment Received - ${project.name}`,
-                html: receiptHtml
-              });
-            }
-
-            // Notify owner
-            if (project.user_id) {
-              const { data: owner } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('id', project.user_id)
-                .single();
-
-              if (owner?.email) {
-                await transporter.sendMail({
-                  from: `"Surprise Granite" <${FROM_EMAIL}>`,
-                  to: owner.email,
-                  subject: `Payment Received - ${project.name} - $${amount.toFixed(2)}`,
-                  html: `
-                    <h2>Payment Received!</h2>
-                    <p><strong>Project:</strong> ${project.name}</p>
-                    <p><strong>Customer:</strong> ${project.customer_name || project.customer_email}</p>
-                    <p><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-                    <p><strong>Payment Type:</strong> ${paymentType}</p>
-                    <p><strong>Total Paid:</strong> $${newAmountPaid.toFixed(2)} / $${(project.quote_total || 0).toFixed(2)}</p>
-                    ${isPaidInFull ? '<p style="color: green; font-weight: bold;">PROJECT PAID IN FULL!</p>' : ''}
-                  `
-                });
-              }
-            }
-          }
-        }
-        break;
-      }
-
-      // ============ VENDOR SUBSCRIPTION EVENTS ============
+      // NOTE: a second `case 'payment_intent.succeeded'` used to sit here —
+      // 149 lines handling PROJECT payments (project_payments,
+      // project_activities, room_designs, profiles). A switch takes the FIRST
+      // matching case, so none of it had ever run since it was added on
+      // 2026-01-17. It cost nothing only because the feature was never used:
+      // project_payments and project_activities are both empty tables.
+      //
+      // Deleted rather than merged. Folding unrun code into the live handler
+      // would put an untested path in front of real payments; the live block
+      // has zero references to project_id, so project payments are simply NOT
+      // handled today, and that is now visible instead of looking handled.
+      // Reinstate deliberately, with tests, if project payments ship.
       case 'customer.subscription.created': {
         const subscription = event.data.object;
         const vendorId = subscription.metadata?.vendor_id;
