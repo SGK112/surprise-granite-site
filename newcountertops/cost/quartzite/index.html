@@ -96,5 +96,15 @@
   <div>&copy; 2026 NewCountertops.com</div>
   <div><a href="/quote/">Get a quote</a> · <a href="/cost/">Costs</a> · <a href="/calculator/">Calculator</a> · <a href="/privacy/">Privacy</a></div>
 </div></footer>
+
+<script>
+// A table that scrolls sideways with no visual cue reads as a table that is
+// simply cut off. Only flag the ones that actually overflow.
+(function(){function m(){document.querySelectorAll('.tablewrap').forEach(function(w){
+  w.classList.toggle('is-scrollable', w.scrollWidth > w.clientWidth + 1);});}
+m();addEventListener('resize',m);
+document.querySelectorAll('.tablewrap').forEach(function(w){w.addEventListener('scroll',function(){
+  w.classList.toggle('is-scrollable', w.scrollWidth - w.scrollLeft > w.clientWidth + 1);});});})();
+</script>
 </body>
 </html>

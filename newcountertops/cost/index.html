@@ -89,6 +89,19 @@
   img,video,table,pre{max-width:100%}
   body{overflow-wrap:break-word}
   .mat > *,.slabcard,.slabcard figcaption{min-width:0}
+
+  /* iPhone SE and friends: buy the price table enough room to fit outright,
+     and where it still can't, make the scroll visible instead of a secret. */
+  @media (max-width:360px){
+    th,td{padding:7px 4px}
+    table{font-size:13.5px}
+    .dim{font-size:12.5px}
+  }
+  .tablewrap{position:relative}
+  .tablewrap::after{content:"";position:absolute;top:0;right:0;bottom:0;width:26px;
+    pointer-events:none;opacity:0;transition:opacity .2s;
+    background:linear-gradient(to right,rgba(255,253,250,0),rgba(255,253,250,.96))}
+  .tablewrap.is-scrollable::after{opacity:1}
 </style>
 </head>
 <body>
@@ -246,5 +259,15 @@
   <div>&copy; 2026 NewCountertops.com</div>
   <div><a href="/quote/">Get a quote</a> · <a href="/calculator/">Calculator</a> · <a href="/privacy/">Privacy</a></div>
 </div></footer>
+
+<script>
+// A table that scrolls sideways with no visual cue reads as a table that is
+// simply cut off. Only flag the ones that actually overflow.
+(function(){function m(){document.querySelectorAll('.tablewrap').forEach(function(w){
+  w.classList.toggle('is-scrollable', w.scrollWidth > w.clientWidth + 1);});}
+m();addEventListener('resize',m);
+document.querySelectorAll('.tablewrap').forEach(function(w){w.addEventListener('scroll',function(){
+  w.classList.toggle('is-scrollable', w.scrollWidth - w.scrollLeft > w.clientWidth + 1);});});})();
+</script>
 </body>
 </html>

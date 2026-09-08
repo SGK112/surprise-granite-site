@@ -77,3 +77,16 @@
   img,video,table,pre{max-width:100%}
   body{overflow-wrap:break-word}
   .mat > *,.slabcard,.slabcard figcaption{min-width:0}
+
+  /* iPhone SE and friends: buy the price table enough room to fit outright,
+     and where it still can't, make the scroll visible instead of a secret. */
+  @media (max-width:360px){
+    th,td{padding:7px 4px}
+    table{font-size:13.5px}
+    .dim{font-size:12.5px}
+  }
+  .tablewrap{position:relative}
+  .tablewrap::after{content:"";position:absolute;top:0;right:0;bottom:0;width:26px;
+    pointer-events:none;opacity:0;transition:opacity .2s;
+    background:linear-gradient(to right,rgba(255,253,250,0),rgba(255,253,250,.96))}
+  .tablewrap.is-scrollable::after{opacity:1}
