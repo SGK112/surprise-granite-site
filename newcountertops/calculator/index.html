@@ -2028,7 +2028,7 @@
 <footer style="border-top:1px solid #e6e3dd;background:#fff;padding:26px 20px;color:#7a828b;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif">
   <div style="max-width:1080px;margin:0 auto;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;align-items:center">
     <div>&copy; 2026 NewCountertops.com</div>
-    <div><a href="/quote/" style="color:#7a828b">Get a quote</a></div>
+    <div><a href="/quote/" style="color:#7a828b">Get a quote</a> · <a href="/cost/" style="color:#7a828b">Costs</a> · <a href="/privacy/" style="color:#7a828b">Privacy</a></div>
   </div>
 </footer>
 
@@ -2864,6 +2864,27 @@
   /* The estimate button is the one thing on the page that should sit dead
      centre, so it reads as the end of the flow rather than another field. */
   .nc-next{max-width:340px}
+
+  /* ── Mobile ───────────────────────────────────────────────────────────
+     iOS zooms the whole viewport whenever a focused field is under 16px, and
+     the user has to pinch back out. Nothing on this form needs to be smaller
+     than that on a phone. */
+  @media (max-width:768px){
+    .project-options select,
+    .project-options input[type=number],
+    .fraction-select,
+    .backsplash-select,
+    .finished-edges-select,
+    .waterfall-height,
+    .waterfall-custom-height,
+    .quote-email-input,
+    .input-wrapper input{font-size:16px}
+    .project-options .opt-price{font-size:12.5px}
+    .result-label{font-size:12.5px}
+    .nc-logo{display:inline-block;padding:8px 0}
+    .nc-cta{padding:13px 18px}
+    footer a{display:inline-block;padding:7px 2px}
+  }
 </style>
 </body>
 </html>

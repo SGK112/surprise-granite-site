@@ -41,3 +41,32 @@
   ul.cmp{padding-left:20px}
   ul.cmp li{margin-bottom:10px}
   .end p{color:var(--body);margin:0 0 18px}
+
+  .slabcard{display:flex;gap:18px;align-items:center;margin:0 0 28px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .slabcard img{width:120px;height:120px;flex:0 0 120px;object-fit:cover;
+    border-radius:10px;border:1px solid var(--line);display:block}
+  .slabcard figcaption{font-size:15px;color:var(--body);line-height:1.5}
+  .slabcard b{display:block;color:var(--ink);margin-bottom:3px}
+  @media(max-width:480px){
+    .slabcard{flex-direction:column;align-items:flex-start}
+    .slabcard img{width:100%;height:160px;flex:none}
+  }
+
+  /* ── Mobile ───────────────────────────────────────────────────────────
+     Touch targets: inline links in prose are exempt, but anything that acts
+     as a control — the logo, footer nav, an accordion — needs a finger-sized
+     hit area, not a text-sized one. */
+  @media (max-width:760px){
+    .logo{display:inline-block;padding:8px 0}
+    footer a{display:inline-block;padding:7px 2px}
+    .fl{gap:8px 18px}
+  }
+
+  /* Under ~380px the four-column price table needs the scroll bar it sits in.
+     Tightening the cells first means most phones never see it. */
+  @media (max-width:420px){
+    th,td{padding:9px 6px}
+    table{font-size:14.5px}
+    summary{padding:7px 0}
+  }

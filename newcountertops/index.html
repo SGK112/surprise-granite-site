@@ -11,6 +11,10 @@
 <meta property="og:description" content="A real price range for your kitchen, and a local pro who can do the work."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://newcountertops.com/"/>
+<meta property="og:image" content="https://newcountertops.com/img/kitchen-hero.webp"/>
+<meta property="og:image:width" content="1400"/>
+<meta property="og:image:height" content="875"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <style>
   :root{
     --ink:#14181d; --body:#4a5159; --muted:#7a828b;
@@ -33,7 +37,14 @@
   .bar .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
     font-weight:700;font-size:14px;padding:10px 18px;border-radius:10px}
 
-  .hero{padding:56px 0 44px}
+  .hero{padding:56px 0 44px;display:grid;grid-template-columns:1.02fr .98fr;
+    gap:48px;align-items:center}
+  .hero-copy{min-width:0}
+  .hero .trust{grid-column:1/-1}
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;gap:30px;padding:38px 0 36px}
+    .hero h1{max-width:none}
+  }
   .hero h1{font-size:clamp(30px,5.2vw,50px);line-height:1.06;letter-spacing:-.03em;
     font-weight:800;margin:0 0 16px;max-width:15ch}
   .hero p.lead{font-size:clamp(17px,2.1vw,20px);color:var(--body);margin:0 0 28px;max-width:52ch}
@@ -45,6 +56,19 @@
   .btn:hover{background:var(--accent-ink)}
   .btn:active{transform:translateY(1px)}
   .btn-note{color:var(--muted);font-size:14px}
+
+  figure{margin:0}
+  .shot img{display:block;width:100%;height:auto;border-radius:16px;
+    border:1px solid var(--line);box-shadow:var(--shadow)}
+
+  .people{padding:52px 0 4px}
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:26px}
+  @media(max-width:760px){.pgrid{grid-template-columns:1fr}}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;box-shadow:var(--shadow)}
+  .pcard img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
+  .pcard figcaption{padding:18px 20px 20px;font-size:15px;color:var(--body)}
+  .pcard b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
 
   .trust{display:flex;gap:26px;flex-wrap:wrap;margin-top:30px;padding-top:22px;border-top:1px solid var(--line)}
   .trust div{font-size:14px;color:var(--body)}
@@ -68,6 +92,16 @@
   footer{border-top:1px solid var(--line);background:var(--panel);padding:26px 0;color:var(--muted);font-size:13px}
   .fl{display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;align-items:center}
   footer a{color:var(--muted)}
+
+  /* ── Mobile ───────────────────────────────────────────────────────────
+     Touch targets: inline links in prose are exempt, but anything that acts
+     as a control — the logo, footer nav, an accordion — needs a finger-sized
+     hit area, not a text-sized one. */
+  @media (max-width:760px){
+    .logo{display:inline-block;padding:8px 0}
+    footer a{display:inline-block;padding:7px 2px}
+    .fl{gap:8px 18px}
+  }
 </style>
 </head>
 <body>
@@ -81,13 +115,23 @@
 
 <main>
   <div class="wrap hero">
-    <h1>What will new countertops actually cost?</h1>
-    <p class="lead">Answer four questions about your kitchen and get a real price range in about
-      a minute — then we'll connect you with a pro who can do the work.</p>
-    <div class="row">
-      <a class="btn" href="/quote/">Get my free quote →</a>
-      <a class="btn" href="/calculator/" style="background:#fff;color:var(--accent-ink);box-shadow:inset 0 0 0 1px var(--line)">Price it myself first</a>
+    <div class="hero-copy">
+      <h1>What will new countertops actually cost?</h1>
+      <p class="lead">Answer four questions about your kitchen and get a real price range in about
+        a minute — then we'll connect you with a pro who can do the work.</p>
+      <div class="row">
+        <a class="btn" href="/quote/">Get my free quote →</a>
+        <a class="btn" href="/calculator/" style="background:#fff;color:var(--accent-ink);box-shadow:inset 0 0 0 1px var(--line)">Price it myself first</a>
+      </div>
     </div>
+
+    <figure class="shot">
+      <img src="/img/kitchen-hero.webp"
+           srcset="/img/kitchen-hero-800.webp 800w, /img/kitchen-hero.webp 1400w"
+           sizes="(max-width:900px) 92vw, 46vw"
+           width="1400" height="875" fetchpriority="high" decoding="async"
+           alt="Kitchen with a white veined stone island and full-height backsplash above olive-green cabinets"/>
+    </figure>
 
     <div class="trust">
       <div><b>No showroom runaround</b>Real numbers before anyone calls you.</div>
@@ -121,6 +165,38 @@
           <p>In Arizona, that's our own fabrication and install crew. Everywhere else, a
             licensed local fabricator who does this every week.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="people">
+    <div class="wrap">
+      <h2>Who's actually on the other end</h2>
+      <p class="sub">A countertop lead form usually means twelve strangers calling you by
+        dinnertime. This one goes to people who cut and fit the stone themselves.</p>
+
+      <div class="pgrid">
+        <figure class="pcard">
+          <img src="/img/josh.webp" width="760" height="570" loading="lazy" decoding="async"
+               alt="Josh Breese in a Surprise Granite polo shirt, standing behind a finished quartz countertop"/>
+          <figcaption>
+            <b>Josh Breese</b>
+            Runs the Arizona fabrication and install crew. If your ZIP code is one of ours,
+            he's the one measuring the kitchen and cutting the slab — not a call centre
+            selling your details on.
+          </figcaption>
+        </figure>
+
+        <figure class="pcard">
+          <img src="/img/customer-barb.webp" width="760" height="570" loading="lazy" decoding="async"
+               alt="Barb, a Surprise Granite customer, sitting in her finished kitchen with the new countertops behind her"/>
+          <figcaption>
+            <b>Barb</b>
+            A customer, filmed in her own kitchen after the install — the countertops behind
+            her are the ones the crew fitted.
+            <a href="https://www.surprisegranite.com/company/reviews/" rel="noopener">Hear it from her →</a>
+          </figcaption>
+        </figure>
       </div>
     </div>
   </section>

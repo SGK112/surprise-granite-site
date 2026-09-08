@@ -11,6 +11,8 @@
 <meta property="og:description" content="Priced from 1,569 slabs available today, not industry averages."/>
 <meta property="og:type" content="article"/>
 <meta property="og:url" content="https://newcountertops.com/cost/"/>
+<meta property="og:image" content="https://newcountertops.com/img/kitchen-hero.webp"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9HJRRMG310"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9HJRRMG310');</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How much do new countertops cost?","acceptedAnswer":{"@type":"Answer","text":"Installed, most kitchens land between $64 and $140 per square foot depending on material. A typical 45 square foot kitchen is roughly $2,902 to $6,300. Material is the variable; fabrication and installation run about $55 per square foot on top of it."}},{"@type":"Question","name":"What is the cheapest countertop material?","acceptedAnswer":{"@type":"Answer","text":"Granite, by a margin — it starts around $9 per square foot for material where quartz starts nearer $14. Natural stone being cheaper than engineered stone surprises people, but granite is quarried in volume and quartz is manufactured."}},{"@type":"Question","name":"Does that price include installation?","acceptedAnswer":{"@type":"Answer","text":"The installed figures on this page include fabrication and installation at $55 per square foot — cutting the slab, the sink cutout, the edge profile, delivery and fitting. They do not include removing your old countertops, plumbing reconnection, or tile backsplash."}},{"@type":"Question","name":"Why is my quote higher than these numbers?","acceptedAnswer":{"@type":"Answer","text":"Usually edges and extras. A waterfall edge adds a whole slab side, a mitred edge doubles the fabrication on that run, and cooktop cutouts, drainboards and reconnects each carry labour. The calculator on this site prices those individually rather than hiding them in a per-foot number."}}]}</script>
@@ -39,7 +41,19 @@
   .tablewrap{overflow-x:auto}
   .callout{background:var(--stone);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:26px 0}
   .callout p:last-child{margin:0}
-  .mat{border-top:1px solid var(--line);padding-top:6px}
+  .mat{border-top:1px solid var(--line);padding-top:6px;
+    display:grid;grid-template-columns:108px 1fr;column-gap:22px}
+  .mat h3,.mat p{grid-column:2}
+  .swatch{grid-column:1;grid-row:1/-1;align-self:start;margin-top:30px;
+    width:108px;height:108px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+  @media(max-width:560px){
+    .mat{grid-template-columns:1fr}
+    .mat h3,.mat p{grid-column:1}
+    .swatch{grid-column:1;grid-row:auto;width:100%;height:160px;margin-top:22px}
+  }
+  figure{margin:26px 0}
+  figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line)}
+  figcaption{color:var(--muted);font-size:14px;margin-top:9px}
   .fig{font-size:15.5px;color:var(--body)}
   .eg{font-size:15.5px;color:var(--muted)}
   details{border-bottom:1px solid var(--line);padding:14px 0}
@@ -50,6 +64,24 @@
   footer{border-top:1px solid var(--line);background:var(--panel);padding:26px 20px;color:var(--muted);font-size:13px}
   .fl{max-width:1080px;margin:0 auto;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
   footer a{color:var(--muted)}
+
+  /* ── Mobile ───────────────────────────────────────────────────────────
+     Touch targets: inline links in prose are exempt, but anything that acts
+     as a control — the logo, footer nav, an accordion — needs a finger-sized
+     hit area, not a text-sized one. */
+  @media (max-width:760px){
+    .logo{display:inline-block;padding:8px 0}
+    footer a{display:inline-block;padding:7px 2px}
+    .fl{gap:8px 18px}
+  }
+
+  /* Under ~380px the four-column price table needs the scroll bar it sits in.
+     Tightening the cells first means most phones never see it. */
+  @media (max-width:420px){
+    th,td{padding:9px 6px}
+    table{font-size:14.5px}
+    summary{padding:7px 0}
+  }
 </style>
 </head>
 <body>
@@ -117,6 +149,7 @@
 
   <h2>What you get for the money</h2>
 <section class="mat" id="quartz">
+      <img class="swatch" src="/img/mat-quartz.webp" width="480" height="480" loading="lazy" decoding="async" alt="Adirondack Birch quartz — a pale white engineered slab with fine grey flecks"/>
       <h3>Quartz countertops</h3>
       <p>Engineered, non-porous and consistent slab to slab. The default for most kitchens because it never needs sealing and what you see in the showroom is what arrives.</p>
       <p class="fig"><strong>$69 – $101</strong> per square foot installed
@@ -125,6 +158,7 @@
         &nbsp;·&nbsp; <a href="/cost/quartz/">quartz costs in detail &rarr;</a></p>
     </section>
 <section class="mat" id="granite">
+      <img class="swatch" src="/img/mat-granite.webp" width="480" height="480" loading="lazy" decoding="async" alt="Alaska White granite — a white and grey slab shot through with black and brown mineral"/>
       <h3>Granite countertops</h3>
       <p>Natural stone, every slab different. The cheapest way into real stone, and the reason to go and look at the actual slab before you buy it.</p>
       <p class="fig"><strong>$64 – $94</strong> per square foot installed
@@ -133,6 +167,7 @@
         &nbsp;·&nbsp; <a href="/cost/granite/">granite costs in detail &rarr;</a></p>
     </section>
 <section class="mat" id="quartzite">
+      <img class="swatch" src="/img/mat-quartzite.webp" width="480" height="480" loading="lazy" decoding="async" alt="Maori quartzite — near-black stone crossed by a broad white quartz vein"/>
       <h3>Quartzite countertops</h3>
       <p>Natural, and harder than granite. Looks like marble, behaves like stone that can take a pan. You pay for that combination.</p>
       <p class="fig"><strong>$85 – $133</strong> per square foot installed
@@ -141,6 +176,7 @@
         &nbsp;·&nbsp; <a href="/cost/quartzite/">quartzite costs in detail &rarr;</a></p>
     </section>
 <section class="mat" id="marble">
+      <img class="swatch" src="/img/mat-marble.webp" width="480" height="480" loading="lazy" decoding="async" alt="Calacatta Gold marble — white stone with soft grey and gold veining"/>
       <h3>Marble countertops</h3>
       <p>The one people want and installers warn about. Beautiful, porous, and it will etch where lemon juice lands. Worth it if you accept a patina.</p>
       <p class="fig"><strong>$74 – $166</strong> per square foot installed
@@ -149,6 +185,7 @@
         &nbsp;·&nbsp; <a href="/cost/marble/">marble costs in detail &rarr;</a></p>
     </section>
 <section class="mat" id="porcelain">
+      <img class="swatch" src="/img/mat-porcelain.webp" width="480" height="480" loading="lazy" decoding="async" alt="Statuario Gold porcelain — a white large-format surface with warm gold veining"/>
       <h3>Porcelain countertops</h3>
       <p>Large-format, extremely hard, and thin. Good for waterfall edges and outdoor kitchens where UV would fade quartz.</p>
       <p class="fig"><strong>$73 – $95</strong> per square foot installed
@@ -157,6 +194,7 @@
         &nbsp;·&nbsp; <a href="/cost/porcelain/">porcelain costs in detail &rarr;</a></p>
     </section>
 <section class="mat" id="dekton">
+      <img class="swatch" src="/img/mat-dekton.webp" width="480" height="480" loading="lazy" decoding="async" alt="A dark charcoal Dekton island in a modern kitchen with floor-to-ceiling glass"/>
       <h3>Dekton countertops</h3>
       <p>Sintered stone. Effectively immune to heat, UV and scratching, which is why it turns up outdoors and on islands people actually cook on.</p>
       <p class="fig"><strong>$87 – $119</strong> per square foot installed
@@ -170,6 +208,12 @@
   <p><strong>Edges.</strong> A standard eased or square edge is included. A mitred or waterfall edge means
   fabricating a second face and matching the veining across the join — on an island that can add a
   four-figure sum on its own.</p>
+  <figure>
+    <img src="/img/edge-detail.webp" width="1000" height="625" loading="lazy" decoding="async"
+         alt="Close-up of a thick mitred countertop edge on a kitchen island, veining carried down the side"/>
+    <figcaption>A mitred edge like this one is two fabricated faces, not one — the veining has to
+      line up across the corner. That is where a quote moves, not the material.</figcaption>
+  </figure>
   <p><strong>Cutouts.</strong> An undermount sink, a cooktop, a bar prep sink and faucet holes each carry
   labour. Most kitchens have two or three.</p>
   <p><strong>Removing what's there.</strong> Tear-out and disposal of the old tops is separate work, and
@@ -192,7 +236,7 @@
 
 <footer><div class="fl">
   <div>&copy; 2026 NewCountertops.com</div>
-  <div><a href="/quote/">Get a quote</a> · <a href="/calculator/">Calculator</a></div>
+  <div><a href="/quote/">Get a quote</a> · <a href="/calculator/">Calculator</a> · <a href="/privacy/">Privacy</a></div>
 </div></footer>
 </body>
 </html>
