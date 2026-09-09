@@ -201,7 +201,8 @@
 
   // ── The only numbers worth tuning ────────────────────────────────────
   // Installed $/sqft = material + fabrication & installation. FAB is the same
-  // $55/sqft Surprise Granite quotes on its own site, so the two never disagree.
+  // $55/sqft, the same rate the calculator and the cost pages quote, so nothing
+  // on this site disagrees with anything else on it.
   // Ranges are deliberately wide: this is a filter to sort $4k kitchens from
   // $14k ones, not a bid. Narrow them once real jobs say what they should be.
   var FAB = 55;
@@ -213,9 +214,8 @@
   };
   var MIN_JOB = 1200;               // nobody fabricates a countertop for less
   var API = 'https://surprise-granite-email-api.onrender.com';
-  // Surprise Granite's existing GA4 property. Shared deliberately rather than
-  // creating a second one: GA4 splits by Hostname, so newcountertops.com stays
-  // separable in reports, and one property means one place to look.
+  // Shared GA4 property. GA4 splits by Hostname, so newcountertops.com stays
+  // separable in reports. A dedicated property would sever this entirely.
   var GA_ID = 'G-9HJRRMG310';
 
   // Arizona ZIPs run 85001–86556. Anything else gets referred, so this single
@@ -273,12 +273,11 @@
       ' · includes fabrication and installation';
 
     $('fork').textContent = st.az
-      ? "You're in our service area. Surprise Granite fabricates and installs this ourselves — same crew, one invoice, licensed AZ contractor ROC #367593."
+      ? "You're inside a service area we cover directly, so this goes to a licensed shop that templates, cuts and installs its own work — one invoice, one crew."
       : "We'll match you with a licensed countertop shop near you. One shop will get in touch — not a call centre, and not a dozen of them.";
 
-    $('consentText').textContent = st.az
-      ? 'I agree that Surprise Granite may contact me about this quote by phone, text or email at the number and address above, including with an autodialer or pre-recorded message. Consent is not a condition of purchase. Message and data rates may apply.'
-      : 'I agree that NewCountertops.com may share my information with a licensed countertop fabricator near me, and that they and NewCountertops.com may contact me about this quote by phone, text or email at the number and address above, including with an autodialer or pre-recorded message. Consent is not a condition of purchase. Message and data rates may apply.';
+    $('consentText').textContent =
+      'I agree that NewCountertops.com may share my information with one licensed countertop shop near me, and that they and NewCountertops.com may contact me about this quote by phone, text or email at the number and address above, including with an autodialer or pre-recorded message. Consent is not a condition of purchase. Message and data rates may apply.';
 
     show(3);
   });
@@ -324,7 +323,7 @@
       $('doneVal').textContent = money(st.low) + ' – ' + money(st.high);
       $('doneH').textContent = st.az ? "We'll be in touch today" : "We're finding your local pro";
       $('doneP').textContent = st.az
-        ? 'Someone from Surprise Granite will call to book a measure. Bring questions — the measure is free either way.'
+        ? 'The shop will call to book a measure. Bring questions — the measure is free either way.'
         : 'We’re matching you with a licensed shop in your area. We’ll be in touch shortly to tell you which one.';
       show(4);
       if(GA_ID && window.gtag) window.gtag('event','generate_lead',{value:st.low,currency:'USD',routing:routing});
