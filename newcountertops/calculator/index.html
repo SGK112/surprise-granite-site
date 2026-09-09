@@ -4,9 +4,11 @@
     <meta charset="utf-8"/>
     <title>Countertop Cost Calculator — NewCountertops.com</title>
     <link rel="canonical" href="https://newcountertops.com/calculator/"/>
-    <meta content="Calculate your countertop square footage instantly. Add multiple sections for L-shaped or U-shaped layouts. Get accurate measurements for your kitchen or bathroom project." name="description"/>
+    <meta content="Free countertop calculator: measure your kitchen, get the square footage and a real installed price range for quartz, granite or quartzite." name="description"/>
     <meta content="Countertop Square Footage Calculator | NewCountertops.com" property="og:title"/>
     <meta content="Calculate your countertop square footage instantly. Free tool for kitchen and bathroom countertop projects." property="og:description"/>
+    <meta property="og:url" content="https://newcountertops.com/calculator/"/>
+    <meta property="og:image" content="https://newcountertops.com/img/hero-wide.webp"/>
     <meta content="Countertop Square Footage Calculator | NewCountertops.com" property="twitter:title"/>
     <meta content="Calculate your countertop square footage instantly. Free tool for kitchen and bathroom countertop projects." property="twitter:description"/>
     <meta property="og:type" content="website"/>
@@ -1582,10 +1584,10 @@
 
                 <!-- Project Options -->
                 <div class="project-options">
-                    <label class="edge-label">Material &amp; Service</label>
+                    <div class="edge-label">Material &amp; Service</div>
                     <div class="options-grid">
                         <div class="input-group">
-                            <label>Material Price Tier</label>
+                            <label for="optMaterialTier">Material Price Tier</label>
                             <select id="optMaterialTier" onchange="calculateAll()">
                                 <option value="1">Tier 1 · $10–20/sqft</option>
                                 <option value="2">Tier 2 · $20–40/sqft</option>
@@ -1595,7 +1597,7 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Service</label>
+                            <label for="optService">Service</label>
                             <select id="optService" onchange="calculateAll()">
                                 <option value="55" selected>Fabrication &amp; Install · $55/sqft</option>
                                 <option value="45">Fabrication only · $45/sqft</option>
@@ -1603,7 +1605,7 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Edge Profile</label>
+                            <label for="optEdge">Edge Profile</label>
                             <select id="optEdge" onchange="calculateAll()">
                                 <option value="0" selected>Flat / Eased / Square · Free</option>
                                 <option value="20">Miter · +$20/linear ft</option>
@@ -1611,7 +1613,7 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Countertop Removal</label>
+                            <label for="optDemo">Countertop Removal</label>
                             <select id="optDemo" onchange="calculateAll()">
                                 <option value="0" selected>None</option>
                                 <option value="5">Laminate · $5/sqft</option>
@@ -1620,26 +1622,26 @@
                             </select>
                         </div>
                     </div>
-                    <label class="edge-label" style="margin-top:18px;">Sinks &amp; Cutouts</label>
+                    <div class="edge-label" style="margin-top:18px;">Sinks &amp; Cutouts</div>
                     <div class="options-grid">
                         <div class="input-group">
-                            <label>Kitchen sink reconnect <span class="opt-price">$550 ea</span></label>
+                            <label for="optKitchenSink">Kitchen sink reconnect <span class="opt-price">$550 ea</span></label>
                             <input type="number" id="optKitchenSink" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
                         </div>
                         <div class="input-group">
-                            <label>Bath vanity reconnect <span class="opt-price">$275 ea</span></label>
+                            <label for="optBathSink">Bath vanity reconnect <span class="opt-price">$275 ea</span></label>
                             <input type="number" id="optBathSink" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
                         </div>
                         <div class="input-group">
-                            <label>Undermount cutout <span class="opt-price">1 free, then $150</span></label>
+                            <label for="optUndermount">Undermount cutout <span class="opt-price">1 free, then $150</span></label>
                             <input type="number" id="optUndermount" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
                         </div>
                         <div class="input-group">
-                            <label>Bar prep sink <span class="opt-price">1 free, then $125</span></label>
+                            <label for="optBarPrep">Bar prep sink <span class="opt-price">1 free, then $125</span></label>
                             <input type="number" id="optBarPrep" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
                         </div>
                         <div class="input-group">
-                            <label>Cooktop cutout <span class="opt-price">$150 ea</span></label>
+                            <label for="optCooktop">Cooktop cutout <span class="opt-price">$150 ea</span></label>
                             <input type="number" id="optCooktop" min="0" step="1" value="0" placeholder="0" oninput="calculateAll()">
                         </div>
                     </div>
@@ -1669,9 +1671,9 @@
                                 <label>Length</label>
                                 <div class="measurement-inputs">
                                     <div class="input-wrapper">
-                                        <input type="number" class="length-whole" placeholder="0" min="0" step="1" oninput="calculateAll()">
+                                        <input type="number" class="length-whole" aria-label="Length in whole inches" placeholder="0" min="0" step="1" oninput="calculateAll()">
                                     </div>
-                                    <select class="fraction-select length-fraction" onchange="calculateAll()">
+                                    <select class="fraction-select length-fraction" aria-label="Length, fraction of an inch" onchange="calculateAll()">
                                         <option value="0">0</option>
                                         <option value="0.0625">1/16</option>
                                         <option value="0.125">1/8</option>
@@ -1696,9 +1698,9 @@
                                 <label>Depth</label>
                                 <div class="measurement-inputs">
                                     <div class="input-wrapper">
-                                        <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
+                                        <input type="number" class="depth-whole" aria-label="Depth in whole inches" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
                                     </div>
-                                    <select class="fraction-select depth-fraction" onchange="calculateAll()">
+                                    <select class="fraction-select depth-fraction" aria-label="Depth, fraction of an inch" onchange="calculateAll()">
                                         <option value="0">0</option>
                                         <option value="0.0625">1/16</option>
                                         <option value="0.125">1/8</option>
@@ -1721,7 +1723,7 @@
                             </div>
                             <div class="input-group">
                                 <label>Backsplash</label>
-                                <select class="backsplash-select" onchange="calculateAll()">
+                                <select class="backsplash-select" aria-label="Backsplash height" onchange="calculateAll()">
                                     <option value="0">None</option>
                                     <option value="4">4" Standard</option>
                                     <option value="6">6" Tall</option>
@@ -1730,7 +1732,7 @@
                             </div>
                             <div class="input-group">
                                 <label>Finished Edges</label>
-                                <select class="finished-edges-select" onchange="calculateAll()">
+                                <select class="finished-edges-select" aria-label="Finished edges" onchange="calculateAll()">
                                     <option value="front">Front only</option>
                                     <option value="front-left">Front + Left</option>
                                     <option value="front-right">Front + Right</option>
@@ -1761,13 +1763,13 @@
                                 </div>
                                 <div class="waterfall-height-group">
                                     <label>Drop Height</label>
-                                    <select class="waterfall-height" onchange="calculateAll()">
+                                    <select class="waterfall-height" aria-label="Waterfall drop height" onchange="calculateAll()">
                                         <option value="36">36" (Standard Counter)</option>
                                         <option value="42">42" (Bar Height)</option>
                                         <option value="30">30" (Desk Height)</option>
                                         <option value="custom">Custom...</option>
                                     </select>
-                                    <input type="number" class="waterfall-custom-height" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
+                                    <input type="number" class="waterfall-custom-height" aria-label="Custom waterfall drop height, inches" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
                                 </div>
                             </div>
                         </div>
@@ -1918,7 +1920,7 @@
             <div class="quote-modal-header">
                 <h2>Your Countertop Estimate</h2>
                 <p>NewCountertops.com</p>
-                <button class="quote-modal-close" onclick="closeQuoteModal()">
+                <button class="quote-modal-close" onclick="closeQuoteModal()" aria-label="Close">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" style="stroke:#ffffff;stroke-width:2.5"></line>
                         <line x1="6" y1="6" x2="18" y2="18" style="stroke:#ffffff;stroke-width:2.5"></line>
@@ -1994,7 +1996,7 @@
             <div class="quote-email-form" id="quoteEmailForm">
                 <h4>Email this estimate to yourself</h4>
                 <div class="quote-email-input-row">
-                    <input type="email" class="quote-email-input" id="quoteEmailInput" placeholder="Enter your email">
+                    <input type="email" class="quote-email-input" id="quoteEmailInput" placeholder="Enter your email" aria-label="Your email address" autocomplete="email">
                     <button class="quote-email-submit" onclick="sendQuoteEmail()">Send</button>
                 </div>
             </div>
@@ -2011,7 +2013,7 @@
                     </svg>
                     Email
                 </button>
-                <a href="/get-a-free-estimate/" class="quote-action-btn primary">
+                <a href="/quote/" class="quote-action-btn primary">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -2168,9 +2170,9 @@
                         <label>Length</label>
                         <div class="measurement-inputs">
                             <div class="input-wrapper">
-                                <input type="number" class="length-whole" placeholder="0" min="0" step="1" oninput="calculateAll()">
+                                <input type="number" class="length-whole" aria-label="Length in whole inches" placeholder="0" min="0" step="1" oninput="calculateAll()">
                             </div>
-                            <select class="fraction-select length-fraction" onchange="calculateAll()">
+                            <select class="fraction-select length-fraction" aria-label="Length, fraction of an inch" onchange="calculateAll()">
                                 ${fractionOptions}
                             </select>
                             <span class="input-unit-label">in</span>
@@ -2180,9 +2182,9 @@
                         <label>Depth</label>
                         <div class="measurement-inputs">
                             <div class="input-wrapper">
-                                <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
+                                <input type="number" class="depth-whole" aria-label="Depth in whole inches" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
                             </div>
-                            <select class="fraction-select depth-fraction" onchange="calculateAll()">
+                            <select class="fraction-select depth-fraction" aria-label="Depth, fraction of an inch" onchange="calculateAll()">
                                 ${fractionOptions.replace('value="0.5">1/2', 'value="0.5" selected>1/2')}
                             </select>
                             <span class="input-unit-label">in</span>
@@ -2190,7 +2192,7 @@
                     </div>
                     <div class="input-group">
                         <label>Backsplash</label>
-                        <select class="backsplash-select" onchange="calculateAll()">
+                        <select class="backsplash-select" aria-label="Backsplash height" onchange="calculateAll()">
                             <option value="0">None</option>
                             <option value="4">4" Standard</option>
                             <option value="6">6" Tall</option>
@@ -2199,7 +2201,7 @@
                     </div>
                     <div class="input-group">
                         <label>Finished Edges</label>
-                        <select class="finished-edges-select" onchange="calculateAll()">
+                        <select class="finished-edges-select" aria-label="Finished edges" onchange="calculateAll()">
                             <option value="front">Front only</option>
                             <option value="front-left">Front + Left</option>
                             <option value="front-right">Front + Right</option>
@@ -2230,13 +2232,13 @@
                         </div>
                         <div class="waterfall-height-group">
                             <label>Drop Height</label>
-                            <select class="waterfall-height" onchange="calculateAll()">
+                            <select class="waterfall-height" aria-label="Waterfall drop height" onchange="calculateAll()">
                                 <option value="36">36" (Standard Counter)</option>
                                 <option value="42">42" (Bar Height)</option>
                                 <option value="30">30" (Desk Height)</option>
                                 <option value="custom">Custom...</option>
                             </select>
-                            <input type="number" class="waterfall-custom-height" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
+                            <input type="number" class="waterfall-custom-height" aria-label="Custom waterfall drop height, inches" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
                         </div>
                     </div>
                 </div>
@@ -2256,7 +2258,6 @@
                 </div>
             `;
             container.appendChild(section);
-            updateSectionCount();
             calculateAll();
 
             // Focus the new length input
@@ -2267,7 +2268,6 @@
             const section = btn.closest('.countertop-section');
             section.remove();
             renumberSections();
-            updateSectionCount();
             calculateAll();
         }
 
@@ -2278,11 +2278,6 @@
                 section.dataset.index = index;
             });
             sectionCount = sections.length;
-        }
-
-        function updateSectionCount() {
-            const count = document.querySelectorAll('.countertop-section').length;
-            document.getElementById('sectionCount').textContent = count;
         }
 
         function toggleWaterfall(checkbox) {
@@ -2765,10 +2760,10 @@
   var lead = document.createElement('div');
   lead.className = 'nc-lead';
   lead.innerHTML =
-    '<label>Your name</label><input id="ncName" type="text" autocomplete="name" placeholder="First and last">' +
-    '<label>Email</label><input id="ncEmail" type="email" autocomplete="email" placeholder="you@example.com">' +
-    '<label>Phone</label><input id="ncPhone" type="tel" autocomplete="tel" placeholder="(602) 555-0134">' +
-    '<label>ZIP code</label><input id="ncZip" type="text" inputmode="numeric" maxlength="5" placeholder="85379">' +
+    '<label for="ncName">Your name</label><input id="ncName" type="text" autocomplete="name" placeholder="First and last">' +
+    '<label for="ncEmail">Email</label><input id="ncEmail" type="email" autocomplete="email" placeholder="you@example.com">' +
+    '<label for="ncPhone">Phone</label><input id="ncPhone" type="tel" autocomplete="tel" placeholder="(602) 555-0134">' +
+    '<label for="ncZip">ZIP code</label><input id="ncZip" type="text" inputmode="numeric" maxlength="5" placeholder="85379">' +
     '<label class="nc-ok"><input type="checkbox" id="ncConsent"> I agree to be contacted about this estimate by phone, text or email, ' +
     'including by a licensed fabricator near me if the work is outside Arizona. Consent is not a condition of purchase.</label>' +
     '<div class="nc-err" id="ncErr">Add your name, a valid email, a ZIP and tick the box.</div>';
