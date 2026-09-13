@@ -130,8 +130,16 @@
   <script>
   (function(){
     var API='https://surprise-granite-email-api.onrender.com';
-    var q=new URLSearchParams(location.search);
-    var g=function(k){return (q.get(k)||'').trim().replace(/[<>]/g,'');};
+    // The product params ride in the HASH, not the query string. A fragment is
+    // never part of a URL's identity to a crawler, so the ~5,000 "Write a review"
+    // links on the product pages all collapse to ONE crawlable URL instead of
+    // 5,000 near-duplicates. That is what lets /product-review/ stay OUT of
+    // robots.txt — and being crawlable is the only way Google can see the
+    // noindex above and drop the 109 of these it had already indexed.
+    // The old "?" form is still honoured: review links already sent by email use it.
+    var qs=new URLSearchParams(location.search);
+    var hs=new URLSearchParams(location.hash.replace(/^#/,''));
+    var g=function(k){return (hs.get(k)||qs.get(k)||'').trim().replace(/[<>]/g,'');};
     var sku=g('sku'), slug=g('slug'), category=g('category'), order=g('order'),
         name=g('name'), product=g('product')||g('name_product'), img=g('img');
     var rating=0;

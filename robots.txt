@@ -26,17 +26,30 @@ Disallow: /estimate/
 Disallow: /staff/
 # API endpoints are not pages — stop crawlers wasting budget 404ing on them
 Disallow: /api/
-# Review form: one noindexed page reached via ~4,900 unique query strings.
-# Blocking it keeps crawl budget on the real product pages.
-Disallow: /product-review/
-# Finsweet/Webflow CMS pagination params. These were ~30% of the "Crawled - currently
-# not indexed" bucket (GSC 2026-08-07): every page carried a hidden paginator emitting
-# ?xxxxxxxx_page=2, and Google then COMBINED the params across widgets
-# (?017144ac_page=4&5dd91d68_page=4), so the URL space exploded. The widgets are gone
-# (scripts/strip-webflow-pagination.js) — this covers the thousands of legacy URLs
-# Google already knows, which still return 200. None of them are indexed, so blocking
-# costs no canonical signal.
-Disallow: /*_page=
+
+# ⚠️ /product-review/ and /*_page= were Disallowed here until 2026-09-13. Both were
+# removed on purpose — do NOT re-add them. Blocking a URL does not remove it from
+# the index, it only stops Google READING it, and a blocked URL that something links
+# to gets indexed anyway with no title ("Indexed, though blocked by robots.txt" —
+# 0 pages on 2026-06-29, 125 by 2026-09-03).
+#
+# Every one of those 125 URLs already serves the correct instruction:
+#   /product-review/?…   → <meta robots="noindex, follow"> + canonical /product-review/
+#   …?xxxxxxxx_page=N    → canonical to the param-free URL
+# The Disallow was the ONE thing preventing Google from seeing it. That is a deadlock:
+# the page says "drop me", the robots file says "you may not read that". Removing the
+# block lets the noindex and the canonicals finally do their job.
+#
+# The crawl-budget worry the block was written for is now handled at the source
+# instead, which is where it belongs:
+#   • The ~5,000 "Write a review" links on the product pages now pass their params in
+#     the URL FRAGMENT (/product-review/#sku=…), and a fragment is never part of a
+#     URL's identity to a crawler. 5,000 near-duplicate URLs collapsed to exactly one.
+#   • The Finsweet paginators that minted ?xxxxxxxx_page=N are gone
+#     (scripts/strip-webflow-pagination.js), so nothing generates new ones.
+# Both URL spaces are closed. What is left is a one-time crawl of legacy URLs Google
+# already knows, after which they leave the index for good rather than sitting in
+# "Blocked by robots.txt" forever.
 
 # Sitemap location
 Sitemap: https://www.surprisegranite.com/sitemap.xml
