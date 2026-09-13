@@ -191,7 +191,16 @@ function page(p) {
   const name = p.name || 'Product';
   const brand = p.brand || p.vendor_id || '';
   const price = Number(p.retail_price);
-  const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url]).filter(Boolean);
+  // Absolute URLs, always. 175 tile products are on self-hosted images stored as
+  // site-relative paths ("/images/vendors/bravo-tile/notte-blue.jpg"), and those were
+  // being emitted verbatim into Product schema `image`, `og:image` and
+  // `twitter:image` — all three of which REQUIRE an absolute URL. Google cannot use
+  // a relative image for a rich result or a Merchant listing, and Facebook/LinkedIn
+  // render no preview at all, so every share of those pages was imageless. The
+  // browser-facing <img>/preload never cared, which is why it looked fine on screen.
+  const absUrl = u => (/^https?:\/\//i.test(u) ? u : `${SITE}${String(u).startsWith('/') ? '' : '/'}${u}`);
+  const imgs = (Array.isArray(p.image_urls) && p.image_urls.length ? p.image_urls : [p.primary_image_url])
+    .filter(Boolean).map(absUrl);
   const img = imgs[0] || `${SITE}/images/placeholder.svg`;
   // An image-less product can't be a valid Merchant listing (GSC "Missing field image") and shows a
   // placeholder — noindex it so it's not surfaced/flagged. Still renders for direct visitors.

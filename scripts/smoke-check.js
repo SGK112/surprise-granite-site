@@ -190,6 +190,56 @@ async function checkReviewLinkShape() {
   }
 }
 
+// ── Machine-read image URLs must be absolute ───────────────────────────────
+// og:image, twitter:image and schema.org Product `image` all REQUIRE an absolute
+// URL. A relative one is silently useless: no rich result, no Merchant listing, and
+// no link preview on Facebook/LinkedIn/Slack — while the page looks perfect on
+// screen, because the browser resolves <img src="/…"> fine. That is why 402 pages
+// carried a relative og:image and 327 Product schemas a relative image (every
+// flooring page among them) without anyone noticing. Local-only: this reads files.
+async function checkAbsoluteImageUrls() {
+  if (LIVE) return;
+  const rel = { meta: [], schema: [] };
+  const dirs = ['marketplace', 'countertops', 'flooring', 'materials', 'services', 'blog'];
+  const stack = dirs.map((d) => path.join(ROOT, d)).filter((d) => fs.existsSync(d));
+  const files = [];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) stack.push(p);
+      else if (e.name === 'index.html') files.push(p);
+    }
+  }
+  for (const f of files) {
+    const s = fs.readFileSync(f, 'utf8');
+    if (/<meta\s+(?:property|name)="(?:og:image(?::secure_url)?|twitter:image)"\s+content="\/[^"/]/i.test(s)) {
+      if (rel.meta.length < 3) rel.meta.push(path.relative(ROOT, f));
+      else rel.meta.push('');
+    }
+    for (const m of s.matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+      let d; try { d = JSON.parse(m[1].trim()); } catch (e) { continue; }
+      const walk = (n) => {
+        if (Array.isArray(n)) return n.forEach(walk);
+        if (!n || typeof n !== 'object') return;
+        const v = n.image;
+        for (const u of (Array.isArray(v) ? v : [v])) {
+          if (typeof u === 'string' && u.startsWith('/') && !u.startsWith('//')) {
+            if (rel.schema.length < 3) rel.schema.push(path.relative(ROOT, f)); else rel.schema.push('');
+          }
+        }
+        for (const k of Object.keys(n)) if (typeof n[k] === 'object') walk(n[k]);
+      };
+      walk(d);
+    }
+  }
+  check(`og/twitter images are absolute (${files.length} pages)`, rel.meta.length === 0,
+    `${rel.meta.length} page(s) with a relative og:image — no link preview anywhere, e.g. ${rel.meta.filter(Boolean).slice(0, 3).join(', ')}`);
+  check('schema Product images are absolute', rel.schema.length === 0,
+    `${rel.schema.length} relative schema image(s) — Google cannot build a rich result from these, e.g. ${rel.schema.filter(Boolean).slice(0, 3).join(', ')}`);
+}
+
 // ── robots.txt must not re-block what it cannot then un-index ──────────────
 // Disallow is a READ ban, not a removal tool: blocking these stops Google seeing
 // the noindex/canonical that are already on the pages, so anything already indexed
@@ -277,6 +327,7 @@ async function checkPriceAgreement() {
   await checkReviewForm();
   await checkReviewLinkShape();
   await checkRobots();
+  await checkAbsoluteImageUrls();
   await checkOneSurface();
   await checkSearch();
   await checkPriceAgreement();
