@@ -304,7 +304,14 @@ function reviewsSection(e, rd) {
 
 function related(e) {
   const m = (e.material || 'Stone').toLowerCase();
-  const pool = (byMaterial[m] || []).filter(s => s !== e.slug);
+  // Only link colours that actually get a page. `byMaterial` is the whole dataset,
+  // including entries that never reach renderSet — and one of them, "glisten", was
+  // linked from 967 pages straight into a 404 (its page is written as
+  // "glisten-quartz"). A related-colours strip is pure internal linking, so every
+  // dead entry in it is wasted crawl budget and a dead end for a real visitor.
+  // renderSet only — not the redirect variants either, so these links never take a
+  // hop through a 301.
+  const pool = (byMaterial[m] || []).filter(s => s !== e.slug && renderSet.has(s));
   const pick = pool.slice(0, 8).map(s => bySlug[s]);
   if (!pick.length) return '';
   return `<section class="rel"><h2>More ${esc(e.material)} colors</h2><div class="rel-grid">` +
