@@ -271,7 +271,17 @@ function page(p) {
       { '@type': 'ListItem', position: 4, name }
     ]
   };
-  const cartObj = { id: p.sku || handle, name, price, image: img, variant: brand, category: DIR, href: url };
+  // sku/handle are carried EXPLICITLY, not folded into `id`. The order row stores
+  // whatever the cart sent, so with only `id` every order landed in Supabase with
+  // items[].sku = null and items[].slug = null — the 2026-07-06 and 2026-06-04
+  // orders are both like that, and nothing downstream could tell what had been
+  // bought without re-parsing the product name. The vendor PO needs the part
+  // number. Checkout already accepts either (it resolves on id, handle or sku),
+  // so this costs nothing and makes the order record self-describing.
+  const cartObj = {
+    id: p.sku || handle, sku: p.sku || '', handle, slug: handle,
+    name, price, image: img, variant: brand, category: DIR, href: url,
+  };
   const thumbs = imgs.slice(0, 5).map((u, i) =>
     `<img class="pdp-thumb${i === 0 ? ' active' : ''}" src="${esc(u)}" alt="${esc(name)} view ${i + 1}" loading="lazy" onclick="document.getElementById('pdpMain').src=this.src" onerror="this.remove()"/>`).join('');
   // Brand/SKU/Type alone does not help anyone decide on a $600 sink. Add whatever
@@ -452,7 +462,7 @@ function page(p) {
   <script src="/js/pricing-config.js"></script>
   <script src="/js/sg-auth.js?v=20260205b"></script>
   <script src="/js/cart.js?v=20260713a"></script>
-  <script src="/js/shop-cart-integration.js?v=20260628e"></script>
+  <script src="/js/shop-cart-integration.js?v=20260913a"></script>
 </body>
 </html>`;
 }
