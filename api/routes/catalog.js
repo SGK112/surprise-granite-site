@@ -49,6 +49,13 @@ const PUBLIC_SPEC_KEYS = new Set([
   'slab_size', 'slab_sqft', 'piece_size', 'piece_sqft',   // physical dimensions
   'wear_layer', 'sf_per_box',                             // flooring
   'spec_pdf_url', 'install_pdf_url', 'parts_pdf_url',     // vendor spec/cut sheets (public-safe)
+  // ⚠️ `msrp` was added here on 2026-09-13 and REVERTED the same day. 831 in-stock
+  // products sit a median 41% under MSRP and showing that saving is the strongest
+  // reason-to-buy the catalogue has — but publishing it is a MAP (minimum advertised
+  // price) question, not a technical one: ALFI/Whitehaus terms are cost x0.405/x0.50
+  // with a MAP floor, and advertising "MSRP $900, ours $587" can breach the dealer
+  // agreement. api/tests/unit/publicSpecs.test.js asserts msrp stays out. Do not add
+  // it back without the vendor agreements actually being checked.
   // The PDP renders its DISCONTINUED banner from `p.active === false ||
   // specs.discontinued` (marketplace/product/index.html). Without this key the
   // flag was stripped here, so a colour marked discontinued while still active —
@@ -219,7 +226,9 @@ router.get('/', async (req, res) => {
 
     let q = supabase
       .from('catalog_products')
-      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags, vendor_cost', { count: 'exact' })
+      // `specs` is selected raw and MUST be run through publicSpecs() below for any
+      // non-internal caller — it carries cost_basis/markup_x alongside the safe keys.
+      .select('id, vendor_id, sku, slug, name, brand, category, subcategory, short_description, primary_image_url, image_urls, retail_price, price_unit, size, finish, color_family, sample_eligible, sample_price, in_stock, vendor_url, tags, vendor_cost, specs', { count: 'exact' })
       .eq('active', true)
       .order('vendor_id', { ascending: true })
       .order('name', { ascending: true })
@@ -247,6 +256,9 @@ router.get('/', async (req, res) => {
         return withInstalled({ ...p, margin_pct: simpleMarginPct(p) }, true);
       }
       const { vendor_cost, ...pub } = p; // public: retail only
+      // Same allowlist the single-product route uses. Without this the list would
+      // publish the whole specs blob — cost_basis and markup_x included.
+      if (pub.specs && typeof pub.specs === 'object') pub.specs = publicSpecs(pub.specs);
       return withInstalled(pub, false);
     });
     return res.json({ success: true, products, total: count, limit, offset, cost_visible: internal });

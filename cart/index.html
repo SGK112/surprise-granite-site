@@ -293,7 +293,12 @@
         }).join('');
 
         document.getElementById('cartSubtotal').textContent = fmt(totals.subtotal);
-        document.getElementById('cartShipping').textContent = totals.shipping === 0 ? (totals.subtotal >= 1000 ? 'Free' : '$0.00') : fmt(totals.shipping);
+        // Shipping of zero IS free shipping — say so. This used to print a flat
+        // "$0.00" unless the subtotal cleared $1,000, but the real threshold is
+        // $500 per vendor (getCartTotals, mirroring the server price-validator),
+        // so every order between $500 and $1,000 earned free shipping and was
+        // shown a number instead of the word that sells it.
+        document.getElementById('cartShipping').textContent = totals.shipping === 0 ? 'Free' : fmt(totals.shipping);
         document.getElementById('cartTax').textContent = 'Calculated at checkout';
         document.getElementById('cartTotal').textContent = fmt(totals.total);
       }

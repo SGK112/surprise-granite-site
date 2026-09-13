@@ -344,9 +344,14 @@
     try {
       // Build line items for Stripe - include products, tax, and shipping
       // Include id and handle for server-side price validation against shopify_products
+      // sku and slug ride along so the order row can say WHAT was bought. Without
+      // them every order stored items[].sku = null, and the vendor PO needs the part
+      // number — see the 2026-06-04 and 2026-07-06 orders, which have only a name.
       const lineItems = cart.map(item => ({
         id: item.id || null,
-        handle: item.handle || null,
+        handle: item.handle || item.slug || null,
+        sku: item.sku || null,
+        slug: item.slug || item.handle || null,
         name: item.name || 'Product',
         price: Math.round((parseFloat(item.price) || 0) * 100),
         quantity: item.quantity || 1,

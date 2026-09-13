@@ -284,9 +284,14 @@ const starStr = n => '★★★★★☆☆☆☆☆'.slice(5 - Math.round(n), 1
 // Real approved customer reviews for a color → visible section + (in renderPage) Product schema.
 // Always renders a "Write a review" CTA; shows the rating summary + cards only when reviews exist.
 function reviewsSection(e, rd) {
-  // nofollow: every color page emits a unique query string onto one noindexed
-  // form, so leaving these crawlable burns crawl budget (GSC 2026-07: ~1,500 found).
-  const rateLink = `<a class="rv-cta" rel="nofollow" href="/product-review/?sku=${encodeURIComponent(e.slug)}&amp;product=${encodeURIComponent(e.name)}&amp;slug=${encodeURIComponent(e.slug)}&amp;category=countertop&amp;img=${encodeURIComponent(e.images[0] || '')}">✍️ Write a review</a>`;
+  // The params go after "#", not "?" — keep it that way. A fragment is not part of
+  // a URL's identity to a crawler, so all ~5,000 of these links resolve to the single
+  // URL /product-review/ instead of 5,000 near-duplicates. That is what closed the
+  // "Indexed, though blocked by robots.txt" bucket (125 pages, GSC 2026-09-13) and
+  // let /product-review/ come back OUT of robots.txt, where its noindex can be read.
+  // rel=nofollow stays, but it is only a hint — Google followed these anyway, which
+  // is how they were discovered in the first place. The "#" is what actually works.
+  const rateLink = `<a class="rv-cta" rel="nofollow" href="/product-review/#sku=${encodeURIComponent(e.slug)}&amp;product=${encodeURIComponent(e.name)}&amp;slug=${encodeURIComponent(e.slug)}&amp;category=countertop&amp;img=${encodeURIComponent(e.images[0] || '')}">✍️ Write a review</a>`;
   if (rd && rd.count > 0) {
     const items = (rd.reviews || []).slice(0, 12).map(r =>
       `<li class="rv"><div class="rv-top"><span class="rv-stars">${starStr(r.rating)}</span>${r.verified ? '<span class="rv-vb">Verified buyer</span>' : ''}</div>${r.title ? `<div class="rv-h">${esc(r.title)}</div>` : ''}${r.body ? `<p class="rv-b">${esc(r.body)}</p>` : ''}<div class="rv-a">${esc(r.author_name || 'Verified Customer')}</div></li>`).join('');

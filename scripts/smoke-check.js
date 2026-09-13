@@ -138,6 +138,73 @@ async function checkReviewForm() {
   check('review form: has an exit', /id="closeBtn"/.test(html), 'no close control — the form is a dead end');
   check('review form: the exit works without JS',
     /<a class="close"[^>]*href="\/[^"]+"/.test(html), 'close has no href to fall back on');
+
+  // The product params arrive in the FRAGMENT, so the page must read location.hash.
+  check('review form: reads params from the hash',
+    /location\.hash/.test(html),
+    'reads only location.search — every "Write a review" link would land on an empty form');
+  // …and the query string must still work: review links Aria already emailed use "?".
+  check('review form: still honours the legacy ?sku= form',
+    /location\.search/.test(html),
+    'dropped the query-string fallback — review links already sent by email would break');
+}
+
+// ── The review CTA must stay on "#", not "?" ───────────────────────────────
+// This is the whole point of the 2026-09-13 fix and it is a one-character revert
+// away at all times. "?" puts a unique URL on ~5,000 product pages pointing at one
+// noindexed form; "#" collapses them to a single crawlable URL, which is what lets
+// /product-review/ stay out of robots.txt where its noindex can actually be read.
+// GSC symptom if this regresses: "Indexed, though blocked by robots.txt" climbing.
+async function checkReviewLinkShape() {
+  // Locally, scan EVERY product page — sampling a handful would miss a revert on
+  // any page it happened not to pick, which is exactly how this would slip through.
+  // Against the live site that is ~7,300 fetches, so there we sample instead.
+  const dirs = [
+    ...['sinks', 'faucets', 'tile', 'bathroom', 'kitchen-accessories']
+      .flatMap((c) => dirsIn(`marketplace/${c}`).map((h) => `marketplace/${c}/${h}`)),
+    ...dirsIn('countertops').map((h) => `countertops/${h}`),
+  ];
+  const targets = LIVE ? pick(dirs, 6) : dirs;
+
+  let checked = 0;
+  const reverted = [];
+  for (const rel of targets) {
+    const html = await readPage(`/${rel}/`);
+    if (!html || !html.includes('/product-review/')) continue;
+    checked++;
+    if (/href="\/product-review\/\?/.test(html)) reverted.push(rel);
+  }
+  check(`review CTA uses the fragment (${checked} page${checked === 1 ? '' : 's'} scanned)`,
+    reverted.length === 0,
+    `${reverted.length} page(s) reverted to "?sku=", e.g. ${reverted.slice(0, 3).join(', ')} — ` +
+    'this remints thousands of crawlable near-duplicate URLs');
+  check('review CTA: found pages to check', checked > 0,
+    'no product page linked /product-review/ — the CTA may have been dropped entirely');
+
+  // The generators rebuild these pages, so guard them too or the next run undoes it.
+  for (const gen of ['scripts/gen-marketplace-pages.js', 'scripts/build-countertop-pages.js']) {
+    const src = fs.existsSync(path.join(ROOT, gen)) ? fs.readFileSync(path.join(ROOT, gen), 'utf8') : '';
+    check(`${gen}: emits the fragment form`,
+      !!src && !/\/product-review\/\?/.test(src),
+      'generator still emits "?sku=" — the next rebuild would revert every product page');
+  }
+}
+
+// ── robots.txt must not re-block what it cannot then un-index ──────────────
+// Disallow is a READ ban, not a removal tool: blocking these stops Google seeing
+// the noindex/canonical that are already on the pages, so anything already indexed
+// is frozen there permanently. Both lines were removed 2026-09-13 for that reason.
+async function checkRobots() {
+  const file = path.join(ROOT, 'robots.txt');
+  if (!check('robots.txt: exists', fs.existsSync(file), 'no robots.txt')) return;
+  const txt = fs.readFileSync(file, 'utf8');
+  const directives = txt.split('\n').filter((l) => /^\s*Disallow:/i.test(l)).join('\n');
+  check('robots.txt: /product-review/ stays crawlable',
+    !/Disallow:\s*\/product-review\//i.test(directives),
+    're-blocked — Google can no longer read its noindex, so indexed copies can never drop out');
+  check('robots.txt: *_page= stays crawlable',
+    !/Disallow:\s*\/\*_page=/i.test(directives),
+    're-blocked — the param URLs canonical correctly, but blocked Google cannot see that');
 }
 
 // ── One product, one page ──────────────────────────────────────────────────
@@ -208,6 +275,8 @@ async function checkPriceAgreement() {
   await checkMarketplace('faucets', 'faucets');
   await checkCountertops();
   await checkReviewForm();
+  await checkReviewLinkShape();
+  await checkRobots();
   await checkOneSurface();
   await checkSearch();
   await checkPriceAgreement();

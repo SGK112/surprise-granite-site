@@ -468,8 +468,15 @@
       var href = providedObj && providedObj.href;
       if (!href && card && card.tagName === 'A') href = card.getAttribute('href') || '';
 
+      // This rebuild is where product identity used to be lost: the caller passes a
+      // full object with sku/handle/slug, and only `id` survived, so every order row
+      // stored items[].sku = null and the vendor PO had nothing but a product name
+      // to go on. Carry them through when the caller supplied them.
       window.SgCart.addToCart({
         id: id,
+        sku: (providedObj && (providedObj.sku || providedObj.id)) || '',
+        handle: (providedObj && (providedObj.handle || providedObj.slug)) || '',
+        slug: (providedObj && (providedObj.slug || providedObj.handle)) || '',
         name: name,
         price: price,
         image: image || '',
