@@ -24,6 +24,11 @@ const ROOT = path.resolve(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
 const API = 'https://surprise-granite-email-api.onrender.com';
 const CAT = (process.argv[2] || 'sink').toLowerCase();
+// --preview=<sku|slug> renders ONE product to stdout and writes nothing. A template
+// change previously had no way to be checked short of regenerating ~2,000 pages,
+// which mixes the edit under review with live price/stock drift and makes the diff
+// unreadable. Render one, read it, then run for real.
+const PREVIEW = (process.argv.find(a => a.startsWith('--preview=')) || '').split('=')[1] || '';
 // Map a catalog category to its clean-URL dir (an EXISTING listing page so the
 // breadcrumb / "browse all" links resolve) + display labels.
 const CFG = {
@@ -96,6 +101,88 @@ function stockLine(p) {
   // No vendor line for this SKU: the catalog said in_stock and that is all we
   // have. Ship without asserting a quantity we cannot see.
   return '<div class="pdp-ship">✓ Available · ships to your door</div>';
+}
+
+/**
+ * data/shipping-freight.json, loaded once. `freight` = oversized/LTL SKUs that are
+ * always billed their real cost and never qualify for free shipping.
+ */
+let FREIGHT_TABLE = null;
+function freightFor(p) {
+  if (FREIGHT_TABLE === null) {
+    try {
+      FREIGHT_TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'shipping-freight.json'), 'utf8')).freight || {};
+    } catch (e) { FREIGHT_TABLE = {}; }
+  }
+  for (const k of [p.sku, p.slug, p.id]) {
+    if (!k) continue;
+    const hit = FREIGHT_TABLE[String(k)] ?? FREIGHT_TABLE[String(k).toUpperCase()] ?? FREIGHT_TABLE[String(k).toLowerCase()];
+    if (hit) return Number(hit) || 0;
+  }
+  return 0;
+}
+
+/**
+ * What this product actually costs to get to the door, worked out at build time
+ * from the SAME rule the cart and the server price-validator use: per vendor,
+ * under $100 → $15, $100–$500 → $25, $500+ → free — except freight SKUs, which
+ * always bill their real LTL cost and can never be free.
+ *
+ * Shipping that only appears at checkout is the single biggest reason a cart is
+ * abandoned, and this store was showing a bare price and then adding a delivery
+ * charge three screens later. Stating it on the page costs us nothing and removes
+ * the surprise. It is deliberately computed, never a hardcoded promise — an
+ * inaccurate shipping claim is worse than none at all.
+ */
+function deliveryBlock(p, price) {
+  const fr = freightFor(p);
+  let ship;
+  if (fr > 0) {
+    ship = `<strong>$${money(fr)}</strong> freight delivery — this item ships by truck`;
+  } else if (price >= 500) {
+    ship = '<strong>FREE shipping</strong> on this item';
+  } else {
+    const tier = price < 100 ? 15 : 25;
+    const toFree = 500 - price;
+    ship = `<strong>$${money(tier)}</strong> shipping`
+      + (toFree > 0 ? ` — add $${money(toFree)} to this order for free shipping` : '');
+  }
+  return `<ul class="pdp-assure">
+        <li><span aria-hidden="true">🚚</span><div>${ship}</div></li>
+        <li><span aria-hidden="true">↩️</span><div><strong>30-day returns.</strong> Not right? Send it back — see our <a href="/legal/refund-policy/">refund policy</a>.</div></li>
+        <li><span aria-hidden="true">📞</span><div>Questions before you buy? Call <a href="tel:+16028333189">(602) 833-3189</a> — a real person in Arizona.</div></li>
+      </ul>`;
+}
+
+/**
+ * The saving against the manufacturer's price.
+ *
+ * 831 in-stock products carry a vendor MSRP in specs.msrp and sell a median 41%
+ * below it — on the big items that is four figures — and the page shows only a
+ * bare number, so none of that reaches the customer. It is the strongest
+ * reason-to-buy the catalogue has.
+ *
+ * ⚠️ CURRENTLY INERT, ON PURPOSE. `msrp` is withheld from the public catalog API
+ * (api/routes/catalog.js PUBLIC_SPEC_KEYS, asserted by publicSpecs.test.js), so
+ * specs.msrp never arrives here and this renders nothing. That is not an oversight
+ * to "fix" — advertising a price against MSRP is a MAP (minimum advertised price)
+ * question under the ALFI/Whitehaus dealer terms, and breaching MAP can cost the
+ * account. The code is kept ready: allowlist `msrp` and this lights up everywhere
+ * at once, but only once the vendor agreements have actually been checked.
+ *
+ * Only ever renders a real vendor MSRP that is genuinely above our price — never
+ * inferred from markup — so it cannot become a fake "was" price.
+ */
+function savingsBlock(p, price) {
+  const msrp = Number((p.specs || {}).msrp);
+  if (!msrp || !(msrp > price)) return '';
+  const save = msrp - price;
+  const pct = Math.round((save / msrp) * 100);
+  if (pct < 5) return '';
+  return `<div class="pdp-save">
+        <span class="pdp-msrp">MSRP $${money(msrp)}</span>
+        <span class="pdp-savebadge">You save $${money(save)} (${pct}%)</span>
+      </div>`;
 }
 
 function page(p) {
@@ -187,8 +274,56 @@ function page(p) {
   const cartObj = { id: p.sku || handle, name, price, image: img, variant: brand, category: DIR, href: url };
   const thumbs = imgs.slice(0, 5).map((u, i) =>
     `<img class="pdp-thumb${i === 0 ? ' active' : ''}" src="${esc(u)}" alt="${esc(name)} view ${i + 1}" loading="lazy" onclick="document.getElementById('pdpMain').src=this.src" onerror="this.remove()"/>`).join('');
-  const specs = [['Brand', brand], ['SKU', p.sku || handle], ['Type', p.subcategory || `${catLabel}`]]
-    .filter(([, v]) => v).map(([k, v]) => `<li><span>${esc(k)}</span><strong>${esc(v)}</strong></li>`).join('');
+  // Brand/SKU/Type alone does not help anyone decide on a $600 sink. Add whatever
+  // real attributes the catalog actually holds — size, finish, colour — and link
+  // the manufacturer's own spec sheet where we have one (633 products do), so the
+  // dimensions question that currently becomes a phone call, or a lost sale, is
+  // answered on the page.
+  // The columns are mostly empty (finish is null on every row; size on 22%), but the
+  // `specs` blob is not — material is there on 52% of in-stock products, thickness on
+  // 34%, finish on 16%, and a manufacturer spec sheet on 12%. Only keys the catalog
+  // API's PUBLIC_SPEC_KEYS allowlist already publishes are read here, so nothing that
+  // reveals cost can reach the page even if a scraper adds a new key upstream.
+  const sp = p.specs || {};
+  const pick = (...keys) => { for (const k of keys) { const v = sp[k]; if (v || v === 0) return v; } return ''; };
+  const sqft = v => (v ? `${v} sq ft` : '');
+  // `collection` arrives as the scraper's slug ("q-premium-natural-quartz-msi-surfaces").
+  // Printed raw it reads like a database key, so make it a label a customer recognises
+  // and drop the vendor tail, which the Brand row already says.
+  const human = v => String(v || '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b(msi surfaces|msi|arizona tile|cosentino|daltile|bolder|sunstone)\b\s*$/i, '')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+  const sameAs = (a, b) => String(a).trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const specRows = [
+    ['Brand', brand],
+    ['SKU', p.sku || handle],
+    ['Type', p.subcategory || `${catLabel}`],
+    // Suppressed when it just repeats Type — "Type: Quartz / Material: Quartz" reads
+    // like padding and makes the table look auto-generated, which is the opposite of
+    // what a spec table is for.
+    ['Material', sameAs(pick('material'), p.subcategory || catLabel) ? '' : pick('material')],
+    ['Thickness', pick('thickness')],
+    ['Finish', p.finish || pick('finish')],
+    ['Size', p.size || pick('slab_size', 'piece_size')],
+    ['Coverage', sqft(pick('slab_sqft', 'piece_sqft')) || (pick('sf_per_box') ? `${pick('sf_per_box')} sq ft per box` : '')],
+    ['Wear layer', pick('wear_layer')],
+    ['Colour', p.color_family || pick('accentColor')],
+    ['Style', pick('style')],
+    ['Collection', human(pick('collection', 'line', 'product_line'))],
+    ['Origin', pick('origin')],
+    ['Sold by', p.price_unit && p.price_unit !== 'each' ? p.price_unit : ''],
+  ]
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<li><span>${esc(k)}</span><strong>${esc(String(v))}</strong></li>`);
+
+  // The manufacturer's own cut sheet answers the "will it fit my cabinet" question
+  // that otherwise becomes a phone call, or more often a closed tab.
+  for (const [label, key] of [['Spec sheet', 'spec_pdf_url'], ['Installation guide', 'install_pdf_url'], ['Parts list', 'parts_pdf_url']]) {
+    if (sp[key]) specRows.push(`<li><span>${label}</span><strong><a href="${esc(sp[key])}" target="_blank" rel="noopener nofollow">Open PDF</a></strong></li>`);
+  }
+  const specs = specRows.join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -237,6 +372,17 @@ function page(p) {
     .pdp-title{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;margin:6px 0 14px;line-height:1.2}
     .pdp-price{font-size:1.9rem;font-weight:800;color:var(--navy);margin-bottom:8px}
     .pdp-ship{font-size:13px;color:#16a34a;font-weight:600;margin-bottom:20px}
+    .pdp-save{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-2px 0 10px}
+    .pdp-msrp{color:var(--text-muted);text-decoration:line-through;font-size:15px}
+    .pdp-savebadge{background:#e8f7ee;color:#0a7d3f;border:1px solid #bfe6cd;border-radius:999px;padding:3px 11px;font-size:13px;font-weight:800}
+    .pdp-assure{list-style:none;padding:16px 0 0;margin:18px 0 0;border-top:1px solid var(--border);display:grid;gap:11px}
+    .pdp-assure li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:var(--text-secondary)}
+    .pdp-assure li span{flex:0 0 auto;line-height:1.4}
+    .pdp-assure strong{color:var(--text-primary)}
+    .pdp-assure a{color:inherit;text-decoration:underline}
+    @media (prefers-color-scheme:dark){
+      .pdp-savebadge{background:rgba(10,125,63,.18);color:#7ee0a6;border-color:rgba(126,224,166,.35)}
+    }
     .add-to-cart-btn{display:block;width:100%;max-width:340px;background:var(--gold);color:var(--navy);border:none;border-radius:12px;padding:16px 28px;font:inherit;font-size:1rem;font-weight:800;letter-spacing:.01em;cursor:pointer;transition:background .15s,box-shadow .15s,transform .06s;box-shadow:0 1px 2px rgba(26,43,60,.12)}
     .add-to-cart-btn:hover{background:#ffd633;box-shadow:0 4px 14px rgba(26,43,60,.16)}
     .add-to-cart-btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(26,43,60,.12)}
@@ -284,8 +430,10 @@ function page(p) {
       ${brand ? `<div class="pdp-brand">${esc(brand)}</div>` : ''}
       <h1 class="pdp-title">${esc(name)}</h1>
       <div class="pdp-price">$${money(price)}</div>
+      ${savingsBlock(p, price)}
       ${stockLine(p)}
       <button class="add-to-cart-btn" onclick="sgAdd(this)">Add to Cart</button>
+      ${deliveryBlock(p, price)}
       <div class="pdp-desc">${esc(desc)}</div>
       <ul class="pdp-specs">${specs}</ul>
       <a class="pdp-back" href="/marketplace/${DIR}/">← Browse all ${PLURAL}</a>
@@ -366,6 +514,17 @@ const collisions = [];
 const oosList = [];
 const pulled = [];
 const urls = [];
+if (PREVIEW) {
+  const key = PREVIEW.toLowerCase();
+  const hit = all.find(x => String(x.sku || '').toLowerCase() === key || String(x.slug || '').toLowerCase() === key);
+  if (!hit) {
+    console.error(`--preview: no ${CAT} matched "${PREVIEW}" in the ${all.length} fetched products`);
+    process.exit(1);
+  }
+  process.stdout.write(page(hit));
+  process.exit(0);
+}
+
 for (const p of all) {
   const handle = p.slug || p.id;
   if (!handle) continue;
