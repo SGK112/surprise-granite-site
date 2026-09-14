@@ -22,7 +22,24 @@
  *      account, then create a JSON key for it.
  *   2. Enable the Merchant API on that project.
  *   3. Merchant Center -> Settings -> People and access -> add the service account's
- *      email (…@….iam.gserviceaccount.com) as a user with ADMIN access.
+ *      email (…@….iam.gserviceaccount.com) as a user.
+ *
+ *      ⚠️ THE SERVICE ACCOUNT NEEDS NO GCP IAM ROLE. Merchant API does not authorize
+ *      through IAM at all — it authorizes through Merchant Center's own user list, so
+ *      granting the service account Editor/Owner on the Cloud project achieves
+ *      nothing except widening the blast radius. What it needs is to BE a Merchant
+ *      Center user. That is the step people miss when every call 403s.
+ *
+ *      Access rights are an enum (accounts_v1beta User.accessRights):
+ *        READ_ONLY, STANDARD, ADMIN, PERFORMANCE_REPORTING, API_DEVELOPER
+ *      Google's quickstart says ADMIN. Least privilege for what this script does is
+ *      STANDARD (+ API_DEVELOPER) — reads plus dataSources create/delete. Start there
+ *      and escalate to ADMIN only if a call 403s.
+ *
+ *      ⚠️ ONE SCOPE COVERS EVERYTHING and there is no read-only variant:
+ *      https://www.googleapis.com/auth/content grants every method in the API,
+ *      including accounts.delete and accounts.users.create. Whatever access right you
+ *      pick is the only thing limiting what a leaked key could do.
  *   4. Save the key OUTSIDE this repo and point the env var at it:
  *        export GOOGLE_APPLICATION_CREDENTIALS=~/.config/surprise-granite/merchant-sa.json
  *        export MERCHANT_ACCOUNT_ID=666338555
