@@ -43,7 +43,10 @@ function buildOffer(price, slug) {
     hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
-      returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+      // FREE, matching /legal/refund-policy ("we'll send you a return shipping
+      // label"). Asserting the customer pays contradicted the page this schema
+      // links Google to, and Google cross-checks the two.
+      returnFees: 'https://schema.org/FreeReturn',
       merchantReturnLink: `${SITE}/legal/refund-policy/` },
     shippingDetails: { '@type': 'OfferShippingDetails',
       shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },

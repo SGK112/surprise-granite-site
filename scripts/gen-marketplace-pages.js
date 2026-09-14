@@ -193,7 +193,12 @@ function page(p) {
   const catLabel = CAT.charAt(0).toUpperCase() + CAT.slice(1);
   // Single-item freight for this product, per the checkout's per-vendor tiers
   // (api/validators/price-validator.js): <$100 → $15, <$500 → $25, else free.
-  const shipVal = price >= 500 ? 0 : price >= 100 ? 25 : 15;
+  // The SAME figure the page, the cart, checkout and the Merchant feed use. This was
+  // a fourth hand-rolled copy of the tier rule and it was freight-blind: a tub with
+  // $450 of real LTL freight declared $25 in its schema while checkout charged $450.
+  // Google cross-checks feed shipping against the landing page, and a landing page
+  // that undercuts the feed is how items get disapproved.
+  const shipVal = shippingFor({ ...p, handle }, price, ROOT).cost;
   const priceValidUntil = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10);
 
   const productLd = {
@@ -203,12 +208,15 @@ function page(p) {
     offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'USD', priceValidUntil,
       availability: 'https://schema.org/InStock', url,
       seller: { '@type': 'Organization', name: 'Surprise Granite' },
-      // Blanket store policy: 30-day returns, customer pays return shipping (per
-      // /legal/refund-policy). restocking varies by vendor, so not asserted.
+      // Blanket store policy, taken from /legal/refund-policy: 30 days, by mail, and
+      // FREE — the policy says "we'll send you a return shipping label", so the
+      // merchant pays. This asserted ReturnFeesCustomerResponsibility until
+      // 2026-09-13, contradicting the very page merchantReturnLink points Google at.
+      // Restocking varies by vendor, so it is still not asserted.
       hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'US',
         returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
         merchantReturnDays: 30, returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+        returnFees: 'https://schema.org/FreeReturn',
         merchantReturnLink: `${SITE}/legal/refund-policy/` },
       shippingDetails: { '@type': 'OfferShippingDetails',
         shippingRate: { '@type': 'MonetaryAmount', value: shipVal.toFixed(2), currency: 'USD' },
