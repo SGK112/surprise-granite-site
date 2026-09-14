@@ -38,6 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const crypto = require('crypto');
 const { shippingFor } = require('./lib/shipping');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -63,6 +64,24 @@ const xml = s => String(s == null ? '' : s)
   .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');           // control chars break the parse
 const money = n => Number(n).toFixed(2);
 const clean = s => String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * Google caps the `id` attribute at 50 characters and rejects the item outright
+ * beyond that ("Value too long in attribute: id"). Five SKUs are really slugs and
+ * ran 51-53 chars.
+ *
+ * Plain truncation is not safe: `msi-arabescato-venato-white-marble-subway-honed-tile`
+ * and `...-herringbone-tile` share a long prefix, and two items with the same id
+ * silently overwrite each other in Merchant Center. So keep a readable prefix and
+ * append a short hash of the FULL sku — unique, and stable across rebuilds, which
+ * matters because changing an id resets that item's history with Google.
+ */
+function feedId(sku) {
+  const s = String(sku);
+  if (s.length <= 50) return s;
+  const h = crypto.createHash('sha1').update(s).digest('hex').slice(0, 7);
+  return `${s.slice(0, 42)}-${h}`;
+}
 
 function fetchCategory(cat) {
   const out = [];
@@ -113,7 +132,7 @@ for (const [cat, cfg] of Object.entries(CATS)) {
     const perSqft = String(p.price_unit) === 'sqft';
 
     const parts = [
-      `<g:id>${xml(p.sku || handle)}</g:id>`,
+      `<g:id>${xml(feedId(p.sku || handle))}</g:id>`,
       `<g:title>${xml(title)}</g:title>`,
       `<g:description>${xml(desc)}</g:description>`,
       `<g:link>${xml(link)}</g:link>`,
