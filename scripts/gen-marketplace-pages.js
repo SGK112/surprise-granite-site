@@ -19,6 +19,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { serviceStrip } = require('./lib/cross-sell');
+// ONE copy of the delivery rule, shared with the Merchant feed — see lib/shipping.js.
+const { shippingFor } = require('./lib/shipping');
 
 const ROOT = path.resolve(__dirname, '..');
 const SITE = 'https://www.surprisegranite.com';
@@ -104,25 +106,6 @@ function stockLine(p) {
 }
 
 /**
- * data/shipping-freight.json, loaded once. `freight` = oversized/LTL SKUs that are
- * always billed their real cost and never qualify for free shipping.
- */
-let FREIGHT_TABLE = null;
-function freightFor(p) {
-  if (FREIGHT_TABLE === null) {
-    try {
-      FREIGHT_TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'shipping-freight.json'), 'utf8')).freight || {};
-    } catch (e) { FREIGHT_TABLE = {}; }
-  }
-  for (const k of [p.sku, p.slug, p.id]) {
-    if (!k) continue;
-    const hit = FREIGHT_TABLE[String(k)] ?? FREIGHT_TABLE[String(k).toUpperCase()] ?? FREIGHT_TABLE[String(k).toLowerCase()];
-    if (hit) return Number(hit) || 0;
-  }
-  return 0;
-}
-
-/**
  * What this product actually costs to get to the door, worked out at build time
  * from the SAME rule the cart and the server price-validator use: per vendor,
  * under $100 → $15, $100–$500 → $25, $500+ → free — except freight SKUs, which
@@ -135,17 +118,15 @@ function freightFor(p) {
  * inaccurate shipping claim is worse than none at all.
  */
 function deliveryBlock(p, price) {
-  const fr = freightFor(p);
+  const s = shippingFor(p, price, ROOT);
   let ship;
-  if (fr > 0) {
-    ship = `<strong>$${money(fr)}</strong> freight delivery — this item ships by truck`;
-  } else if (price >= 500) {
+  if (s.isFreight) {
+    ship = `<strong>$${money(s.cost)}</strong> freight delivery — this item ships by truck`;
+  } else if (s.isFree) {
     ship = '<strong>FREE shipping</strong> on this item';
   } else {
-    const tier = price < 100 ? 15 : 25;
-    const toFree = 500 - price;
-    ship = `<strong>$${money(tier)}</strong> shipping`
-      + (toFree > 0 ? ` — add $${money(toFree)} to this order for free shipping` : '');
+    ship = `<strong>$${money(s.cost)}</strong> shipping`
+      + (s.toFree > 0 ? ` — add $${money(s.toFree)} to this order for free shipping` : '');
   }
   return `<ul class="pdp-assure">
         <li><span aria-hidden="true">🚚</span><div>${ship}</div></li>
