@@ -12,6 +12,7 @@
  *   node scripts/merchant-api.js whoami
  *   node scripts/merchant-api.js sources                 # list data sources
  *   node scripts/merchant-api.js add-feed                # add /merchant-feed.xml (daily fetch)
+ *   node scripts/merchant-api.js fetch-now <name>        # trigger an immediate fetch
  *   node scripts/merchant-api.js delete-source <name>    # remove the stale Shopify source
  *   node scripts/merchant-api.js issues [limit]          # per-product issues
  *
@@ -31,6 +32,21 @@
  *
  * No external dependencies: the JWT is signed with node's crypto, so this runs
  * without adding googleapis to the project.
+ *
+ * ⚠️ THE REQUEST SHAPES BELOW ARE TAKEN FROM GOOGLE'S DISCOVERY DOCUMENT, NOT FROM
+ * MEMORY. Verify against it before "correcting" them — an automated review proposed
+ * three changes that the discovery document contradicts:
+ *   curl 'https://merchantapi.googleapis.com/$discovery/rest?version=datasources_v1beta'
+ *   curl 'https://merchantapi.googleapis.com/$discovery/rest?version=products_v1beta'
+ * Specifically, and all three were checked on 2026-09-13:
+ *   - channel IS 'ONLINE_PRODUCTS'. The enum is
+ *     [CHANNEL_UNSPECIFIED, ONLINE_PRODUCTS, LOCAL_PRODUCTS, PRODUCTS]. Plain 'ONLINE'
+ *     is the OLD Content API value and is rejected here.
+ *   - the fetch field IS 'frequency', not 'fetchFrequency'.
+ *   - there is NO productStatuses resource. accounts has only {productInputs,
+ *     products}; itemLevelIssues lives on the ProductStatus schema reached via
+ *     products.list -> product.productStatus. Calling /productStatuses 404s.
+ * Also note fileInputType is OUTPUT ONLY — sending it is an error.
  */
 const fs = require('fs');
 const path = require('path');
@@ -98,8 +114,12 @@ const cmd = process.argv[2] || 'whoami';
     console.log(`merchant account: ${ACCOUNT}`);
     const t = await token();
     console.log(`token           : acquired (${t.slice(0, 12)}…)`);
-    console.log('\nIf a call 403s, the service account is not yet a user on the Merchant Center');
-    console.log('account. Add it under Settings -> People and access with ADMIN access.');
+    // A token proves the KEY is valid, nothing more — it is issued by Google's OAuth
+    // endpoint without Merchant Center ever being consulted. So whoami used to report
+    // success for a service account that had never been added to the account, which
+    // is the single most likely setup mistake. Make a real account-scoped call.
+    const acct = await api(`https://merchantapi.googleapis.com/accounts/v1beta/accounts/${ACCOUNT}`);
+    console.log(`account access  : VERIFIED — "${acct.accountName || acct.name}"`);
     return;
   }
 
@@ -123,6 +143,19 @@ const cmd = process.argv[2] || 'whoami';
   }
 
   if (cmd === 'add-feed') {
+    // Point Merchant Center at a URL only after confirming it actually serves a feed.
+    // A data source whose scheduled fetch fails looks identical in the UI to one that
+    // is merely empty, and it quietly advertises nothing until someone digs in.
+    process.stdout.write(`checking ${FEED_URL} … `);
+    const probe = await fetch(FEED_URL);
+    const xmlText = probe.ok ? await probe.text() : '';
+    const itemCount = (xmlText.match(/<item>/g) || []).length;
+    if (!probe.ok || itemCount < 1) {
+      die(`\nfeed is not servable (HTTP ${probe.status}, ${itemCount} items). `
+        + 'Run `node scripts/build-merchant-feed.js --write`, deploy, then retry.');
+    }
+    console.log(`OK — HTTP ${probe.status}, ${itemCount} items`);
+
     const body = {
       displayName: 'surprisegranite.com product feed',
       primaryProductDataSource: { channel: 'ONLINE_PRODUCTS', countries: ['US'], contentLanguage: 'en', feedLabel: 'US' },
@@ -135,6 +168,15 @@ const cmd = process.argv[2] || 'whoami';
     };
     const j = await api('/dataSources', { method: 'POST', body });
     console.log('created:\n' + JSON.stringify(j, null, 2).slice(0, 1200));
+    return;
+  }
+
+  if (cmd === 'fetch-now') {
+    const name = process.argv[3];
+    if (!name) die('usage: fetch-now accounts/<id>/dataSources/<id>   (from `sources`)');
+    // Otherwise the first pull waits for tomorrow's 6am schedule.
+    await api(`https://merchantapi.googleapis.com/datasources/v1beta/${name}:fetch`, { method: 'POST', body: {} });
+    console.log('fetch requested. Processing takes a few minutes; then run `issues`.');
     return;
   }
 
